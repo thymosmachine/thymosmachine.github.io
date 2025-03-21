@@ -433,21 +433,21 @@
 
 
 <script>
-    if ('serviceWorker' in navigator) {
-        console.log('Service Worker is supported.');
-        navigator.serviceWorker.register('service-worker.js').then(function (registration) {
-            console.log('Service Worker was registered', registration);
-        }).catch(function (error) {
-            console.log('Registration failed.', error);
-        });
-    } else {
-        console.log('Service Worker is not supported.');
-    }
+    // if ('serviceWorker' in navigator) {
+    //     console.log('Service Worker is supported.');
+    //     navigator.serviceWorker.register('service-worker.js').then(function (registration) {
+    //         console.log('Service Worker was registered', registration);
+    //     }).catch(function (error) {
+    //         console.log('Registration failed.', error);
+    //     });
+    // } else {
+    //     console.log('Service Worker is not supported.');
+    // }
 
-    self.addEventListener("activate", (event) => {
-        console.log("New service worker activated");
-        event.waitUntil(self.clients.claim());
-    });
+    // self.addEventListener("activate", (event) => {
+    //     console.log("New service worker activated");
+    //     event.waitUntil(self.clients.claim());
+    // });
 
 
     const storageKey = "formData"; // Key in localStorage
