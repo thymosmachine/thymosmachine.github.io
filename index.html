@@ -5,20 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
-    <link rel="icon" type="image/png" sizes="32x32" href="images/icon-32x32.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
-    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="./images/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./images/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./images/icon-512x512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">
+    <link rel="shortcut icon" href="./images/favicon.ico">
 
 
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
 
 
-    <script src="uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
-    <link rel="stylesheet" href="/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
-
-    <!-- Add XLSX (MS Excel) JavaScript -->
-    <script src="xlsx.full.min.js"></script>
+    <script src="./uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+    <link rel="stylesheet" href="./uPlot.min.css"> <!-- Add uPlot CSS for styling -->
+    <script src="./xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
 
 
     <title>Moira Control - Thymos</title>
@@ -42,6 +41,7 @@
             font-family: Arial, sans-serif;
             height: 100%;
             width: 98%;
+            background: white;
         }
 
         /* Button styling for spacing and cursor behavior */
@@ -62,14 +62,16 @@
         }
 
         /* Disabled elements styling */
-        .disabled {
-            cursor: not-allowed;
+        .prohibited, .disabled {
             opacity: 0.5;
-            user-select: none; /* Disables text selection */
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            pointer-events: none; /* Prevents interaction */
+            cursor: not-allowed !important;
+            user-select: none !important; /* Disables text selection */
+            -webkit-user-select: none !important; /* Safari */
+            -moz-user-select: none !important; /* Firefox */
+            -ms-user-select: none !important; /* IE/Edge */
+            pointer-events: none !important; /* Prevents interaction */
+            tab-index: -1 !important;
+            outline: none !important;
         }
 
         #settingContainer {
@@ -79,6 +81,9 @@
             padding: 0 15px 15px;
             justify-self: center;
             justify-content: center;
+        }
+
+        .sizeableContainer {
             overflow: hidden;
             max-height: 0;
             opacity: 0;
@@ -95,7 +100,7 @@
         }
 
 
-        #machineSettingsContainer {
+        #machineSettingsWrapper {
             display: flex;
             gap: 10px; /* Space between inputs */
             justify-self: center;
@@ -104,7 +109,7 @@
             width: 100%;
         }
 
-        #appSettingsContainer {
+        #appSettingsWrapper {
             display: flex;
             gap: 10px; /* Space between inputs */
             justify-self: center;
@@ -144,12 +149,14 @@
         }
 
         h3 {
+            position: relative;
             margin-top: 20px;
             margin-bottom: 5px;
             align-self: flex-start;
         }
 
         h4 {
+            position: relative;
             margin-top: 5px;
             margin-bottom: 5px;
         }
@@ -161,104 +168,437 @@
             border: 1px solid gray;
         }
 
+
+        .headerContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            margin-left: 20px;
+        }
+
+        .statusContainer {
+            gap: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .graphContainer {
+            display: flex;
+            flex-direction: column;
+            margin-top: 50px;
+            align-items: center;
+            width: 95%;
+            justify-self: center;
+        }
+
+        #usbContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #inputNumBaudRate {
+            width: 148px;
+            height: 33px;
+            border-radius: 10px;
+            padding: 5px;
+            border: 1px solid darkgray;
+            background: #f0f0f0;
+            text-align: center;
+        }
+
+        #connectionStatus {
+            font-weight: bold;
+            color: gray;
+        }
+
+        .graphBtnWrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        #connectBtnUSB {
+            padding: 5px;
+            height: 45px;
+            width: 160px;
+        }
+
+        .btnGraph {
+            display: flex;
+            min-width: 100px;
+            height: 50px;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #thymosLogo {
+            width: 50px;
+            height: 50px;
+        }
+
+        #chartsContainer {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 400px;
+            margin-top: 10px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            border: 1px solid lightgrey;
+        }
+
+        .chartWrapper {
+            width: 49%;
+            height: 400px;
+        }
+
+        .machineControlContainer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btnControlWrapper {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controlBtn {
+            display: flex;
+            height: 50px;
+            min-width: 100px;
+            width: 170px;
+            max-width: 200px;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #startExperiment {
+            background: lightblue;
+        }
+
+        #stopMachine {
+            background: lightpink;
+        }
+
+        #returnPositionExperimentBtn {
+            background: lightgrey;
+        }
+
+        #autoReturnPositionExperiment {
+            display: flex;
+            height: 50px;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #experimentProgress {
+            flex-grow: 1;
+            max-width: 450px;
+            min-width: 50px;
+            height: 20px;
+        }
+
+        #progressWrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            width: 100%;
+            max-width: 650px;
+            min-width: 50px;
+        }
+
+        .experimentContainer {
+            display: flex;
+            flex-direction: column;
+            padding: 5px;
+            gap: 10px;
+            left: 0;
+            justify-self: center;
+            align-items: center;
+        }
+
+        #experimentInputsWrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+
+        #experimentInputsContainer {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            max-width: 1220px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            gap: 10px;
+            justify-items: left;
+        }
+
+        #experimentType {
+            width: calc(100% - 20px);
+            height: 24px;
+            padding: 10px;
+            border: none;
+            background: lightgray;
+            border-radius: 10px;
+        }
+
+        #experimentDesc {
+            width: calc(100% - 20px);
+            height: 32px;
+            padding: 10px;
+            border: none;
+            background: lightgray;
+            border-radius: 10px;
+        }
+
+        #experimentBtnsWrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #saveData {
+            width: 150px;
+            height: 44px;
+        }
+
+        #convertCSV {
+            width: 150px;
+            height: 52px;
+        }
+
+        #settingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            background: lightgray;
+            border-radius: calc(1px + 10px);
+            border: 1px solid darkgray
+        }
+
+        #openSettingsContainer {
+            padding: 10px;
+        }
+
+        #loadSettingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #experimentDirectionDropdown {
+            width: 227.2px;
+            height: 30.2px;
+        }
+
+        #inputPhotoIntervalLabel {
+            min-width: max-content;
+        }
+
+        #inputPhotoInterval {
+            max-width: 50px;
+        }
+
+        #machineSettingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #appSettingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #clearStorageButton {
+            padding: 20px;
+        }
+
+        #consoleWrapper {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            background: lightgray;
+            border-radius: calc(1px + 10px);
+            border: 1px solid darkgray
+        }
+
+        #openConsoleContainer {
+            padding: 10px;
+        }
+
+        #consoleContainer {
+            padding: 10px;
+        }
+
+        #logWrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        #regularLog {
+            max-width: 1200px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            height: 200px;
+            background: darkgray;
+            margin: 0;
+            border-radius: 10px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        #loadingLog {
+            max-width: 1200px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            height: 80px;
+            background: #323232;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 0;
+        }
+
+        #logContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #logBtnWrapper {
+            display: grid;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logBtn {
+            width: 150px
+        }
+
+        #commandWrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            height: 40px;
+            padding: 0 10px 10px;
+        }
+
+        #commandInput {
+            max-width: 1200px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            padding: 10px;
+            height: calc(100% - 20px);
+            border: none;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 50px;
+        }
     </style>
 </head>
 
 <body>
 
-<div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 20px; margin-left: 20px;">
-    <img src="images/icon-192x192.png" alt="thymos" style="width: 50px; height: 50px;">
+<div class="headerContainer">
+    <img id="thymosLogo" src="./images/icon-512x512.png" alt="thymos">
     <h2>THYMOS - Moira controller</h2>
 </div>
 
-<div style="gap: 5px; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+<div class="statusContainer">
     <!-- USB Connection Section -->
-    <div id="usbContainer"
-         style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; ">
-
-        <button id="connectBtnUSB" style=" padding: 5px; height: 45px; width: 160px;">🔌 Connect via USB</button>
-        <label for="inputNumBaudRate" class="disabled">Baud-Rate:</label>
-        <input data-inputType="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-               value="921600" min="1" data-type="int" class="disabled"
-               style="width: 148px; height: 33px;  border-radius: 10px; padding: 5px; border: 1px solid darkgray; background: #f0f0f0; text-align: center;">
-
+    <div id="usbContainer">
+        <button id="connectBtnUSB">🔌 Connect via USB</button>
+        <label for="inputNumBaudRate" class="prohibited">Baud-Rate:
+            <input data-inputType="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
+                   value="921600" min="1" data-type="int" class="prohibited">
+        </label>
     </div>
-    <div id="connectionStatus" style="font-weight: bold; color: gray;">
-        🔴 Disconnected
-    </div>
+    <div id="connectionStatus"> 🔴 Disconnected</div>
 </div>
 
 <!-- Graph Display Section -->
 
-<div style="display: flex; flex-direction: column; margin-top: 50px; align-items: center; width: 95%; justify-self: center;">
+<div class="graphContainer">
     <h3>📈 Graphs:</h3>
-    <div style="display: flex; gap: 10px;">
-        <button id="toggleLive"
-                style="display: flex; min-width: 100px; height: 50px; padding: 20px; align-items: center; justify-content: center;">
-            ▶️ Activate Charts
-        </button>
-        <button style="display: flex; height: 50px; min-width: 100px; padding: 20px;align-items: center; justify-content: center;"
-                onclick="clearCharts()">🧹 Clear Charts
-        </button>
-        <button style="display: flex; height: 50px; min-width: 100px; padding: 20px;align-items: center; justify-content: center;"
-                onclick="refreshCharts()">🔄 Refresh Charts
-        </button>
+    <div class="graphBtnWrapper">
+        <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
+        <button class="btnGraph" onclick="clearCharts()">🧹 Clear Charts</button>
+        <button class="btnGraph" onclick="refreshCharts()">🔄 Refresh Charts</button>
     </div>
-    <div style="display: flex; justify-content: space-between; width: 100%; height: 400px; margin-top: 10px; background: #f5f5f5; border-radius: 10px; border: 1px solid lightgrey;"
-         id="chartsContainer">
-        <div id="timeChart" style="width: 49%; height: 400px;"></div>
-        <div id="distanceChart" style="width: 49%;height: 400px;"></div>
+    <div id="chartsContainer">
+        <div id="timeChart" class="chartWrapper"></div>
+        <div id="distanceChart" class="chartWrapper"></div>
 
     </div>
-</div>
 
-<!-- Progress Bar -->
-<div style="display: flex; flex-direction: column; width: 100%; gap: 10px; align-items: center; justify-content: center; margin-top: 20px;">
-    <div style="display: flex; flex-direction: row; width: 100%; gap: 10px; align-items: center; justify-content: center;">
-        <!-- Start Experiment Button -->
-        <button id="startExperiment"
-                style="display: flex; height: 50px; min-width: 100px; width: 170px; max-width: 200px; padding: 20px; align-items: center; justify-content: center; background: lightblue;">
-            ⚡ Start Experiment
-        </button>
+    <!-- Progress Bar -->
+    <div class="machineControlContainer">
+        <div class="btnControlWrapper">
+            <!-- Start Experiment Button -->
+            <button id="startExperiment" class="controlBtn"> ⚡ Start Experiment</button>
 
-        <!-- Stop Experiment Button -->
-        <button id="stopExperiment"
-                style="display: flex; height: 50px; min-width: 100px; width: 170px; max-width: 200px; padding: 20px; align-items: center; justify-content: center; background: lightpink;">
-            🛑 Stop Experiment
-        </button>
+            <!-- Stop Experiment Button -->
+            <button id="stopMachine" class="controlBtn"> 🛑 Stop Machine</button>
 
-        <!-- Return to original position Button -->
-        <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()"
-                style="display: flex; height: 50px; min-width: 100px; width: 170px; max-width: 200px; padding: 20px; align-items: center; justify-content: center; background: lightgrey;">
-            ↩️ Return to original position
-        </button>
+            <!-- Return to original position Button -->
+            <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()" class="controlBtn disabled"> ↩️
+                Return to original position
+            </button>
 
-        <!-- Automatic returning to original position Checnkmark -->
-        <label for="autoReturnPositionExperiment">↕️ Auto-return to original position:</label>
-        <input type="checkbox" id="autoReturnPositionExperiment"
-               style="display: flex; height: 50px; padding: 20px; align-items: center; justify-content: center;">
-    </div>
+            <!-- Automatic returning to original position Checkmark -->
+            <label for="autoReturnPositionExperiment">↕️ Auto-return to original position:</label>
+            <input type="checkbox" id="autoReturnPositionExperiment">
 
-    <!-- Experiment Progress -->
-    <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;  width: 100%; max-width: 650px; min-width: 50px; ">
-        <label for="experimentProgress">Experiment Progress:</label>
-        <progress id="experimentProgress" value="0" max="100"
-                  style="flex-grow: 1; max-width: 450px; min-width: 50px; height: 20px;"></progress>
+        </div>
+
+        <!-- Experiment Progress -->
+        <div id="progressWrapper">
+            <label for="experimentProgress">Experiment Progress:</label>
+            <progress id="experimentProgress" value="0" max="100"></progress>
+
+        </div>
     </div>
 </div>
 
 
-<div style="display: flex; flex-direction: column; padding: 5px; gap: 10px; left: 0; justify-self: center;align-items: center;">
-    <h3 style="position: relative;">📝 Experiment options:</h3>
-    <div style="display: flex; flex-direction: row; gap: 10px;">
-        <div style="display: grid; grid-template-columns: auto 1fr; max-width: 1220px; min-width: 300px; width: calc(100vw - 200px); gap: 10px; justify-items: left;">
+<div class="experimentContainer">
+    <h3>📝 Experiment options:</h3>
+    <div id="experimentInputsWrapper">
+        <div id="experimentInputsContainer">
 
-            <label for="experimentType" style="">🧪 Experiment Name: </label>
-            <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ..."
-                   style="width: calc(100% - 20px); height: 24px; padding: 10px; border: none; background: lightgray; border-radius: 10px;">
+            <label for="experimentType">🧪 Experiment Name: </label>
+            <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ...">
             <label for="experimentDesc">📄 Experiment description: </label>
-            <input id="experimentDesc" placeholder="Short description of the experiment (optional)..."
-                   style="width: calc(100% - 20px); height: 32px; padding: 10px; border: none; background: lightgray; border-radius: 10px;">
+            <input id="experimentDesc" placeholder="Short description of the experiment (optional)...">
             <label for="storagePath">📁 Handpick the folder: </label>
             <div><input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
                 Downloads)
@@ -266,37 +606,36 @@
         </div>
 
 
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-
-            <button id="saveData" style="width: 150px; height: 44px;">💾 Save single CSV</button>
-            <button id="convertCSV" onclick="convertCSVtoXLSX()" style="width: 150px; height: 52px;">
+        <div id="experimentBtnsWrapper">
+            <button id="saveData">💾 Save single CSV</button>
+            <button id="convertCSV" onclick="convertCSVtoXLSX_MATTES()">
                 📊 Convert CSV files to XLSX (MATTES)
             </button>
 
         </div>
     </div>
 
+
     <!-- Experiment Parameter Inputs -->
-    <h3 style="position: relative;">⚙️ Settings:</h3>
-    <div style="position: relative; display: flex; align-items: flex-start; width: 100%; background: lightgray; border-radius: 10px; border: 1px solid darkgray">
-        <button id="openSettingsContainer" style="padding: 10px;">🔽</button>
-        <div id="settingContainer">
+    <h3>⚙️ Settings:</h3>
+    <div id="settingsContainer">
+        <button id="openSettingsContainer">🔽</button>
+        <div id="settingContainer" class="sizeableContainer">
 
 
-            <h4 style="position: relative;">🛠️ Loading settings:</h4>
-            <div style="position: relative; display: flex; align-items: flex-start; gap: 10px;">
+            <h4>🛠️ Loading settings:</h4>
+            <div id="loadSettingsContainer">
                 <div id="experimentSettingsContainer">
                     <div class="input-group">
                         <label for="inputDistance">Distance (mm): </label>
-                        <input data-inputType="floatInput" type="number" id="inputDistance" value="20" min="0.00001"
+                        <input data-inputType="floatInput" type="number" id="inputDistance" value="20" min="0"
                                step="any"
                                max="100000000">
                     </div>
 
                     <div class="input-group">
-                        <label for="experimentDirectionDropdown" class="disabled">Direction: </label>
-                        <select id="experimentDirectionDropdown" class="disabled"
-                                style="width: 227.2px; height: 30.2px;">
+                        <label for="experimentDirectionDropdown" class="prohibited">Direction: </label>
+                        <select id="experimentDirectionDropdown" class="prohibited">
                             <option value="Option-DOWN"> DOWN ⏬ </option>
                             <option value="Option-UP"> UP    ⏫ </option>
                         </select>
@@ -314,11 +653,10 @@
                     <div class="input-group">
                         <label for="inputTakePhotos">Take photos: </label>
                         <input type="checkbox" id="inputTakePhotos">
-                        <label for="inputPhotoInterval" style="min-width: max-content;">Photo Interval (s): </label>
+                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval (s): </label>
                         <input class="disabled" data-inputType="floatInput" type="number" id="inputPhotoInterval"
-                               style="max-width: 50px;"
                                value="1"
-                               min="0.00001" step="any"
+                               min="0" step="any"
                                max="100000000">
                     </div>
 
@@ -332,25 +670,25 @@
 
 
                     <div class="input-group">
-                        <label for="inputSpeedForward">Speed Forward (mm/s): </label>
-                        <input data-inputType="floatInput" type="number" id="inputSpeedForward" value="1" min="0.00001"
+                        <label for="inputSpeedForward">Loading speed (mm/s): </label>
+                        <input data-inputType="floatInput" type="number" id="inputSpeedForward" value="1" min="0"
                                step="any"
                                max="100000000">
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group"> <!-- TODO minimum na 10000 -->
                         <label for="inputDataInterval">Data Interval (µs): </label>
-                        <input data-inputType="floatInput" type="number" id="inputDataInterval" value="20000"
-                               min="15000"
+                        <input data-inputType="floatInput" type="number" id="inputDataInterval" value="30000"
+                               min="10000"
                                step="any"
                                max="100000000">
                     </div>
 
                     <div class="input-group">
-                        <label for="inputSpeedBackward" class="disabled">Speed Backward (mm/s): </label>
-                        <input data-inputType="floatInput" type="number" id="inputSpeedBackward" class="disabled"
+                        <label for="inputSpeedBackward" class="prohibited">Returning speed (mm/s): </label>
+                        <input data-inputType="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
                                value="25"
-                               min="0.00001"
+                               min="0.000001"
                                step="any"
                                max="100000000">
                     </div>
@@ -360,21 +698,21 @@
 
             <hr>
 
-            <h4 style="position: relative;">📟 Machine settings:</h4>
-            <div style="position: relative; display: flex; align-items: flex-start; gap: 10px;">
-                <div id="machineSettingsContainer">
+            <h4>📟 Machine settings:</h4>
+            <div id="machineSettingsContainer">
+                <div id="machineSettingsWrapper">
 
                     <div class="input-group">
                         <label for="inputLoadcellCapacity">Loadcell Capacity (kg): </label>
-                        <input data-inputType="floatInput" type="number" id="inputLoadcellCapacity" value="1000"
+                        <input data-inputType="intInput" type="number" id="inputLoadcellCapacity" value="1000"
                                step="any"
-                               min="0.00001" max="100000000">
+                               min="0.000001" max="100000000">
                     </div>
 
                     <div class="input-group">
                         <label for="inputLoadcellOutput">Loadcell Rated Output (mV/V): </label>
                         <input data-inputType="floatInput" type="number" id="inputLoadcellOutput" value="2.0" step="any"
-                               min="0.00001"
+                               min="0.000001"
                                max="100000000">
                     </div>
 
@@ -383,11 +721,11 @@
 
             <hr>
 
-            <h4 style="position: relative;">🕹️ App settings:</h4>
-            <div style="position: relative; display: flex; align-items: flex-start; gap: 10px;">
-                <div id="appSettingsContainer">
+            <h4>🕹️ App settings:</h4>
+            <div id="appSettingsContainer">
+                <div id="appSettingsWrapper">
 
-                    <button id="clearStorageButton" onclick="clearLocalStorage()" style="padding: 20px;">🔁 Restart app
+                    <button id="clearStorageButton" onclick="clearLocalStorage()">🔁 Restart app
                     </button>
 
                 </div>
@@ -395,49 +733,45 @@
         </div>
     </div>
 
-
     <!-- Device Output Section -->
     <h3>📑 Device Output:</h3>
-    <div style="display: flex; flex-direction: row; gap: 10px;">
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-        <pre id="regularLog"
-             style="max-width: 1200px; min-width: 300px; width: calc(100vw - 200px); height: 200px; background: darkgray; margin: 0; border-radius: 10px; overflow-y: auto; padding: 10px;">
-        </pre>
+    <div id="consoleWrapper">
+        <button id="openConsoleContainer">🔽</button>
+        <div id="consoleContainer" class="sizeableContainer">
+            <div id="logWrapper">
+                <div id="logContainer">
+                    <pre id="regularLog"> </pre>
+                    <pre id="loadingLog"> </pre>
+                </div>
 
-            <pre id="loadingLog"
-                 style="max-width: 1200px; min-width: 300px; width: calc(100vw - 200px); height: 80px; background: #323232; border-radius: 10px; padding: 10px;">
+                <!-- Log Control Buttons -->
+                <div id="logBtnWrapper">
+                    <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
+                    <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
+                    </button>
+                    <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
 
-            </pre>
+                </div>
+            </div>
 
-
+            <div id="commandWrapper">
+                <div>
+                    <label for="commandInput"></label>
+                    <textarea id="commandInput" placeholder="Enter command..."></textarea>
+                </div>
+                <button id="sendButton" class="logBtn">📡 Send Command</button>
+            </div>
         </div>
-        <!-- Log Control Buttons -->
-        <div style="display: grid; flex-direction: column; justify-content: center; gap: 10px;">
-            <button id="toggleScrollBtn" style="width: 150px">📌 Auto-scroll: ON</button>
-            <button id="toggleLineLockBtn" onclick="lineLock()" style="width: 150px">🔒 Fix Scroll: ON</button>
-            <button onclick="clearLog()" style="width: 150px">🗑️ Clear Log</button>
-
-        </div>
-    </div>
-
-    <div style="display: flex; flex-direction: row; gap: 10px; height: 40px;">
-        <div>
-            <label for="commandInput" style="margin-top: -5px"></label>
-            <textarea id="commandInput" placeholder="Enter command..."
-                      style="max-width: 1200px; min-width: 300px; width: calc(100vw - 200px); padding: 10px; height: calc(100% - 20px); border: none; background: lightgray; border-radius: 10px; margin-bottom: 50px;"></textarea>
-        </div>
-        <button id="sendButton" style="width: 150px">📡 Send Command</button>
     </div>
 
 </div>
 
 
 <script>
-        const softwareVersion = "0.0.1";
+    const softwareVersion = "0.0.1";
 
 
     serviceWorkerRegistration();
-
 
     async function serviceWorkerRegistration() {
 
@@ -472,7 +806,6 @@
         // if (!serviceWorkerRegistrationStatus) window.location.reload();
     }
 
-
     const storageKey = "formData"; // Key in localStorage
 
     // /////// Log Settings /////////
@@ -495,7 +828,7 @@
     let liveUpdatePaused = false;
 
     // Maximum number of data points displayed in the charts
-    // let maxDataPoints = 1e10000000000000;
+    // let maxDataPoints = 10e10000000000000;
 
     let isReadingSerial = false;
 
@@ -512,10 +845,9 @@
     let startPosition = 0;
     let experimentEndPosition = 0;
 
-    const cpuDelay = 50; // Delay (ms) to prevent excessive CPU usage
-
     let isExperimentRunning = false;
     let stopExperiment = false;
+    let machineOccupation = false;
 
     let measureForces = null;
     let takeMeasurements = false;
@@ -552,19 +884,9 @@
     // These were commented out, but they could be used to attach click events
 
 
-    document.getElementById("openSettingsContainer").addEventListener("click", function () {
-        const container = document.getElementById("settingContainer");
+    document.getElementById("openSettingsContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "settingContainer"));
+    document.getElementById("openConsoleContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "consoleContainer"));
 
-        if (window.getComputedStyle(container).maxHeight === "0px") {
-            container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
-            container.style.opacity = 1;
-            this.textContent = "🔼";
-        } else {
-            container.style.maxHeight = 0; // Close the container
-            container.style.opacity = 0;
-            this.textContent = "🔽";
-        }
-    });
 
     // /////// Auto-scroll Toggle /////////
     UI.toggleScrollBtn.addEventListener("click", () => {
@@ -579,7 +901,7 @@
 
 
     // Detects manual scrolling by the user
-    UI.regularLogContainer.addEventListener("scroll", function () {
+    UI.regularLogContainer.addEventListener("scroll", () => {
         isScrolledToBottom = checkScrolledToBottom();
 
         if (!isScrolledToBottom) {
@@ -594,6 +916,21 @@
         }
         UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
     });
+
+
+    function controlContainer(btn, containerID) {
+        const container = document.getElementById(containerID);
+
+        if (window.getComputedStyle(container).maxHeight === "0px") {
+            container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
+            container.style.opacity = 1;
+            btn.textContent = "🔼";
+        } else {
+            container.style.maxHeight = 0; // Close the container
+            container.style.opacity = 0;
+            btn.textContent = "🔽";
+        }
+    }
 
     // /////// Log Control Functions /////////
 
@@ -813,9 +1150,6 @@
             fileHandle = {name: `${fileName}`}; // Simulated save outside File System Access API
         }
 
-        const header = `Time [s]${delimiter}Distance [mm]${delimiter}Speed [mm/s]${delimiter}Loadcell 1 [N]${delimiter}Loadcell 2 [N]${delimiter}Loadcell 3 [N]${delimiter}Photo Index\n`;
-        let content = `Date:${delimiter}${new Date().toISOString()}\nDescription:${delimiter}${experimentDesc}\n${header}`;
-
         let transaction = db.transaction(STORE_NAME, "readonly");
         let store = transaction.objectStore(STORE_NAME);
         let request = store.getAll();
@@ -828,6 +1162,13 @@
                 alert("⚠️ No data to save. Ensure experiment has been run.");
                 return;
             }
+
+            const experimentInfo = dataEntries[0];
+
+            const header = `Time [s]${delimiter}Distance [mm]${delimiter}Speed [mm/s]${delimiter}Loadcell 1 [N]${delimiter}Loadcell 2 [N]${delimiter}Loadcell 3 [N]${delimiter}Photo Index\n`;
+            let content = `Date:${delimiter}${experimentInfo.experimentDate}${delimiter}Loading speed (mm/s):${delimiter}${experimentInfo.loadSpeed}${delimiter}Load distance (mm):${delimiter}${experimentInfo.loadDistance}${delimiter}Loadcell capacity (kg):${delimiter}${experimentInfo.loadcellCapacity}${delimiter}Software version:${delimiter}${softwareVersion} ${delimiter}Firmware version:${delimiter}${machineFirmware} \nDescription:${delimiter}${experimentDesc}\n${header}`;
+
+            dataEntries.shift(); // Skip the first entry (initial values)
 
             dataEntries.forEach(entry => {
                 const time = isNaN(entry.time) ? "" : entry.time;
@@ -842,7 +1183,7 @@
                 // Ensure `photoIndex` is properly handled
                 const photoIndex = isNaN(entry.photoIndex) ? "" : entry.photoIndex;
 
-                content += `${time}${delimiter}${distance}${delimiter}${speed}${delimiter}${load1}${delimiter}${load2}${delimiter}${load3}${delimiter}${photoIndex}\n`;
+                content += `${roundDecimal(time, 6)}${delimiter}${roundDecimal(distance, 4)}${delimiter}${roundDecimal(speed, 2)}${delimiter}${roundDecimal(load1, 2)}${delimiter}${roundDecimal(load2, 2)}${delimiter}${roundDecimal(load3, 2)}${delimiter}${photoIndex}\n`;
             });
 
             if (handFolderSelect) {
@@ -913,10 +1254,18 @@
      * Sends a command to the connected device.
      * Works with Serial (USB) connection;
      * @param {string} command - The command string to send.
+     * @param timeOut
      */
-    async function sendCommand(command) {
+    async function sendCommand(command, timeOut = 1) {
         if (!isConnected || !serialPort?.writable) {
             await logMessage("\n⚠️ No device is connected or port is unavailable!");
+            return;
+        }
+
+        if (command.includes(" NaN")) {
+            await logMessage("\n⚠️ Command contains 'NaN' values. Please check the input.");
+            console.error("⚠️ Command contains 'NaN' values. Please check the input.");
+            alert("⚠️ Aborted command due to 'NaN' values in the input.");
             return;
         }
 
@@ -932,6 +1281,7 @@
 
             console.log("Sent:", command);
             await logMessage("📤 Command sent: " + command);
+            await new Promise(resolve => setTimeout(resolve, timeOut));  // Stop for at least 1 ms
 
         } catch (error) {
             await handleError(error, "sendCommand");
@@ -1038,7 +1388,14 @@
     }
 
 
+    function roundDecimal(num, decimalPlace) {
+        return Math.round(num * Math.pow(10, decimalPlace)) / Math.pow(10, decimalPlace);
+    }
+
+
     // Logs a message to the regular log container
+    const logLineHeight = 1.2 * parseInt(UI.regularLogContainer.style.fontSize)
+
     function logMessage(msg) {
         if (!msg) return;
 
@@ -1047,11 +1404,13 @@
 
         while (isLineLimit && (logCount >= logContentMaxLines)) {
             logContentLines.shift();
-            if (isLineLocker) {
-                UI.regularLogContainer.scrollTop -= UI.regularLogContainer.scrollHeight / logCount;
-            }
+
             logCount--;
         }
+
+        // if (isLineLocker) {
+        //     UI.regularLogContainer.scrollTop -= logLineHeight; // UI.regularLogContainer.scrollHeight / logContentLines.length; // logCount;
+        // }
 
         if (isAutoScroll) {
             UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
@@ -1118,14 +1477,14 @@
         let thymosPorts = [];
         navigator.serial.getPorts().then(ports => {
             ports.forEach(port => {
-                if (port.manufacturer === "Thymio") {
+                if (port.manufacturer === "Thymos") {
                     thymosPorts.push(port);
                 }
             });
 
 
             return port
-        }).catch(error => {
+        }).catch(_ => {
             return null
         });
     }
@@ -1140,6 +1499,7 @@
         isSerial = true;
         try {
             const ports = await serialFunctionGetPorts();
+            console.log("🔍 Searching for available ports...", ports);
             if (ports && ports.length === 1) {
                 serialPort = ports[0];
                 await openPort(serialPort);
@@ -1162,6 +1522,7 @@
 
             await handleError(error, "connectSerial");
             isSerial = false;
+            isConnected = false;
             await disconnectSerial(true);
 
         }
@@ -1171,8 +1532,9 @@
      * Opens a serial port for communication.
      *  SerialPort => comPort - The selected serial port.
      */
+    let machineFirmware = null;
 
-    async function openPort(comPort) {
+    async function openPort(comPort, retry = false) {
         try {
             if (!comPort) {
                 console.error("⚠️ No available port.");
@@ -1205,19 +1567,21 @@
 
             await checkSerialSignals(comPort);
 
-
             await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
 
+            readSerial();
 
             await updateConnectionStatus("connected", "USB");
             UI.USB.innerText = "❌ Disconnect ESP (USB)";
             await logMessage("\n✅ Connected to ESP via USB\n");
-            await readSerial();
 
+            machineFirmware = await getFirmwareVersion();
 
         } catch (error) {
-            await handleError(error, "openPort");
-            await disconnectSerial(true);
+            if (!(error.name === "InvalidStateError" && retry)) {
+                await handleError(error, "openPort");
+                await disconnectSerial(true);
+            }
         }
     }
 
@@ -1255,24 +1619,23 @@
     /**
      * Disconnects from the ESP device via USB.
      */
-    async function disconnectSerial() {
-        if (!isConnected) {
+    async function disconnectSerial(override = false) {
+        if (!override && !isConnected) {
             console.warn("⚠️ Port is not connected.");
             return;
         }
 
         try {
-            stopExperiment = true;
-            isExperimentRunning = false;
             try {
                 await sendCommand("MC STOP"); // Stop data collection
-                await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
                 await sendCommand("DSLR STOP CYCLIC");
-                new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
                 await sendCommand("DATAC 0"); // Stop data collection
-                await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
             } catch (error) {
                 console.warn("⚠️ Error stopping data collection:", error);
+            } finally {
+                machineOccupation = false;
+                stopExperiment = true;
+                isExperimentRunning = false;
             }
 
             await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
@@ -1324,6 +1687,7 @@
 
         isExperimentRunning = false;
         stopExperiment = true;
+        machineOccupation = false;
         UI.loadingLogContainer.style.background = "#323232";
         experimentEndPosition = 0;
         startTime = null;
@@ -1389,13 +1753,19 @@
         } finally {
             if (serialReader) {
                 await serialReader.cancel(); //  Immediately stop reading !!!!
+                await stopMachine();
                 serialReader.releaseLock();
+
+
             }
             await logMessage("\n✅ Reading stopped.\n");
         }
     }
 
     async function attemptReconnect() {
+        await disconnectSerial(true);
+        return; // #TODO => fix reconnecting
+
         if (isConnected || isReconnecting) {
             console.warn("🚨 Reconnect aborted - Already connected or disconnect was expected.");
             // reconnectAttempts = 0;
@@ -1419,7 +1789,8 @@
 
         try {
             if (isSerial) {
-                await connectSerial();
+                await openPort(serialPort, true);
+                new Error("Reconnect failed");
             }
 
             if (isConnected) {
@@ -1479,7 +1850,7 @@
 
                     waitingForDataFormat = false; // Reset the format
                     dataFormat = null; // Reset the format
-                    return;
+                    continue;
                 }
             }
 
@@ -1487,7 +1858,7 @@
             if (msg.startsWith("DS")) {
                 await parseData(msg);
             } else {
-                logMessage(msg);
+                await logMessage("📩\t" + msg);
             }
 
             // // Increment the message counter
@@ -1504,48 +1875,82 @@
     }
 
 
+    function timeStepCheck(previous, current, stepSize, tolerance = null) {
+        if (!tolerance) {
+            tolerance = stepSize * 0.1; // set default tolerance to 10% of step size
+        }
+        if (current >= previous) {
+            const actualStep = current - previous;
+            if ((stepSize - tolerance) <= actualStep && actualStep <= (stepSize + tolerance)) {
+                return current;
+            }
+        }
+        console.warn("⚠️ Step size mismatch:\n\tprevious:", previous, " current: ", current);
+        return previous + stepSize;
+    }
+
+
     let maxLoad = [null, null, null];
 
 
     // /////// Data Parsing /////////
-    function interpolateDSLRData(dslrEvent, nextData) {
-        if (!parsedData || !parsedData.time) {
-            console.log("⚠️ No valid previous data for interpolation.");
+    function interpolateDSLRData(dslrEvent, nextData, prevData) {
+        if (!prevData || !nextData || !dslrEvent) {
+            console.log("⚠️ No valid data for interpolation.");
             return;
         }
 
-        let prevData = parsedData; // Use the last stored data as the previous measurement
-        let dslrTime = dslrEvent.time;
-        let photoIndex = dslrEvent.photoIndex;
+        const dslrTime = roundDecimal(dslrEvent.time - startTime, 6);
+
+        const photoIndex = dslrEvent.photoIndex;
 
         // Ensure valid data for interpolation
-        if (!prevData || !nextData || prevData.time >= nextData.time) {
-            console.log("⚠️ Not enough data for interpolation.");
+        if (prevData.time >= nextData.time) {
+            console.error("⚠️ Not enough data for interpolation.");
             return;
         }
 
-        // Linear interpolation factor
-        let t1 = prevData.time, t2 = nextData.time;
-        let factor = (dslrTime - t1) / (t2 - t1);
+        let interpolatedData;
 
-        let interpolatedSpeed = prevData.speed + factor * (nextData.speed - prevData.speed);
-        let interpolatedDistance = prevData.distance + factor * (nextData.distance - prevData.distance);
-        let interpolatedLoad = prevData.load.map((val, i) => val + factor * (nextData.load[i] - val));
+        if ((prevData.time <= dslrTime) && (dslrTime <= nextData.time)) {
+            // Linear interpolation factor
+            const t1 = prevData.time, t2 = nextData.time;
+            const factor = (dslrTime - t1) / (t2 - t1);
 
-        // Store interpolated data
-        let interpolatedData = {
-            time: dslrTime,
-            distance: interpolatedDistance,
-            speed: interpolatedSpeed,
-            load: interpolatedLoad,
-            photoIndex: photoIndex // Store DSLR photo order
-        };
+            const interpolatedDistance = roundDecimal(prevData.distance + factor * (nextData.distance - prevData.distance), 4);
+            const interpolatedSpeed = roundDecimal(prevData.speed + factor * (nextData.speed - prevData.speed), 2);
+            const interpolatedLoad = prevData.load.map((val, i) => roundDecimal(val + factor * (nextData.load[i] - val), 2));
+
+            interpolatedData = {
+                time: dslrTime,
+                distance: interpolatedDistance,
+                speed: interpolatedSpeed,
+                load: interpolatedLoad,
+                photoIndex: photoIndex // Store DSLR photo order
+            };
+
+        } else {
+            console.error("⚠️ Invalid interpolation range.");
+
+            interpolatedData = {
+                time: roundDecimal((prevData.time + nextData.time) / 2, 6),
+                distance: roundDecimal((prevData.distance + nextData.distance) / 2, 4),
+                speed: roundDecimal((prevData.speed + nextData.speed) / 2, 2),
+                load: prevData.load.map((val, i) => roundDecimal((val + nextData.load[i]) / 2, 2)),
+                photoIndex: photoIndex // Store DSLR photo order
+            };
+        }
+        dataCount++;
+        aggregatedDataBetweenSteps.push(interpolatedData);
+        pendingDSLR = null;
+
 
         // Log interpolated data
-        logMeasurements(`${interpolatedData}`);
+        // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedDistance + startPosition).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedLoad[0].toFixed(2)},${interpolatedLoad[1].toFixed(2)},${interpolatedLoad[2].toFixed(2)},    ${photoIndex}`);
         addDataToLog(interpolatedData);
-        // addMarker(timeChart, dslrTime); // #TODO
-        // addMarker(distanceChart, interpolatedDistance);
+
+        addMarker(timeChart, markersTime, interpolatedData.time);
+        addMarker(distanceChart, markersDist, interpolatedData.distance);
     }
 
 
@@ -1561,8 +1966,39 @@
     let startTime = null;
 
     let isDelayed = false;
+
     // let firstPhoto = 0;
-    let photoCount = 0;
+
+
+    function calculateAverageParsedData(parsedDataList) {
+        const totalEntries = parsedDataList.length;
+
+        if (totalEntries === 0) return {
+            time: 0,
+            distance: 0,
+            load: [0, 0, 0]
+        }; // Return zero values if no data
+
+        let sumTime = 0;
+        let sumDistance = 0;
+        let sumLoad = [0, 0, 0]; // Empty list of `load` values
+
+        parsedDataList.forEach(data => {
+            sumTime += data.time;
+            sumDistance += data.distance;
+
+            // Sum all values in `load` list
+            data.load.forEach((value, index) => {
+                sumLoad[index] += value;
+            });
+        });
+
+        return {
+            time: roundDecimal(sumTime / totalEntries, 6),
+            distance: roundDecimal(sumDistance / totalEntries, 4),
+            load: sumLoad.map(value => roundDecimal(value / totalEntries, 2)) // Average of `load` list values (per index)
+        };
+    }
 
 
     function delayData() {
@@ -1577,132 +2013,133 @@
 
     }
 
-    async function parseData(dataString) {
-        if (!isExperimentRunning && !isDelayed) {
-            logMeasurements(dataString);
+
+    let aggregatedDataBetweenSteps = [];
+    let minimumZeroSpeedCount = 2;
+    let directionCorrection = 0;
+    let forceDirectionCorrection = -1;
+
+    async function parseData(dataString) { // #TODO => move string handle to 'processMeasurements'
+        if (!takeMeasurements && !isExperimentRunning && !isDelayed) {
+            await logMeasurements(dataString);
             return;
         }
-
-        // === Detect DSLR shoot event ===
-        if (dataString.startsWith("DSLR shoot:")) {
-            let parts = dataString.split(":")[1].split(",");
-            let dslrTime = parseFloat(parts[0]) * 1e-3; // Convert microseconds to seconds
-            let photoIndex = parseInt(parts[1]); // Extract photo order
-
-            // if (firstPhoto === 0) {  // #TODO
-            //     firstPhoto = photoIndex - 1;
-            // }
-
-            // photoIndex - firstPhoto
-            pendingDSLR = {time: dslrTime, photoIndex: photoCount}; // Store for later interpolation
-            photoCount++;
-            return;
-        }
-
 
         dataString = dataString.substring(2);
         const parts = dataString.split(",");
 
-        if (parts.length !== 6) {
-            logMessage(dataString);
+        // Detect DSLR shoot event
+        if (takePhotos && dataString.startsWith("LR shoot:")) {
+            const [dslrTime, photoIndex] = dataString.split(":")[1].split(",");
+            pendingDSLR = {time: parseFloat(dslrTime) * 1e-3, photoIndex: parseInt(photoIndex) - 1};
+            await logMeasurements("Photo" + dataString.substring(2));
             return;
         }
 
-        let timeVal = parseFloat(parts[0]) * 1e-6; // Convert microseconds to seconds
-        let distVal = parseFloat(parts[1]); // Distance value
-        let speedVal = parseFloat(parts[2]); // Speed value
-        let loadVal = parts.slice(3).map(parseFloat); // Load cell values
+        if (parts.length !== 6) {
+            await logMessage("🌡️ DS" + dataString);
+            return;
+        } else {
+            await logMeasurements(dataString);
+        }
 
+        // Common parsing logic
+        // let loadVal = parts.slice(3).map(num => isNaN(parseFloat(num)) ? 0 : roundDecimal(parseFloat(num) * forceDirectionCorrection, 2)); // Load cell values
+        let loadVal = parts.slice(3).map(parseFloat);
 
         if (takeMeasurements) {
-
-            loadVal.forEach((value, index) => {
-                measureForces[index].push(value);
-            });
-
-        } else {
-            if (startTime === null) {
-                startTime = timeVal;
-            }
-
-            timeVal -= startTime;
-            distVal -= startPosition;
-            loadVal = loadVal.map((value, index) => value - meanForces[index]);
+            loadVal.forEach((value, index) => measureForces[index].push(value * forceDirectionCorrection)); // Handle takeMeasurements
+            return;
+        }
 
 
-            const newData = {time: timeVal, distance: distVal, speed: speedVal, load: loadVal, photoIndex: NaN};
-
-            // If a pending DSLR timestamp exists, interpolate values
-            if (pendingDSLR) {
-                await interpolateDSLRData(pendingDSLR, newData);
-                pendingDSLR = null; // Reset after interpolation
-            }
-
-            // Stop experiment if speed is near zero for too long
-            if (speedVal < 0.001 && !isDelayed) {
-                zero_speed_counter++;
-                if (zero_speed_counter > 5) {
-                    // stopExperiment = true;
-                    console.log("    🛑 Experiment stopped due to zero speed.");
-                    logMessage("🛑 Experiment stopped due to zero speed.");
-                }
-
-            } else {
-                zero_speed_counter = 0;
-            }
+        let timeVal = roundDecimal(parseFloat(parts[0]) * 1e-6, 6); // Convert microseconds to seconds
+        let distVal = roundDecimal(parseFloat(parts[1]) * directionCorrection, 4); // Distance value
+        const speedVal = roundDecimal(parseFloat(parts[2]), 2); // Speed value
 
 
-            for (let i = 0; i < 3; i++) {
-                if (maxLoad[i] < Math.abs(loadVal[i])) {
-                    maxLoad[i] = Math.abs(loadVal[i]);
-                }
+        // Handle regular data (not DSLR)
+        if (startTime === null) {
+            startTime = timeVal;
+            timeVal = 0;
+        } else { // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
+            timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6);
+        }
+        distVal -= startPosition;
+        loadVal = loadVal.map((value, index) => roundDecimal((value * forceDirectionCorrection) - meanForces[index], 2));
 
 
-                if (maxLoad[i] && !isDelayed) {
-                    if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] &&
-                        (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
+        const newData = {time: timeVal, distance: distVal, speed: speedVal, load: loadVal, photoIndex: NaN};
 
-                        stopExperiment = true;
-                        console.log(`    🛑 Experiment stopped due to load cell ${i + 1} drop.`);
-                        logMessage(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
-                        break; // Stop checking other load cells if one fails
-                    }
-                }
-            }
+        // If a pending DSLR timestamp exists, interpolate values
+        if (takePhotos && pendingDSLR) {
+            await interpolateDSLRData(pendingDSLR, newData, parsedData);
+        }
 
-
-            logMeasurements(dataString);
-            addDataToLog(newData);
-            parsedData = newData;
-
-
-            // Update Progress Bar
-            const progress = distVal / experimentEndPosition * 100
-            if (progress >= 100 && !isDelayed) {
+        // Handle speed checks and experiment stopping
+        if (speedVal < 0.01 && !isDelayed && (timeVal - startTime) > 2) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places
+            zero_speed_counter++;
+            if (zero_speed_counter > minimumZeroSpeedCount) {
+                console.log("🛑 Experiment stopped due to zero speed.");
+                await logMessage("🛑 Experiment stopped due to zero speed.");
                 stopExperiment = true;
-                console.log("🏁 Experiment finished.");
-                logMessage("🏁 Experiment finished.");
             }
-            UI.progressBar.value = Math.max(0, progress);
+        } else {
+            zero_speed_counter = 0;
+        }
 
-
-            if (liveUpdate) {
-                if (dataCount % dataChartInterval === 0) {
-                    updateChart(parsedData);
+        // Handle load cell limit checks
+        for (let i = 0; i < 3; i++) {
+            if (Math.abs(loadVal[i]) > maxLoad[i]) maxLoad[i] = Math.abs(loadVal[i]);
+            if (maxLoad[i] && !isDelayed) {
+                if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] && (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
+                    // await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
+                    stopExperiment = true;
+                    console.log(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
+                    await logMessage(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
+                    break; // Stop checking other load cells if one fails
                 }
-            }
-            dataCount++;
-
-
-            if (stopExperiment && !isDelayed) {
-                console.log("🛑 Experiment stopped.");
-                isExperimentRunning = false;
-                UI.loadingLogContainer.style.background = "#323232";
-                dataCount = null;
-                delayData();
             }
         }
+
+        await addDataToLog(newData);
+        parsedData = newData;
+
+        // Update Progress Bar
+        const progress = distVal / experimentEndPosition * 100;
+        if (progress >= 100 && !isDelayed) {
+            stopExperiment = true;
+            console.log("🏁 Experiment finished.");
+            await logMessage("🏁 Experiment finished.");
+        }
+        UI.progressBar.value = Math.min(Math.max(0, progress), 100);
+
+
+        // Live chart update
+        dataCount++;
+        aggregatedDataBetweenSteps.push(parsedData);
+        if (liveUpdate) {
+            if (dataChartInterval === 1) {
+                await updateChart(parsedData);
+            } else if (dataCount % dataChartInterval === 0) {
+                await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+            }
+        }
+        if (dataCount % dataChartInterval === 0) {
+            aggregatedDataBetweenSteps.length = 0;
+        }
+
+
+        // Stop experiment and reset
+        if (stopExperiment && !isDelayed) {
+            console.log("🛑 Experiment stopped.");
+            isExperimentRunning = false;
+            UI.loadingLogContainer.style.background = "#323232";
+            dataCount = null;
+            await delayData();
+        }
     }
+
 
     // /////// Command Handling /////////
 
@@ -1773,7 +2210,7 @@
 
     let isPageVisible = true; // Visibility status of the page
     let hideTimeout = null; // Timeout for hiding the page
-    const MIN_HIDE_TIME = 10_000; // 10 seconds
+    const MIN_HIDE_TIME = 20_000; // 20 seconds
 
     // Event listener for page visibility change
     document.addEventListener("visibilitychange", () => {
@@ -1813,6 +2250,74 @@
     });
 
 
+    function aggregateData(dataEntries, chunkSize, timeData, distanceData, loadcellData, overflowData) {
+        if (!chunkSize) chunkSize = 1;
+
+        if (chunkSize === 1) {
+            // If chunkSize = 1, no aggregation is needed (1:1 mapping)
+            for (let i = 0; i < dataEntries.length; i++) {
+                let entry = dataEntries[i];
+                timeData[i] = entry.time;
+                distanceData[i] = entry.distance;
+                loadcellData[0][i] = entry.load[0];
+                loadcellData[1][i] = entry.load[1];
+                loadcellData[2][i] = entry.load[2];
+            }
+            return;
+        }
+
+        let fullChunks = Math.floor(dataEntries.length / chunkSize) * chunkSize;
+        let chunkCount = Math.floor(dataEntries.length / chunkSize); // Block count
+        let remainderStart = fullChunks; // First index of data
+
+        // Predefine arrays size to match the new chunk count
+        timeData.length = chunkCount;
+        distanceData.length = chunkCount;
+        loadcellData[0].length = chunkCount;
+        loadcellData[1].length = chunkCount;
+        loadcellData[2].length = chunkCount;
+
+        let sumTime = 0, sumDistance = 0;
+        let sumLoad0 = 0, sumLoad1 = 0, sumLoad2 = 0;
+        let count = 0, chunkIndex = 0;
+
+        for (let i = 0; i < fullChunks; i++) {
+            let entry = dataEntries[i];
+            sumTime += entry.time;
+            sumDistance += entry.distance;
+            sumLoad0 += entry.load[0];
+            sumLoad1 += entry.load[1];
+            sumLoad2 += entry.load[2];
+            count++;
+
+            if (count === chunkSize) {
+                let invCount = 1 / count; // Inverse count: quicker than '%' division operation
+                timeData[chunkIndex] = sumTime * invCount;
+                distanceData[chunkIndex] = sumDistance * invCount;
+                loadcellData[0][chunkIndex] = sumLoad0 * invCount;
+                loadcellData[1][chunkIndex] = sumLoad1 * invCount;
+                loadcellData[2][chunkIndex] = sumLoad2 * invCount;
+
+                sumTime = sumDistance = 0;
+                sumLoad0 = sumLoad1 = sumLoad2 = 0;
+                count = 0;
+                chunkIndex++;
+            }
+        }
+
+        // Add remaining data to overflow array
+        // console.log("Overflow: ", dataEntries.length - remainderStart);
+        for (let i = remainderStart; i < dataEntries.length; i++) {
+            let entry = dataEntries[i];
+            overflowData.push({
+                time: entry.time,
+                distance: entry.distance,
+                load: [entry.load[0], entry.load[1], entry.load[2]]
+            });
+        }
+    }
+
+
     async function loadDataFromDBToChart(stateAtEnd = false) {
         if (!db) {
             console.error("⚠️ IndexedDB is not available (not opened).");
@@ -1834,20 +2339,41 @@
             if (!dataEntries || dataEntries.length === 0) {
                 console.warn("⚠️ No data to load.");
                 return;
+            } else if (dataEntries.length < 3) {
+                console.warn("⚠️ Not enough data to load.");
+                return;
             }
+
+            // remove first element from entry
+            dataEntries.shift();
+
 
             console.log(`📉 Loaded ${dataEntries.length} data points`);
 
-            // ⏩ **Use `filter` to reduce the number of data points**
-            const filteredEntries = dataEntries.filter((_, index) => index % dataChartInterval === 0);
 
-            // ⏩ **Use `map` to extract specific data fields**
-            timeData = filteredEntries.map(entry => entry.time);
-            distanceData = filteredEntries.map(entry => entry.distance);
-            loadcellData[0] = filteredEntries.map(entry => entry.load[0]);
-            loadcellData[1] = filteredEntries.map(entry => entry.load[1]);
-            loadcellData[2] = filteredEntries.map(entry => entry.load[2]);
+            // // ⏩ **Use `filter` to reduce the number of data points**
+            // const filteredEntries = dataEntries.filter((_, index) => index % dataChartInterval === 0);
+            //
+            // // ⏩ **Use `map` to extract specific data fields**
+            // timeData = filteredEntries.map(entry => entry.time);
+            // distanceData = filteredEntries.map(entry => entry.distance);
+            // loadcellData[0] = filteredEntries.map(entry => entry.load[0]);
+            // loadcellData[1] = filteredEntries.map(entry => entry.load[1]);
+            // loadcellData[2] = filteredEntries.map(entry => entry.load[2]);
 
+            aggregateData(dataEntries, dataChartInterval, timeData, distanceData, loadcellData, aggregatedDataBetweenSteps);
+
+            dataEntries.forEach(entry => {
+                if (!isNaN(entry.photoIndex)) {
+                    markersTime.push(entry.time); // Add `time` value to markersTime list
+                }
+            });
+
+            dataEntries.forEach(entry => {
+                if (!isNaN(entry.photoIndex)) {
+                    markersDist.push(entry.distance); // Add `distance` value to markersTime list
+                }
+            });
 
             timeChart.setData([timeData, ...loadcellData]);
             distanceChart.setData([distanceData, ...loadcellData]);
@@ -1877,9 +2403,9 @@
 
     // /////// uPlot Chart Initialization /////////
 
-    function addMarker(uplotInstance, xValue) {
-        markers.push(xValue); // Přidání nové značky do pole
-        uplotInstance.redraw(); // Překreslení grafu
+    function addMarker(uplotInstance, list, xValue) {
+        list.push(xValue); // Add marker to the list
+        // uplotInstance.redraw(); // Redraw graph
     }
 
     // Store dataset
@@ -1888,37 +2414,43 @@
     let loadcellData = [[], [], []];
 
 
-    let markers = []; // Pole pro uložené značky
-
-    const markerPlugin = {
-        hooks: {
-            draw: (u) => {
-                const ctx = u.ctx;
-                ctx.save();
-                ctx.strokeStyle = "red"; // Barva čáry
-                ctx.lineWidth = 2;
-
-                markers.forEach(xValue => {
-                    let xPixel = u.valToPos(xValue, "x", true);
-                    ctx.beginPath();
-                    ctx.moveTo(xPixel, u.bbox.top);
-                    ctx.lineTo(xPixel, u.bbox.top + u.bbox.height);
-                    ctx.stroke();
-                });
-
-                ctx.restore();
-            }
-        }
-    };
+    const markersTime = []; // List of time markers
+    const markersDist = []; // List of distance markers
 
 
-    function createChart(containerID, seriesLabels, title = "Graph") {
+    function createChart(containerID, marker, seriesLabels, title = "Graph", labelX = "", labelY = "") {
         // Get the container element
         let container = document.getElementById(containerID);
         if (!container) {
             console.error(`❌ Error: container s ID "${containerID}" not found.`);
             return null;
         }
+
+
+        const markerPlugin = {
+            hooks: {
+                draw: (u) => {
+                    const ctx = u.ctx;
+                    ctx.save();
+                    ctx.fillStyle = "darkorange"; // Marker color
+
+                    marker.forEach(xValue => {
+                        // let xPixel = Math.round(u.valToPos(xValue, "x", true)); // Rounding X coordinate
+                        // let yPixel = Math.round(u.valToPos(0, "y", true)); // Rounding Y coordinate
+
+                        // TODO: Check if this is correct (rounding needed?)
+                        let xPixel = u.valToPos(xValue, "x", true); // Rounding X coordinate
+                        let yPixel = u.valToPos(0, "y", true); // Rounding Y coordinate
+
+                        ctx.beginPath();
+                        ctx.arc(xPixel, yPixel, 3.5, 0, 2 * Math.PI); // Marker point size: 3.5 px
+                        ctx.fill();
+                    });
+
+                    ctx.restore();
+                }
+            }
+        };
 
         // Get the container dimensions
         let width = container.clientWidth || 400; // Default width if container is empty
@@ -1929,6 +2461,14 @@
             title: title,
             width: width,
             height: height,
+            axes: [
+                {
+                    label: labelX, // Axis label X
+                },
+                {
+                    label: labelY, // Axis label Y
+                }
+            ],
             scales: {
                 x: {time: false},
                 y: {auto: true}
@@ -1955,8 +2495,8 @@
     }
 
     // Initialization of uPlot charts
-    let timeChart = createChart("timeChart", ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Time Graph");
-    let distanceChart = createChart("distanceChart", ["Distance (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Distance Graph");
+    let timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Time Graph", "Time [s]", "Force [N]");
+    let distanceChart = createChart("distanceChart", markersDist, ["Distance (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Distance Graph", "Displacement [mm]", "Force [N]");
 
     function getChartHeightIncludingLegend() {
         let charts = document.querySelectorAll(".uplot");
@@ -2016,12 +2556,15 @@
 
         timeData.length = 0;
         distanceData.length = 0;
+        markersTime.length = 0;
+        markersDist.length = 0;
         loadcellData.forEach(dataset => dataset.length = 0);
         await timeChart.setData([[], [], [], []]);
         await distanceChart.setData([[], [], [], []]);
 
         await timeChart.setScale("y", {min: 0, max: 1e-10});
         await distanceChart.setScale("y", {min: 0, max: 1e-10});
+
 
         console.log("🧹 Distance chart cleared!");
     }
@@ -2054,14 +2597,14 @@
     }
 
 
-    function getPosition(timeout = 5000) {
-        return new Promise((resolve, reject) => {
-            setExpectedDataFormat(/^Motor position:\s(-?\d+(\.\d+)?)\smm$/, (match) => {
-                let positionValue = parseFloat(match[1], 10);
-                resolve(positionValue); // Resolve
+    function getPromisedValue(command, format, valueIndex, timeout = 5000) {
+        return new Promise((resolve) => {
+            setExpectedDataFormat(format, (match) => {
+                let value = match[valueIndex];
+                resolve(value); // Resolve with the value
             });
 
-            sendCommand("MC GET POS");
+            sendCommand(command);
 
             // ⏳ Timeout in case no data is received
             if (timeout && timeout > 0) {
@@ -2069,12 +2612,13 @@
                     if (waitingForDataFormat) {
                         waitingForDataFormat = false;
                         dataFormat = null;
-                        reject(new Error("⏳ Timeout: No data received."));
+                        resolve(null); // Return null instead of rejecting
                     }
-                }, timeout); // Timeout 5 seconds
+                }, timeout); // Timeout after specified time (e.g., 5 seconds)
             }
         });
     }
+
 
     function setExpectedDataFormat(regexPattern, callback) {
         waitingForDataFormat = true;
@@ -2083,19 +2627,117 @@
         console.log(`🔍 Waiting for data in format: ${regexPattern}`);
     }
 
-    // === Measure Position ===
-    async function measurePosition() {
+
+    // === Firmware version ===
+    async function getFirmwareVersion(timeOut = 1000) {
         if (!isConnected) {
             console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
         try {
-            let position = await getPosition();
+            const version = `${await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut)}`;
+
+            if (!version) {
+                throw new Error("Position is not a number.");
+            }
+            console.log(`📦 Firmware version: ${version}`);
+            return version;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Firmware version not received.", error);
+        }
+    }
+
+    // === Measure Position ===
+    async function measurePosition(timeOut = 2000) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const position = parseFloat(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut));
+
+            if (!position || isNaN(position)) {
+                throw new Error("Position is not a number.");
+            }
             console.log(`📌 Current position: ${position} mm`);
             return position;
         } catch (error) {
             console.error(error.message);
+            throw new Error("Position not received.", error);
+        }
+    }
+
+    // === Get Calibration Status ===
+    let calibrationStatus = false;
+
+    async function getCalibrationStatus(timeOut = 2000) { // 30000
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            return await getPromisedValue("MC GET ISCALIBRATED", /^Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Calibration status not received.", error);
+        }
+    }
+
+
+    async function getSpeed(timeOut = 2000) { // 30000
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const speed = parseFloat(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut));
+            if (!speed || isNaN(speed)) {
+                throw new Error("Speed is not a number.");
+            }
+            console.log(`🚅 Current speed: ${speed} mm/s`);
+            return speed;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Speed not received.", error);
+        }
+    }
+
+
+    async function getAcceleration(timeOut = 2000) { // 30000
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut));
+            if (!acceleration || isNaN(acceleration)) {
+                throw new Error("Acceleration is not a number.");
+            }
+            console.log(`🚝 Current acceleration: ${acceleration} mm/s²`);
+            return acceleration
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Acceleration not received.", error);
+        }
+    }
+
+    async function isMoving(timeOut = 100) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            return await getPromisedValue("MC GET RUNNING", /Motor running:\s[01]/, 1, timeOut) === "1";
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Moving status not received.", error);
         }
     }
 
@@ -2106,17 +2748,7 @@
     // === Experiment Data Saving ===
     document.getElementById("startExperiment").addEventListener('click', startExperiment);
 
-    document.getElementById("stopExperiment").addEventListener('click', () => {
-        isExperimentRunning = false;
-        stopExperiment = true;
-        UI.progressBar.value = 0;
-        sendCommand("MC STOP");
-        new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        sendCommand("DSLR STOP CYCLIC");
-        new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        sendCommand("DATAC 0");
-        new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-    });
+    document.getElementById("stopMachine").addEventListener('click', stopMachine);
 
     document.getElementById("inputLoadLimitDropPercent").addEventListener('change', (event) => {
         loadLimitDropPercent = 1 - parseFloat(event.target.value) / 100;
@@ -2125,23 +2757,58 @@
         loadLimitDropValue = parseFloat(event.target.value);
     });
 
+    // #TODO do better disabeling of elements //////////////////////////////////////////////////
+    document.querySelectorAll('.prohibited').forEach(element => {
+        element.readOnly = true;
+        element.tabindex = -1;
+
+        element.addEventListener("selectstart", e => e.preventDefault());
+        element.addEventListener("mousedown", e => e.preventDefault());
+        element.addEventListener("keydown", e => e.preventDefault());
+    })
+
     document.getElementById("inputTakePhotos").addEventListener('change', (event) => {
         if (event.target.checked) {
             // disable photo interval input
             document.getElementById("inputPhotoInterval").classList.remove("disabled");
+            document.getElementById("inputPhotoInterval").readOnly = false;
+            document.getElementById("inputPhotoInterval").tabIndex = 1;
+
             // disable photo interval input label
             document.querySelector(`label[for='${"inputPhotoInterval"}']`).classList.remove("disabled");
         } else {
             // disable photo interval input
             document.getElementById("inputPhotoInterval").classList.add("disabled");
+            document.getElementById("inputPhotoInterval").readOnly = true;
+            document.getElementById("inputPhotoInterval").tabIndex = -1;
             // disable photo interval input label
             document.querySelector(`label[for='${"inputPhotoInterval"}']`).classList.add("disabled");
         }
     });
 
+    function calculateStep(frequencyMicroseconds, updateIntervalMs = 200, minimum = 1) {
+        return Math.max(1, minimum, Math.ceil((updateIntervalMs * 1000) / frequencyMicroseconds));
+    }
+
+    function stopMachine() {
+        isExperimentRunning = false;
+        stopExperiment = true;
+        machineOccupation = false;
+        UI.progressBar.value = 0;
+        sendCommand("MC STOP");
+        sendCommand("DSLR STOP CYCLIC");
+        sendCommand("DATAC 0");
+        if (currentSpeed) sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+    }
+
+
+    let speedForward_mmps = 0;
+    let currentSpeed = null;
+    let currentAcceleration = null;
+    let takePhotos = false;
+    let dataInterval_us = null;
 
     async function startExperiment() {
-
 
         if (!isConnected) {
             console.warn("⚠️ ESP is not connected!");
@@ -2149,179 +2816,462 @@
             return;
         }
 
-        if (isExperimentRunning) {
+        if (isExperimentRunning || machineOccupation) {
             console.warn("⚠️ Experiment is already running.");
             await logMessage("⚠️ Experiment is already running.");
             return;
         }
 
+        try {
+            machineOccupation = true;
 
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // === Retrieve Parameters from Inputs ===
+            const distance_mm = Math.max(parseFloat(document.getElementById("inputDistance").value), 0);
+            directionCorrection = document.getElementById("experimentDirectionDropdown").value.toLowerCase().includes("down") ? 1 : -1;
+            speedForward_mmps = Math.max(parseFloat(document.getElementById("inputSpeedForward").value), 0);
+            // const speedBackward_mmps = parseFloat(document.getElementById("inputSpeedBackward").value);
+            const photoInterval_ms = Math.max(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000, 0);
+            dataInterval_us = Math.max(parseInt(document.getElementById("inputDataInterval").value), 1);
+            const loadcellCapacity = Math.max(parseInt(document.getElementById("inputLoadcellCapacity").value), 0);
+            const loadcellOutput = Math.max(parseFloat(document.getElementById("inputLoadcellOutput").value), 0);
+            takePhotos = document.getElementById("inputTakePhotos").checked;
+            loadLimitDropPercent = 1 - Math.max(parseFloat(document.getElementById("inputLoadLimitDropPercent").value), 0) / 100;
+            loadLimitDropValue = Math.max(parseFloat(document.getElementById("inputLoadLimitDropValue").value), 0);
 
-        await clearDBLog();
-        await clearCharts();
-
-        if (!liveUpdate) await chartUpdate();
-
-        await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
-
-        UI.loadingLogContainer.style.background = "black";
-
-        // === Retrieve Parameters from Inputs ===
-        const distance_mm = parseFloat(document.getElementById("inputDistance").value);
-        const speedForward_mmps = parseFloat(document.getElementById("inputSpeedForward").value);
-        const speedBackward_mmps = parseFloat(document.getElementById("inputSpeedBackward").value);
-        const photoInterval_ms = parseFloat(document.getElementById("inputPhotoInterval").value) * 1000;
-        const dataInterval_us = parseInt(document.getElementById("inputDataInterval").value);
-        const loadcellCapacity = parseFloat(document.getElementById("inputLoadcellCapacity").value);
-        const loadcellOutput = parseFloat(document.getElementById("inputLoadcellOutput").value);
-        const takePhotos = document.getElementById("inputTakePhotos").checked;
-        loadLimitDropPercent = 1 - parseFloat(document.getElementById("inputLoadLimitDropPercent").value) / 100;
-        loadLimitDropValue = parseFloat(document.getElementById("inputLoadLimitDropValue").value);
-
-
-        await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with" : "without"} photos 📸`);
-        console.log("🚀 Starting experiment...");
-
-        isExperimentRunning = true;
-        stopExperiment = false;
-
-        // === Progress Bar Setup ===
-        UI.progressBar.value = 0;
-        experimentEndPosition = distance_mm; // The total distance to be moved
-        startTime = null;
-        maxLoad = [null, null, null];
-        // firstPhoto = 0;
-        measureForces = [[], [], []];
-        meanForces = [0, 0, 0];
+            // === System Limits ===
+            const minDistance = 1e-4;
+            const minFSpeed = 1e-4;
+            const minPhotoInt = 1e-6;
+            const minLoadCap = 1e-4;
+            const minLoadOut = 1e-4;
 
 
-        // === Load Cell Configuration ===
-        for (let i = 0; i < 3; i++) {
-            await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
+            if (takePhotos) {
+                if (photoInterval_ms <= minPhotoInt) {
+                    console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    machineOccupation = false;
+                    alert(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    return;
+                }
+
+                if (photoInterval_ms * 1000 < dataInterval_us) {
+                    console.warn("⚠️ Photo interval must be bigger than data interval.");
+                    await logMessage("⚠️ Photo interval must be bigger than data interval.");
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1000} µs ❗`);
+                    dataInterval_us = photoInterval_ms * 1000;
+                    document.getElementById("inputDataInterval").value = dataInterval_us;
+                }
+            }
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-            await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
+
+            if (distance_mm <= minDistance) {
+                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                machineOccupation = false;
+                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                return;
+            } else if (speedForward_mmps <= minFSpeed) {
+                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                machineOccupation = false;
+                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                return;
+            } else if (loadcellCapacity <= minLoadCap) {
+                console.warn(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                await logMessage(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                machineOccupation = false;
+                alert(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                return;
+            } else if (loadcellOutput <= minLoadOut) {
+                console.warn(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                await logMessage(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                machineOccupation = false;
+                alert(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                return;
+            }
+
+
+            dataChartInterval = calculateStep(dataInterval_us, 200, 1);
+            minimumZeroSpeedCount = calculateStep(dataInterval_us, 50, 2);
+            aggregatedDataBetweenSteps = [];
+            dataCount = 0;
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+
+            calibrationStatus = await getCalibrationStatus(2000);
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            if (!calibrationStatus) {
+                if (confirm("⚠️ Motor is not calibrated. Calibrate the motor?\n\nOK = Calibrate\tCancel = Not Calibrate")) {
+                    let confirmCalibrationCount = 0;
+
+                    await logMessage("⚠️ Motor is not calibrated. Calibrating the motor...");
+                    console.warn("⚠️ Motor is not calibrated. Calibrating the motor...");
+                    await sendCommand('MC CALIBRATE');
+                    await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+
+                    while (!calibrationStatus) {
+                        await new Promise(resolve => setTimeout(resolve, 2500)); // Stop for 2000 ms
+                        calibrationStatus = await getCalibrationStatus(500);
+
+                        // log time
+                        // console.log("🕒 Time: ", new Date().toLocaleTimeString());
+
+                        if (confirmCalibrationCount > 50) {
+                            await logMessage("❌ Calibration timeout reached. Please check the motor.\n\tMotors are not calibrated.");
+                            console.error("❌ Calibration timeout. Please check the motor.\n\tMotors are not calibrated.");
+                            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+                        } else {
+                            confirmCalibrationCount++;
+                        }
+                    }
+
+                    console.log("📐 Motors are calibrated.");
+                    await logMessage("📐 Motors are calibrated.\n\t🔃 Please restart the experiment.");
+                    alert("📐 Motors are calibrated.\n\t🔃 Please restart the experiment.");
+                } else {
+                    await logMessage("❌ Calibration is required to start the experiment.");
+                    console.error("❌ Calibration is required to start the experiment.");
+                    alert("❌ Calibration is required to start the experiment.");
+                }
+
+                machineOccupation = false;
+                isExperimentRunning = false;
+                stopExperiment = true;
+                return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+            await clearDBLog();
+            await clearCharts();
+
+            if (!liveUpdate) await chartUpdate();
+
+            await new Promise(resolve => setTimeout(resolve, 10)); // Stop for 1 ms
+
+
+            UI.loadingLogContainer.style.background = "black";
+
+
+            // await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
+            // console.log("🚀 Starting experiment...");
+            //
+            // isExperimentRunning = true;
+            // stopExperiment = false;
+            //
+            // // === Progress Bar Setup ===
+            // UI.progressBar.value = 0;
+            // experimentEndPosition = distance_mm; // The total distance to be moved
+            // startTime = null;
+            // maxLoad = [null, null, null];
+            // // firstPhoto = 0;
+            // measureForces = [[], [], []];
+            // meanForces = [0, 0, 0];
+            //
+            // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+            //
+            //
+            // // === Load Cell Configuration ===
+            // for (let i = 0; i < 3; i++) {
+            //     await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
+            //     await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //     await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
+            //     await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // }
+            //
+            // // === Prepare Motor ===
+            // await sendCommand('MC STOP');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            //
+            // // === Prepare Data Collection ===
+            // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+            //
+            // startPosition = await measurePosition();
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            //
+            // await sendCommand('DSLR RESET COUNTERS');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // await sendCommand('DSLR SHOOT');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // await sendCommand('DATA SET INTERVAL 2000');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // await sendCommand('DATAC 1');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // takeMeasurements = true;
+            //
+            // await new Promise(resolve => setTimeout(resolve, 5000)); // Stop for 1 s
+            //
+            // takeMeasurements = false;
+            // await sendCommand('DATAC 0');
+            //
+            // meanForces = await measureForces.map(force => Math.round(force.reduce((a, b) => a + b, 0) / force.length * 100000) / 100000);
+            // measureForces = [[], [], []];
+            // await addDataToLog({
+            //     time: 0,
+            //     distance: 0,
+            //     speed: 0,
+            //     load: [0, 0, 0],
+            //     photoIndex: 0 // Store DSLR photo order
+            // });
+            // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+            //
+            // // === Enable Data Streaming and DSLR Shooting ===
+            // await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`);
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // await sendCommand('DATAC 1');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // // === Move Forward ===
+            // console.log("➡️ Moving forward...");
+            // await sendCommand(`MC MOVEBY USER ${distance_mm}`);
+
+
+            await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
+            console.log("🚀 Starting experiment...");
+
+
+            // === Progress Bar Setup ===
+            UI.progressBar.value = 0;
+            experimentEndPosition = distance_mm; // The total distance to be moved
+            startTime = null;
+            maxLoad = [null, null, null];
+            // firstPhoto = 0;
+            measureForces = [[], [], []];
+            meanForces = [0, 0, 0];
+            markersTime.length = 0;
+            markersDist.length = 0;
+
+
+            currentSpeed = await getSpeed();
+            currentAcceleration = await getAcceleration();
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+
+            // === Load Cell Configuration ===
+            for (let i = 0; i < 3; i++) {
+                await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
+                await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
+            }
+
+            // === Prepare Motor ===
+            await sendCommand("MC STOP");
+            await sendCommand(`MC SET ACCELMM ${200}`);
+            await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+
+
+            // === Prepare Data Collection ===
+            startPosition = roundDecimal(parseFloat(await measurePosition()), 4);
+            document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
+            document.getElementById("returnPositionExperimentBtn").readOnly = false;
+            document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
+            document.getElementById("returnPositionExperimentBtn").textContent = `↩️ Return to original position: ${startPosition} mm`;
+            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+
+
+            if (takePhotos) {
+                await sendCommand('DSLR RESET COUNTERS', 2);
+                await sendCommand('DSLR SHOOT');
+            }
+
+            await addDataToLog({
+                experimentDate: new Date().toLocaleString(),
+                loadDirection: directionCorrection,
+                loadDistance: distance_mm,
+                loadSpeed: speedForward_mmps,
+                loadcellCapacity: loadcellCapacity,
+                loadcellType: NaN,
+            });
+
+
+            pendingDSLR = null;
+            parsedData = {
+                time: 0,
+                distance: 0,
+                speed: 0,
+                load: [0, 0, 0],
+                photoIndex: takePhotos ? 0 : NaN // Store DSLR photo order
+            };
+            await addDataToLog(parsedData);
+            if (takePhotos) {
+                markersTime.push(0);
+                markersDist.push(0);
+            }
+            await updateChart(parsedData);
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+
+            await sendCommand('DATA SET INTERVAL 2000');
+            takeMeasurements = true;
+
+
+            await sendCommand("DATAC 1");
+
+            // Take measurements for one second
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Stop for 1 s
+
+
+            takeMeasurements = false;
+            await sendCommand("DATAC 0");
+            meanForces = measureForces.map(force => roundDecimal(force.reduce((a, b) => a + b, 0) / force.length, 2));
+            measureForces = [[], [], []];
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+
+            startTime = null;
+            isExperimentRunning = true;
+            stopExperiment = false;
+            isDelayed = false;
+
+
+            // === Enable Data Streaming and DSLR Shooting ===
+            await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`);
+            await sendCommand("DATAC 1");
+            if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
+
+            // === Move Forward ===
+            console.log("➡️ Moving forward...");
+            await sendCommand(`MC MOVEBY USER ${distance_mm * directionCorrection}`);
+
+
+            // === Ensure Serial Reading is Running ===
+            if (!isReadingSerial) {
+                isReadingSerial = true;
+                readSerial();
+            }
+
+            // === Data Collection Loop ===
+            while (isExperimentRunning) {
+                await new Promise(resolve => setTimeout(resolve, 200)); // Prevents excessive CPU usage
+            }
+
+
+            isExperimentRunning = false;
+            stopExperiment = true;
+
+            await sendCommand('MC STOP');
+
+            // === Stop Data Streaming and DSLR Shooting ===
+            await sendCommand('DSLR STOP CYCLIC');
+            await sendCommand('DATAC 0');
+
+
+            await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+            await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+
+            // === Move Back ===
+            if (UI.autoReturnPosition.checked) {
+                await moveToOriginalPosition(currentSpeed, currentAcceleration);
+            }
+
+
+            machineOccupation = false;
+
+
+            // === Save Data ===
+            console.log("💾 Saving data...");
+            await saveCSV();
+
+
+            UI.loadingLogContainer.style.background = "#323232";
+            console.log("✅ Experiment completed.");
+            await showNotification("Experiment Finished", "The experiment has been completed successfully.");
+
+        } catch (error) {
+            await handleError(error, "Experiment");
+            alert("❌ Experiment failed. Please check the logs and machine.");
+
+        } finally {
+            machineOccupation = false;
+            isExperimentRunning = false;
+            stopExperiment = true;
+        }
+    }
+
+
+    async function moveToOriginalPosition(speed, acceleration) {
+        calibrationStatus = false;
+        calibrationStatus = await getCalibrationStatus(1000);
+        await new Promise(resolve => setTimeout(resolve, 50)); // Stop for 1 ms
+
+        if (!calibrationStatus) {
+            console.warn("⚠️ Motor is not calibrated. Cannot return to the original position.");
+            await logMessage("⚠️ Motor is not calibrated. Cannot return to the original position.");
+            return;
         }
 
-        // === Prepare Motor ===
-        await sendCommand("MC STOP");
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+        const endPosition = roundDecimal(parseFloat(await measurePosition()), 4);
 
+        if (!endPosition || !startPosition || startPosition === 0) {
+            document.getElementById("returnPositionExperimentBtn").classList.add("disabled");
+            document.getElementById("returnPositionExperimentBtn").readOnly = true;
+            document.getElementById("returnPositionExperimentBtn").tabIndex = -1;
+            return;
+        } else {
+            document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
+            document.getElementById("returnPositionExperimentBtn").readOnly = false;
+            document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
+        }
 
-        // === Prepare Data Collection ===
+        if (Math.abs(startPosition - endPosition) < 1e-2) {
+            console.log("🚩 Already at the original position.");
+            return;
+        }
+
+        if (!speed) speed = await getSpeed();
+        if (!acceleration) acceleration = await getAcceleration();
         await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
-        startPosition = await measurePosition();
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-
-
-        await sendCommand('DATA SET INTERVAL 2000');
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        await sendCommand("DATAC 1");
-        takeMeasurements = true;
-
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Stop for 1 s
-
-        takeMeasurements = false;
-        await sendCommand("DATAC 0");
-        meanForces = measureForces.map(force => Math.round(force.reduce((a, b) => a + b, 0) / force.length * 100000) / 100000);
-        measureForces = [[], [], []];
-
-        await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
-
-        await sendCommand('DSLR SHOOT');
-        await addDataToLog({
-            time: 0,
-            distance: 0,
-            speed: 0,
-            load: [0, 0, 0],
-            photoIndex: 0 // Store DSLR photo order
-        });
-        photoCount++;
-        await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
-
-        // === Enable Data Streaming and DSLR Shooting ===
-        await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`);
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        await sendCommand("DATAC 1");
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-
-        // === Move Forward ===
-        console.log("➡️ Moving forward...");
-        await sendCommand(`MC MOVEBY USER ${distance_mm}`);
-
-
-        // === Ensure Serial Reading is Running ===
-        if (!isReadingSerial) {
-            isReadingSerial = true;
-            await readSerial();
-        }
-
-        // === Data Collection Loop ===
-        while (isExperimentRunning) {
-            await delay(cpuDelay); // Prevents excessive CPU usage
-        }
-
-
-        isExperimentRunning = false;
-        stopExperiment = true;
-
-        await sendCommand("MC STOP");
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-
-        // await showNotification("Experiment Finished", "The experiment has been completed successfully.");
-
-        // === Stop Data Streaming and DSLR Shooting ===
-        await sendCommand("DSLR STOP CYCLIC");
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-        await sendCommand("DATAC 0");
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-
-        // === Move Back ===
         console.log("⬅️ Moving backward...");
-        await sendCommand(`MC SET SPEEDMM ${speedBackward_mmps}`);
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+        const movingSpeed = 25;
 
-        if (UI.autoReturnPosition.checked) {
-            await moveToOriginalPosition();
-        }
+        await sendCommand(`MC SET ACCELMM ${200}`);
+        await sendCommand(`MC SET SPEEDMM ${movingSpeed}`);
 
-
-        // === Save Data ===
-        console.log("💾 Saving data...");
-        await saveCSV();
-
-
-        UI.loadingLogContainer.style.background = "#323232";
-        console.log("✅ Experiment completed.");
-    }
-
-
-    async function moveToOriginalPosition() {
-        const endPosition = await measurePosition();
-        if (!parseFloat(endPosition)) return;
-        if (!startPosition || startPosition === 0) return;
+        await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
         await sendCommand(`MC MOVEBY USER ${startPosition - endPosition}`);
-        await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
-    }
 
 
-    function delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        await new Promise(resolve => setTimeout(resolve, (((Math.abs(startPosition - endPosition) / movingSpeed) * 1000) + 200))); // Wait
+
+        // TODO: Check if this is working correctly (not needed here?)
+        // while (!await isMoving()) {
+        //     await new Promise(resolve => setTimeout(resolve, 200)); // Prevents excessive CPU usage
+        // }
+
+        console.log("🚩 Returning to original position completed.");
+        await sendCommand(`MC SET SPEEDMM ${speed}`, 2);
+        await sendCommand(`MC SET ACCELMM ${acceleration}`, 2);
     }
 
 
     // Function Clear `localStorage`
     function clearLocalStorage() {
+        setSerialSignals(serialPort, true, true);
+
+
+        disconnectSerial();
+
+        new Promise(resolve => setTimeout(resolve, 200)); // Wait (200 ms)
+
         localStorage.removeItem(storageKey); // Remove the saved data
         console.log("LocalStorage cleared.");
 
         window.location.reload();
+
+
     }
 
 
@@ -2417,9 +3367,10 @@
     });
 
 
-    async function convertCSVtoXLSX() {
+    async function convertCSVtoXLSX_MATTES() {
         const input = document.createElement('input');
-        const delimiter = ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
+
+        const mattesMaxLines = 20_000; // Maximum number of lines in one file
 
         input.type = 'file';
         input.accept = '.csv';
@@ -2463,7 +3414,7 @@
             }
 
             let wb = XLSX.utils.book_new(); // Create a new Excel workbook
-            let sheetName = "P-" + files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").trim();
+            let sheetName = ("P-" + files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").trim()).slice(0, 31); // Sheet name
             let formattedData = [];
             let columnOffset = 0; // Column shift for each section
             let fileIndexData = [["File Order", "File Name"]]; // Second sheet data
@@ -2471,14 +3422,127 @@
             let fileCount = 0;
             for (let file of files) {
                 fileCount++;
-                let text = await file.text(); // Read file content
-                let rows = text.split("\n").map(row => row.split(delimiter)); // Parse CSV into an array
+                const text = await file.text(); // Read file content
+                const isMoira = text.startsWith("Date:"); // Check if the file is from MOIRA
+                const isMatlab = !isMoira && text.startsWith("Timestamp_us"); // Check if the file is from MATLAB
 
-                if (rows.length < 4) continue; // Skip if the file has no data
-                rows = rows.slice(2); // Skip the first 2 rows
+                if (!isMoira && !isMatlab) {
+                    logMessage(`❓ Unknown file format: ${file.name}`);
+                    console.warn(`❓ Unknown file format: ${file.name}`);
+                }
 
-                let blockSize = 1000; // Number of rows in one block
-                let firstShiftAbove1 = null; // Track first shift where force > 1 N
+                // const delimiter = isMatlab ? "," : ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
+
+                const delimiters = [";", ",", "\t"];
+
+                let rows = text.split("\n"); // Split text into lines
+
+
+                if (rows.length <= 3) {  // Skip if the file has no data
+                    logMessage(`❌ Not enough data in file: ${file.name}`);
+                    console.warn(`❌ Not enough data in file: ${file.name}`);
+                    fileCount--;
+                    continue;
+                }
+
+                rows.shift(); // Skip the first row (Header or Date and Info)
+                if (isMoira) {
+                    rows.shift(); // Skip the second row (Description)
+                    rows.shift(); // Skip the third row (Header)
+                } // Skip the second row if not from MATLAB => from MOIRA
+
+
+                const testLine = rows[Math.ceil(rows.length / 2)]; // data line of CSV file
+                let delimiter = null; // Delimiter of data in CSV file
+
+                for (const separator of delimiters) {
+                    const parts = testLine.split(separator);
+                    if (parts.length >= 7) {
+                        delimiter = separator;
+                        break; // Found the delimiter
+                    }
+                }
+                if (!delimiter) {
+                    logMessage(`❌ Delimiter not found in file: ${file.name}`);
+                    console.warn(`❌ Delimiter not found in file: ${file.name}`);
+                    fileCount--;
+                    continue;
+                }
+
+                rows = rows.map(row => row.split(delimiter)); // Parse CSV lines into an array
+
+                let maxTries = 10;
+                let validRowFound = false;
+
+                while (maxTries-- > 0 && rows.length > 0) {
+                    const firstRow = rows[0];
+                    const values = firstRow.slice(0, 6).map(val => parseFloat(val));
+
+                    if (!firstRow || values.length < 6) {
+                        rows.shift();
+                        continue;
+                    }
+
+                    const allValid = values.every(val => !isNaN(val));
+
+                    if (allValid) {
+                        validRowFound = true;
+                        break; // Found a valid row
+                    } else {
+                        rows.shift(); // Remove the first row
+                    }
+                }
+
+                if (!validRowFound) {
+                    logMessage(`❌ No valid data found in file: ${file.name}`);
+                    console.warn("❌ No valid data found in file:", file.name);
+                    fileCount--;
+                    continue;
+                }
+
+
+                let shift = 0; // Displacement (mm)
+                let force = 0; // Force (N)
+                let time = 0; // Time (s)
+                let deformation = 0; // Deformation (mm)
+
+
+                const firstTime = parseFloat(rows[0][0]) || 0; // First time value
+                const firstShift = parseFloat(rows[0][1]) || 0; // First shift value
+                const firstForce = (parseFloat(rows[0][3]) || 0) + (parseFloat(rows[0][4]) || 0) + (parseFloat(rows[0][5]) || 0); // First force value
+
+
+                const originalLength = rows.length; // Original number of rows
+
+                if (isMoira) {
+                    rows = rows.filter(row => row[6] === ""); // Filter out rows of taken photos
+                }
+
+                const dataSize = rows.length; // Number of rows in one file
+
+
+                if (dataSize === 0) {
+                    logMessage(`❌ No data found in file: ${file.name}`);
+                    console.warn("❌ No data found in file:", file.name);
+                    fileCount--;
+                    continue;
+                }
+
+
+                console.log(file.name, ": 📊 Rows in file:", originalLength, "📦 Rows to process:", dataSize);
+
+
+                if (dataSize > mattesMaxLines) {
+                    // Data (rows) reduction
+                    const step = Math.ceil(dataSize / mattesMaxLines);
+                    rows = rows.filter((_, i) => i % step === 0);
+
+                    logMessage(`❗ Too many lines in file: ${file.name} (${dataSize} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataSize} -> ${rows.length} lines\n\tData step: ${step}`);
+                    console.log(`❗ Too many lines in file: ${file.name} (${dataSize} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataSize} -> ${rows.length} lines\n\tData step: ${step}`);
+                }
+
+
+                // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
 
                 fileIndexData.push([fileCount, file.name.replace(".csv", "")]);
 
@@ -2512,15 +3576,8 @@
                     }
                 }
 
-                let shift = 0; // Displacement (mm)
-                let force = 0; // Force (N)
-                let time = 0; // Time (s)
-
-                const firstTime = parseFloat(rows[1][0]) || 0; // First time value
-                const firstShift = parseFloat(rows[1][1]) || 0; // First shift value
-
                 // Add data to the section
-                for (let row = 1; row < blockSize; row++) {
+                for (let row = 0; row < dataSize; row++) {
                     let index = row;
                     let dataRow = formattedData[row + 3] || [];
 
@@ -2530,21 +3587,23 @@
                             if (!entry[0]) continue; // Skip empty rows
 
 
-                            time = parseFloat(entry[0]) - firstTime || 0; // Time (s)
+                            time = ((parseFloat(entry[0]) - firstTime) * (isMatlab ? 1e-6 : 1)) || 0; // Time (s)
 
-                            force = (parseFloat(entry[3]) || 0) + (parseFloat(entry[4]) || 0) + (parseFloat(entry[5]) || 0); // Force sum
 
-                            if (firstShiftAbove1 === null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
+                            force = (parseFloat(entry[3]) || 0) + (parseFloat(entry[4]) || 0) + (parseFloat(entry[5]) || 0) - firstForce; // Force sum
+
+                            // if (firstShiftAbove1 === null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
                             shift = parseFloat(entry[1]) - firstShift || 0; // Displacement (mm)
 
 
-                            let deformation = (firstShiftAbove1 === null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                            // deformation = (firstShiftAbove1 === null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                            deformation = shift; // Calculate deformation
 
-                            dataRow[columnOffset] = time;
-                            dataRow[columnOffset + 1] = shift;
-                            dataRow[columnOffset + 2] = force;
-                            dataRow[columnOffset + 3] = deformation;
+                            dataRow[columnOffset] = roundDecimal(time, 6);
+                            dataRow[columnOffset + 1] = roundDecimal(shift, 4);
+                            dataRow[columnOffset + 2] = roundDecimal(force, 2);
+                            dataRow[columnOffset + 3] = roundDecimal(deformation, 4);
                         }
                     }
                     formattedData[row + 3] = dataRow;
@@ -2568,6 +3627,27 @@
 
         input.click(); // Open file selection dialog
     }
+
+
+    // TODO : get data from ESP
+    // async function handleFirmwareBlock(lines) {
+    //     console.log("📦 Firmware block received:");
+    //     for (const line of lines) {
+    //         console.log("   ➤", line);
+    //         await logMessage("🔧 " + line);
+    //     }
+    //
+    //     // můžeš zde třeba extrahovat verze, validovat atd.
+    // }
+
+
+    //TODO : random generator
+    //         if (Math.random() < 0.01) {
+    //             timeVal = timeVal * 100;
+    //             console.log("🎲 Náhodné číslo:", timeVal);
+    //         } else {
+    //             console.log("🚫 Žádné číslo tentokrát.");
+    //         }
 
 
 </script>
