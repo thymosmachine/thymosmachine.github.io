@@ -62,10 +62,14 @@ self.addEventListener('activate', function (event) {
 });
 
 // Odezva pro offline přístup
-self.addEventListener('fetch', function (event) {
-    event.respondWith(
-        caches.match(event.request).then(function (response) {
-            return response || fetch(event.request);
-        })
-    );
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request) // ← 🔍 nejprve se pokusí stáhnout čerstvá data ze sítě
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)); // uloží novou verzi do cache
+        return response; // vrátí síťovou odpověď
+      })
+      .catch(() => caches.match(event.request)) // pokud síť selže, použije cache
+  );
 });
