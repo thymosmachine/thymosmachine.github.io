@@ -165,6 +165,11 @@
 </head>
 
 <body>
+    <label for="version-select"></label><select id="version-select">
+  <option value="v1.0.0">v1.0.0</option>
+  <option value="v1.2.3">v1.2.3</option>
+  <option value="latest">latest</option>
+</select>
 
 <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 20px; margin-left: 20px;">
     <img src="images/icon-192x192.png" alt="thymos" style="width: 50px; height: 50px;">
@@ -433,21 +438,51 @@
 
 
 <script>
-    if ('serviceWorker' in navigator) {
-        console.log('Service Worker is supported.');
-        navigator.serviceWorker.register('service-worker.js').then(function (registration) {
-            console.log('Service Worker was registered', registration);
-        }).catch(function (error) {
-            console.log('Registration failed.', error);
-        });
-    } else {
-        console.log('Service Worker is not supported.');
-    }
+        const softwareVersion = "0.0.1";
 
-    self.addEventListener("activate", (event) => {
-        console.log("New service worker activated");
-        event.waitUntil(self.clients.claim());
-    });
+
+    serviceWorkerRegistration();
+
+
+    document.getElementById('version-select').addEventListener('change', (e) => {
+  const selectedVersion = e.target.value;
+  // přesměruj s query parametrem
+  window.location.href = `/?v=${selectedVersion}`;
+});
+
+
+    async function serviceWorkerRegistration() {
+
+        if ('serviceWorker' in navigator) {
+            console.log('☑️ Service Worker is supported.');
+
+            navigator.serviceWorker.getRegistration()
+                .then(reg => {
+                    const match = reg && reg.active && reg.active.scriptURL.includes('service-worker.js');
+
+                    if (match) {
+                        // serviceWorkerRegistrationStatus = true;
+                        console.log('✅ Service worker is registered:', reg);
+                    } else {
+                        navigator.serviceWorker.register('service-worker.js').then(function (registration) {
+                            console.log('🆕 Service Worker was registered', registration);
+                        }).catch(function (error) {
+                            console.log('❌ Registration failed.', error);
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('⚠️ Error checking service worker registration:', err);
+                });
+        } else {
+            console.log('🚫 Service Worker is not supported.');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 10));  // Stop
+
+        // console.log(serviceWorkerRegistrationStatus);
+        // if (!serviceWorkerRegistrationStatus) window.location.reload();
+    }
 
 
     const storageKey = "formData"; // Key in localStorage
