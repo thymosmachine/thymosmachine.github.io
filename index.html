@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
-    <link rel="icon" type="image/png" sizes="32x32" href="./images/icon-32x32.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="./images/icon-192x192.png">
+    <!--    <link rel="icon" type="image/png" sizes="32x32" href="./images/icon-32x32.png">-->
+    <!--    <link rel="icon" type="image/png" sizes="192x192" href="./images/icon-192x192.png">-->
     <link rel="icon" type="image/png" sizes="512x512" href="./images/icon-512x512.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">
+    <!--    <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">-->
     <link rel="shortcut icon" href="./images/favicon.ico">
 
 
@@ -21,6 +21,87 @@
 
 
     <title>Moira Control - Thymos</title>
+
+
+    <script>
+        const softwareVersion = "0.0.1.3";
+        const softwareDate = "29.04.2025";
+
+        const debugging = false;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("softwareInfo").innerText = `v${softwareVersion} , ${softwareDate}`;
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // try {
+            //     // Check if the File System Access API is supported
+            //     if ('showDirectoryPicker' in window) {
+            //         console.log("✅ File System Access API is supported.");
+            //     } else {
+            //         console.error("⛔ File System Access API is not supported.");
+            //     }
+            // } catch (error) {
+            //     console.error("⛔ Error checking File System Access API support:", error);
+            // }
+
+            function compareVersions(versionA, versionB) {
+                const a = versionA.trim().split('.').map(Number);
+                const b = versionB.trim().split('.').map(Number);
+                const maxLength = Math.max(a.length, b.length);
+
+                for (let i = 0; i < maxLength; i++) {
+                    const numA = a[i] || 0; // missing parts are treated as 0
+                    const numB = b[i] || 0;
+
+                    if (numA > numB) return 1;  // A is newer
+                    if (numA < numB) return -1; // B is newer
+                }
+                return 0; // Versions are equal
+            }
+
+
+            async function loadCurrentVersion() {
+                try {
+                    // Try to load the latest version of the app from the latest.txt [server]
+                    fetch("./latest.txt")
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error("Network response was not ok");
+                            }
+                            return response.text();
+                        })
+                        .then(data => {
+                            // Trim the data to remove any extra spaces or newlines and take the first line
+                            const latestVersion = data.split("\n")[0].trim();
+                            const appStatus = compareVersions(softwareVersion, latestVersion);
+
+                            if (appStatus === 0) {
+                                console.info("%c\n🔧\tApp is upto date!", "color: blue; font-weight: bold;");
+                            } else if (appStatus === 1) {
+                                console.info("%c\n🔧\tAvaileble version is older than App!", "color: blue; font-weight: bold;");
+                            } else {
+                                console.info("%c\n🔧\tNew version is availeble!", "color: blue; font-weight: bold;");
+                            }
+
+                            if (appStatus !== 0) {
+                                document.getElementById("updateHeader").style.visibility = "visible";
+                                document.getElementById("updateHeaderVersion").innerText = `[from: v${softwareVersion} to v${latestVersion}]`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error("⛔ Error fetching latest version:", error);
+                        });
+                } catch (error) {
+                    console.error("⛔ Error checking File System Access API support:", error);
+                }
+            }
+
+            loadCurrentVersion();
+
+        });
+    </script>
+
     <style>
         :root {
             --blue-color: #007bff;
@@ -30,18 +111,29 @@
             --red-color: #dc3545;
             --red-light-color: #E6717C;
             --orange-color: #ffc107;
+            --darkorange-color: #FF8C00;
             --cyan-color: #17a2b8;
             --light-color: #f8f9fa;
+            --mid-color: #e9ecef;
+            --mid-dark-color: #adb5bd;
+            --dark-color: #ced4da;
+            --darker-color: #343a40;
             --gray-color: #6c757d;
-            --dark-color: #343a40;
+
+            --progressColor: var(--darkorange-color); /* --blue-color // --orange-color  ///   linear-gradient(to right, #FFD580, #FF8C00) */
+
+            --radius: 10px;
+
+            --color-bg: var(--mid-color);
+            --charts-bg: var(--light-color);
         }
 
         /* General styling for the body */
         body {
             font-family: Arial, sans-serif;
-            height: 100%;
-            width: 98%;
             background: white;
+            min-width: 650px;
+            padding: 5px 20px 0;
         }
 
         /* Button styling for spacing and cursor behavior */
@@ -51,6 +143,22 @@
             border-radius: 10px;
             border: 1px solid darkgray;
             font-size: 14px;
+            background: var(--light-color);
+        }
+
+        button {
+            user-select: none; /* Disables text selection */
+            transition: filter 0.2s ease; /* for smooth transition */
+        }
+
+        /* When the button is hovered */
+        button:hover {
+            filter: brightness(1.15); /* 15% brighter */
+        }
+
+        /* When the button is clicked */
+        button:active {
+            filter: brightness(0.95); /* 5% darker */
         }
 
         /* Styling for textAreas used for user input */
@@ -59,6 +167,14 @@
             overflow: auto;
             font-size: 16px;
             font-family: monospace;
+        }
+
+        input, select {
+            background: white;
+            border: 1px solid darkgray;
+            border-radius: 1vh;
+            padding: 0 6px;
+            min-height: 34px;
         }
 
         /* Disabled elements styling */
@@ -101,7 +217,8 @@
 
 
         #machineSettingsWrapper {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(470px, 1fr)); /* Dynamic grid */
             gap: 10px; /* Space between inputs */
             justify-self: center;
             justify-content: center;
@@ -173,26 +290,53 @@
             display: flex;
             flex-direction: row;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
-            margin-top: 20px;
-            margin-left: 20px;
+        }
+
+        #nameHeader {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #updateHeader {
+            visibility: hidden;
+
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            color: darkgray;
+            font-size: 12px;
+            text-align: right;
         }
 
         .statusContainer {
-            gap: 5px;
+            gap: 10px;
             display: flex;
+            justify-self: center;
             justify-content: center;
             align-items: center;
             flex-direction: column;
+
+            background: var(--mid-color);
+            padding: 10px 20px;
+            border-radius: var(--radius);
         }
 
         .graphContainer {
             display: flex;
+            width: 100%;
+            max-width: 1600px;
             flex-direction: column;
             margin-top: 50px;
+            margin-bottom: 50px;
             align-items: center;
-            width: 95%;
             justify-self: center;
+            padding: 20px;
+            background: var(--color-bg);
+            border-radius: 10px;
         }
 
         #usbContainer {
@@ -249,10 +393,16 @@
             width: 100%;
             height: 400px;
             margin-top: 10px;
-            background: #f5f5f5;
+            margin-bottom: 20px;
+            /*background: #f5f5f5;*/
+            gap: 20px;
+
+            background: var(--charts-bg);
             border-radius: 10px;
-            border: 1px solid lightgrey;
+            border: 2px solid lightgrey;
+            padding-top: 10px;
         }
+
 
         .chartWrapper {
             width: 49%;
@@ -262,11 +412,14 @@
         .machineControlContainer {
             display: flex;
             flex-direction: column;
-            width: 100%;
-            gap: 10px;
+            gap: 15px;
             align-items: center;
             justify-content: center;
             margin-top: 20px;
+
+            background: var(--dark-color);
+            border-radius: var(--radius);
+            padding: 20px;
         }
 
         .btnControlWrapper {
@@ -299,6 +452,7 @@
 
         #returnPositionExperimentBtn {
             background: lightgrey;
+            width: 200px;
         }
 
         #autoReturnPositionExperiment {
@@ -313,7 +467,35 @@
             flex-grow: 1;
             max-width: 450px;
             min-width: 50px;
-            height: 20px;
+            height: 15px;
+            appearance: none; /* reset of style */
+        }
+
+        /* For Chrome, Edge (outer frame of progressbar) */
+        progress::-webkit-progress-bar {
+            background-color: #eee; /* background color */
+            border-radius: 50vh; /* roundness to 50% */
+        }
+
+        /* For Chrome, Edge (internal infill part of progressbar) */
+        progress::-webkit-progress-value {
+            background-color: var(--progressColor); /* infill color */
+            border-radius: 50vh;
+            transition: background-color 0.3s ease;
+        }
+
+        /* For Firefox (internal infill part of progressbar) */
+        progress::-moz-progress-bar {
+            background-color: var(--progressColor); /* infill color */
+            border-radius: 50vh;
+            transition: background-color 0.3s ease;
+        }
+
+        #experimentProgressLabel {
+            font-size: 15px;
+            display: inline-block;
+            min-width: 65px; /* nebo fixní width */
+            text-align: center; /* volitelné, zarovnání obsahu */
         }
 
         #progressWrapper {
@@ -329,17 +511,23 @@
         .experimentContainer {
             display: flex;
             flex-direction: column;
-            padding: 5px;
+            padding: 20px;
             gap: 10px;
             left: 0;
             justify-self: center;
             align-items: center;
+            width: 100%;
+            max-width: 1300px;
+
+            background: var(--color-bg);
+            border-radius: var(--radius);
         }
 
         #experimentInputsWrapper {
-            display: flex;
-            flex-direction: row;
+            display: grid;
+            grid-template-columns:  10fr 1fr;
             gap: 10px;
+            width: 100%;
         }
 
         #experimentInputsContainer {
@@ -347,31 +535,37 @@
             grid-template-columns: auto 1fr;
             max-width: 1220px;
             min-width: 300px;
-            width: calc(100vw - 200px);
             gap: 10px;
             justify-items: left;
         }
 
-        #experimentType {
-            width: calc(100% - 20px);
-            height: 24px;
-            padding: 10px;
-            border: none;
-            background: lightgray;
-            border-radius: 10px;
+        #experimentType, #experimentCount {
+            flex-grow: 1;
+            /*height: 24px;*/
+            height: 44px;
+            padding: 0 10px;
+            /*background: lightgray;*/
+        }
+
+        #experimentCount {
+            max-width: 65px;
+            box-sizing: border-box; /* THIS IS THE MAGIC */
+        }
+
+        #convertCSV, #experimentDesc {
+            height: 56px;
         }
 
         #experimentDesc {
             width: calc(100% - 20px);
             height: 32px;
             padding: 10px;
-            border: none;
-            background: lightgray;
-            border-radius: 10px;
+            /*background: lightgray;*/
         }
 
         #experimentBtnsWrapper {
             display: flex;
+            width: max-content;
             flex-direction: column;
             gap: 10px;
         }
@@ -383,7 +577,6 @@
 
         #convertCSV {
             width: 150px;
-            height: 52px;
         }
 
         #settingsContainer {
@@ -391,7 +584,7 @@
             display: flex;
             align-items: flex-start;
             width: 100%;
-            background: lightgray;
+            background: var(--dark-color);
             border-radius: calc(1px + 10px);
             border: 1px solid darkgray
         }
@@ -443,7 +636,7 @@
             display: flex;
             align-items: flex-start;
             width: 100%;
-            background: lightgray;
+            background: var(--dark-color);
             border-radius: calc(1px + 10px);
             border: 1px solid darkgray
         }
@@ -454,11 +647,15 @@
 
         #consoleContainer {
             padding: 10px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         #logWrapper {
             display: flex;
             flex-direction: row;
+            flex-grow: 1;
             gap: 10px;
             padding: 10px;
         }
@@ -466,7 +663,7 @@
         #regularLog {
             max-width: 1200px;
             min-width: 300px;
-            width: calc(100vw - 200px);
+            flex-grow: 1;
             height: 200px;
             background: darkgray;
             margin: 0;
@@ -479,7 +676,6 @@
         #loadingLog {
             max-width: 1200px;
             min-width: 300px;
-            width: calc(100vw - 200px);
             height: 80px;
             background: #323232;
             border-radius: 10px;
@@ -490,6 +686,7 @@
         #logContainer {
             display: flex;
             flex-direction: column;
+            flex-grow: 1;
             gap: 10px;
         }
 
@@ -501,7 +698,9 @@
         }
 
         .logBtn {
-            width: 150px
+            width: 150px;
+            background: var(--gray-color, #6c757d);
+            color: white;
         }
 
         #commandWrapper {
@@ -513,15 +712,15 @@
         }
 
         #commandInput {
+            width: calc(100% - 20px);
+
             max-width: 1200px;
             min-width: 300px;
-            width: calc(100vw - 200px);
             padding: 10px;
             height: calc(100% - 20px);
             border: none;
             background: #f5f5f5;
             border-radius: 10px;
-            margin-bottom: 50px;
         }
     </style>
 </head>
@@ -529,8 +728,19 @@
 <body>
 
 <div class="headerContainer">
-    <img id="thymosLogo" src="./images/icon-512x512.png" alt="thymos">
-    <h2>THYMOS - Moira controller</h2>
+
+    <div id="nameHeader">
+        <img id="thymosLogo" src="./images/icon-512x512.png" alt="thymos">
+        <div style="display: flex; flex-direction: column; align-content: space-between;">
+            <span style="font-weight: bolder; font-size: 24px;">THYMOS - Moira controller</span>
+            <span id="softwareInfo" style="color: darkgray; font-size: 12px;">v0.0.0.0, 00.00.0000</span>
+        </div>
+    </div>
+    <div id="updateHeader">
+        <span style="font-size: 22px; color: darkorange;">Upgrade available</span>
+        <span id="updateHeaderVersion" style="color: coral; font-size: 12px;">[from: v0.0.3 to v0.0.4]</span>
+        (press 'F5')
+    </div>
 </div>
 
 <div class="statusContainer">
@@ -538,8 +748,8 @@
     <div id="usbContainer">
         <button id="connectBtnUSB">🔌 Connect via USB</button>
         <label for="inputNumBaudRate" class="prohibited">Baud-Rate:
-            <input data-inputType="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                   value="921600" min="1" data-type="int" class="prohibited">
+            <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
+                   value="921600" min="1" class="prohibited">
         </label>
     </div>
     <div id="connectionStatus"> 🔴 Disconnected</div>
@@ -548,7 +758,7 @@
 <!-- Graph Display Section -->
 
 <div class="graphContainer">
-    <h3>📈 Graphs:</h3>
+    <h3 style="margin-top: 0;">📈 Graphs:</h3>
     <div class="graphBtnWrapper">
         <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
         <button class="btnGraph" onclick="clearCharts()">🧹 Clear Charts</button>
@@ -560,7 +770,10 @@
 
     </div>
 
+    <hr>
+
     <!-- Progress Bar -->
+    <h3 style="margin-top: 0;">💻 Control Panel:</h3>
     <div class="machineControlContainer">
         <div class="btnControlWrapper">
             <!-- Start Experiment Button -->
@@ -569,12 +782,12 @@
             <!-- Stop Experiment Button -->
             <button id="stopMachine" class="controlBtn"> 🛑 Stop Machine</button>
 
-            <!-- Return to original position Button -->
+            <!-- Return to the original position Button -->
             <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()" class="controlBtn disabled"> ↩️
                 Return to original position
             </button>
 
-            <!-- Automatic returning to original position Checkmark -->
+            <!-- Automatic returning to the original position Checkmark -->
             <label for="autoReturnPositionExperiment">↕️ Auto-return to original position:</label>
             <input type="checkbox" id="autoReturnPositionExperiment">
 
@@ -584,7 +797,7 @@
         <div id="progressWrapper">
             <label for="experimentProgress">Experiment Progress:</label>
             <progress id="experimentProgress" value="0" max="100"></progress>
-
+            <span id="experimentProgressLabel">0%</span>
         </div>
     </div>
 </div>
@@ -595,12 +808,20 @@
     <div id="experimentInputsWrapper">
         <div id="experimentInputsContainer">
 
-            <label for="experimentType">🧪 Experiment Name: </label>
-            <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ...">
-            <label for="experimentDesc">📄 Experiment description: </label>
-            <input id="experimentDesc" placeholder="Short description of the experiment (optional)...">
-            <label for="storagePath">📁 Handpick the folder: </label>
-            <div><input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
+            <label for="experimentType">🧪 Experiment Name:</label>
+            <div style="display: flex; width: 100%; gap: 10px;">
+                <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ..."
+                       data-nonremember="true">
+                <label for="experimentCount">🔢 Experiment count:</label>
+                <input type="number" id="experimentCount" placeholder="Num ..." min="1" max="999" value="1" step="1"
+                       data-input-type="intInput" data-nonremember="true">
+            </div>
+            <label for="experimentDesc">📄 Experiment description:</label>
+            <input id="experimentDesc" placeholder="Short description of the experiment (optional)..."
+                   data-nonremember="true">
+            <label for="storagePath">📁 Handpick the folder:</label>
+            <div style="align-items: center; display: flex; gap: 10px;">
+                <input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
                 Downloads)
             </div>
         </div>
@@ -628,23 +849,24 @@
                 <div id="experimentSettingsContainer">
                     <div class="input-group">
                         <label for="inputDistance">Distance (mm): </label>
-                        <input data-inputType="floatInput" type="number" id="inputDistance" value="20" min="0"
+                        <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0"
                                step="any"
                                max="100000000">
                     </div>
 
                     <div class="input-group">
-                        <label for="experimentDirectionDropdown" class="prohibited">Direction: </label>
-                        <select id="experimentDirectionDropdown" class="prohibited">
-                            <option value="Option-DOWN"> DOWN ⏬ </option>
-                            <option value="Option-UP"> UP    ⏫ </option>
+                        <label for="experimentDirectionDropdown">Direction: </label>
+                        <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
+                                font-size: 16px; color: #333;">
+                            <option value="Option-DOWN">&nbsp;DOWN&nbsp;⏬</option>
+                            <option value="Option-UP">&nbsp;UP&nbsp;&nbsp;&nbsp;⏫</option>
                         </select>
                     </div>
 
 
                     <div class="input-group">
                         <label for="inputLoadLimitDropPercent">Force drop limit (%): </label>
-                        <input data-inputType="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
+                        <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
                                min="0"
                                max="100">
                     </div>
@@ -654,7 +876,7 @@
                         <label for="inputTakePhotos">Take photos: </label>
                         <input type="checkbox" id="inputTakePhotos">
                         <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval (s): </label>
-                        <input class="disabled" data-inputType="floatInput" type="number" id="inputPhotoInterval"
+                        <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
                                value="1"
                                min="0" step="any"
                                max="100000000">
@@ -663,7 +885,7 @@
 
                     <div class="input-group">
                         <label for="inputLoadLimitDropValue">Force drop limit (N): </label>
-                        <input data-inputType="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
+                        <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
                                step="any"
                                max="100000000">
                     </div>
@@ -671,14 +893,14 @@
 
                     <div class="input-group">
                         <label for="inputSpeedForward">Loading speed (mm/s): </label>
-                        <input data-inputType="floatInput" type="number" id="inputSpeedForward" value="1" min="0"
+                        <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0"
                                step="any"
                                max="100000000">
                     </div>
 
                     <div class="input-group"> <!-- TODO minimum na 10000 -->
                         <label for="inputDataInterval">Data Interval (µs): </label>
-                        <input data-inputType="floatInput" type="number" id="inputDataInterval" value="30000"
+                        <input data-input-type="floatInput" type="number" id="inputDataInterval" value="30000"
                                min="10000"
                                step="any"
                                max="100000000">
@@ -686,9 +908,9 @@
 
                     <div class="input-group">
                         <label for="inputSpeedBackward" class="prohibited">Returning speed (mm/s): </label>
-                        <input data-inputType="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
+                        <input data-input-type="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
                                value="25"
-                               min="0.000001"
+                               min="0"
                                step="any"
                                max="100000000">
                     </div>
@@ -704,15 +926,16 @@
 
                     <div class="input-group">
                         <label for="inputLoadcellCapacity">Loadcell Capacity (kg): </label>
-                        <input data-inputType="intInput" type="number" id="inputLoadcellCapacity" value="1000"
+                        <input data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
                                step="any"
-                               min="0.000001" max="100000000">
+                               min="0" max="100000000">
                     </div>
 
                     <div class="input-group">
                         <label for="inputLoadcellOutput">Loadcell Rated Output (mV/V): </label>
-                        <input data-inputType="floatInput" type="number" id="inputLoadcellOutput" value="2.0" step="any"
-                               min="0.000001"
+                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput" value="2.0"
+                               step="any"
+                               min="0"
                                max="100000000">
                     </div>
 
@@ -748,14 +971,15 @@
                 <div id="logBtnWrapper">
                     <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
                     <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
-                    </button>
+                    </button><!--                    prohibited-->
                     <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
+
 
                 </div>
             </div>
 
             <div id="commandWrapper">
-                <div>
+                <div style="flex-grow: 1;">
                     <label for="commandInput"></label>
                     <textarea id="commandInput" placeholder="Enter command..."></textarea>
                 </div>
@@ -768,9 +992,6 @@
 
 
 <script>
-    const softwareVersion = "0.0.1";
-
-
     serviceWorkerRegistration();
 
     async function serviceWorkerRegistration() {
@@ -866,6 +1087,7 @@
         connectionStatus: document.getElementById("connectionStatus"), // Display for connection status
         USB: document.getElementById("connectBtnUSB"), // Button to connect via USB
         progressBar: document.getElementById("experimentProgress"), // Progress bar for experiment status
+        progressLabel: document.getElementById("experimentProgressLabel"), // Label for progress percentage
         timeChartContainer: document.getElementById("timeChart"),
         distanceChartContainer: document.getElementById("distanceChart"),
         chartsContainer: document.getElementById("chartsContainer"),
@@ -954,10 +1176,9 @@
 
     // /////// Input Validation and Adjustment /////////
 
-    // Ensures user input is within valid min/max range
+    // Ensures user input is within a valid min / max range
     function checkInput(element, valueType) {
         if (!element) return;
-
 
         // Validate input: if empty, set to a minimum or 0
         if (element.value.trim() === "") {
@@ -966,7 +1187,7 @@
             if (valueType === "floatInput") {
                 element.value = parseFloat(element.value);
             } else if (valueType === "intInput") {
-                element.value = parseInt(element.value, 10);
+                element.value = parseInt(element.value);
             }
 
             // Enforce min/max constraints
@@ -981,9 +1202,12 @@
         element.dispatchEvent(new Event("change", {bubbles: true}));
     }
 
+
     // Attaches validation checks to numeric inputs
     document.querySelectorAll("input[type=number]").forEach(input => {
-        input.addEventListener("blur", () => checkInput(input, input.dataset.inputType));
+        input.addEventListener("blur", (event) => {
+            checkInput(event.target, event.target.dataset.inputType);
+        });
         input.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 checkInput(event.target, event.target.dataset.inputType);
@@ -995,7 +1219,7 @@
 
     // /////// Command Input Handling /////////
 
-    // Listens for Enter key in the command input field and sends command
+    // Listens for the Enter key in the command input field and sends command
     UI.commandInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
@@ -1048,12 +1272,12 @@
 
             // Creates a new object store with an auto-incremented key
             db.createObjectStore(STORE_NAME, {keyPath: "id", autoIncrement: true});
-            console.log("✅ IndexedDB created");
+            console.info("%c\n✅ IndexedDB created", "color: green; font-weight: bold;");
         };
 
         request.onsuccess = function (event) {
             db = event.target.result;
-            console.log("✅ IndexedDB opened");
+            console.info("%c\n✅ IndexedDB opened", "color: green; font-weight: bold;");
             checkExistingLog();
         };
     }
@@ -1064,6 +1288,31 @@
      * Checks if there are existing log entries in IndexedDB.
      * If logs exist, prompts the user to either save or delete them.
      */
+    let initialData = {experimentType: "", experimentCount: "", experimentDesc: ""};
+
+    let pageLoaded = false;
+
+    function addData() {
+        if (pageLoaded) {
+            document.getElementById("experimentType").value = initialData.experimentType || "";
+            document.getElementById("experimentCount").value = initialData.experimentCount || "";
+            document.getElementById("experimentDesc").value = initialData.experimentDesc || "";
+        } else {
+            setTimeout(resolve => resolve, 500);
+            addData();
+        }
+    }
+
+    function removeLoadingDirection(text) {
+        if (text.startsWith("Loading direction: UP;")) {
+            return text.slice("Loading direction: UP;".length).trim();
+        } else if (text.startsWith("Loading direction: DOWN;")) {
+            return text.slice("Loading direction: DOWN;".length).trim();
+        }
+        return text;
+    }
+
+
     function checkExistingLog() {
         let transaction = db.transaction(STORE_NAME, "readonly");
         let store = transaction.objectStore(STORE_NAME);
@@ -1075,6 +1324,18 @@
             if (request.result > 0) {
                 if (confirm("🔄 Old log exists. Save it or delete?\nOK = Save\nCancel = Delete and create new")) {
                     saveCSV();
+                } else {
+                    // transaction = db.transaction(STORE_NAME, "readonly");
+                    // store = transaction.objectStore(STORE_NAME);
+                    request = store.getAll();
+                    request.onsuccess = async function () {
+                        let dataEntries = request.result;
+                        const experimentInfo = dataEntries[0];
+                        initialData.experimentType = experimentInfo.experimentName || "";
+                        initialData.experimentCount = experimentInfo.experimentCounter || "";
+                        initialData.experimentDesc = (`${experimentInfo.loadDirection}` === "-1" ? "Loading direction: DOWN;  " : "Loading direction: UP;  ") + (removeLoadingDirection(experimentInfo.experimentDescription) || "");
+                        addData();
+                    };
                 }
             }
         };
@@ -1123,6 +1384,7 @@
 
     async function saveCSV() {
         let dirHandle = null;
+        const expNum = parseInt(document.getElementById("experimentCount").value.trim()) || 0;
         const experimentType = document.getElementById("experimentType").value.trim();
         const experimentDesc = document.getElementById("experimentDesc").value.trim();
         const delimiter = ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
@@ -1134,7 +1396,13 @@
             return;
         }
 
-        const fileName = `${experimentType}.csv`;
+        let experimentCount
+        if (expNum) {
+            experimentCount = `_${expNum.toString().padStart(3, "0")}`;
+        } else {
+            experimentCount = "";
+        }
+        const fileName = `${experimentType}${experimentCount}.csv`;
 
         let fileHandle;
         if (handFolderSelect) {
@@ -1166,7 +1434,7 @@
             const experimentInfo = dataEntries[0];
 
             const header = `Time [s]${delimiter}Distance [mm]${delimiter}Speed [mm/s]${delimiter}Loadcell 1 [N]${delimiter}Loadcell 2 [N]${delimiter}Loadcell 3 [N]${delimiter}Photo Index\n`;
-            let content = `Date:${delimiter}${experimentInfo.experimentDate}${delimiter}Loading speed (mm/s):${delimiter}${experimentInfo.loadSpeed}${delimiter}Load distance (mm):${delimiter}${experimentInfo.loadDistance}${delimiter}Loadcell capacity (kg):${delimiter}${experimentInfo.loadcellCapacity}${delimiter}Software version:${delimiter}${softwareVersion} ${delimiter}Firmware version:${delimiter}${machineFirmware} \nDescription:${delimiter}${experimentDesc}\n${header}`;
+            let content = `Date:${delimiter}${experimentInfo.experimentDate}${delimiter}Loading speed (mm/s):${delimiter}${experimentInfo.loadSpeed}${delimiter}Load distance (mm):${delimiter}${experimentInfo.loadDistance}${delimiter}Loadcell capacity (kg):${delimiter}${experimentInfo.loadcellCapacity}${delimiter}Software version:${delimiter}v${softwareVersion} ${delimiter}Firmware version:${delimiter}v${experimentInfo.machineFirmware} \nDescription:${delimiter}${experimentDesc}\n${header}`;
 
             dataEntries.shift(); // Skip the first entry (initial values)
 
@@ -1187,7 +1455,7 @@
             });
 
             if (handFolderSelect) {
-                // Save file to the selected folder using File System Access API
+                // Save the file to the selected folder using File System Access API
                 const writable = await fileHandle.createWritable();
                 await writable.write(`\uFEFF${content}`); // Add BOM for correct UTF-8 encoding
                 await writable.close();
@@ -1198,6 +1466,11 @@
                 link.href = URL.createObjectURL(blob);
                 link.download = fileHandle.name.split("/").pop();
                 link.click();
+            }
+
+            if (expNum) {
+                document.getElementById("experimentCount").value = expNum + 1;
+                document.getElementById("experimentCount").dispatchEvent(new Event("change", {bubbles: true}));
             }
 
             console.log(`✅ Data saved to file: ${fileName}`);
@@ -1262,7 +1535,7 @@
             return;
         }
 
-        if (command.includes(" NaN")) {
+        if (command.toLowerCase().includes(" nan")) {
             await logMessage("\n⚠️ Command contains 'NaN' values. Please check the input.");
             console.error("⚠️ Command contains 'NaN' values. Please check the input.");
             alert("⚠️ Aborted command due to 'NaN' values in the input.");
@@ -1279,8 +1552,11 @@
 
             await serialWriter.write(encoder.encode(command + "\n"));
 
+
             console.log("Sent:", command);
-            await logMessage("📤 Command sent: " + command);
+            if (command.toLowerCase() !== "syswr") {
+                await logMessage("📤 Command sent: " + command);
+            }
             await new Promise(resolve => setTimeout(resolve, timeOut));  // Stop for at least 1 ms
 
         } catch (error) {
@@ -1394,30 +1670,35 @@
 
 
     // Logs a message to the regular log container
-    const logLineHeight = 1.2 * parseInt(UI.regularLogContainer.style.fontSize)
+    const logLineHeight = 1.2 * parseInt(window.getComputedStyle(UI.regularLogContainer).fontSize);
+
 
     function logMessage(msg) {
         if (!msg) return;
 
-        logCount++;
         isScrolledToBottom = checkScrolledToBottom();
 
         while (isLineLimit && (logCount >= logContentMaxLines)) {
             logContentLines.shift();
-
             logCount--;
         }
 
-        // if (isLineLocker) {
-        //     UI.regularLogContainer.scrollTop -= logLineHeight; // UI.regularLogContainer.scrollHeight / logContentLines.length; // logCount;
-        // }
+
+        logContentLines.push(msg);
+        logCount++;
+        UI.regularLogContainer.textContent = logContentLines.join("\n");
+
 
         if (isAutoScroll) {
             UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
         }
 
-        logContentLines.push(msg);
-        UI.regularLogContainer.textContent = logContentLines.join("\n");
+        // // TODO : change to remember scrollPosition and scrollHeight, and scroll to it minus the new scrollHeight
+        // if (isLineLocker) {
+        //     UI.regularLogContainer.scrollTop -= Math.floor(UI.regularLogContainer.scrollHeight / (logCount - 1)); // UI.regularLogContainer.scrollHeight / logContentLines.length; // logCount;
+        //     // console.log(UI.regularLogContainer.scrollHeight, logLineHeight * logCount, UI.regularLogContainer.scrollHeight / (logLineHeight * (logCount + 1)))
+        //     // UI.regularLogContainer.scrollTop -= logLineHeight; // UI.regularLogContainer.scrollHeight / logContentLines.length; // logCount;
+        // }
 
         if (isScrolledToBottom) {
             UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
@@ -1523,6 +1804,7 @@
             await handleError(error, "connectSerial");
             isSerial = false;
             isConnected = false;
+            activeWatchDog = false;
             await disconnectSerial(true);
 
         }
@@ -1532,10 +1814,12 @@
      * Opens a serial port for communication.
      *  SerialPort => comPort - The selected serial port.
      */
-    let machineFirmware = null;
+    let machineFirmware = "NaN";
 
     async function openPort(comPort, retry = false) {
         try {
+            activeWatchDog = false;
+
             if (!comPort) {
                 console.error("⚠️ No available port.");
                 await logMessage("\n⚠️ No available port.");
@@ -1571,13 +1855,21 @@
 
             readSerial();
 
+            machineFirmware = `${await getFirmwareVersion()}`;
+
             await updateConnectionStatus("connected", "USB");
             UI.USB.innerText = "❌ Disconnect ESP (USB)";
             await logMessage("\n✅ Connected to ESP via USB\n");
 
-            machineFirmware = await getFirmwareVersion();
+            // TODO : try watchdog and usbcheck **********************************************************************
+            // watchDog(1000);
+
+            // await sendCommand(`MISC SET USB_CHECK_ENABLED ${0}`, 5);
+            // await sendCommand(`MISC SET USB_CHECK_INTERVAL ${1000}`);
+            // await sendCommand(`MISC SET USB_CHECK_ENABLED ${1}`);
 
         } catch (error) {
+            activeWatchDog = false;
             if (!(error.name === "InvalidStateError" && retry)) {
                 await handleError(error, "openPort");
                 await disconnectSerial(true);
@@ -1624,6 +1916,8 @@
             console.warn("⚠️ Port is not connected.");
             return;
         }
+
+        activeWatchDog = false;
 
         try {
             try {
@@ -1697,6 +1991,8 @@
         measureForces = [[], [], []];
         meanForces = [0, 0, 0];
 
+        activeWatchDog = false;
+
         isSerial = false;
         isConnected = false;
         serialPort = null;
@@ -1736,7 +2032,7 @@
         try {
             while (isConnected) {
                 const {value, done} = await serialReader.read();
-                if (done) break; // Stop loop if the stream is closed
+                if (done) break; // Stop the loop if the stream is closed
 
                 buffer += decoder.decode(value, {stream: true});
 
@@ -1749,6 +2045,7 @@
                 }
             }
         } catch (error) {
+            activeWatchDog = false;
             await handleError(error, "readSerial"); // Handle any errors
         } finally {
             if (serialReader) {
@@ -1781,6 +2078,7 @@
             return;
         }
 
+        activeWatchDog = false;
         isReconnecting = true;
         reconnectAttempts++;
         UI.USB.innerText = "🔄 Reconnecting...";
@@ -2044,8 +2342,8 @@
         }
 
         // Common parsing logic
-        // let loadVal = parts.slice(3).map(num => isNaN(parseFloat(num)) ? 0 : roundDecimal(parseFloat(num) * forceDirectionCorrection, 2)); // Load cell values
-        let loadVal = parts.slice(3).map(parseFloat);
+        let loadVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // Load cell values
+        // let loadVal = parts.slice(3).map(parseFloat);
 
         if (takeMeasurements) {
             loadVal.forEach((value, index) => measureForces[index].push(value * forceDirectionCorrection)); // Handle takeMeasurements
@@ -2111,8 +2409,12 @@
             stopExperiment = true;
             console.log("🏁 Experiment finished.");
             await logMessage("🏁 Experiment finished.");
+            document.documentElement.style.setProperty('--progressColor', 'var(--blue-color)');
+            UI.progressLabel.textContent = `100%`;
         }
-        UI.progressBar.value = Math.min(Math.max(0, progress), 100);
+        const progressValue = Math.min(Math.max(0, progress), 100);
+        UI.progressBar.value = progressValue;
+        UI.progressLabel.innerText = `${progressValue.toFixed(2)}%`; // .padStart(5, "0")
 
 
         // Live chart update
@@ -2137,6 +2439,17 @@
             UI.loadingLogContainer.style.background = "#323232";
             dataCount = null;
             await delayData();
+
+            if (aggregatedDataBetweenSteps.length > 0) {
+                console.log("⚠️ Data not sent to chart.", aggregatedDataBetweenSteps.length);
+                await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+            }
+            aggregatedDataBetweenSteps.length = 0
+            // const lastData = await calculateAverageParsedData(aggregatedDataBetweenSteps);
+            // console.warn(lastData);
+            // aggregatedDataBetweenSteps.forEach(data => {
+            //     updateChart(data);
+            // });
         }
     }
 
@@ -2204,7 +2517,7 @@
         liveUpdate = !liveUpdate;
 
         UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "▶️ Activate Charts";
-        UI.chartsContainer.style.background = liveUpdate ? "transparent" : "#f5f5f5";
+        UI.chartsContainer.style.background = liveUpdate ? "white" : "var(--charts-bg)";
     }
 
 
@@ -2270,7 +2583,7 @@
         let chunkCount = Math.floor(dataEntries.length / chunkSize); // Block count
         let remainderStart = fullChunks; // First index of data
 
-        // Predefine arrays size to match the new chunk count
+        // Predefine array size to match the new chunk count
         timeData.length = chunkCount;
         distanceData.length = chunkCount;
         loadcellData[0].length = chunkCount;
@@ -2305,7 +2618,7 @@
             }
         }
 
-        // Add remaining data to overflow array
+        // Add remaining data to an overflow array
         // console.log("Overflow: ", dataEntries.length - remainderStart);
         for (let i = remainderStart; i < dataEntries.length; i++) {
             let entry = dataEntries[i];
@@ -2328,7 +2641,7 @@
 
         await clearCharts();
 
-        console.log("🔄 Loading data from IndexedDB to charts...");
+        console.info("\n%c🔄 Loading data from IndexedDB to charts...", "color: blue;");
 
         let transaction = db.transaction(STORE_NAME, "readonly");
         let store = transaction.objectStore(STORE_NAME);
@@ -2404,7 +2717,7 @@
     // /////// uPlot Chart Initialization /////////
 
     function addMarker(uplotInstance, list, xValue) {
-        list.push(xValue); // Add marker to the list
+        list.push(xValue); // Add a marker to the list
         // uplotInstance.redraw(); // Redraw graph
     }
 
@@ -2453,8 +2766,8 @@
         };
 
         // Get the container dimensions
-        let width = container.clientWidth || 400; // Default width if container is empty
-        let height = container.clientHeight || 300; // Default height if container is empty
+        let width = container.clientWidth || 400; // Default width if the container is empty
+        let height = container.clientHeight || 300; // Default height if the container is empty
 
         // Configurations for uPlot chart
         const options = {
@@ -2537,7 +2850,6 @@
         //     loadcellData.forEach(dataset => dataset.shift());
         // }
 
-
         // Update charts
         timeChart.setData([timeData, ...loadcellData]);
         distanceChart.setData([distanceData, ...loadcellData]);
@@ -2566,7 +2878,7 @@
         await distanceChart.setScale("y", {min: 0, max: 1e-10});
 
 
-        console.log("🧹 Distance chart cleared!");
+        console.info("🧹 Charts cleared!");
     }
 
 
@@ -2597,6 +2909,32 @@
     }
 
 
+    let activeWatchDog = false;
+
+    async function watchDog(timeout = 500) {
+        return;
+
+        if (!activeWatchDog) {
+            console.log("🐕 Watchdog is inactive. Starting...");
+            await sendCommand(`MISC SET WATCHDOG_ENABLED ${0}`, 5);
+            await sendCommand(`MISC SET WATCHDOG_INTERVAL ${Math.ceil(timeout * 1.05)}`, 5); // Reset watchdog 5% before timeout
+            await sendCommand(`MISC SET WATCHDOG_ENABLED ${1}`);
+            activeWatchDog = true;
+        } else {
+            console.log("🐕 Watchdog is active.");
+            return;
+        }
+
+        while (activeWatchDog) {
+
+            if (isConnected) {
+                await sendCommand("SYSWR"); // Send a watchdog command
+            }
+            await new Promise(resolve => setTimeout(resolve, timeout));
+        }
+    }
+
+
     function getPromisedValue(command, format, valueIndex, timeout = 5000) {
         return new Promise((resolve) => {
             setExpectedDataFormat(format, (match) => {
@@ -2614,7 +2952,7 @@
                         dataFormat = null;
                         resolve(null); // Return null instead of rejecting
                     }
-                }, timeout); // Timeout after specified time (e.g., 5 seconds)
+                }, timeout); // Timeout after a specified time (e.g., 5 seconds)
             }
         });
     }
@@ -2757,7 +3095,7 @@
         loadLimitDropValue = parseFloat(event.target.value);
     });
 
-    // #TODO do better disabeling of elements //////////////////////////////////////////////////
+    // #TODO do better disabling of elements //////////////////////////////////////////////////
     document.querySelectorAll('.prohibited').forEach(element => {
         element.readOnly = true;
         element.tabindex = -1;
@@ -2795,6 +3133,7 @@
         stopExperiment = true;
         machineOccupation = false;
         UI.progressBar.value = 0;
+        UI.progressLabel.textContent = `0%`;
         sendCommand("MC STOP");
         sendCommand("DSLR STOP CYCLIC");
         sendCommand("DATAC 0");
@@ -2837,6 +3176,7 @@
             takePhotos = document.getElementById("inputTakePhotos").checked;
             loadLimitDropPercent = 1 - Math.max(parseFloat(document.getElementById("inputLoadLimitDropPercent").value), 0) / 100;
             loadLimitDropValue = Math.max(parseFloat(document.getElementById("inputLoadLimitDropValue").value), 0);
+
 
             // === System Limits ===
             const minDistance = 1e-4;
@@ -2892,10 +3232,16 @@
             }
 
 
-            dataChartInterval = calculateStep(dataInterval_us, 200, 1);
+            dataChartInterval = calculateStep(dataInterval_us, 150, 1);
             minimumZeroSpeedCount = calculateStep(dataInterval_us, 50, 2);
             aggregatedDataBetweenSteps = [];
             dataCount = 0;
+
+            // === Ensure Serial Reading is Running ===
+            if (!isReadingSerial) {
+                isReadingSerial = true;
+                readSerial();
+            }
 
             await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
@@ -3043,7 +3389,11 @@
 
 
             // === Progress Bar Setup ===
+            document.documentElement.style.setProperty('--progressColor', 'var(--darkorange-color)');
             UI.progressBar.value = 0;
+            UI.progressLabel.textContent = `0%`;
+
+            // === Experiment Parameters ===
             experimentEndPosition = distance_mm; // The total distance to be moved
             startTime = null;
             maxLoad = [null, null, null];
@@ -3085,13 +3435,19 @@
                 await sendCommand('DSLR SHOOT');
             }
 
+
+            forceDirectionCorrection = directionCorrection * -1;
             await addDataToLog({
+                experimentName: document.getElementById("experimentType").value.trim(),
+                experimentCounter: document.getElementById("experimentCount").value.trim(),
+                experimentDescription: document.getElementById("experimentDesc").value.trim(),
                 experimentDate: new Date().toLocaleString(),
                 loadDirection: directionCorrection,
                 loadDistance: distance_mm,
                 loadSpeed: speedForward_mmps,
                 loadcellCapacity: loadcellCapacity,
-                loadcellType: NaN,
+                loadcellType: "NaN",
+                machineFirmware: machineFirmware,
             });
 
 
@@ -3145,12 +3501,6 @@
             console.log("➡️ Moving forward...");
             await sendCommand(`MC MOVEBY USER ${distance_mm * directionCorrection}`);
 
-
-            // === Ensure Serial Reading is Running ===
-            if (!isReadingSerial) {
-                isReadingSerial = true;
-                readSerial();
-            }
 
             // === Data Collection Loop ===
             while (isExperimentRunning) {
@@ -3325,7 +3675,10 @@
             let formData = {};
 
             optionsElements.forEach(input => {
-                formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
+                if (input.dataset.nonremember !== "true") {
+                    formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
+                }
+
             });
 
             localStorage.setItem(storageKey, JSON.stringify(formData));
@@ -3335,8 +3688,9 @@
 
         // Function to load inputs from localStorage
         function loadInputsFromLocalStorage() {
-            const formData = JSON.parse(localStorage.getItem(storageKey)) || {}; // Load the saved data
+            const formData = JSON.parse(localStorage.getItem(storageKey)) || NaN; // Load the saved data
             if (!formData) saveAllInputsToLocalStorage();
+
             optionsElements.forEach(input => {
                 if (formData.hasOwnProperty(input.id)) {
                     if (input.type === "checkbox") {
@@ -3358,12 +3712,64 @@
 
         // Listen for changes in all inputs
         optionsElements.forEach(input => {
-            input.addEventListener("change", saveInputToLocalStorage);
+            if (input.dataset.nonremember !== "true") {
+                input.addEventListener("change", saveInputToLocalStorage);
+            }
         });
+
+        let isBlinking = false;
+
+        function blinkBorder(element) {
+            if (isBlinking) return; // Prevent spam
+
+            isBlinking = true;
+            const originalBorderColor = "darkgray";
+            const originalBorderWidth = "1px";
+            const blinkBorderColor = "orange";
+            // const blinkBorderWidth = "4px";
+
+            let count = 0;
+            const maxBlinks = 4; // total blinks
+            const interval = 200; // milliseconds between states
+
+            const blinkInterval = setInterval(() => {
+                if (count % 2 === 0) {
+                    element.style.borderColor = blinkBorderColor;
+                    element.style.background = "Moccasin"; // LightGoldenRodYellow, Moccasin, LemonChiffon, PapayaWhip, PeachPuff, LightYellow, NavajoWhite, BlanchedAlmond
+                    // element.style.borderWidth = blinkBorderWidth;
+                } else {
+                    // element.style.borderColor = originalBorderColor;
+                    element.style.borderWidth = originalBorderWidth;
+                    element.style.background = "white";
+                }
+
+                count++;
+                if (count >= maxBlinks * 2) { // 2x per blink (on + off)
+                    clearInterval(blinkInterval);
+                    element.style.borderColor = originalBorderColor;
+                    element.style.borderWidth = originalBorderWidth;
+                    isBlinking = false;
+                }
+            }, interval);
+        }
+
+
+        document.getElementById("experimentType").addEventListener("change", () => {
+            const countInput = document.getElementById("experimentCount");
+            if (countInput) {
+                countInput.value = 1;
+                countInput.dispatchEvent(new Event("change", {bubbles: true}));
+                blinkBorder(countInput);
+            }
+        });
+
 
         // Load saved data when the page loads
         loadInputsFromLocalStorage();
         UI.chartsContainer.style.height = getChartHeightIncludingLegend() + "px";
+
+
+        pageLoaded = true;
     });
 
 
@@ -3413,12 +3819,42 @@
                 console.log("📂 Sorted files:", files.map(f => f.name)); // Log sorted file names
             }
 
+            const measurementName = files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").replace(/^(.*)_(\d{1,})$/, "$1").trim(); // Measurement name
             let wb = XLSX.utils.book_new(); // Create a new Excel workbook
-            let sheetName = ("P-" + files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").trim()).slice(0, 31); // Sheet name
-            let formattedData = [];
-            let columnOffset = 0; // Column shift for each section
-            let fileIndexData = [["File Order", "File Name"]]; // Second sheet data
+            let sheetName = ("P-" + measurementName).slice(0, (31 - 8)); // Sheet name
 
+            // ==================== FILES LIST ==================== //
+
+            let fileIndexData = [["File Order", "File Name"]]; // Third sheet data
+
+            // ================== LOADING DATA ================== //
+
+            let formattedData = []; // First sheet data  -   Array to store ALL formatted measurement data
+            let columnOffset = 0; // Column shift for each section
+            let formattedMerges = []; // Merge of the first two line of the header
+
+
+            // ================== SAMPLES TABLE ================== //
+
+
+            let samplesTable = [
+                ["Code", "Method", "W", "Number", "Dimensions, weight, before drying", "", "", "", "Dimensions, weight, after drying", "", "", "", "lo (mm)"], // row 0
+                ["", "", "", "", "hw", "lw", "ww", "mw", "h0", "l0", "w0", "m0", ""], // row 1
+                ["", "", "", "", "height (mm)", "length (mm)", "width (mm)", "(g)", "height (mm)", "length (mm)", "width (mm)", "(g)", ""] // row 2
+            ];// Second sheet data
+
+            // Optional: force merges grouped headers in Excel
+            samplesTable["!merges"] = [
+                {s: {r: 0, c: 0}, e: {r: 2, c: 0}}, // Code
+                {s: {r: 0, c: 1}, e: {r: 2, c: 1}}, // Method
+                {s: {r: 0, c: 2}, e: {r: 2, c: 2}}, // W
+                {s: {r: 0, c: 3}, e: {r: 2, c: 3}}, // Number
+                {s: {r: 0, c: 4}, e: {r: 0, c: 7}}, // Dimensions before drying
+                {s: {r: 0, c: 8}, e: {r: 0, c: 11}}, // Dimensions after drying
+                {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
+            ];
+
+            // ----------------- LOOPING THROW CSV FILES ----------------- //
             let fileCount = 0;
             for (let file of files) {
                 fileCount++;
@@ -3453,7 +3889,7 @@
 
 
                 const testLine = rows[Math.ceil(rows.length / 2)]; // data line of CSV file
-                let delimiter = null; // Delimiter of data in CSV file
+                let delimiter = null; // Delimiter of data in a a CSV file
 
                 for (const separator of delimiters) {
                     const parts = testLine.split(separator);
@@ -3501,17 +3937,6 @@
                 }
 
 
-                let shift = 0; // Displacement (mm)
-                let force = 0; // Force (N)
-                let time = 0; // Time (s)
-                let deformation = 0; // Deformation (mm)
-
-
-                const firstTime = parseFloat(rows[0][0]) || 0; // First time value
-                const firstShift = parseFloat(rows[0][1]) || 0; // First shift value
-                const firstForce = (parseFloat(rows[0][3]) || 0) + (parseFloat(rows[0][4]) || 0) + (parseFloat(rows[0][5]) || 0); // First force value
-
-
                 const originalLength = rows.length; // Original number of rows
 
                 if (isMoira) {
@@ -3542,9 +3967,37 @@
                 }
 
 
+                // ==================== FILES LIST ==================== //
+
+                fileIndexData.push([fileCount, file.name.replace(/\.csv$/i, "")]);
+
+                // ================== SAMPLES TABLE ================== //
+
+                samplesTable.push([
+                    file.name.replace(/\.csv$/i, ""), // Code
+                    3,                             // Method (place 3)
+                    0,                             // W (place 0)
+                    fileCount,                     // Number (file count)
+                    "", "", "", "",                // hw, lw, vw, mw (empty)
+                    "", "", "", "",                // h0, l0, v0, m0 (empty)
+                    ""                             // lo (empty)
+                ]);
+
+
+                // ================== LOADING DATA ================== //
+
+                let shift = 0; // Displacement (mm)
+                let force = 0; // Force (N)
+                let time = 0; // Time (s)
+                let deformation = 0; // Deformation (mm)
+
+
                 // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
 
-                fileIndexData.push([fileCount, file.name.replace(".csv", "")]);
+
+                const firstTime = parseFloat(rows[0][0]) || 0; // First time value
+                const firstShift = parseFloat(rows[0][1]) || 0; // First shift value
+                const firstForce = (parseFloat(rows[0][3]) || 0) + (parseFloat(rows[0][4]) || 0) + (parseFloat(rows[0][5]) || 0); // First force value
 
                 // Define headers for this section
                 let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
@@ -3558,6 +4011,13 @@
                 sectionHeader4[columnOffset + 1] = "mm";
                 sectionHeader4[columnOffset + 2] = "N";
                 sectionHeader4[columnOffset + 3] = "mm";
+
+                formattedMerges.push({
+                    s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
+                });
+                formattedMerges.push({
+                    s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
+                });
 
                 // Ensure headers are fully added for every section
                 if (formattedData.length === 0) {
@@ -3614,18 +4074,62 @@
 
             // Create the first sheet with data
             let ws = XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
+            ws["!merges"] = formattedMerges;
             XLSX.utils.book_append_sheet(wb, ws, sheetName); // Append a sheet to workbook
 
-            // Create the second sheet with file order index
+            // Create the second with file order index
+            let wsSamples = XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
+            wsSamples["!merges"] = samplesTable["!merges"]; // Merge cells
+
+            // const range = XLSX.utils.decode_range(wsSamples['!ref']); // Get table size
+            //
+            // for (let R = range.s.r; R <= range.e.r; ++R) {
+            //     for (let C = range.s.c; C <= range.e.c; ++C) {
+            //         const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
+            //         const cell = wsSamples[cellAddress];
+            //         if (!cell) continue; // Empty cells
+            //
+            //         cell.s = cell.s || {};
+            //
+            //         // Set cell style
+            //         cell.s = {
+            //             font: {
+            //                 bold: R <= 2 // First three line in Bold text (0,1,2)
+            //             },
+            //             border: {
+            //                 top: {style: "thin", color: {auto: 1}},
+            //                 bottom: {style: "thin", color: {auto: 1}},
+            //                 left: {style: "thin", color: {auto: 1}},
+            //                 right: {style: "thin", color: {auto: 1}}
+            //             }
+            //         };
+            //
+            //
+            //            cell.s.alignment = {
+            //                horizontal: "center",
+            //                vertical: "center"
+            //            };
+            //
+            //            // Bold text for the first three lines if the cell is not empty
+            //            if (R <= 2) {
+            //                cell.s.font = {bold: true};
+            //            }
+            //     }
+            // }
+
+            XLSX.utils.book_append_sheet(wb, wsSamples, (sheetName + "-objects").slice(0, 31)); // Append a sheet to workbook
+
+
+            // Create the third sheet with file order index
             let wsIndex = XLSX.utils.aoa_to_sheet(fileIndexData);  // Convert data to Excel sheet
             XLSX.utils.book_append_sheet(wb, wsIndex, "File Order"); // Append a sheet to workbook
 
             // Save the file
-            XLSX.writeFile(wb, "merged_data.xlsx");
+            XLSX.writeFile(wb, `${measurementName.slice(0, 31)}.xlsx`);
             console.log("✅ Excel file created.");
         };
 
-        input.click(); // Open file selection dialog
+        input.click(); // Open the file selection dialog
     }
 
 
@@ -3636,18 +4140,28 @@
     //         console.log("   ➤", line);
     //         await logMessage("🔧 " + line);
     //     }
-    //
-    //     // můžeš zde třeba extrahovat verze, validovat atd.
     // }
 
 
     //TODO : random generator
     //         if (Math.random() < 0.01) {
     //             timeVal = timeVal * 100;
-    //             console.log("🎲 Náhodné číslo:", timeVal);
+    //             console.log("🎲 Random number:", timeVal);
     //         } else {
-    //             console.log("🚫 Žádné číslo tentokrát.");
+    //             console.log("🚫 No number.");
     //         }
+
+
+    //TODO : Constantly log random numbers
+    // async function tester() {
+    //     while (true) {
+    //         await new Promise(resolve => setTimeout(resolve, 20)); // Wait for 1 second
+    //         logMessage(Math.random());
+    //     }
+    //
+    // }
+    //
+    // tester();
 
 
 </script>
