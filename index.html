@@ -2312,7 +2312,7 @@
     let directionCorrection = 1;
     let forceDirectionCorrection = -1;
 
-    async function parseData(dataString) { // #TODO => move string handle to 'processMeasurements'
+    async function parseData(dataString) { //  TODO => move string handle to 'processMeasurements'
         if (!takeMeasurements && !isExperimentRunning && !isDelayed) {
             await logMeasurements(dataString);
             return;
@@ -2832,7 +2832,7 @@
     function updateChart(data) {
 
         // Check if the data is valid (not NaN)
-        if (isNaN(data.time) || isNaN(data.distance) || data.load.some(isNaN)) {
+        if (isNaN(data.time) || isNaN(data.distance) || data.load.every(x => isNaN(x))) { //  || data.load.some(isNaN)
             return;
         }
 
