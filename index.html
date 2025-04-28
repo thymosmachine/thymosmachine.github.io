@@ -2303,18 +2303,13 @@
         if (isDelayed) return;
 
         isDelayed = true;
-        new Promise(resolve => setTimeout(() => {
-            isDelayed = false;
-            resolve(); // Call resolve() po 1000 ms
-        }, 1000)); // Delay 1 second
-
-
+        new Promise(() => setTimeout(() => isDelayed = false, 500)); // Call resolve() po 500 ms
     }
 
 
     let aggregatedDataBetweenSteps = [];
     let minimumZeroSpeedCount = 2;
-    let directionCorrection = 0;
+    let directionCorrection = 1;
     let forceDirectionCorrection = -1;
 
     async function parseData(dataString) { // #TODO => move string handle to 'processMeasurements'
@@ -2352,8 +2347,8 @@
 
 
         let timeVal = roundDecimal(parseFloat(parts[0]) * 1e-6, 6); // Convert microseconds to seconds
-        let distVal = roundDecimal(parseFloat(parts[1]) * directionCorrection, 4); // Distance value
-        const speedVal = roundDecimal(parseFloat(parts[2]), 2); // Speed value
+        let distVal = roundDecimal((parseFloat(parts[1]) - startPosition) * directionCorrection, 4); // Distance value
+        const speedVal = roundDecimal(parseFloat(parts[2]) * directionCorrection, 2); // Speed value
 
 
         // Handle regular data (not DSLR)
@@ -2363,7 +2358,9 @@
         } else { // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
             timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6);
         }
-        distVal -= startPosition;
+
+
+        // distVal = (distVal - startPosition) * directionCorrection;
         loadVal = loadVal.map((value, index) => roundDecimal((value * forceDirectionCorrection) - meanForces[index], 2));
 
 
@@ -2375,7 +2372,7 @@
         }
 
         // Handle speed checks and experiment stopping
-        if (speedVal < 0.01 && !isDelayed && (timeVal - startTime) > 2) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places
+        if (speedVal < 0.01 && !isDelayed && timeVal > 1) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
             zero_speed_counter++;
             if (zero_speed_counter > minimumZeroSpeedCount) {
                 console.log("🛑 Experiment stopped due to zero speed.");
@@ -2409,10 +2406,8 @@
             stopExperiment = true;
             console.log("🏁 Experiment finished.");
             await logMessage("🏁 Experiment finished.");
-            document.documentElement.style.setProperty('--progressColor', 'var(--blue-color)');
-            UI.progressLabel.textContent = `100%`;
         }
-        const progressValue = Math.min(Math.max(0, progress), 100);
+        const progressValue = Math.min(Math.max(0, distVal / experimentEndPosition * 100), 100);
         UI.progressBar.value = progressValue;
         UI.progressLabel.innerText = `${progressValue.toFixed(2)}%`; // .padStart(5, "0")
 
@@ -2438,13 +2433,18 @@
             isExperimentRunning = false;
             UI.loadingLogContainer.style.background = "#323232";
             dataCount = null;
-            await delayData();
+            // await delayData();
 
             if (aggregatedDataBetweenSteps.length > 0) {
                 console.log("⚠️ Data not sent to chart.", aggregatedDataBetweenSteps.length);
                 await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
             }
             aggregatedDataBetweenSteps.length = 0
+
+            if (progressValue >= 99.99999900) {
+                document.documentElement.style.setProperty('--progressColor', 'var(--blue-color)');
+                UI.progressLabel.textContent = `100%`;
+            }
             // const lastData = await calculateAverageParsedData(aggregatedDataBetweenSteps);
             // console.warn(lastData);
             // aggregatedDataBetweenSteps.forEach(data => {
