@@ -1,13 +1,22 @@
 const CACHE_NAME = "Thymos-Moira-vLATEST"; // Název cache
-const FILES_TO_CACHE = ["./", // Hlavní stránka
-    "./index.html", "./uPlot.iife.min.js", "./uPlot.min.css", "./xlsx.full.min.js", "./images/icon-512x512.png", // "./images/icon-192x192.png",
+const FILES_TO_CACHE = [
+    "./", // Hlavní stránka
+    "./index.html",
+    "./uPlot.iife.min.js",
+    "./uPlot.min.css",
+    "./xlsx.full.min.js",
+    "./images/icon-512x512.png",
+    // "./images/icon-192x192.png",
     // "./images/icon-96x96.png",
     // "./images/icon-48x48.png",
     // "./images/icon-32x32.png",
-    "./images/favicon.ico",];
+    "./images/favicon.ico",
+];
 
-const FETCH_EXCEPTIONS = [// Seznam URL, které nebudou cachovány
-    "latest.txt",]
+const FETCH_EXCEPTIONS = [
+    // Seznam URL, které nebudou cachovány
+    "latest.txt",
+]
 
 
 // Instalace Service Workeru a cacheování souborů
