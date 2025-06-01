@@ -1,4 +1,4 @@
-const CACHE_NAME = "Thymos-Moira-v0.0.1"; // Název cache
+const CACHE_NAME = "Thymos-Moira-vLATEST"; // Název cache
 const FILES_TO_CACHE = [
     "./", // Hlavní stránka
     "./index.html",
