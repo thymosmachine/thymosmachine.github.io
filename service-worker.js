@@ -13,10 +13,16 @@ const FILES_TO_CACHE = [
     "./images/favicon.ico",
 ];
 
+const FETCH_EXCEPTIONS = [
+    // Seznam URL, které nebudou cachovány
+    "latest.txt",
+]
+
 
 // Instalace Service Workeru a cacheování souborů
 self.addEventListener('install', function (event) {
-    self.skipWaiting().then(_ => {});
+    self.skipWaiting().then(_ => {
+    });
     try {
 
         event.waitUntil(
@@ -42,7 +48,8 @@ self.addEventListener('install', function (event) {
 
 // Aktivace Service Workeru
 self.addEventListener('activate', function (event) {
-    self.clients.claim().then(_ => {});
+    self.clients.claim().then(_ => {
+    });
     let cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
         caches.keys().then(function (cacheNames) {
@@ -59,6 +66,18 @@ self.addEventListener('activate', function (event) {
 
 // Odezva pro offline přístup
 self.addEventListener('fetch', event => {
+    const requestUrl = new URL(event.request.url);
+
+    // ✅ Zjisti, jestli žádost spadá do výjimek
+    const isException = FETCH_EXCEPTIONS.some(ex => requestUrl.pathname.endsWith(ex));
+
+    if (isException) {
+        // 🔁 Normální fetch bez ukládání do cache
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // ⚙️ Standardní cachovací strategie
     event.respondWith(
         fetch(event.request) // ← 🔍 nejprve se pokusí stáhnout čerstvá data ze sítě
             .then(response => {
