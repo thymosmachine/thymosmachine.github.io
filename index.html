@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
-    <!--    <link rel="icon" type="image/png" sizes="32x32" href="./images/icon-32x32.png">-->
-    <!--    <link rel="icon" type="image/png" sizes="192x192" href="./images/icon-192x192.png">-->
-    <link rel="icon" type="image/png" sizes="512x512" href="./images/icon-512x512.png">
-    <!--    <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">-->
-    <link rel="shortcut icon" href="./images/favicon.ico">
+    <!--    <link rel="icon" type="image/png" sizes="32x32" href="/images/icon-32x32.png">-->
+    <!--    <link rel="icon" type="image/png" sizes="192x192" href="/images/icon-192x192.png">-->
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512x512.png">
+    <!--    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">-->
+    <link rel="shortcut icon" href="/images/favicon.ico">
 
 
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
 
-    <script src="./uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
-    <link rel="stylesheet" href="./uPlot.min.css"> <!-- Add uPlot CSS for styling -->
-    <script src="./xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
+    <script src="/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+    <link rel="stylesheet" href="/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
+    <script src="/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
 
 
     <title>Moira Control - Thymos</title>
 
 
     <script>
-        const softwareVersion = "0.0.1.6";
+        const softwareVersion = "0.0.1.5";
         const softwareDate = "01.06.2025";
 
         const debugging = false;
@@ -64,7 +64,7 @@
             async function loadCurrentVersion() {
                 try {
                     // Try to load the latest version of the app from the latest.txt [server]
-                    fetch("./latest.txt")
+                    fetch("/latest.txt")
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error("Network response was not ok");
