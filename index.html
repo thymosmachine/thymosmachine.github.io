@@ -24,8 +24,8 @@
 
 
     <script>
-        const softwareVersion = "0.0.1.3";
-        const softwareDate = "29.04.2025";
+        const softwareVersion = "0.0.1.4";
+        const softwareDate = "01.06.2025";
 
         const debugging = false;
 
@@ -601,7 +601,7 @@
         }
 
         #experimentDirectionDropdown {
-            width: 227.2px;
+            width: 233.6px;
             height: 30.2px;
         }
 
@@ -610,7 +610,7 @@
         }
 
         #inputPhotoInterval {
-            max-width: 50px;
+            max-width: 53px;
         }
 
         #machineSettingsContainer {
@@ -722,6 +722,12 @@
             background: #f5f5f5;
             border-radius: 10px;
         }
+
+        .units-text {
+            font-size: 14px;
+            color: #4f4f4f;
+        }
+
     </style>
 </head>
 
@@ -784,11 +790,11 @@
 
             <!-- Return to the original position Button -->
             <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()" class="controlBtn disabled"> ↩️
-                Return to original position
+                Return to start position
             </button>
 
             <!-- Automatic returning to the original position Checkmark -->
-            <label for="autoReturnPositionExperiment">↕️ Auto-return to original position:</label>
+            <label for="autoReturnPositionExperiment">↕️ Final Auto-positioning:</label>
             <input type="checkbox" id="autoReturnPositionExperiment">
 
         </div>
@@ -848,24 +854,29 @@
             <div id="loadSettingsContainer">
                 <div id="experimentSettingsContainer">
                     <div class="input-group">
-                        <label for="inputDistance">Distance (mm): </label>
-                        <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0"
+                        <label for="inputDistance">Distance <span class="units-text">(mm)</span>: </label>
+                        <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0.01"
                                step="any"
                                max="100000000">
                     </div>
 
                     <div class="input-group">
-                        <label for="experimentDirectionDropdown">Direction: </label>
+                        <label for="experimentDirectionDropdown">Experiment type: </label>
                         <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; color: #333;">
-                            <option value="Option-DOWN">&nbsp;DOWN&nbsp;⏬</option>
-                            <option value="Option-UP">&nbsp;UP&nbsp;&nbsp;&nbsp;⏫</option>
+                            <option value="Option-UP">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            </option>
+                            <option value="Option-DOWN" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            </option>
+                            <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;⏫
+                            </option>
                         </select>
                     </div>
 
 
                     <div class="input-group">
-                        <label for="inputLoadLimitDropPercent">Force drop limit (%): </label>
+                        <label for="inputLoadLimitDropPercent">Force drop limit <span class="units-text">(%)</span>:
+                        </label>
                         <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
                                min="0"
                                max="100">
@@ -875,7 +886,8 @@
                     <div class="input-group">
                         <label for="inputTakePhotos">Take photos: </label>
                         <input type="checkbox" id="inputTakePhotos">
-                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval (s): </label>
+                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval <span
+                                class="units-text">(s)</span>: </label>
                         <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
                                value="1"
                                min="0" step="any"
@@ -884,7 +896,8 @@
 
 
                     <div class="input-group">
-                        <label for="inputLoadLimitDropValue">Force drop limit (N): </label>
+                        <label for="inputLoadLimitDropValue">Force drop limit <span class="units-text">(N)</span>:
+                        </label>
                         <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
                                step="any"
                                max="100000000">
@@ -892,26 +905,44 @@
 
 
                     <div class="input-group">
-                        <label for="inputSpeedForward">Loading speed (mm/s): </label>
-                        <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0"
-                               step="any"
-                               max="100000000">
+                        <label for="inputSpeedForward">Loading speed <span class="units-text">(mm/s)</span>: </label>
+                        <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0.01"
+                               step="any" max="25">
                     </div>
 
                     <div class="input-group"> <!-- TODO minimum na 10000 -->
-                        <label for="inputDataInterval">Data Interval (µs): </label>
+                        <label for="inputDataInterval">Data Interval <span class="units-text">(µs)</span>: </label>
                         <input data-input-type="floatInput" type="number" id="inputDataInterval" value="30000"
                                min="10000"
                                step="any"
                                max="100000000">
                     </div>
 
-                    <div class="input-group">
-                        <label for="inputSpeedBackward" class="prohibited">Returning speed (mm/s): </label>
+                    <div class="input-group" style="display: none;">
+                        <label for="inputSpeedBackward" class="prohibited">Returning speed <span class="units-text">(mm/s)</span>:
+                        </label>
                         <input data-input-type="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
                                value="25"
                                min="0"
                                step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="disabled" id="inputInitialSpeedLabel" for="inputInitialSpeed">Initial speed
+                            <span class="units-text">(mm/s)</span>:</label>
+                        <input class="disabled" data-input-type="floatInput" type="number"
+                               id="inputInitialSpeed" style="max-width: 46px; min-width: 25px;"
+                               value="1"
+                               min="0.01" step="any"
+                               max="25">
+                        <label class="disabled" id="inputInitialForceLabel" for="inputInitialForce"
+                               style="min-width: max-content;">Force lim.
+                            <span class="units-text">(N)</span>:</label>
+                        <input class="disabled" data-input-type="floatInput" type="number"
+                               id="inputInitialForce" style="max-width: 42px; min-width: 25px;"
+                               value="1"
+                               min="0" step="any"
                                max="100000000">
                     </div>
 
@@ -925,18 +956,18 @@
                 <div id="machineSettingsWrapper">
 
                     <div class="input-group">
-                        <label for="inputLoadcellCapacity">Loadcell Capacity (kg): </label>
+                        <label for="inputLoadcellCapacity">Loadcell Capacity <span class="units-text">(kg)</span>:
+                        </label>
                         <input data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
                                step="any"
                                min="0" max="100000000">
                     </div>
 
-                    <div class="input-group">
-                        <label for="inputLoadcellOutput">Loadcell Rated Output (mV/V): </label>
-                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput" value="2.0"
-                               step="any"
-                               min="0"
-                               max="100000000">
+                    <div class="input-group prohibited" disabled>
+                        <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
+                        </label>
+                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput"
+                               value="2.0" step="any" min="0" max="100000000">
                     </div>
 
                 </div>
@@ -1035,7 +1066,7 @@
     let isAutoScroll = true;// Enables automatic scrolling of log output
     let isLineLimit = true;// Limits the number of stored log lines
     let isLineLocker = true;// Locks the view at a fixed position when scrolling is disabled
-    let logContentMaxLines = 10000;// Maximum number of log lines to keep in memory
+    let logContentMaxLines = 150;// Maximum number of log lines to keep in memory
     let isScrolledToBottom = true;// Tracks whether the user has scrolled to the bottom of the log
     let logCount = 0; // Counter for received messages
     const logContentLines = []; // Array storing the log content
@@ -1384,10 +1415,10 @@
 
     async function saveCSV() {
         let dirHandle = null;
+        const delimiter = ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
         const expNum = parseInt(document.getElementById("experimentCount").value.trim()) || 0;
         const experimentType = document.getElementById("experimentType").value.trim();
-        const experimentDesc = document.getElementById("experimentDesc").value.trim();
-        const delimiter = ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
+        const experimentDesc = document.getElementById("experimentDesc").value.trim().replaceAll("\n", " ").replaceAll(delimiter, "|"); // Replace newlines with spaces and delimiters with spaces
 
         handFolderSelect = document.getElementById("storagePath").checked;
 
@@ -1844,22 +1875,24 @@
             serialWriter = comPort.writable.getWriter(); // 🔥  writer
             serialReader = comPort.readable.getReader(); // 🔥  reader
 
-
             isConnected = true;
             reconnectAttempts = 0;
 
+            readSerial();
 
             await checkSerialSignals(comPort);
 
             await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
 
-            readSerial();
+            await logMessage("\n");
+
+            await sendCommand("MC STOP"); // Stop data collection
+            await sendCommand("DSLR STOP CYCLIC");
+            await sendCommand("DATAC 0"); // Stop data collection
+
+            await logMessage("\n");
 
             machineFirmware = `${await getFirmwareVersion()}`;
-
-            await updateConnectionStatus("connected", "USB");
-            UI.USB.innerText = "❌ Disconnect ESP (USB)";
-            await logMessage("\n✅ Connected to ESP via USB\n");
 
             // TODO : try watchdog and usbcheck **********************************************************************
             // watchDog(1000);
@@ -1867,6 +1900,12 @@
             // await sendCommand(`MISC SET USB_CHECK_ENABLED ${0}`, 5);
             // await sendCommand(`MISC SET USB_CHECK_INTERVAL ${1000}`);
             // await sendCommand(`MISC SET USB_CHECK_ENABLED ${1}`);
+
+            await new Promise(resolve => setTimeout(resolve, 50)); // Wait for 50 ms
+
+            await updateConnectionStatus("connected", "USB");
+            UI.USB.innerText = "❌ Disconnect ESP (USB)";
+            await logMessage("\n✅ Connected to ESP via USB\n");
 
         } catch (error) {
             activeWatchDog = false;
@@ -2314,7 +2353,7 @@
 
     async function parseData(dataString) { //  TODO => move string handle to 'processMeasurements'
         if (!takeMeasurements && !isExperimentRunning && !isDelayed) {
-            await logMeasurements(dataString);
+            logMeasurements(dataString);
             return;
         }
 
@@ -2325,15 +2364,15 @@
         if (takePhotos && dataString.startsWith("LR shoot:")) {
             const [dslrTime, photoIndex] = dataString.split(":")[1].split(",");
             pendingDSLR = {time: parseFloat(dslrTime) * 1e-3, photoIndex: parseInt(photoIndex) - 1};
-            await logMeasurements("Photo" + dataString.substring(2));
+            logMeasurements("Photo" + dataString.substring(2));
             return;
         }
 
         if (parts.length !== 6) {
-            await logMessage("🌡️ DS" + dataString);
+            logMessage("🌡️ DS" + dataString);
             return;
         } else {
-            await logMeasurements(dataString);
+            logMeasurements(dataString);
         }
 
         // Common parsing logic
@@ -2344,7 +2383,6 @@
             loadVal.forEach((value, index) => measureForces[index].push(value * forceDirectionCorrection)); // Handle takeMeasurements
             return;
         }
-
 
         let timeVal = roundDecimal(parseFloat(parts[0]) * 1e-6, 6); // Convert microseconds to seconds
         let distVal = roundDecimal((parseFloat(parts[1]) - startPosition) * directionCorrection, 4); // Distance value
@@ -2368,15 +2406,20 @@
 
         // If a pending DSLR timestamp exists, interpolate values
         if (takePhotos && pendingDSLR) {
-            await interpolateDSLRData(pendingDSLR, newData, parsedData);
+            await interpolateDSLRData(pendingDSLR, newData, parsedData); // TODO can chech if its valid with set INPUT
+        }
+
+        if (experimentIB && loadVal.some(value => !isNaN(value) && value >= initialForceLoadLim_N)) {
+            sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+            experimentIB = false;
         }
 
         // Handle speed checks and experiment stopping
-        if (speedVal < 0.01 && !isDelayed && timeVal > 1) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
+        if (speedVal < 0.001 && !isDelayed && timeVal > 1) { // speedVal < 0.001 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
             zero_speed_counter++;
             if (zero_speed_counter > minimumZeroSpeedCount) {
                 console.log("🛑 Experiment stopped due to zero speed.");
-                await logMessage("🛑 Experiment stopped due to zero speed.");
+                logMessage("🛑 Experiment stopped due to zero speed.");
                 stopExperiment = true;
             }
         } else {
@@ -2385,14 +2428,16 @@
 
         // Handle load cell limit checks
         for (let i = 0; i < 3; i++) {
-            if (Math.abs(loadVal[i]) > maxLoad[i]) maxLoad[i] = Math.abs(loadVal[i]);
-            if (maxLoad[i] && !isDelayed) {
-                if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] && (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
-                    // await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
-                    stopExperiment = true;
-                    console.log(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
-                    await logMessage(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
-                    break; // Stop checking other load cells if one fails
+            if (!isNaN(loadVal[i])) {
+                if (Math.abs(loadVal[i]) > maxLoad[i]) maxLoad[i] = Math.abs(loadVal[i]);
+                if (maxLoad[i] && !isDelayed) {
+                    if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] && (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
+                        // await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
+                        stopExperiment = true;
+                        console.log(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
+                        logMessage(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
+                        break; // Stop checking other load cells if one fails
+                    }
                 }
             }
         }
@@ -2405,7 +2450,7 @@
         if (progress >= 100 && !isDelayed) {
             stopExperiment = true;
             console.log("🏁 Experiment finished.");
-            await logMessage("🏁 Experiment finished.");
+            logMessage("🏁 Experiment finished.");
         }
         const progressValue = Math.min(Math.max(0, distVal / experimentEndPosition * 100), 100);
         UI.progressBar.value = progressValue;
@@ -2527,32 +2572,40 @@
 
     // Event listener for page visibility change
     document.addEventListener("visibilitychange", () => {
-        if (!liveUpdate && !isExperimentRunning) return;
+        if (!isExperimentRunning) return;
+        if (!liveUpdate && !liveUpdatePaused) return;
 
         isPageVisible = !document.hidden;
 
         if (!isPageVisible) {
-            console.log("⏸️ Page is hidden.");
-            if (liveUpdate && !liveUpdatePaused) {
-                console.log("⏸️ Pause live update of charts.");
-                liveUpdatePaused = true;
-                liveUpdate = false;
-            }
+            console.log("\n📄 - ⏸️ Page is hidden.");
+
 
             // 🕒 Set timeout for hiding the page
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null; // Reset the timeout
+            }
             hideTimeout = setTimeout(() => {
                 if (!isPageVisible) {
-                    console.log("⏳ Page is hidden longer than 10+ seconds. Hiding...");
+                    console.log(`⏳ Page is hidden longer than ${roundDecimal(MIN_HIDE_TIME / 1000, 2)}+ seconds. Hiding...`);
+
+                    if (liveUpdate && !liveUpdatePaused) {
+                        console.log("⏸️ Pause live update of charts.");
+                        liveUpdatePaused = true;
+                        liveUpdate = false;
+                    }
                 }
             }, MIN_HIDE_TIME);
 
         } else {
+
             if (hideTimeout) {
                 clearTimeout(hideTimeout); // Clear the hide timeout
                 hideTimeout = null;
             }
 
-            console.log("🔄 Page is visible");
+            console.log("\n📄 - ▶️ Page is visible");
             if (liveUpdatePaused) {
                 console.log("🔄 Resuming live update of charts.");
                 loadDataFromDBToChart(true);
@@ -2976,35 +3029,32 @@
         try {
             const version = `${await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut)}`;
 
-            if (!version) {
-                throw new Error("Position is not a number.");
-            }
             console.log(`📦 Firmware version: ${version}`);
             return version;
         } catch (error) {
             console.error(error.message);
-            throw new Error("Firmware version not received.", error);
+            throw new Error(`Firmware version not received. ${error}`);
         }
     }
 
     // === Measure Position ===
-    async function measurePosition(timeOut = 2000) {
+    async function measurePosition(timeOut = 5000) {
         if (!isConnected) {
             console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
         try {
-            const position = parseFloat(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut));
+            const position = roundDecimal(parseFloat(`${await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut)}`), 4);
 
-            if (!position || isNaN(position)) {
-                throw new Error("Position is not a number.");
+            if (isNaN(position)) {
+                throw new Error(`Position is not a number. ${position}`);
             }
             console.log(`📌 Current position: ${position} mm`);
             return position;
         } catch (error) {
             console.error(error.message);
-            throw new Error("Position not received.", error);
+            throw new Error(`Position not received. ${error}`);
         }
     }
 
@@ -3021,7 +3071,7 @@
             return await getPromisedValue("MC GET ISCALIBRATED", /^Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
         } catch (error) {
             console.error(error.message);
-            throw new Error("Calibration status not received.", error);
+            throw new Error(`Calibration status not received. ${error}`);
         }
     }
 
@@ -3033,15 +3083,15 @@
             return;
         }
         try {
-            const speed = parseFloat(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut));
-            if (!speed || isNaN(speed)) {
-                throw new Error("Speed is not a number.");
+            const speed = roundDecimal(parseFloat(`${await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut)}`), 2);
+            if (isNaN(speed)) {
+                throw new Error(`Speed is not a number. ${speed}`);
             }
             console.log(`🚅 Current speed: ${speed} mm/s`);
             return speed;
         } catch (error) {
             console.error(error.message);
-            throw new Error("Speed not received.", error);
+            throw new Error(`Speed not received. ${error}`);
         }
     }
 
@@ -3053,15 +3103,15 @@
             return;
         }
         try {
-            const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut));
-            if (!acceleration || isNaN(acceleration)) {
-                throw new Error("Acceleration is not a number.");
+            const acceleration = roundDecimal(parseFloat(`${await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut)}`), 2);
+            if (isNaN(acceleration)) {
+                throw new Error(`Acceleration is not a number. ${acceleration}`);
             }
             console.log(`🚝 Current acceleration: ${acceleration} mm/s²`);
             return acceleration
         } catch (error) {
             console.error(error.message);
-            throw new Error("Acceleration not received.", error);
+            throw new Error(`Acceleration not received. ${error}`);
         }
     }
 
@@ -3075,7 +3125,7 @@
             return await getPromisedValue("MC GET RUNNING", /Motor running:\s[01]/, 1, timeOut) === "1";
         } catch (error) {
             console.error(error.message);
-            throw new Error("Moving status not received.", error);
+            throw new Error(`Moving status not received. ${error}`);
         }
     }
 
@@ -3128,6 +3178,22 @@
         return Math.max(1, minimum, Math.ceil((updateIntervalMs * 1000) / frequencyMicroseconds));
     }
 
+    function computeMotionTime(distance, speed, acceleration) {
+        const t_accel = speed / acceleration;               // time acceleration
+        const s_accel = 0.5 * acceleration * t_accel ** 2;  // distance during acceleration
+
+        if (2 * s_accel >= distance) {
+            // 🚩 Triangular profile – only acceleration and deceleration
+            return 2 * Math.sqrt(distance / acceleration);
+        } else {
+            // 🚩 Trapezoidal profile – acceleration, constant speed, and deceleration
+            const s_cruise = distance - 2 * s_accel;
+            const t_cruise = s_cruise / speed;
+            return 2 * t_accel + t_cruise;
+        }
+    }
+
+
     function stopMachine() {
         isExperimentRunning = false;
         stopExperiment = true;
@@ -3146,6 +3212,8 @@
     let currentAcceleration = null;
     let takePhotos = false;
     let dataInterval_us = null;
+    let initialForceLoadLim_N = null;
+    let experimentIB = false;
 
     async function startExperiment() {
 
@@ -3161,40 +3229,114 @@
             return;
         }
 
+
+        // === System Limits ===
+        const minDistance = 1e-3;
+        const minFSpeed = 1e-3;
+        const maxFSpeed = 25;
+        const minPhotoInt = 1e-6;
+        const minLoadCap = 1e-4;
+        const minLoadOut = 1e-4;
+
+
         try {
             machineOccupation = true;
 
+            await console.clear();
+            await console.log("\n\n\n──────────── NEW EXPERIMENT ────────────\n\n\n");
+            await console.groupCollapsed("New Experiment Section");
+
             // === Retrieve Parameters from Inputs ===
             const distance_mm = Math.max(parseFloat(document.getElementById("inputDistance").value), 0);
-            directionCorrection = document.getElementById("experimentDirectionDropdown").value.toLowerCase().includes("down") ? 1 : -1;
+            const experimentType = document.getElementById("experimentDirectionDropdown").value.toLowerCase();
+            directionCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = Math.max(parseFloat(document.getElementById("inputSpeedForward").value), 0);
             // const speedBackward_mmps = parseFloat(document.getElementById("inputSpeedBackward").value);
-            const photoInterval_ms = Math.max(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000, 0);
             dataInterval_us = Math.max(parseInt(document.getElementById("inputDataInterval").value), 1);
             const loadcellCapacity = Math.max(parseInt(document.getElementById("inputLoadcellCapacity").value), 0);
             const loadcellOutput = Math.max(parseFloat(document.getElementById("inputLoadcellOutput").value), 0);
             takePhotos = document.getElementById("inputTakePhotos").checked;
+            const photoInterval_ms = Math.max(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000, 0);
             loadLimitDropPercent = 1 - Math.max(parseFloat(document.getElementById("inputLoadLimitDropPercent").value), 0) / 100;
             loadLimitDropValue = Math.max(parseFloat(document.getElementById("inputLoadLimitDropValue").value), 0);
+            let initialSpeed_mmps;
 
+            if (experimentType.endsWith("-ib")) {
+                initialSpeed_mmps = Math.max(parseFloat(document.getElementById("inputInitialSpeed").value), 0);
+                initialForceLoadLim_N = Math.max(parseFloat(document.getElementById("inputInitialForce").value), 0);
+                experimentIB = true;
+            } else {
+                initialSpeed_mmps = speedForward_mmps;
+                initialForceLoadLim_N = null;
+                experimentIB = false;
+            }
 
-            // === System Limits ===
-            const minDistance = 1e-4;
-            const minFSpeed = 1e-4;
-            const minPhotoInt = 1e-6;
-            const minLoadCap = 1e-4;
-            const minLoadOut = 1e-4;
+            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
 
+            if (!distance_mm || distance_mm <= minDistance) {
+                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                machineOccupation = false;
+                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                return;
+            } else if (!speedForward_mmps || speedForward_mmps <= minFSpeed) {
+                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                machineOccupation = false;
+                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                return;
+            } else if (!speedForward_mmps || speedForward_mmps > maxFSpeed) {
+                console.warn(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
+                await logMessage(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
+                machineOccupation = false;
+                alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
+                return;
+            } else if (experimentIB && (!initialSpeed_mmps || initialSpeed_mmps <= minFSpeed)) {
+                console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                machineOccupation = false;
+                alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                return;
+            } else if (experimentIB && (!initialSpeed_mmps || initialSpeed_mmps > maxFSpeed)) {
+                console.warn(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                machineOccupation = false;
+                alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                return;
+            } else if (experimentIB && (!initialForceLoadLim_N || initialForceLoadLim_N <= 0)) {
+                console.warn(`⚠️ Initial force load must be greater than 0 N.`);
+                await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
+                machineOccupation = false;
+                alert(`⚠️ Initial force load must be greater than 0 N.`);
+                return;
+            } else if (!dataInterval_us || dataInterval_us < 1) {
+                console.warn(`⚠️ Data interval must be greater than 1 µs.`);
+                await logMessage(`⚠️ Data interval must be greater than 1 µs.`);
+                machineOccupation = false;
+                alert(`⚠️ Data interval must be greater than 1 µs.`);
+                return;
+            } else if (!loadcellCapacity || loadcellCapacity <= minLoadCap) {
+                console.warn(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                await logMessage(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                machineOccupation = false;
+                alert(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                return;
+            } else if (!loadcellOutput || loadcellOutput <= minLoadOut) {
+                console.warn(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                await logMessage(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                machineOccupation = false;
+                alert(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                return;
+            }
 
             if (takePhotos) {
-                if (photoInterval_ms <= minPhotoInt) {
-                    console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
-                    await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                if (!photoInterval_ms || photoInterval_ms <= minPhotoInt) {
+                    console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
+                    await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     machineOccupation = false;
-                    alert(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    alert(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     return;
                 }
-
                 if (photoInterval_ms * 1000 < dataInterval_us) {
                     console.warn("⚠️ Photo interval must be bigger than data interval.");
                     await logMessage("⚠️ Photo interval must be bigger than data interval.");
@@ -3203,33 +3345,8 @@
                     document.getElementById("inputDataInterval").value = dataInterval_us;
                 }
             }
-            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
 
-            if (distance_mm <= minDistance) {
-                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                machineOccupation = false;
-                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                return;
-            } else if (speedForward_mmps <= minFSpeed) {
-                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                machineOccupation = false;
-                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                return;
-            } else if (loadcellCapacity <= minLoadCap) {
-                console.warn(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
-                await logMessage(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
-                machineOccupation = false;
-                alert(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
-                return;
-            } else if (loadcellOutput <= minLoadOut) {
-                console.warn(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
-                await logMessage(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
-                machineOccupation = false;
-                alert(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
-                return;
-            }
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
 
             dataChartInterval = calculateStep(dataInterval_us, 150, 1);
@@ -3271,6 +3388,12 @@
                             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
                         } else {
                             confirmCalibrationCount++;
+                        }
+
+                        if (!isSerial || !isConnected) {
+                            console.warn("⚠️ Serial connection lost during calibration.");
+                            await logMessage("⚠️ Serial connection lost during calibration.");
+                            return;
                         }
                     }
 
@@ -3418,15 +3541,15 @@
             // === Prepare Motor ===
             await sendCommand("MC STOP");
             await sendCommand(`MC SET ACCELMM ${200}`);
-            await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+            await sendCommand(`MC SET SPEEDMM ${initialSpeed_mmps}`);
 
 
             // === Prepare Data Collection ===
-            startPosition = roundDecimal(parseFloat(await measurePosition()), 4);
+            startPosition = await measurePosition();
             document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
             document.getElementById("returnPositionExperimentBtn").readOnly = false;
             document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
-            document.getElementById("returnPositionExperimentBtn").textContent = `↩️ Return to original position: ${startPosition} mm`;
+            document.getElementById("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${startPosition} mm`;
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
 
 
@@ -3465,7 +3588,7 @@
                 markersDist.push(0);
             }
             await updateChart(parsedData);
-            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
 
             await sendCommand('DATA SET INTERVAL 2000');
@@ -3518,14 +3641,39 @@
             await sendCommand('DATAC 0');
 
 
-            await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
-            await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+            const returningSpeed = roundDecimal(25, 2); // mm/s
+            const returningAcceleration = 100; // mm/s²
+            await sendCommand(`MC SET SPEEDMM ${returningSpeed}`); // Set speed to 25 mm/s
+            await sendCommand(`MC SET ACCELMM ${returningAcceleration}`); // Set acceleration to 100 mm/s²
 
-            // === Move Back ===
-            if (UI.autoReturnPosition.checked) {
-                await moveToOriginalPosition(currentSpeed, currentAcceleration);
+
+            if (experimentType.endsWith("-ib")) {
+                // === Move Further ===
+                if (UI.autoReturnPosition.checked) {
+                    await new Promise(resolve => setTimeout(resolve, 2000)); // Stop for 2 s
+
+                    let endPosition = await measurePosition();
+
+                    const shift = Math.abs(100);
+
+                    console.log(`➡️ Moving further to ${endPosition - shift} mm...`);
+
+                    await sendCommand(`MC MOVEBY USER -${shift}`);
+                    await new Promise(resolve => setTimeout(resolve, ((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1000) + 500))); // Wait
+
+                    endPosition = await measurePosition();
+
+                    console.log(`🚩 Reached position: ${endPosition} mm`);
+                }
+            } else {
+                // === Move Back ===
+                if (UI.autoReturnPosition.checked) {
+                    await moveToOriginalPosition(currentSpeed, currentAcceleration);
+                }
             }
 
+            await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+            await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
 
             machineOccupation = false;
 
@@ -3547,11 +3695,13 @@
             machineOccupation = false;
             isExperimentRunning = false;
             stopExperiment = true;
+            await sendCommand('MC STOP');
+            console.groupEnd();
         }
     }
 
 
-    async function moveToOriginalPosition(speed, acceleration) {
+    async function moveToOriginalPosition(endSpeed, endAcceleration) {
         calibrationStatus = false;
         calibrationStatus = await getCalibrationStatus(1000);
         await new Promise(resolve => setTimeout(resolve, 50)); // Stop for 1 ms
@@ -3562,7 +3712,7 @@
             return;
         }
 
-        const endPosition = roundDecimal(parseFloat(await measurePosition()), 4);
+        const endPosition = await measurePosition();
 
         if (!endPosition || !startPosition || startPosition === 0) {
             document.getElementById("returnPositionExperimentBtn").classList.add("disabled");
@@ -3580,21 +3730,22 @@
             return;
         }
 
-        if (!speed) speed = await getSpeed();
-        if (!acceleration) acceleration = await getAcceleration();
+        if (!endSpeed) endSpeed = await getSpeed();
+        if (!endAcceleration) endAcceleration = await getAcceleration();
         await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
         console.log("⬅️ Moving backward...");
         const movingSpeed = 25;
+        const movingAcceleration = 200;
 
-        await sendCommand(`MC SET ACCELMM ${200}`);
+        await sendCommand(`MC SET ACCELMM ${movingAcceleration}`);
         await sendCommand(`MC SET SPEEDMM ${movingSpeed}`);
 
         await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
         await sendCommand(`MC MOVEBY USER ${startPosition - endPosition}`);
 
 
-        await new Promise(resolve => setTimeout(resolve, (((Math.abs(startPosition - endPosition) / movingSpeed) * 1000) + 200))); // Wait
+        await new Promise(resolve => setTimeout(resolve, ((computeMotionTime(Math.abs(startPosition - endPosition), movingSpeed, movingAcceleration) * 1000) + 200))); // Wait
 
         // TODO: Check if this is working correctly (not needed here?)
         // while (!await isMoving()) {
@@ -3602,8 +3753,8 @@
         // }
 
         console.log("🚩 Returning to original position completed.");
-        await sendCommand(`MC SET SPEEDMM ${speed}`, 2);
-        await sendCommand(`MC SET ACCELMM ${acceleration}`, 2);
+        await sendCommand(`MC SET SPEEDMM ${endSpeed}`, 2);
+        await sendCommand(`MC SET ACCELMM ${endAcceleration}`, 2);
     }
 
 
@@ -3764,11 +3915,36 @@
         });
 
 
+        document.getElementById("experimentDirectionDropdown").addEventListener("change", (event) => {
+            const selectedValue = event.target.value.toLowerCase();
+            const speedInput = document.getElementById("inputInitialSpeed");
+            const forceInput = document.getElementById("inputInitialForce");
+            const speedLabel = document.getElementById("inputInitialSpeedLabel");
+            const forceLabel = document.getElementById("inputInitialForceLabel");
+
+            if (selectedValue.endsWith("-ib")) {
+                speedInput.disabled = false;
+                forceInput.disabled = false;
+                // volitelné: zvýraznění labelu
+                speedLabel.classList.remove("disabled");
+                forceLabel.classList.remove("disabled");
+                speedInput.classList.remove("disabled");
+                forceInput.classList.remove("disabled");
+            } else {
+                speedInput.disabled = true;
+                forceInput.disabled = true;
+                // volitelné: ztlumení labelu
+                speedLabel.classList.add("disabled");
+                forceLabel.classList.add("disabled");
+                speedInput.classList.add("disabled");
+                forceInput.classList.add("disabled");
+            }
+        });
+
+
         // Load saved data when the page loads
         loadInputsFromLocalStorage();
         UI.chartsContainer.style.height = getChartHeightIncludingLegend() + "px";
-
-
         pageLoaded = true;
     });
 
