@@ -3107,7 +3107,7 @@
                 throw new Error(`Speed is not a number. ${speed}`);
             }
             console.log(`🚅 Current speed: ${speed} mm/s`);
-            return Math.min(Math.abs(speed), 25);
+            return Math.abs(speed);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Speed not received. ${error}`);
@@ -3127,7 +3127,7 @@
                 throw new Error(`Acceleration is not a number. ${acceleration}`);
             }
             console.log(`🚝 Current acceleration: ${acceleration} mm/s²`);
-            return Math.min(Math.abs(acceleration), 200);
+            return Math.abs(acceleration);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Acceleration not received. ${error}`);
