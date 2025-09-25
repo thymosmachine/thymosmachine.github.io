@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,8 +21,8 @@
 
 
     <script>
-        const softwareVersion = "0.0.1.7";
-        const softwareDate = "01.06.2025";
+        const softwareVersion = "0.0.1.8";
+        const softwareDate = "26.09.2025";
 
         const debugging = false;
 
@@ -177,7 +177,7 @@
         }
 
         /* Disabled elements styling */
-        .prohibited, .disabled {
+        .prohibited, .disabled, .prohibited *, .disabled * {
             opacity: 0.5;
             cursor: not-allowed !important;
             user-select: none !important; /* Disables text selection */
@@ -430,15 +430,19 @@
             justify-content: center;
         }
 
-        .controlBtn {
+        .controlBtn, .controlBtnHalf {
             display: flex;
             height: 50px;
             min-width: 100px;
-            width: 170px;
             max-width: 200px;
             padding: 20px;
             align-items: center;
             justify-content: center;
+        }
+
+        .controlBtnHalf {
+            min-width: 150px;
+            width: 150px;
         }
 
         #startExperiment {
@@ -794,8 +798,14 @@
             </button>
 
             <!-- Automatic returning to the original position Checkmark -->
-            <label for="autoReturnPositionExperiment">↕️ Final Auto-positioning:</label>
+            <label id="autoReturnPositionExperimentLabel" for="autoReturnPositionExperiment">↕️ Final
+                Auto-positioning:</label>
             <input type="checkbox" id="autoReturnPositionExperiment">
+
+
+            <button id="moveMachineUP" class="controlBtnHalf" onclick="moveBy(-100);"> ⬆️ Move UP<br>(100 mm)</button>
+            <button id="moveMachineDOWN" class="controlBtnHalf" onclick="moveBy(100);"> ⬇️ Move DOWN<br>(100 mm)
+            </button>
 
         </div>
 
@@ -864,11 +874,13 @@
                         <label for="experimentDirectionDropdown">Experiment type: </label>
                         <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; color: #333;">
-                            <option value="Option-UP">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
-                            <option value="Option-DOWN" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
-                            <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;⏫
+                            <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            </option>
+                            <option value="Option-DOWN-HB">&nbsp;HARDNESS (Brinell)&nbsp;⏬
                             </option>
                         </select>
                     </div>
@@ -963,7 +975,7 @@
                                min="0" max="100000000">
                     </div>
 
-                    <div class="input-group prohibited" disabled>
+                    <div class="input-group">
                         <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
                         </label>
                         <input data-input-type="floatInput" type="number" id="inputLoadcellOutput"
@@ -987,8 +999,8 @@
         </div>
     </div>
 
-    <!-- Device Output Section -->
-    <h3>📑 Device Output:</h3>
+    <!-- Device Console Output Section -->
+    <h3>📑 Device Console:</h3>
     <div id="consoleWrapper">
         <button id="openConsoleContainer">🔽</button>
         <div id="consoleContainer" class="sizeableContainer">
@@ -1106,6 +1118,10 @@
     let meanForces = [0, 0, 0];
 
 
+    // MOVING
+    let isMovingVal = false;
+    let movingTimeout = null;
+
     // /////// UI Elements /////////
     const UI = {
         regularLogContainer: document.getElementById("regularLog"),// Reference to the log display container
@@ -1123,6 +1139,7 @@
         distanceChartContainer: document.getElementById("distanceChart"),
         chartsContainer: document.getElementById("chartsContainer"),
         autoReturnPosition: document.getElementById("autoReturnPositionExperiment"),
+        autoReturnPositionLabel: document.getElementById("autoReturnPositionExperimentLabel"),
     };
 
     // Connection status messages and colors
@@ -2038,6 +2055,8 @@
         serialReader = null;
         serialWriter = null;
         reconnectAttempts = 0;
+
+        unblockMoveBy();
     }
 
 
@@ -2409,9 +2428,9 @@
             await interpolateDSLRData(pendingDSLR, newData, parsedData); // TODO can chech if its valid with set INPUT
         }
 
-        if (experimentIB && loadVal.some(value => !isNaN(value) && value >= initialForceLoadLim_N)) {
+        if (experimentDoubleSpeed && loadVal.some(value => !isNaN(value) && value >= initialForceLoadLim_N)) {
             sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
-            experimentIB = false;
+            experimentDoubleSpeed = false;
         }
 
         // Handle speed checks and experiment stopping
@@ -3088,7 +3107,7 @@
                 throw new Error(`Speed is not a number. ${speed}`);
             }
             console.log(`🚅 Current speed: ${speed} mm/s`);
-            return speed;
+            return Math.abs(speed);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Speed not received. ${error}`);
@@ -3108,7 +3127,7 @@
                 throw new Error(`Acceleration is not a number. ${acceleration}`);
             }
             console.log(`🚝 Current acceleration: ${acceleration} mm/s²`);
-            return acceleration
+            return Math.abs(acceleration);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Acceleration not received. ${error}`);
@@ -3204,6 +3223,7 @@
         sendCommand("DSLR STOP CYCLIC");
         sendCommand("DATAC 0");
         if (currentSpeed) sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+        if (isMovingVal) unblockMoveBy();
     }
 
 
@@ -3213,7 +3233,7 @@
     let takePhotos = false;
     let dataInterval_us = null;
     let initialForceLoadLim_N = null;
-    let experimentIB = false;
+    let experimentDoubleSpeed = false;
 
     async function startExperiment() {
 
@@ -3247,28 +3267,30 @@
             await console.groupCollapsed("New Experiment Section");
 
             // === Retrieve Parameters from Inputs ===
-            const distance_mm = Math.max(parseFloat(document.getElementById("inputDistance").value), 0);
+            const distance_mm = Math.abs(parseFloat(document.getElementById("inputDistance").value));
             const experimentType = document.getElementById("experimentDirectionDropdown").value.toLowerCase();
             directionCorrection = experimentType.includes("down") ? 1 : -1;
-            speedForward_mmps = Math.max(parseFloat(document.getElementById("inputSpeedForward").value), 0);
+            speedForward_mmps = Math.abs(parseFloat(document.getElementById("inputSpeedForward").value));
             // const speedBackward_mmps = parseFloat(document.getElementById("inputSpeedBackward").value);
-            dataInterval_us = Math.max(parseInt(document.getElementById("inputDataInterval").value), 1);
-            const loadcellCapacity = Math.max(parseInt(document.getElementById("inputLoadcellCapacity").value), 0);
-            const loadcellOutput = Math.max(parseFloat(document.getElementById("inputLoadcellOutput").value), 0);
+            dataInterval_us = Math.max(Math.abs(parseInt(document.getElementById("inputDataInterval").value)), 100);
+            const loadcellCapacity = Math.abs(parseInt(document.getElementById("inputLoadcellCapacity").value));
+            const loadcellOutput = Math.abs(parseFloat(document.getElementById("inputLoadcellOutput").value));
             takePhotos = document.getElementById("inputTakePhotos").checked;
-            const photoInterval_ms = Math.max(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000, 0);
-            loadLimitDropPercent = 1 - Math.max(parseFloat(document.getElementById("inputLoadLimitDropPercent").value), 0) / 100;
-            loadLimitDropValue = Math.max(parseFloat(document.getElementById("inputLoadLimitDropValue").value), 0);
+            const photoInterval_ms = Math.abs(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000);
+            loadLimitDropPercent = 1 - (Math.abs(parseFloat(document.getElementById("inputLoadLimitDropPercent").value)) / 100);
+            loadLimitDropValue = Math.abs(parseFloat(document.getElementById("inputLoadLimitDropValue").value));
             let initialSpeed_mmps;
 
-            if (experimentType.endsWith("-ib")) {
-                initialSpeed_mmps = Math.max(parseFloat(document.getElementById("inputInitialSpeed").value), 0);
-                initialForceLoadLim_N = Math.max(parseFloat(document.getElementById("inputInitialForce").value), 0);
-                experimentIB = true;
+
+            const suffixes = ["-ib", "-hb"];
+            if (suffixes.some(suf => experimentType.endsWith(suf))) {
+                initialSpeed_mmps = Math.abs(parseFloat(document.getElementById("inputInitialSpeed").value));
+                initialForceLoadLim_N = Math.abs(parseFloat(document.getElementById("inputInitialForce").value));
+                experimentDoubleSpeed = true;
             } else {
                 initialSpeed_mmps = speedForward_mmps;
                 initialForceLoadLim_N = null;
-                experimentIB = false;
+                experimentDoubleSpeed = false;
             }
 
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
@@ -3291,19 +3313,19 @@
                 machineOccupation = false;
                 alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 return;
-            } else if (experimentIB && (!initialSpeed_mmps || initialSpeed_mmps <= minFSpeed)) {
+            } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps <= minFSpeed)) {
                 console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 machineOccupation = false;
                 alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 return;
-            } else if (experimentIB && (!initialSpeed_mmps || initialSpeed_mmps > maxFSpeed)) {
+            } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps > maxFSpeed)) {
                 console.warn(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                 await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                 machineOccupation = false;
                 alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                 return;
-            } else if (experimentIB && (!initialForceLoadLim_N || initialForceLoadLim_N <= 0)) {
+            } else if (experimentDoubleSpeed && (!initialForceLoadLim_N || initialForceLoadLim_N <= 0)) {
                 console.warn(`⚠️ Initial force load must be greater than 0 N.`);
                 await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
                 machineOccupation = false;
@@ -3602,9 +3624,27 @@
 
 
             takeMeasurements = false;
-            await sendCommand("DATAC 0");
+            await sendCommand("DATAC 0", 5);
             meanForces = measureForces.map(force => roundDecimal(force.reduce((a, b) => a + b, 0) / force.length, 2));
+            const measuredForces = measureForces.map(force => Math.sum(force));
+
+            await new Promise(resolve => setTimeout(resolve, 5));
+
             measureForces = [[], [], []];
+
+            // If more one force is not eaqule to zero, than Stop and Alert
+
+            if (!experimentType.endsWith("-basic")) {
+                if (measuredForces.filter(f => f === 0).length > 1) {
+                    console.warn("⚠️ Multiple loadcells are connected.");
+                    await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
+                    alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
+                } else if (measuredForces.every(f => f === 0)) {
+                    console.warn("⚠️ No loadcell is connected.");
+                    await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                    alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                }
+            }
 
             await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
@@ -3642,35 +3682,37 @@
 
 
             const returningSpeed = roundDecimal(25, 2); // mm/s
-            const returningAcceleration = 100; // mm/s²
+            const returningAcceleration = roundDecimal(100, 2); // mm/s²
             await sendCommand(`MC SET SPEEDMM ${returningSpeed}`); // Set speed to 25 mm/s
             await sendCommand(`MC SET ACCELMM ${returningAcceleration}`); // Set acceleration to 100 mm/s²
 
 
             if (experimentType.endsWith("-ib")) {
-                // === Move Further ===
-                if (UI.autoReturnPosition.checked) {
-                    await new Promise(resolve => setTimeout(resolve, 2000)); // Stop for 2 s
-
-                    let endPosition = await measurePosition();
-
-                    const shift = Math.abs(100);
-
-                    console.log(`➡️ Moving further to ${endPosition - shift} mm...`);
-
-                    await sendCommand(`MC MOVEBY USER -${shift}`);
-                    await new Promise(resolve => setTimeout(resolve, ((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1000) + 500))); // Wait
-
-                    endPosition = await measurePosition();
-
-                    console.log(`🚩 Reached position: ${endPosition} mm`);
-                }
+                // // === Move Further ===
+                // // TODO: Make sure, that it will not break sample (window to user to accept)
+                // if (UI.autoReturnPosition.checked) {
+                //     await new Promise(resolve => setTimeout(resolve, 2000)); // Stop for 2 s
+                //
+                //     let endPosition = await measurePosition();
+                //
+                //     const shift = Math.abs(100);
+                //
+                //     console.log(`➡️ Moving further to ${endPosition - shift} mm...`);
+                //
+                //     await sendCommand(`MC MOVEBY USER -${shift}`);
+                //     await new Promise(resolve => setTimeout(resolve, ((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1000) + 500))); // Wait
+                //
+                //     endPosition = await measurePosition();
+                //
+                //     console.log(`🚩 Reached position: ${endPosition} mm`);
+                // }
             } else {
                 // === Move Back ===
                 if (UI.autoReturnPosition.checked) {
                     await moveToOriginalPosition(currentSpeed, currentAcceleration);
                 }
             }
+
 
             await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
             await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
@@ -3702,6 +3744,11 @@
 
 
     async function moveToOriginalPosition(endSpeed, endAcceleration) {
+        if (!isConnected) return; // Not connected
+        if (isExperimentRunning || machineOccupation) return; // Machine is busy
+        if (!calibrationStatus) return; // Not calibrated
+        if (isMovingVal) return; // Already moving
+
         calibrationStatus = false;
         calibrationStatus = await getCalibrationStatus(1000);
         await new Promise(resolve => setTimeout(resolve, 50)); // Stop for 1 ms
@@ -3714,11 +3761,14 @@
 
         const endPosition = await measurePosition();
 
-        if (!endPosition || !startPosition || startPosition === 0) {
+        if (typeof startPosition !== "number" || typeof endPosition !== "number" ||
+            (!endPosition && endPosition !== 0) || (!startPosition && startPosition !== 0)) {
+
             document.getElementById("returnPositionExperimentBtn").classList.add("disabled");
             document.getElementById("returnPositionExperimentBtn").readOnly = true;
             document.getElementById("returnPositionExperimentBtn").tabIndex = -1;
             return;
+
         } else {
             document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
             document.getElementById("returnPositionExperimentBtn").readOnly = false;
@@ -3730,13 +3780,13 @@
             return;
         }
 
-        if (!endSpeed) endSpeed = await getSpeed();
-        if (!endAcceleration) endAcceleration = await getAcceleration();
+        endSpeed ||= await getSpeed();
+        endAcceleration ||= await getAcceleration();
         await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
         console.log("⬅️ Moving backward...");
-        const movingSpeed = 25;
-        const movingAcceleration = 200;
+        const movingSpeed = 15;
+        const movingAcceleration = 100;
 
         await sendCommand(`MC SET ACCELMM ${movingAcceleration}`);
         await sendCommand(`MC SET SPEEDMM ${movingSpeed}`);
@@ -3922,7 +3972,8 @@
             const speedLabel = document.getElementById("inputInitialSpeedLabel");
             const forceLabel = document.getElementById("inputInitialForceLabel");
 
-            if (selectedValue.endsWith("-ib")) {
+            const suffixes = ["-ib", "-hb"];
+            if (suffixes.some(suf => selectedValue.endsWith(suf))) {
                 speedInput.disabled = false;
                 forceInput.disabled = false;
                 // volitelné: zvýraznění labelu
@@ -3930,15 +3981,29 @@
                 forceLabel.classList.remove("disabled");
                 speedInput.classList.remove("disabled");
                 forceInput.classList.remove("disabled");
-            } else {
-                speedInput.disabled = true;
-                forceInput.disabled = true;
-                // volitelné: ztlumení labelu
-                speedLabel.classList.add("disabled");
-                forceLabel.classList.add("disabled");
-                speedInput.classList.add("disabled");
-                forceInput.classList.add("disabled");
+
+                if (selectedValue.endsWith("-ib")) {
+                    UI.autoReturnPosition.disabled = true;
+                    UI.autoReturnPosition.classList.add("disabled");
+                    UI.autoReturnPositionLabel.classList.add("disabled");
+                    return;
+                }
+
+                UI.autoReturnPosition.disabled = false;
+                UI.autoReturnPosition.classList.remove("disabled");
+                UI.autoReturnPositionLabel.classList.remove("disabled");
+                return;
             }
+            speedInput.disabled = true;
+            forceInput.disabled = true;
+            // volitelné: ztlumení labelu
+            speedLabel.classList.add("disabled");
+            forceLabel.classList.add("disabled");
+            speedInput.classList.add("disabled");
+            forceInput.classList.add("disabled");
+            UI.autoReturnPosition.disabled = false;
+            UI.autoReturnPosition.classList.remove("disabled");
+            UI.autoReturnPositionLabel.classList.remove("disabled");
         });
 
 
@@ -4230,7 +4295,7 @@
 
                             // if (firstShiftAbove1 === null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                            shift = parseFloat(entry[1]) - firstShift || 0; // Displacement (mm)
+                            shift = (parseFloat(entry[1]) - firstShift) || 0; // Displacement (mm)
 
 
                             // deformation = (firstShiftAbove1 === null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
@@ -4339,6 +4404,54 @@
     //
     // tester();
 
+    function unblockMoveBy() {
+        isMovingVal = false;
+        document.getElementById("moveMachineUP").classList.remove("disabled");
+        document.getElementById("moveMachineDOWN").classList.remove("disabled");
+
+        // Restore previous speed and acceleration
+        sendCommand(`MC SET ACCELMM ${currentAcceleration}`, 5);
+        sendCommand(`MC SET SPEEDMM ${currentSpeed}`, 5);
+
+        clearTimeout(movingTimeout);
+        movingTimeout = null;
+
+    }
+
+    async function moveBy(dist) {
+        if (!isConnected) return; // Not connected
+        if (isExperimentRunning || machineOccupation) return; // Machine is busy
+        if (!calibrationStatus) return; // Not calibrated
+        if (isMovingVal) {
+            console.warn("Machine is already moving. Please wait.");
+            return;
+        }
+        isMovingVal = true;
+        document.getElementById("moveMachineUP").classList.add("disabled");
+        document.getElementById("moveMachineDOWN").classList.add("disabled");
+
+        currentSpeed = await getSpeed();
+        currentAcceleration = await getAcceleration();
+
+        const acceleration = 100; // Acceleration in mm/s²
+        const speed = 25; //         Speed in mm/s
+
+
+        await sendCommand(`MC SET ACCELMM ${acceleration}`, 5);
+        await sendCommand(`MC SET SPEEDMM ${speed}`, 5);
+
+        const movingTime = await (computeMotionTime(Math.abs(dist), speed, acceleration) * 1000) + 250;
+
+        await sendCommand(`MC MOVEBY USER ${dist}`, 5);
+
+
+        // Simulate movement duration (replace with actual movement completion logic)
+        movingTimeout = setTimeout(unblockMoveBy, movingTime);
+    }
+
+
+    clearTimeout(movingTimeout);
+    unblockMoveBy();
 
 </script>
 
