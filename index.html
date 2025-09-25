@@ -1193,11 +1193,11 @@
 
         if (window.getComputedStyle(container).maxHeight === "0px") {
             container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
-            container.style.opacity = 1;
+            container.style.opacity = "1";
             btn.textContent = "🔼";
         } else {
-            container.style.maxHeight = 0; // Close the container
-            container.style.opacity = 0;
+            container.style.maxHeight = "0"; // Close the container
+            container.style.opacity = "0";
             btn.textContent = "🔽";
         }
     }
@@ -2395,7 +2395,7 @@
         }
 
         // Common parsing logic
-        let loadVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // Load cell values
+        let loadVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // LoadCell values
         // let loadVal = parts.slice(3).map(parseFloat);
 
         if (takeMeasurements) {
@@ -2445,7 +2445,7 @@
             zero_speed_counter = 0;
         }
 
-        // Handle load cell limit checks
+        // Handle LoadCell limit checks
         for (let i = 0; i < 3; i++) {
             if (!isNaN(loadVal[i])) {
                 if (Math.abs(loadVal[i]) > maxLoad[i]) maxLoad[i] = Math.abs(loadVal[i]);
@@ -2453,9 +2453,9 @@
                     if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] && (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
                         // await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
                         stopExperiment = true;
-                        console.log(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
-                        logMessage(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
-                        break; // Stop checking other load cells if one fails
+                        console.log(`🛑 Experiment stopped due to LoadCell ${i + 1} drop.`);
+                        logMessage(`🛑 Experiment stopped due to LoadCell ${i + 1} drop.`);
+                        break; // Stop checking other LoadCells if one fails
                     }
                 }
             }
@@ -2522,7 +2522,7 @@
 
     /**
      * Sends a command to the ESP device.
-     * If the command is for reading a specific load cell, it replaces the placeholder with the selected ID.
+     * If the command is for reading a specific LoadCell, it replaces the placeholder with the selected ID.
      * @param {string} name - The command name.
      * @param {string} inputCommand - The raw command string.
      */
@@ -3251,12 +3251,12 @@
 
 
         // === System Limits ===
-        const minDistance = 1e-3;
-        const minFSpeed = 1e-3;
+        const minDistance = 5e-3;
+        const minFSpeed = 0.025;
         const maxFSpeed = 25;
-        const minPhotoInt = 1e-6;
-        const minLoadCap = 1e-4;
-        const minLoadOut = 1e-4;
+        const minPhotoInt = 5e-6;
+        const minLoadCap = 5e-4;
+        const minLoadOut = 5e-4;
 
 
         try {
@@ -3295,17 +3295,17 @@
 
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
 
-            if (!distance_mm || distance_mm <= minDistance) {
+            if (!distance_mm || distance_mm < minDistance) {
                 console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
                 await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
                 machineOccupation = false;
                 alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
                 return;
-            } else if (!speedForward_mmps || speedForward_mmps <= minFSpeed) {
-                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+            } else if (!speedForward_mmps || speedForward_mmps < minFSpeed) {
+                console.warn(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
+                await logMessage(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 machineOccupation = false;
-                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                alert(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 return;
             } else if (!speedForward_mmps || speedForward_mmps > maxFSpeed) {
                 console.warn(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
@@ -3313,7 +3313,7 @@
                 machineOccupation = false;
                 alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 return;
-            } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps <= minFSpeed)) {
+            } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps < minFSpeed)) {
                 console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 machineOccupation = false;
@@ -3337,22 +3337,22 @@
                 machineOccupation = false;
                 alert(`⚠️ Data interval must be greater than 1 µs.`);
                 return;
-            } else if (!loadcellCapacity || loadcellCapacity <= minLoadCap) {
-                console.warn(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
-                await logMessage(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+            } else if (!loadcellCapacity || loadcellCapacity < minLoadCap) {
+                console.warn(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
+                await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 machineOccupation = false;
-                alert(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 return;
-            } else if (!loadcellOutput || loadcellOutput <= minLoadOut) {
-                console.warn(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
-                await logMessage(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+            } else if (!loadcellOutput || loadcellOutput < minLoadOut) {
+                console.warn(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
+                await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 machineOccupation = false;
-                alert(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 return;
             }
 
             if (takePhotos) {
-                if (!photoInterval_ms || photoInterval_ms <= minPhotoInt) {
+                if (!photoInterval_ms || photoInterval_ms < minPhotoInt) {
                     console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     machineOccupation = false;
@@ -3465,7 +3465,7 @@
             // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
             //
             //
-            // // === Load Cell Configuration ===
+            // // === LoadCell Configuration ===
             // for (let i = 0; i < 3; i++) {
             //     await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
             //     await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
@@ -3554,7 +3554,7 @@
             await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
 
-            // === Load Cell Configuration ===
+            // === LoadCell Configuration ===
             for (let i = 0; i < 3; i++) {
                 await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
                 await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
@@ -3896,6 +3896,10 @@
                 if (formData.hasOwnProperty(input.id)) {
                     if (input.type === "checkbox") {
                         input.checked = formData[input.id]; // Restore the checkbox state
+                    } else if (input.tagName.toLowerCase() === "select") {
+                        if ([...input.options].some(option => option.value === formData[input.id])) {
+                            input.value = formData[input.id]; // Restore the select value if it exists
+                        }
                     } else {
                         input.value = formData[input.id]; // Restore the input value
                     }
@@ -4434,7 +4438,7 @@
         currentAcceleration = await getAcceleration();
 
         const acceleration = 100; // Acceleration in mm/s²
-        const speed = 25; //         Speed in mm/s
+        const speed = 15; //         Speed in mm/s
 
 
         await sendCommand(`MC SET ACCELMM ${acceleration}`, 5);
