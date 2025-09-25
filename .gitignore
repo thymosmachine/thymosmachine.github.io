@@ -23,3 +23,5 @@
 
 # Ignorovat moduly NODE.JS
 node_modules/
+/.idea
+*.xml
