@@ -174,6 +174,7 @@
             border-radius: 1vh;
             padding: 0 6px;
             min-height: 34px;
+            box-sizing: border-box;
         }
 
         /* Disabled elements styling */
@@ -189,49 +190,26 @@
             outline: none !important;
         }
 
-        #settingContainer {
-            display: grid;
-            grid-template-columns: 1fr; /* One column */
-            width: 95%;
-            padding: 0 15px 15px;
-            justify-self: center;
-            justify-content: center;
-        }
 
         .sizeableContainer {
             overflow: hidden;
+
             max-height: 0;
             opacity: 0;
             transition: max-height 0.5s ease, opacity 0.45s; /* Animation */
-        }
 
-        #experimentSettingsContainer {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(470px, 1fr)); /* Dynamic grid */
-            gap: 10px; /* Space between inputs */
-            /*justify-self: center;*/
-            overflow: hidden;
-            width: 100%;
-        }
-
-
-        #machineSettingsWrapper {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(470px, 1fr)); /* Dynamic grid */
-            gap: 10px; /* Space between inputs */
+            grid-template-columns: 1fr; /* One column */
+            width: 95%;
+            padding: 5px 15px 20px 15px;
             justify-self: center;
             justify-content: center;
-            overflow: hidden;
-            width: 100%;
         }
 
-        #appSettingsWrapper {
+        #appSettingsWrapperTemp {
             display: flex;
-            gap: 10px; /* Space between inputs */
             justify-self: center;
             justify-content: center;
-            overflow: hidden;
-            width: 100%;
         }
 
         .input-group {
@@ -239,6 +217,7 @@
             align-items: center;
             gap: 10px; /* Space between inputs and labels */
             white-space: nowrap; /* Prevents wrapping */
+            padding-left: 20px;
 
         }
 
@@ -246,7 +225,7 @@
             flex-shrink: 0; /* Prevents shrinking */
             text-align: right;
             width: max-content; /* Label width */
-            min-width: 250px;
+            min-width: 230px;
         }
 
         .input-group input {
@@ -256,7 +235,7 @@
         .input-group input[type="number"] {
             flex-grow: 1; /* Input will grow if there is space */
             justify-self: left;
-            max-width: 220px;
+            max-width: 230px;
         }
 
         input[type="checkbox"] {
@@ -582,7 +561,7 @@
             width: 150px;
         }
 
-        #settingsContainer {
+        .openingContainer {
             position: relative;
             display: flex;
             align-items: flex-start;
@@ -592,76 +571,52 @@
             border: 1px solid darkgray
         }
 
-        #openSettingsContainer {
+        .openingContainerBtn {
             padding: 10px;
         }
 
-        #loadSettingsContainer {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
+        .inputsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); /* Dynamic grid */
+            overflow: hidden;
+            width: 100%;
             gap: 10px;
         }
 
+
         #experimentDirectionDropdown {
-            width: 233.6px;
-            height: 30.2px;
+            flex-grow: 1;
+            min-width: 0;
+            max-width: 230px;
         }
 
         #inputPhotoIntervalLabel {
             min-width: max-content;
+            width: 125px;
         }
 
         #inputPhotoInterval {
             min-width: 25px;
-            max-width: 53px;
+            max-width: 61.5px;
         }
 
-        #machineSettingsContainer {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        #appSettingsContainer {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
+        #inputInitialForceLabel {
+            width: 100px;
         }
 
         #clearStorageButton {
             padding: 20px;
         }
 
-        #consoleWrapper {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            width: 100%;
-            background: var(--dark-color);
-            border-radius: calc(1px + 10px);
-            border: 1px solid darkgray
-        }
-
-        #openConsoleContainer {
+        #regularLog, #loadingLog, #commandInput {
             padding: 10px;
         }
 
         #consoleContainer {
-            padding: 10px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #logWrapper {
-            display: flex;
-            flex-direction: row;
-            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 100fr 1fr; /* One column */
             gap: 10px;
-            padding: 10px;
+            padding-top: 20px;
         }
 
         #regularLog {
@@ -673,7 +628,6 @@
             margin: 0;
             border-radius: 10px;
             overflow-y: auto;
-            padding: 10px;
             font-size: 12px;
         }
 
@@ -683,44 +637,26 @@
             height: 80px;
             background: #323232;
             border-radius: 10px;
-            padding: 10px;
             margin: 0;
         }
 
-        #logContainer {
+        .logContainer {
             display: flex;
             flex-direction: column;
-            flex-grow: 1;
-            gap: 10px;
-        }
-
-        #logBtnWrapper {
-            display: grid;
-            flex-direction: column;
-            justify-content: center;
             gap: 10px;
         }
 
         .logBtn {
+            height: -webkit-fill-available;
             width: 150px;
             background: var(--gray-color, #6c757d);
             color: white;
         }
 
-        #commandWrapper {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            height: 40px;
-            padding: 0 10px 10px;
-        }
-
         #commandInput {
             width: calc(100% - 20px);
-
             max-width: 1200px;
             min-width: 300px;
-            padding: 10px;
             height: calc(100% - 20px);
             border: none;
             background: #f5f5f5;
@@ -728,21 +664,121 @@
         }
 
         .units-text {
+            /*display: inline-block;*/
+            /*width: 45px;*/
             font-size: 14px;
             color: #4f4f4f;
         }
 
+
     </style>
+
+
+    <style>
+        /* wrapper pro přesné pozicování pilulky */
+        .copy-wrap {
+            position: relative;
+            display: inline-flex;
+            flex-grow: 1;
+            max-width: 230px;
+        }
+
+        /* plovoucí tlačítko v pravém horním rohu */
+        .copy-pill {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 5px;
+            z-index: 9999;
+
+            border: 0;
+            padding: 6px;
+            border-radius: 9999px;
+
+            background: rgba(255, 255, 255, 0.55);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+
+            cursor: pointer;
+            line-height: 0;
+
+            /* výchozí: skryté, ukazovat jen na hover/po kliknutí */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .15s ease, background .2s ease, transform .1s ease;
+        }
+
+        .copy-pill:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .copy-pill:active {
+            transform: scale(0.95) translateY(calc(-50% + 1px)) translateX(1px);
+        }
+
+        /* zobraz při hoveru nad obalem nebo když má .visible */
+        .copy-wrap:hover .copy-pill,
+        .copy-pill.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .copyableInput {
+            transition: box-shadow .25s ease; /* animace outline */
+        }
+
+        /* ikony: defaultně nic, zobraz podle data-state */
+        .copy-pill svg {
+            display: none;
+            width: 16px;
+            height: 16px;
+        }
+
+        .copy-pill[data-state="idle"] .icon-copy {
+            display: block;
+            fill: #6b7280;
+        }
+
+        /* šedá */
+        .copy-pill[data-state="ok"] .icon-check {
+            display: block;
+            fill: #22c55e;
+        }
+
+        /* zelená */
+        .copy-pill[data-state="err"] .icon-x {
+            display: block;
+            stroke: #ef4444;
+        }
+
+        /* červená */
+
+        /* vnitřní orámování po akci */
+        .copy-wrap > .copied {
+            outline: none;
+            box-shadow: inset 0 0 0 2px #22c55e;
+            transition: box-shadow .15s ease;
+        }
+
+        .copy-wrap > .copy-error {
+            outline: none;
+            box-shadow: inset 0 0 0 2px #ef4444;
+            transition: box-shadow .15s ease;
+        }
+    </style>
+
 </head>
 
 <body>
+
 
 <div class="headerContainer">
 
     <div id="nameHeader">
         <img id="thymosLogo" src="./images/icon-512x512.png" alt="thymos">
         <div style="display: flex; flex-direction: column; align-content: space-between;">
-            <span style="font-weight: bolder; font-size: 24px;">THYMOS - Moira controller</span>
+            <span style="font-weight: bolder; font-size: 24px;">THYMOS - Μοῖρα controller</span>
             <span id="softwareInfo" style="color: darkgray; font-size: 12px;">v0.0.0.0, 00.00.0000</span>
         </div>
     </div>
@@ -852,181 +888,277 @@
         </div>
     </div>
 
+    <h3>📑 Experiment Results:</h3>
+    <div class="openingContainer">
+        <button id="openResultsContainer" class="openingContainerBtn">🔽</button>
+        <div id="resultsContainer" class="sizeableContainer">
+            <h4>✏️ Calculation inputs:</h4>
+            <div class="inputsContainer">
+                <div class="input-group">
+                    <label for="">Taring Force <em>F<sub>Tare</sub></em> <span class="units-text">(N)</span>: </label>
+                    <input type="number" id="" data-nonremember="true" value="0" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Taring Displacement <em>w<sub>Tare</sub></em> <span class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="" data-nonremember="true" value="0" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Force <em>F</em> <span class="units-text">(N)</span>: </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Displacement <em>w</em> at <em>F</em> <span class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+
+
+                <div class="input-group">
+                    <label for="">Cross-section width <em>b</em> <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Cross-section height <em>h</em> <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Span <em>L</em> <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Depth of indentation <em>h<sub>D</sub></em> <span class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Diameter of Indenter <em>D</em> <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                </div>
+            </div>
+
+            <hr>
+
+            <h4>📐 Calculated values:</h4>
+            <div class="inputsContainer">
+                <div class="input-group">
+                    <label for="">Max Force <em>F<sub>max</sub></em> <span class="units-text">(N)</span>: </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Displacement <em>w<sub>F</sub></em> at <em>F<sub>max</sub></em> <span
+                            class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Cross-section Area <em>A</em> <span class="units-text">(mm<sup>2</sup>)</span>:
+                    </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Moment of Inertia <em>I<sub>y</sub></em> <span
+                            class="units-text">(mm<sup>4</sup>)</span>: </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Young's Module <em>E</em> <span class="units-text">(MPa)</span>: </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Max Stress <em>σ<sub>max</sub></em> <span class="units-text">(MPa)</span>: </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Diameter of indentation <em>d</em> <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group">
+                    <label for="">Hardness (Brinell) <em>H<sub>BW</sub></em> <span class="units-text">(-)</span>:
+                    </label>
+                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 
     <!-- Experiment Parameter Inputs -->
     <h3>⚙️ Settings:</h3>
-    <div id="settingsContainer">
-        <button id="openSettingsContainer">🔽</button>
+    <div class="openingContainer">
+        <button id="openSettingsContainer" class="openingContainerBtn">🔽</button>
         <div id="settingContainer" class="sizeableContainer">
 
-
             <h4>🛠️ Loading settings:</h4>
-            <div id="loadSettingsContainer">
-                <div id="experimentSettingsContainer">
-                    <div class="input-group">
-                        <label for="inputDistance">Distance <span class="units-text">(mm)</span>: </label>
-                        <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0.01"
-                               step="any"
-                               max="100000000">
-                    </div>
+            <div class="inputsContainer">
+                <div class="input-group">
+                    <label for="inputDistance">Distance <span class="units-text">(mm)</span>: </label>
+                    <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0.01"
+                           step="any"
+                           max="100000000">
+                </div>
 
-                    <div class="input-group">
-                        <label for="experimentDirectionDropdown">Experiment type: </label>
-                        <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
+                <div class="input-group">
+                    <label for="experimentDirectionDropdown">Experiment type: </label>
+                    <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; color: #333;">
-                            <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
-                            </option>
-                            <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
-                            </option>
-                            <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
-                            </option>
-                            <option value="Option-DOWN-HB">&nbsp;HARDNESS (Brinell)&nbsp;⏬
-                            </option>
-                        </select>
-                    </div>
+                        <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                        </option>
+                        <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                        </option>
+                        <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                        </option>
+                        <option value="Option-DOWN-HB">&nbsp;HARDNESS (Brinell)&nbsp;⏬
+                        </option>
+                    </select>
+                </div>
 
 
-                    <div class="input-group">
-                        <label for="inputLoadLimitDropPercent">Force drop limit <span class="units-text">(%)</span>:
-                        </label>
-                        <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
-                               min="0"
-                               max="100">
-                    </div>
+                <div class="input-group">
+                    <label for="inputLoadLimitDropPercent">Force drop limit <span class="units-text">(%)</span>:
+                    </label>
+                    <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
+                           min="0"
+                           max="100">
+                </div>
 
 
-                    <div class="input-group">
-                        <label for="inputTakePhotos">Take photos: </label>
-                        <input type="checkbox" id="inputTakePhotos">
-                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval <span
-                                class="units-text">(s)</span>: </label>
-                        <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
-                               value="1"
-                               min="0" step="any"
-                               max="100000000">
-                    </div>
+                <div class="input-group">
+                    <label for="inputTakePhotos">Take photos: </label>
+                    <input type="checkbox" id="inputTakePhotos">
+                    <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval <span
+                            class="units-text">(s)</span>: </label>
+                    <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
+                           value="1"
+                           min="0" step="any"
+                           max="100000000">
+                </div>
 
 
-                    <div class="input-group">
-                        <label for="inputLoadLimitDropValue">Force drop limit <span class="units-text">(N)</span>:
-                        </label>
-                        <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
-                               step="any"
-                               max="100000000">
-                    </div>
+                <div class="input-group">
+                    <label for="inputLoadLimitDropValue">Force drop limit <span class="units-text">(N)</span>:
+                    </label>
+                    <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
+                           step="any"
+                           max="100000000">
+                </div>
 
 
-                    <div class="input-group">
-                        <label for="inputSpeedForward">Loading speed <span class="units-text">(mm/s)</span>: </label>
-                        <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0.01"
-                               step="any" max="25">
-                    </div>
+                <div class="input-group">
+                    <label for="inputSpeedForward">Loading speed <span class="units-text">(mm/s)</span>: </label>
+                    <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0.01"
+                           step="any" max="25">
+                </div>
 
-                    <div class="input-group"> <!-- TODO minimum na 10000 -->
-                        <label for="inputDataInterval">Data Interval <span class="units-text">(µs)</span>: </label>
-                        <input data-input-type="floatInput" type="number" id="inputDataInterval" value="30000"
-                               min="10000"
-                               step="any"
-                               max="100000000">
-                    </div>
+                <div class="input-group"> <!-- TODO minimum na 10000 -->
+                    <label for="inputDataInterval">Data Interval <span class="units-text">(µs)</span>: </label>
+                    <input data-input-type="floatInput" type="number" id="inputDataInterval" value="30000"
+                           min="10000"
+                           step="any"
+                           max="100000000">
+                </div>
 
-                    <div class="input-group" style="display: none;">
-                        <label for="inputSpeedBackward" class="prohibited">Returning speed <span class="units-text">(mm/s)</span>:
-                        </label>
-                        <input data-input-type="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
-                               value="25"
-                               min="0"
-                               step="any"
-                               max="100000000">
-                    </div>
+                <div class="input-group" style="display: none;">
+                    <label for="inputSpeedBackward" class="prohibited">Returning speed <span
+                            class="units-text">(mm/s)</span>:
+                    </label>
+                    <input data-input-type="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
+                           value="25"
+                           min="0"
+                           step="any"
+                           max="100000000">
+                </div>
 
-                    <div class="input-group">
-                        <label class="disabled" id="inputInitialSpeedLabel" for="inputInitialSpeed">Initial speed
-                            <span class="units-text">(mm/s)</span>:</label>
-                        <input class="disabled" data-input-type="floatInput" type="number"
-                               id="inputInitialSpeed" style="max-width: 46px; min-width: 25px;"
-                               value="1"
-                               min="0.01" step="any"
-                               max="25">
-                        <label class="disabled" id="inputInitialForceLabel" for="inputInitialForce"
-                               style="min-width: max-content;">Force lim.
-                            <span class="units-text">(N)</span>:</label>
-                        <input class="disabled" data-input-type="floatInput" type="number"
-                               id="inputInitialForce" style="max-width: 42px; min-width: 25px;"
-                               value="1"
-                               min="0" step="any"
-                               max="100000000">
-                    </div>
-
+                <div class="input-group">
+                    <label class="disabled" id="inputInitialSpeedLabel" for="inputInitialSpeed">Initial speed
+                        <span class="units-text">(mm/s)</span>:</label>
+                    <input class="disabled" data-input-type="floatInput" type="number"
+                           id="inputInitialSpeed" style="max-width: 60px; min-width: 25px;"
+                           value="1"
+                           min="0.01" step="any"
+                           max="25">
+                    <label class="disabled" id="inputInitialForceLabel" for="inputInitialForce"
+                           style="min-width: max-content;">Force lim.
+                        <span class="units-text">(N)</span>:</label>
+                    <input class="disabled" data-input-type="floatInput" type="number"
+                           id="inputInitialForce" style="max-width: 50px; min-width: 25px;"
+                           value="1"
+                           min="0" step="any"
+                           max="100000000">
                 </div>
             </div>
 
             <hr>
 
             <h4>📟 Machine settings:</h4>
-            <div id="machineSettingsContainer">
-                <div id="machineSettingsWrapper">
+            <div class="inputsContainer">
+                <div class="input-group">
+                    <label for="inputLoadcellCapacity">Loadcell Capacity <span class="units-text">(kg)</span>:
+                    </label>
+                    <input data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
+                           step="any"
+                           min="0" max="100000000">
+                </div>
 
-                    <div class="input-group">
-                        <label for="inputLoadcellCapacity">Loadcell Capacity <span class="units-text">(kg)</span>:
-                        </label>
-                        <input data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
-                               step="any"
-                               min="0" max="100000000">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
-                        </label>
-                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput"
-                               value="2.0" step="any" min="0" max="100000000">
-                    </div>
-
+                <div class="input-group">
+                    <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
+                    </label>
+                    <input data-input-type="floatInput" type="number" id="inputLoadcellOutput"
+                           value="2.0" step="any" min="0" max="100000000">
                 </div>
             </div>
 
             <hr>
 
             <h4>🕹️ App settings:</h4>
-            <div id="appSettingsContainer">
-                <div id="appSettingsWrapper">
-
-                    <button id="clearStorageButton" onclick="clearLocalStorage()">🔁 Restart app
+            <div class="inputsContainer">
+                <div id="appSettingsWrapperTemp">
+                    <button id="clearStorageButton" onclick="clearLocalStorage()">🔁 Reset app
                     </button>
-
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Device Console Output Section -->
-    <h3>📑 Device Console:</h3>
-    <div id="consoleWrapper">
-        <button id="openConsoleContainer">🔽</button>
+    <h3>📋 Device Console:</h3>
+    <div class="openingContainer">
+        <button id="openConsoleContainer" class="openingContainerBtn">🔽</button>
         <div id="consoleContainer" class="sizeableContainer">
-            <div id="logWrapper">
-                <div id="logContainer">
-                    <pre id="regularLog"> </pre>
-                    <pre id="loadingLog"> </pre>
-                </div>
-
-                <!-- Log Control Buttons -->
-                <div id="logBtnWrapper">
-                    <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
-                    <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
-                    </button><!--                    prohibited-->
-                    <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
-
-
-                </div>
-            </div>
-
-            <div id="commandWrapper">
-                <div style="flex-grow: 1;">
+            <div class="logContainer">
+                <pre id="regularLog"> </pre>
+                <pre id="loadingLog"> </pre>
+                <div style="height: 40px;">
                     <label for="commandInput"></label>
                     <textarea id="commandInput" placeholder="Enter command..."></textarea>
                 </div>
-                <button id="sendButton" class="logBtn">📡 Send Command</button>
+            </div>
+
+            <!-- Log Control Buttons -->
+            <div class="logContainer">
+                <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
+                <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
+                </button><!--                    prohibited-->
+                <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
+                <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton" class="logBtn">
+                    📡 Send Command
+                </button>
+
             </div>
         </div>
     </div>
@@ -1154,9 +1286,12 @@
     // These were commented out, but they could be used to attach click events
 
 
+    document.getElementById("openResultsContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "resultsContainer"));
+    window.addEventListener("resize", () => controlContainerWidth("resultsContainer"));
     document.getElementById("openSettingsContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "settingContainer"));
+    window.addEventListener("resize", () => controlContainerWidth("settingContainer"));
     document.getElementById("openConsoleContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "consoleContainer"));
-
+    window.addEventListener("resize", () => controlContainerWidth("consoleContainer"));
 
     // /////// Auto-scroll Toggle /////////
     UI.toggleScrollBtn.addEventListener("click", () => {
@@ -1187,6 +1322,12 @@
         UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
     });
 
+    function controlContainerWidth(containerID) {
+        const container = document.getElementById(containerID);
+        if (window.getComputedStyle(container).maxHeight !== "0px") {
+            container.style.maxHeight = container.scrollHeight + "px"; // Adjust height on window resize
+        }
+    }
 
     function controlContainer(btn, containerID) {
         const container = document.getElementById(containerID);
@@ -1228,25 +1369,31 @@
     function checkInput(element, valueType) {
         if (!element) return;
 
+        const val = parseFloat(element.value);
+        const min = parseFloat(element.min);
+        const max = parseFloat(element.max);
+        let newVal = val;
+
         // Validate input: if empty, set to a minimum or 0
-        if (element.value.trim() === "") {
-            element.value = element.min !== "" ? element.min : 0;
+        if (isNaN(val)) {
+            if (!isNaN(min)) newVal = min;
+            else if (!isNaN(max)) newVal = max;
+            else return;
         } else {
-            if (valueType === "floatInput") {
-                element.value = parseFloat(element.value);
-            } else if (valueType === "intInput") {
-                element.value = parseInt(element.value);
+            if (valueType === "intInput") {
+                newVal = Math.round(val);
             }
 
             // Enforce min/max constraints
-            if (element.min && parseFloat(element.value) < parseFloat(element.min)) {
-                element.value = element.min;
+            if (!isNaN(min) && newVal < min) {
+                newVal = min;
             }
-            if (element.max && parseFloat(element.value) > parseFloat(element.max)) {
-                element.value = element.max;
+            if (!isNaN(max) && newVal > max) {
+                newVal = max;
             }
         }
 
+        element.value = newVal;
         element.dispatchEvent(new Event("change", {bubbles: true}));
     }
 
@@ -4422,6 +4569,19 @@
 
     }
 
+    function toNumber(value, defaultValue = 0) {
+        const num = parseFloat(value);
+        return isNaN(num) ? defaultValue : num;
+    }
+
+
+    function speedFromDistance(goal, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
+        const d = Math.max(0, toNumber(goal) || 0);
+        const t = Math.min(1, d / dMax);              // 0..1
+        const v = sMin + (sMax - sMin) * t;           // lineárně 1..25
+        return roundDecimal(v, 2);                    // float f.2
+    }
+
     async function moveBy(dist) {
         if (!isConnected) return; // Not connected
         if (isExperimentRunning || machineOccupation) return; // Machine is busy
@@ -4438,7 +4598,7 @@
         currentAcceleration = await getAcceleration();
 
         const acceleration = 100; // Acceleration in mm/s²
-        const speed = 15; //         Speed in mm/s
+        const speed = speedFromDistance(dist); // Speed in mm/s
 
 
         await sendCommand(`MC SET ACCELMM ${acceleration}`, 5);
@@ -4448,16 +4608,185 @@
 
         await sendCommand(`MC MOVEBY USER ${dist}`, 5);
 
-
-        // Simulate movement duration (replace with actual movement completion logic)
         movingTimeout = setTimeout(unblockMoveBy, movingTime);
     }
-
-
-    clearTimeout(movingTimeout);
-    unblockMoveBy();
-
 </script>
+
+<script>
+    (() => {
+        const selector = '.copyableInput';
+        const lingerMs = 1000; // po opuštění hoveru zůstane tlačítko viditelné
+
+        // Globální „posledně aktivní“ pro exkluzivitu
+        let currentActive = null; // { el, btn, clear() }
+
+        // Pomocné: zrušení hide-timeru a transitionend listeneru na tlačítku
+        const cancelFadeListener = (btn) => {
+            if (btn._onFadeEnd) {
+                btn.removeEventListener('transitionend', btn._onFadeEnd);
+                btn._onFadeEnd = null;
+            }
+        };
+        const cancelHideTimer = (btn) => {
+            if (btn._hideTimer) {
+                clearTimeout(btn._hideTimer);
+                btn._hideTimer = null;
+            }
+        };
+
+        // Deaktivuj aktuální aktivní (outline pryč, tlačítko skryj, stav idle)
+        const deactivateCurrent = () => {
+            if (!currentActive) return;
+            const {el, btn} = currentActive;
+            cancelHideTimer(btn);
+            cancelFadeListener(btn);
+            el.classList.remove('copied', 'copy-error');
+            btn.classList.remove('visible');
+            btn.dataset.state = 'idle';
+            currentActive = null;
+        };
+
+        const setup = (el) => {
+            if (el.parentElement?.classList.contains('copy-wrap')) return;
+
+            // obal pro pozicování
+            const wrap = document.createElement('span');
+            wrap.className = 'copy-wrap';
+            el.insertAdjacentElement('beforebegin', wrap);
+            wrap.appendChild(el);
+
+            // tlačítko s ikonami
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'copy-pill';
+            btn.dataset.state = 'idle';
+            btn.setAttribute('aria-label', 'Zkopírovat hodnotu');
+            btn.title = 'Zkopírovat';
+            btn.innerHTML = `
+      <svg class="icon-copy"  viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      </svg>
+      <svg class="icon-check" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 16.2l-3.5-3.5-1.4 1.4L9 19 20.3 7.7l-1.4-1.4z"/>
+      </svg>
+      <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+        <path d="M6 6 L18 18 M18 6 L6 18"/>
+      </svg>
+    `;
+            wrap.appendChild(btn);
+
+            // Hover: vždy ukázat s idle ikonou, resetovat časovač
+            const showBtn = () => {
+                cancelHideTimer(btn);
+                cancelFadeListener(btn);
+                // btn.dataset.state = 'idle';
+                btn.classList.add('visible');
+            };
+
+            const hideBtnLater = () => {
+                cancelHideTimer(btn);
+                btn._hideTimer = setTimeout(() => {
+                    // spustíme fade-out: jen odebereme .visible
+                    btn.classList.remove('visible');
+
+                    // po dokončení opacity přepneme na idle (bez probliknutí)
+                    cancelFadeListener(btn);
+                    btn._onFadeEnd = (ev) => {
+                        if (ev.propertyName === 'opacity') {
+                            const op = getComputedStyle(btn).opacity;
+                            if (op === '0') {
+                                btn.dataset.state = 'idle';
+                                cancelFadeListener(btn);
+                            }
+                        }
+                    };
+                    btn.addEventListener('transitionend', btn._onFadeEnd);
+                }, lingerMs);
+            };
+
+            wrap.addEventListener('mouseenter', showBtn);
+            wrap.addEventListener('mouseleave', hideBtnLater);
+
+            // Nastaví stav ikony a zajistí exkluzivitu „poslední kopie“
+            const setStateExclusive = (state) => {
+                // Zruš předešlého aktivního
+                if (!currentActive || currentActive.btn !== btn) {
+                    deactivateCurrent();
+                    currentActive = {
+                        el,
+                        btn,
+                        clear() {
+                            deactivateCurrent();
+                        }
+                    };
+                }
+                cancelFadeListener(btn);
+                btn.dataset.state = state;
+                btn.classList.add('visible');
+                hideBtnLater();
+            };
+
+            const copyValue = async () => {
+                const val = el.value ?? el.textContent ?? '';
+                try {
+                    if (!val) throw new Error('Empty');
+
+                    await navigator.clipboard.writeText(val);
+                    // Exkluzivně označ OK
+                    el.classList.remove('copy-error');
+                    el.classList.add('copied');     // outline (animovaný přes transition v CSS)
+                    setStateExclusive('ok');
+                } catch {
+                    // fallback
+                    let ok = false;
+                    try {
+                        if (el.select) {
+                            const s = el.selectionStart, e = el.selectionEnd;
+                            el.focus();
+                            el.select();
+                            ok = document.execCommand('copy');
+                            if ((s != null && e != null) && (s < e) && (s !== 0 && e !== 0)) {
+                                el.setSelectionRange(s, e);
+                            } else {
+                                ok = false;
+                            }
+                            el.blur();
+                        }
+                    } catch {
+                    }
+                    if (ok) {
+                        el.classList.remove('copy-error');
+                        el.classList.add('copied');
+                        setStateExclusive('ok');
+                    } else {
+                        el.classList.remove('copied');
+                        el.classList.add('copy-error');
+                        setStateExclusive('err');
+                    }
+                } finally {
+                    // outline zase pryč po lingerMs (plynule díky transition)
+                    setTimeout(() => el.classList.remove('copied', 'copy-error'), lingerMs);
+                }
+            };
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                copyValue();
+            });
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || (e.ctrlKey && e.key.toLowerCase() === 'c')) {
+                    e.preventDefault();
+                    showBtn();
+                    copyValue();
+                }
+            });
+        };
+
+        document.querySelectorAll(selector).forEach(setup);
+    })();
+</script>
+
 
 </body>
 </html>
