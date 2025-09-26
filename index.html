@@ -101,6 +101,24 @@
         });
     </script>
 
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script>
+        // automatické renderování: inline \( … \) a $ … $, block \[ … \]
+        document.addEventListener("DOMContentLoaded", function () {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\[", right: "\\]", display: true}
+                ]
+            });
+        });
+    </script>
+
     <style>
         :root {
             --blue-color: #007bff;
@@ -225,7 +243,7 @@
             flex-shrink: 0; /* Prevents shrinking */
             text-align: right;
             width: max-content; /* Label width */
-            min-width: 230px;
+            min-width: 245px;
         }
 
         .input-group input {
@@ -577,10 +595,14 @@
 
         .inputsContainer {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); /* Dynamic grid */
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); /* Dynamic grid */
             overflow: hidden;
             width: 100%;
             gap: 10px;
+        }
+
+        .inputsContainer .katex-display {
+            margin: 0;
         }
 
 
@@ -737,13 +759,13 @@
 
         .copy-pill[data-state="idle"] .icon-copy {
             display: block;
-            fill: #6b7280;
+            stroke: #6b7280;
         }
 
         /* šedá */
         .copy-pill[data-state="ok"] .icon-check {
             display: block;
-            fill: #22c55e;
+            stroke: #22c55e;
         }
 
         /* zelená */
@@ -894,103 +916,154 @@
         <div id="resultsContainer" class="sizeableContainer">
             <h4>✏️ Calculation inputs:</h4>
             <div class="inputsContainer">
-                <div class="input-group">
-                    <label for="">Taring Force <em>F<sub>Tare</sub></em> <span class="units-text">(N)</span>: </label>
-                    <input type="number" id="" data-nonremember="true" value="0" step="any">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Taring Displacement <em>w<sub>Tare</sub></em> <span class="units-text">(mm)</span>:
+                <div class="input-group data-eq">
+                    <label for="inputTareForce">Taring Force \( F_{\mathrm{Tare}} \) <span class="units-text">(N)</span>:
                     </label>
-                    <input type="number" id="" data-nonremember="true" value="0" step="any">
+                    <input type="number" id="inputTareForce" data-nonremember="true" value="0" step="any">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Force <em>F</em> <span class="units-text">(N)</span>: </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Displacement <em>w</em> at <em>F</em> <span class="units-text">(mm)</span>:
+                <div class="input-group data-eq">
+                    <label for="inputTareDisp">Taring Displacement \( w_{\mathrm{Tare}} \) <span
+                            class="units-text">(mm)</span>:
                     </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                    <input type="number" id="inputTareDisp" data-nonremember="true" value="0" step="any">
                 </div>
 
-
-                <div class="input-group">
-                    <label for="">Cross-section width <em>b</em> <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                <div class="input-group data-eq">
+                    <label for="inputForce">Force \( F \) <span class="units-text">(N)</span>: </label>
+                    <input type="number" id="inputForce" data-nonremember="true" value="" step="any">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Cross-section height <em>h</em> <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Span <em>L</em> <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Depth of indentation <em>h<sub>D</sub></em> <span class="units-text">(mm)</span>:
+                <div class="input-group data-eq">
+                    <label for="inputDisp">Displacement \( w \) at \( F \) <span class="units-text">(mm)</span>:
                     </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
+                    <input type="number" id="inputDisp" data-nonremember="true" value="" step="any">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Diameter of Indenter <em>D</em> <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="" data-nonremember="true" value="" step="any">
+
+                <div class="input-group data-eq">
+                    <label for="inputWidth">Cross-section width \( b \) <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="inputWidth" data-nonremember="true" value="" step="any">
                 </div>
+
+                <div class="input-group data-eq">
+                    <label for="inputHeight">Cross-section height \( h \) <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="inputHeight" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="B">
+                    <label for="inputSpan">Span \( L \) <span class="units-text">(mm)</span>: </label>
+                    <input type="number" id="inputSpan" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="inputIndDepth">Depth of indentation \( h_{D} \) <span class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="inputIndDepth" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="inputIndDiameter">Diameter of Indenter \( D \) <span class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="inputIndDiameter" data-nonremember="true" value="" step="any">
+                </div>
+            </div>
+
+            <hr>
+
+            <h4>🔣 Equations:</h4>
+            <div class="inputsContainer" style=" padding-left: 50px; gap: 25px 10px;">
+                <span class="data-eq">
+                    \[
+                    F = F_{i} - F_{\mathrm{Tare}}
+                    \]
+                </span>
+                <span class="data-eq">
+                    \[
+                    w = w_{i} - w_{\mathrm{Tare}}
+                    \]
+                </span>
+                <span class="data-eq" data-eq-type="B">
+                    \[
+                    I_{y} = \frac{1}{12} \cdot b \cdot h^{3}
+                    \]
+                </span>
+                <span class="data-eq" data-eq-type="B">
+                    \[
+                    E = \frac{F\,L^{3}}{48\,I_{y}\,w}
+                    \]
+                </span>
+                <span class="data-eq" data-eq-type="IB">
+                    \[
+                    A = b \cdot h
+                    \]
+                </span>
+                <span class="data-eq" data-eq-type="IB">
+                    \[ \sigma_{\mathrm{max}} = \dfrac{F_{\mathrm{max}}}{A} \]
+                </span>
+                <span class="data-eq" data-eq-type="HB">
+                    \[
+                    d = 2\cdot\sqrt{\,h_{D}\,(2D - h_{D})\,}
+                    \]
+                </span>
+                <span class="data-eq" data-eq-type="HB">
+                    \[
+                    H_{B} = \frac{2F}{\pi D\left( D - \sqrt{D^{2} - d^{2}} \right)}
+                    \]
+                </span>
             </div>
 
             <hr>
 
             <h4>📐 Calculated values:</h4>
             <div class="inputsContainer">
-                <div class="input-group">
-                    <label for="">Max Force <em>F<sub>max</sub></em> <span class="units-text">(N)</span>: </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                <div class="input-group data-eq">
+                    <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \) <span class="units-text">(N)</span>:
+                    </label>
+                    <input type="number" id="outputForceMax" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Displacement <em>w<sub>F</sub></em> at <em>F<sub>max</sub></em> <span
+                <div class="input-group data-eq">
+                    <label for="outputDisp">Displacement \( w_{\mathrm{max}} \) at \( F_{\mathrm{max}} \) <span
                             class="units-text">(mm)</span>:
                     </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                    <input type="number" id="outputDisp" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Cross-section Area <em>A</em> <span class="units-text">(mm<sup>2</sup>)</span>:
-                    </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Moment of Inertia <em>I<sub>y</sub></em> <span
+                <div class="input-group data-eq" data-eq-type="B">
+                    <label for="outputIy">Moment of Inertia \( I_{y} \) <span
                             class="units-text">(mm<sup>4</sup>)</span>: </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                    <input type="number" id="outputIy" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Young's Module <em>E</em> <span class="units-text">(MPa)</span>: </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                <div class="input-group data-eq" data-eq-type="B">
+                    <label for="outputYModule">Young's Module \( E \) <span class="units-text">(MPa)</span>: </label>
+                    <input type="number" id="outputYModule" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
-                <div class="input-group">
-                    <label for="">Max Stress <em>σ<sub>max</sub></em> <span class="units-text">(MPa)</span>: </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Diameter of indentation <em>d</em> <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group">
-                    <label for="">Hardness (Brinell) <em>H<sub>BW</sub></em> <span class="units-text">(-)</span>:
+                <div class="input-group data-eq" data-eq-type="IB">
+                    <label for="outputArea">Cross-section Area \( A \) <span class="units-text">(mm<sup>2</sup>)</span>:
                     </label>
-                    <input type="number" id="" class="copyableInput" readonly data-nonremember="true">
+                    <input type="number" id="outputArea" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="IB">
+                    <label for="outputMaxStress">Max Stress \( \sigma_{\mathrm{max}} \) <span
+                            class="units-text">(MPa)</span>: </label>
+                    <input type="number" id="outputMaxStress" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="outputDiameterInd">Diameter of indentation \( d \) <span class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="outputDiameterInd" class="copyableInput" readonly data-nonremember="true">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="outputHardness">Hardness (Brinell) \( H_{\mathrm{BW}} \) <span
+                            class="units-text">(-)</span>:
+                    </label>
+                    <input type="number" id="outputHardness" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
             </div>
@@ -1017,11 +1090,13 @@
                     <label for="experimentDirectionDropdown">Experiment type: </label>
                     <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; color: #333;">
-                        <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                        <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
                         </option>
                         <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                         </option>
-                        <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                        <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
+                        </option>
+                        <option value="Option-DOWN-B">&nbsp;BENDING&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                         </option>
                         <option value="Option-DOWN-HB">&nbsp;HARDNESS (Brinell)&nbsp;⏬
                         </option>
@@ -1046,7 +1121,7 @@
                     <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
                            value="1"
                            min="0" step="any"
-                           max="100000000">
+                           max="120000000">
                 </div>
 
 
@@ -1100,6 +1175,22 @@
                            value="1"
                            min="0" step="any"
                            max="100000000">
+                </div>
+
+                <div class="input-group">
+                    <label class="disabled" id="inputStopForceLabel" for="inputStopForce">Stopping Force Limit <span
+                            class="units-text">(N)</span>: </label>
+                    <input class="disabled" data-input-type="floatInput" type="number" id="inputStopForce" value="1000"
+                           min="0"
+                           step="any" max="100000000">
+                </div>
+
+                <div class="input-group">
+                    <label class="disabled" id="inputEndDelayLabel" for="inputEndDelay">End load delay <span
+                            class="units-text">(s)</span>: </label>
+                    <input class="disabled" data-input-type="floatInput" type="number" id="inputEndDelay" value="25"
+                           min="0"
+                           step="any" max="120000000">
                 </div>
             </div>
 
@@ -4663,16 +4754,23 @@
             btn.setAttribute('aria-label', 'Zkopírovat hodnotu');
             btn.title = 'Zkopírovat';
             btn.innerHTML = `
-      <svg class="icon-copy"  viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-      </svg>
-      <svg class="icon-check" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 16.2l-3.5-3.5-1.4 1.4L9 19 20.3 7.7l-1.4-1.4z"/>
-      </svg>
-      <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" aria-hidden="true">
-        <path d="M6 6 L18 18 M18 6 L6 18"/>
-      </svg>
-    `;
+                <!-- gray copy -->
+                <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect width="13" height="16" x="8" y="7" rx="1.5" ry="1.5"/>
+                    <path d="M 3,15.5 V 3.5 C 3,2.7 3.7,2 4.5,2 H 15"/>
+                    <!-- <path d="M 3,14 V 6.5 C 3,4 5,2 7.5,2 H 15"/>-->
+                </svg>
+
+                <!-- green check -->
+                <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M 4.8,13.4 9,17.6 19.6,7"/>
+                </svg>
+
+                <!-- red X -->
+                <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 6 L18 18 M18 6 L6 18"/>
+                </svg>
+                `;
             wrap.appendChild(btn);
 
             // Hover: vždy ukázat s idle ikonou, resetovat časovač
