@@ -9,25 +9,100 @@
     <link rel="shortcut icon" href="/images/favicon.ico">
 
 
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
 
 
-    <script src="/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
-    <link rel="stylesheet" href="/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
-    <script src="/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
+    <!-- uPlot -->
+    <link rel="stylesheet" href="packages/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
+    <script src="packages/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+
+    <!-- XLSX -->
+    <script async src="packages/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
 
 
     <title>Moira Control - Thymos</title>
 
 
     <script>
-        const softwareVersion = "0.0.1.8";
-        const softwareDate = "26.09.2025";
+        let debugging = true;
 
-        const debugging = false;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const endDebugBtn = $$$('endTestingBtn');
+            const debugWrapper = $$$('debuggingWrapper');
+
+
+            if (debugging) {
+                debugWrapper.style.display = 'flex';
+                const testBtn = $$$('runTestSequenceBtn');
+
+                testBtn?.addEventListener('click', async () => testFce());
+
+                endDebugBtn?.addEventListener('click', () => {
+                    debugWrapper?.remove();
+                    debugging = false;
+                })
+
+                async function testFce() {
+                    console.info("%cTest function running...", "color: orange; font-size: 16px; font-weight: bold;");
+
+                    const ports = await navigator.serial.getPorts();
+                    const devices = await navigator.usb.getDevices(); // requestDevice({ filters: [{ vendorId: 0x2341 }] })
+
+                    console.log("🔌 Serial ports:", ports);
+                    console.log("🔌 USB devices:", devices);
+
+
+                    // const device = devices[0];
+                    // if (!device) {
+                    //     self.postMessage({error: 'No device'});
+                    //     return;
+                    // }
+                    //
+                    // await device.open();
+                    // (volitelně) await device.selectConfiguration(1);
+                    // (volitelně) await device.claimInterface(0);
+
+                    // příklad přenosu:
+                    // await device.transferOut(1, new Uint8Array([0x01, 0x02]));
+                    // const inRes = await device.transferIn(1, 64);
+
+                    console.info("%cTest function completed.", "color: green; font-size: 16px; font-weight: bold;");
+                }
+            } else {
+                debugWrapper?.remove();
+            }
+        });
+    </script>
+
+
+    <script>
+        const softwareVersion = "0.1.0.0";
+        const softwareDate = "29.09.2025";
+
+        async function hasInternet(timeout = 3000) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), timeout);
+            try {
+                const res = await fetch(`/ping.txt?ts=${Date.now()}`, {
+                    method: 'HEAD',
+                    cache: 'no-store',
+                    signal: ctrl.signal
+                });
+                return res.ok;
+            } catch {
+                return false;
+            } finally {
+                clearTimeout(t);
+            }
+        }
+
+        // is online?
+        const reallyOnline = hasInternet();
+        console.info("%c\n\t📶 Ping successful.\n\t\tUser is Online! 🌐", "color: blue; font-weight: bold;")
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById("softwareInfo").innerText = `v${softwareVersion} , ${softwareDate}`;
+            $$$("softwareInfo").innerText = `v${softwareVersion} , ${softwareDate}`;
         });
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -59,6 +134,8 @@
 
 
             async function loadCurrentVersion() {
+                if (!reallyOnline) return;
+
                 try {
                     // Try to load the latest version of the app from the latest.txt [server]
                     fetch(`/latest.txt?ts=${Date.now()}`, {
@@ -76,16 +153,16 @@
                             const appStatus = compareVersions(softwareVersion, latestVersion);
 
                             if (appStatus === 0) {
-                                console.info("%c\n🔧\tApp is upto date!", "color: blue; font-weight: bold;");
+                                console.info("%c\n\t🔧\tApp is upto date!", "color: blue; font-weight: bold;");
                             } else if (appStatus === 1) {
-                                console.info("%c\n🔧\tAvaileble version is older than App!", "color: blue; font-weight: bold;");
+                                console.warn("%c\n\t🔧\tAvaileble version is older than App!", "color: red; font-weight: bold;");
                             } else {
-                                console.info("%c\n🔧\tNew version is availeble!", "color: blue; font-weight: bold;");
+                                console.info("%c\n\t🔧\tNew version is availeble!", "color: orange; font-weight: bold;");
                             }
 
                             if (appStatus !== 0) {
-                                document.getElementById("updateHeader").style.visibility = "visible";
-                                document.getElementById("updateHeaderVersion").innerText = `[from: v${softwareVersion} to v${latestVersion}]`;
+                                $$$("updateHeader").style.visibility = "visible";
+                                $$$("updateHeaderVersion").innerText = `[from: v${softwareVersion} to v${latestVersion}]`;
                             }
                         })
                         .catch(error => {
@@ -103,11 +180,14 @@
 
 
     <!-- KaTeX -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">-->
+    <!--    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>-->
+    <!--    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>-->
+    <link rel="stylesheet" href="packages/katex/katex.min.css">
+    <script defer src="packages/katex/katex.min.js"></script>
+    <script defer src="packages/katex/auto-render.min.js"></script>
     <script>
-        // automatické renderování: inline \( … \) a $ … $, block \[ … \]
+        // automatic rendering: inline \( … \) a $ … $, block \[ … \]
         document.addEventListener("DOMContentLoaded", function () {
             renderMathInElement(document.body, {
                 delimiters: [
@@ -182,17 +262,47 @@
         textarea {
             resize: none; /* Disables resizing */
             overflow: auto;
-            font-size: 16px;
-            font-family: monospace;
+            border: none;
         }
 
-        input, select {
-            background: white;
+        input, select, .textareaWrapper {
             border: 1px solid darkgray;
             border-radius: 1vh;
             padding: 0 6px;
+        }
+
+        input, select, textarea {
+            background: white;
             min-height: 34px;
             box-sizing: border-box;
+
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: normal;
+        }
+
+        .textareaWrapper {
+            display: flex;
+            background: white;
+            width: -webkit-fill-available;
+            height: min-content;
+            padding: 4px;
+            overflow: hidden;
+        }
+
+        .textareaWrapper:focus-within {
+            outline: 2px solid black; /* vlastní barva */
+            outline-offset: -2px;
+            box-shadow: 0 0 0 1px white;
+        }
+
+        .textareaWrapper textarea {
+            width: 100%;
+            padding: 3px 7px;
+        }
+
+        .textareaWrapper textarea:focus {
+            outline: none;
         }
 
         /* Disabled elements styling */
@@ -211,13 +321,13 @@
 
         .sizeableContainer {
             overflow: hidden;
+            content-visibility: auto;
 
             max-height: 0;
             opacity: 0;
             transition: max-height 0.5s ease, opacity 0.45s; /* Animation */
 
-            display: grid;
-            grid-template-columns: 1fr; /* One column */
+            display: block;
             width: 95%;
             padding: 5px 15px 20px 15px;
             justify-self: center;
@@ -231,11 +341,12 @@
         }
 
         .input-group {
-            display: flex;
-            align-items: center;
+            display: inline-flex;
             gap: 10px; /* Space between inputs and labels */
             white-space: nowrap; /* Prevents wrapping */
             padding-left: 20px;
+            align-items: center;
+            justify-content: center;
 
         }
 
@@ -243,14 +354,14 @@
             flex-shrink: 0; /* Prevents shrinking */
             text-align: right;
             width: max-content; /* Label width */
-            min-width: 245px;
+            min-width: 275px;
         }
 
         .input-group input {
             height: 25px;
         }
 
-        .input-group input[type="number"] {
+        .input-group input[type="number"], .input-group input[type="text"] {
             flex-grow: 1; /* Input will grow if there is space */
             justify-self: left;
             max-width: 230px;
@@ -552,15 +663,12 @@
             box-sizing: border-box; /* THIS IS THE MAGIC */
         }
 
-        #convertCSV, #experimentDesc {
+        #convertCSV {
             height: 56px;
         }
 
         #experimentDesc {
-            width: calc(100% - 20px);
-            height: 32px;
-            padding: 10px;
-            /*background: lightgray;*/
+            height: 46px;
         }
 
         #experimentBtnsWrapper {
@@ -595,9 +703,9 @@
 
         .inputsContainer {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); /* Dynamic grid */
+            grid-template-columns: repeat(auto-fit, minmax(510px, 1fr)); /* Dynamic grid */
             overflow: hidden;
-            width: 100%;
+            width: -webkit-fill-available;
             gap: 10px;
         }
 
@@ -676,13 +784,18 @@
         }
 
         #commandInput {
-            width: calc(100% - 20px);
+            width: 100%;
             max-width: 1200px;
             min-width: 300px;
             height: calc(100% - 20px);
             border: none;
             background: #f5f5f5;
             border-radius: 10px;
+
+            padding: 7px 10px;
+            font-size: 16px;
+            font-family: monospace;
+
         }
 
         .units-text {
@@ -707,6 +820,13 @@
 
         /* plovoucí tlačítko v pravém horním rohu */
         .copy-pill {
+            /* výška: min 24px, „ideál“ 80 % výšky rodiče, max 40px */
+            height: clamp(24px, 80%, 40px);
+
+            /* šířka = výška (čtverec) */
+            aspect-ratio: 1 / 1;
+            width: auto; /* dopočítá se z výšky díky aspect-ratio */
+
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
@@ -753,40 +873,53 @@
         /* ikony: defaultně nic, zobraz podle data-state */
         .copy-pill svg {
             display: none;
-            width: 16px;
-            height: 16px;
+            width: 100%;
+            height: 100%;
         }
 
+        /* šedá */
         .copy-pill[data-state="idle"] .icon-copy {
             display: block;
             stroke: #6b7280;
         }
 
-        /* šedá */
+        /* zelená */
         .copy-pill[data-state="ok"] .icon-check {
             display: block;
             stroke: #22c55e;
         }
 
-        /* zelená */
+        /* červená */
         .copy-pill[data-state="err"] .icon-x {
             display: block;
             stroke: #ef4444;
         }
 
-        /* červená */
+        /* vnitřní orámování hover když data-state="idle" */
+        .copy-wrap:hover > .copyableInput:not(:focus):not(.copied):not(.copy-error) {
+            outline: none;
+            box-shadow: inset 0 0 0 2px #3b82f6;
+            transition: box-shadow .1s ease;
+        }
+
 
         /* vnitřní orámování po akci */
         .copy-wrap > .copied {
             outline: none;
             box-shadow: inset 0 0 0 2px #22c55e;
-            transition: box-shadow .15s ease;
+            transition: box-shadow .1s ease;
         }
 
         .copy-wrap > .copy-error {
             outline: none;
             box-shadow: inset 0 0 0 2px #ef4444;
-            transition: box-shadow .15s ease;
+            transition: box-shadow .1s ease;
+        }
+
+        .data-eq {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 
@@ -817,10 +950,20 @@
         <button id="connectBtnUSB">🔌 Connect via USB</button>
         <label for="inputNumBaudRate" class="prohibited">Baud-Rate:
             <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                   value="921600" min="1" class="prohibited">
+                   value="921_600" min="1" class="prohibited">
         </label>
     </div>
     <div id="connectionStatus"> 🔴 Disconnected</div>
+</div>
+
+<div id="debuggingWrapper" style="display: none; width: 100%; gap: 20px; margin-top: 20px; justify-content: center; align-items: center;
+border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box;">
+    <button id="runTestSequenceBtn" style="box-sizing: border-box; justify-self: center; width: 200px; height: 100px;">
+        🧪 Run Test Sequence (for debugging)
+    </button>
+    <button id="endTestingBtn" style="box-sizing: border-box; justify-self: center; width: 200px; height: 100px;">
+        🛑 End Testing (for debugging)
+    </button>
 </div>
 
 <!-- Graph Display Section -->
@@ -891,8 +1034,10 @@
                        data-input-type="intInput" data-nonremember="true">
             </div>
             <label for="experimentDesc">📄 Experiment description:</label>
-            <input id="experimentDesc" placeholder="Short description of the experiment (optional)..."
-                   data-nonremember="true">
+            <div class="textareaWrapper">
+                <textarea id="experimentDesc" placeholder="Short description of the experiment (optional)..."
+                          data-nonremember="true"></textarea>
+            </div>
             <label for="storagePath">📁 Handpick the folder:</label>
             <div style="align-items: center; display: flex; gap: 10px;">
                 <input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
@@ -929,24 +1074,24 @@
                     <input type="number" id="inputTareDisp" data-nonremember="true" value="0" step="any">
                 </div>
 
-                <div class="input-group data-eq">
+                <div class="input-group data-eq" data-eq-type="B, IB, HB">
                     <label for="inputForce">Force \( F \) <span class="units-text">(N)</span>: </label>
                     <input type="number" id="inputForce" data-nonremember="true" value="" step="any">
                 </div>
 
-                <div class="input-group data-eq">
+                <div class="input-group data-eq" data-eq-type="B, IB, HB">
                     <label for="inputDisp">Displacement \( w \) at \( F \) <span class="units-text">(mm)</span>:
                     </label>
                     <input type="number" id="inputDisp" data-nonremember="true" value="" step="any">
                 </div>
 
 
-                <div class="input-group data-eq">
+                <div class="input-group data-eq" data-eq-type="B, IB">
                     <label for="inputWidth">Cross-section width \( b \) <span class="units-text">(mm)</span>: </label>
                     <input type="number" id="inputWidth" data-nonremember="true" value="" step="any">
                 </div>
 
-                <div class="input-group data-eq">
+                <div class="input-group data-eq" data-eq-type="B, IB">
                     <label for="inputHeight">Cross-section height \( h \) <span class="units-text">(mm)</span>: </label>
                     <input type="number" id="inputHeight" data-nonremember="true" value="" step="any">
                 </div>
@@ -963,16 +1108,31 @@
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="inputIndDiameter">Diameter of Indenter \( D \) <span class="units-text">(mm)</span>:
+                    <label for="inputIndDiameter">Diameter of Indenter <b>⌀</b> \( D \) <span
+                            class="units-text">(mm)</span>:
                     </label>
-                    <input type="number" id="inputIndDiameter" data-nonremember="true" value="" step="any">
+                    <input type="number" id="inputIndDiameter" data-nonremember="true" value="10" step="any">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="inputTargetDisp">Displacement \( w_{T} \) at Target force <span
+                            class="units-text">(mm)</span>:
+                    </label>
+                    <input type="number" id="inputTargetDisp" data-nonremember="true" value="" step="any">
+                </div>
+
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="inputLoadingTime">Target loading time \( t \) <span class="units-text">(s)</span>:
+                    </label>
+                    <input type="number" id="inputLoadingTime" data-nonremember="true" value="15" step="any">
                 </div>
             </div>
 
             <hr>
 
             <h4>🔣 Equations:</h4>
-            <div class="inputsContainer" style=" padding-left: 50px; gap: 25px 10px;">
+            <div class="inputsContainer"
+                 style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
                 <span class="data-eq">
                     \[
                     F = F_{i} - F_{\mathrm{Tare}}
@@ -1008,7 +1168,12 @@
                 </span>
                 <span class="data-eq" data-eq-type="HB">
                     \[
-                    H_{B} = \frac{2F}{\pi D\left( D - \sqrt{D^{2} - d^{2}} \right)}
+                    H_{BW} = \frac{2F}{\pi D\left( D - \sqrt{D^{2} - d^{2}} \right)}
+                    \]
+                </span>
+                <span class="data-eq" data-eq-type="HB">
+                    \[
+                    v = \frac{w}{t}
                     \]
                 </span>
             </div>
@@ -1020,52 +1185,58 @@
                 <div class="input-group data-eq">
                     <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \) <span class="units-text">(N)</span>:
                     </label>
-                    <input type="number" id="outputForceMax" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputForceMax" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq">
-                    <label for="outputDisp">Displacement \( w_{\mathrm{max}} \) at \( F_{\mathrm{max}} \) <span
+                    <label for="outputDisp">Displacement \( w_{F_{\mathrm{max}}} \) at \( F_{\mathrm{max}} \) <span
                             class="units-text">(mm)</span>:
                     </label>
-                    <input type="number" id="outputDisp" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputDisp" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="B">
                     <label for="outputIy">Moment of Inertia \( I_{y} \) <span
                             class="units-text">(mm<sup>4</sup>)</span>: </label>
-                    <input type="number" id="outputIy" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputIy" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="B">
                     <label for="outputYModule">Young's Module \( E \) <span class="units-text">(MPa)</span>: </label>
-                    <input type="number" id="outputYModule" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputYModule" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="IB">
                     <label for="outputArea">Cross-section Area \( A \) <span class="units-text">(mm<sup>2</sup>)</span>:
                     </label>
-                    <input type="number" id="outputArea" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputArea" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="IB">
                     <label for="outputMaxStress">Max Stress \( \sigma_{\mathrm{max}} \) <span
                             class="units-text">(MPa)</span>: </label>
-                    <input type="number" id="outputMaxStress" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputMaxStress" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="outputDiameterInd">Diameter of indentation \( d \) <span class="units-text">(mm)</span>:
+                    <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d \) <span
+                            class="units-text">(mm)</span>:
                     </label>
-                    <input type="number" id="outputDiameterInd" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputDiameterInd" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
                 <div class="input-group data-eq" data-eq-type="HB">
                     <label for="outputHardness">Hardness (Brinell) \( H_{\mathrm{BW}} \) <span
                             class="units-text">(-)</span>:
                     </label>
-                    <input type="number" id="outputHardness" class="copyableInput" readonly data-nonremember="true">
+                    <input type="text" id="outputHardness" class="copyableInput" readonly data-nonremember="true">
                 </div>
 
+                <div class="input-group data-eq" data-eq-type="HB">
+                    <label for="outputLoadingSpeed">Loading speed \( v \) <span class="units-text">(mm/s)</span>:
+                    </label>
+                    <input type="text" id="outputLoadingSpeed" class="copyableInput" readonly data-nonremember="true">
+                </div>
             </div>
         </div>
     </div>
@@ -1142,7 +1313,7 @@
 
                 <div class="input-group"> <!-- TODO minimum na 10000 -->
                     <label for="inputDataInterval">Data Interval <span class="units-text">(µs)</span>: </label>
-                    <input data-input-type="floatInput" type="number" id="inputDataInterval" value="30000"
+                    <input data-input-type="intInput" type="number" id="inputDataInterval" value="30000"
                            min="10000"
                            step="any"
                            max="100000000">
@@ -1209,7 +1380,7 @@
                 <div class="input-group">
                     <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
                     </label>
-                    <input data-input-type="floatInput" type="number" id="inputLoadcellOutput"
+                    <input data-input-type="floatInput2" type="number" id="inputLoadcellOutput"
                            value="2.0" step="any" min="0" max="100000000">
                 </div>
             </div>
@@ -1258,6 +1429,480 @@
 
 
 <script>
+
+    // =====================================================================
+    // ====================      HELPERS      ==============================
+    // =====================================================================
+
+    const maxPrecision = 12; // max počet platných desetinných míst u zaokrouhlování
+    const precisionTime = 6;
+    const precisionDistance = 4;
+    const precisionDistanceSystem = precisionDistance;
+    const precisionForce = 2;
+    const precisionForceSystem = precisionForce;
+    const precisionSpeed = 2;
+    const precisionSpeedSystem = 6;
+    const precisionAccelerationSystem = 6;
+
+    // 1) Základní typové kontroly
+    const isNumber = (x) => typeof x === 'number';
+    const isBigInt = (x) => typeof x === 'bigint';
+    const isArray = (x) => Array.isArray(x);
+    const isString = (x) => typeof x === 'string';
+    const isBoolean = (x) => typeof x === 'boolean';
+    const isFunction = (x) => typeof x === 'function';
+    const isObject = (x) => x !== null && typeof x === 'object' && !isArray(x);
+    const isSymbol = (x) => typeof x === 'symbol';
+    const isUndefined = (x) => typeof x === 'undefined';
+    const isNull = (x) => x === null;
+    const isDefined = (x) => x != null;
+    const isEmptyString = (x) => isString(x) && x.trim() === '';
+    const isNonEmptyString = (x) => isString(x) && x.trim() !== '';
+
+
+    const isNumberOrBigInt = (x) =>
+        isNumber(x) || isBigInt(x);
+
+    const isNumberOrInfinity = (x, bigInt = true) =>
+        (isNumber(x) && !Number.isNaN(x)) || (isBigInt(x) && bigInt); // true i pro ±Infinity
+
+    const isFiniteNumber = (x, bigInt = true) =>
+        (isNumber(x) && Number.isFinite(x)) || (isBigInt(x) && bigInt);
+
+    const isFiniteInteger = (x, bigInt = true) =>
+        (isNumber(x) && Number.isInteger(x)) || (isBigInt(x) && bigInt);
+
+    // 2) Parsování stringu na číslo (podpora čárky jako desetinné tečky)
+    const toNumber = (x, all = true) => {
+        if (isNumber(x)) return x;
+        if (isBigInt(x)) return Number(x); // Number(x) pozor na přesnost u velkých hodnot
+        return strToNumber(x, all); // if (isString(x))
+    };
+    const toNumeric = (x, all = true) => {
+        if (isNumberOrBigInt(x)) return x;
+        return strToNumber(x, all); // if (isString(x))
+    };
+
+    const toRounds = (x, digits = 0, way = 'round') => {
+        const n = toNumber(x, true);
+        if (!isNumberOrInfinity(n)) return NaN; // NaN/±Infinity
+        if (way === 'round' || way === 'auto') {
+            if (!Number.isFinite(n)) return n; // ±Infinity
+            digits = Math.round(toNumber(digits, true));
+            if (!isFiniteInteger(digits)) return NaN;
+            digits = Math.min(Math.abs(0, digits), maxPrecision);
+            return roundDecimalFast(n, digits);
+        }
+        if (way === 'ceil' || way === 'up') {
+            return Math.ceil(n);
+        }
+        if (way === 'floor' || way === 'down') {
+            return Math.floor(n);
+        }
+        if (way === 'trunc' || way === 'drop') {
+            return Math.trunc(n);
+        }
+    };
+
+    const toInteger = (x, way = 'drop', bigInt = false) => {
+        if (isNumber(x) && Number.isInteger(x)) return x;
+        if (isBigInt(x) && bigInt) return x;
+
+        const n = toRounds(toNumber(x, true), 0, way);
+
+        if (Number.isInteger(n)) return n;
+
+        return NaN;
+    };
+
+    const strToNumber = (x, all = false) => {
+        if (isString(x)) {
+            const s = x.trim();
+            if (s === '') return NaN;
+            const n = s.replaceAll(',', '.').replaceAll('±', ' ');
+            return all ? parseFloat(n) : Number(n);
+        }
+        return NaN;
+    };
+
+    // 3) „Je to numerické“ (včetně ±Infinity)
+    const isNumericOrInfinity = (x) => {
+        if (isFiniteNumber(x)) return !Number.isNaN(x); // true i pro ±Infinity
+        const n = toNumeric(x, false);
+        return !Number.isNaN(n); // true i pro ±Infinity
+    };
+
+    // 4) „Je to konečné numerické“ (bez NaN/±Infinity)
+    const isFiniteNumeric = (x) => {
+        if (isFiniteNumber(x)) return true;
+        const n = toNumeric(x, false);
+        return Number.isFinite(n);
+    };
+
+    // (volitelné) „dá se to s rozumným výsledkem použít jako číslo“ – alias:
+    const isAnyFiniteNumeric = (x) => {
+        if (isFiniteNumber(x)) return true;
+        const n = toNumeric(x, true);
+        if (isBigInt(n)) return true; // BigInt je OK
+        return Number.isFinite(n);
+    };
+
+    // 5) „Má hodnotu“ – pokud potřebuješ zvlášť (0 projde, null/undef/"" ne)
+    const hasValue = (x) => isDefined(x) && (isNumberOrInfinity(x) || isNonEmptyString(x));
+
+    const isNotEmpty = (x) => {
+        if (!isDefined(x)) return false;
+        if (isBoolean(x)) return true; // false i true projde
+        if (isNumberOrInfinity(x) && !Number.isNaN(x)) return true; // 0 i ±Infinity projde,  0n i velké hodnoty projdou
+        if (isString(x)) return x.trim() !== '';
+        if (isArray(x)) return x.length > 0;
+        if (isObject(x)) return Object.keys(x).length > 0;
+        return false;
+    };
+
+    // Varianta, která NEpovažuje false a 0 za „hodnotu“
+    const hasValueButNotBoolean = (x) => hasValue(x) && x !== false && x !== true && x.toLowerCase() !== 'false' && x.toLowerCase() !== 'true';
+
+    const isInvalidValue = (x, additionSet = []) => {
+        if (!hasValue(x)) return true;
+        if (isNumberOrInfinity(x)) return false;
+
+        const BAD = new Set([
+            'false',
+            'nil', 'null', 'nullable', 'nullptr',
+            'errno', 'error', 'err',
+            'none', 'no', 'n/o', 'not', 'nothing', 'never',
+            'nan', 'nat', 'n/a', 'na', 'n/d', 'nd',
+            'undefined', 'empty', 'missing', 'void', 'voided', 'forgotten', 'out',
+            'val', 'inv', 'invalid', 'not valid', 'disabled', 'expired', 'cancelled', 'not applicable'
+        ]);
+
+        for (const v of additionSet) {
+            BAD.add(String(v).replace(/\\/g, '/').toLowerCase().trim());
+        }
+
+        const norm = v => String(v ?? '')
+            .normalize('NFKD')
+            .replace(/\p{Diacritic}/gu, '') // odstraní diakritiku
+            .trim()
+            .replace(/[.,]/g, '')           // smaže čárky a tečky
+            .replace(/\\/g, '/')            // nahradí \ za /
+            .replace(/\s+/g, ' ')           // zjednoduší vícenásobné mezery
+            .toLowerCase();
+
+        return BAD.has(norm(x));
+    }
+
+    const minimum = (arr, acceptInf = false) => {
+        if (!isArray(arr) || arr.length === 0) return NaN;
+        let min = Infinity;
+        for (const v of arr) {
+            const n = toNumber(v, true);
+            if (!Number.isNaN(n) && n < min) min = n;
+        }
+        return acceptInf ? min : (Number.isFinite(min) ? min : NaN);
+    };
+
+    const maximum = (arr, acceptInf = false) => {
+        if (!isArray(arr) || arr.length === 0) return NaN;
+        let max = -Infinity;
+        for (const v of arr) {
+            const n = toNumber(v, true);
+            if (!Number.isNaN(n) && n > max) max = n;
+        }
+        return acceptInf ? max : (Number.isFinite(max) ? max : NaN);
+    };
+
+    const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const checkArray = (arr) => {
+        if (!isNotEmpty(arr)) return NaN;
+        return isArray(arr) ? arr : [arr];
+    }
+
+    const checkObject = (obj) => {
+        if (!isNotEmpty(obj)) return NaN;
+        if (isObject(obj)) return obj;
+        if (isArray(obj)) {
+            const res = {};
+            for (let i = 0; i < obj.length; i++) {
+                res[i] = obj[i];
+            }
+            return res;
+        }
+        if (isString(obj) || isNumberOrInfinity(obj) || isBoolean(obj)) {
+            return {0: obj};
+        }
+        return NaN;
+    }
+
+    const decimalSymbol = (num, symbol = '.') => {
+        if (!isAnyFiniteNumeric(num)) return "N/A";
+        if (!isFiniteNumber(num)) num = String(num);
+        if (symbol === '.') return num;
+        return num.replace('.', symbol);
+    };
+
+    const getValue = (x, dec = "none", strOut = false) => {
+        const def = strOut ? "N/A" : NaN;
+
+        if (!isNumericOrInfinity(x)) return def;
+
+        // 1) převedeme vstup na číslo (tvůj toNumber umí i čárku apod.)
+        let n = toNumeric(x, true);
+
+        if (strOut && typeof isBigInt(n)) n = Number(n);
+
+        if (dec == null || dec === "none" || isBigInt(n)) {
+            // žádné dec -> vrať n
+            return strOut ? String(n) : n;
+        }
+
+        // 2) vyhodnotíme desetinná místa jen jednou
+        if (!isAnyFiniteNumeric(dec)) return def;
+        const d = Math.min(Math.round(toNumber(dec, true)), maxPrecision);
+
+        if (d < 0) return def; // neplatné dec -> vrať NaN/"N/A"
+
+        // 3) zaokrouhlení
+        return strOut ? n.toFixed(d) : roundDecimalFast(n, d);
+    };
+
+    // Bezpečná koerce na BigInt (přijme number/BigInt/string s číslem)
+    const toBigInt = (x) => {
+        if (isBigInt(x)) return x;
+        let n = toNumber(x, true);
+        if (!isFiniteNumber(n)) return NaN;
+        if (!isFiniteInteger(n)) n = Math.round(n);
+        try {
+            return BigInt(n);
+        } catch (e) {
+            return NaN;
+        }
+    };
+
+    // Oříznutí na n bitů (např. 64bit bezznaménkové ID)
+    const toUintN = (n, b) => BigInt.asUintN(n, toBigInt(b));
+    // a se znaménkem:
+    const toIntN = (n, b) => BigInt.asIntN(n, toBigInt(b));
+
+    const decimalToHex = (num) => {
+        if (!isFiniteInteger(num) || num < 0) return "N/A";
+        return "0x" + num.toString(16).toUpperCase();
+    };
+    const decimalToBinary = (num) => {
+        if (!isFiniteInteger(num) || num < 0) return "N/A";
+        return "0b" + num.toString(2);
+    };
+    const binaryToDecimal = (str) => {
+        if (!isString(x)) return NaN;
+        const s = str.trim();
+        if (!/^0b[01]+$/i.test(s)) return NaN;
+        return parseInt(s.slice(2), 2);
+    };
+    const hexToDecimal = (str) => {
+        if (!isString(x)) return NaN;
+        const s = str.trim();
+        if (!/^0x[0-9a-f]+$/i.test(s)) return NaN;
+        return parseInt(s.slice(2), 16);
+    };
+
+
+    const getNumValue = (x, dec = "none") => getValue(x, dec, false);
+    const getStrFixedValue = (x, dec = "none") => getValue(x, dec, true);
+    const getStrValue = (x, dec = "none") => ((n => Number.isNaN(n) ? "N/A" : String(n))(getNumValue(x, dec)));
+    const getCustomStrValue = (x, dec = "none", decSym = '.', writeSign = false, fixed = false, customError = "N/A") => {
+        const v = fixed ? getStrFixedValue(x, dec) : getStrValue(x, dec);
+        if (v === "N/A") return customError;
+        let s = v;
+        if (!(v === "Infinity" || v === "-Infinity")) s = decimalSymbol(v, decSym);
+        s = s.replace('Infinity', '∞')
+        if (writeSign && !s.startsWith('-')) {
+            if (roundDecimalFast(strToNumber(v), 12) === 0) {
+                s = '±' + s;
+            } else {
+                s = '+' + s;
+            }
+        }
+        return s;
+    };
+
+
+    function roundDecimalFast(num, decimalPlace) {
+        num ||= 0;
+        decimalPlace ||= 0;
+        return Math.round(num * Math.pow(10, decimalPlace)) / Math.pow(10, decimalPlace);
+    }
+
+
+    const arrayWrapper = (arr, func, args) => {
+        // console.log(arrayWrapper([0.000, "0", 454214878181871n, 0n, "0n", "900800700600500400300200100", "   -45   ", "   +45   ", "   ±45±45   ", 488.45, "100.005  ", "100. 005  ", "12,34", "  56.78  ", "text", null, undefined, {}, [], "NaN", "Infinity", "-Infinity"], getCustomStrValue, [12, '.', false, true]));
+        if ((!arr && arr !== 0) || !func) return NaN;
+        if (!isFunction(func)) return NaN;
+        arr = checkArray(arr);
+        if (!isNotEmpty(arr)) return NaN;
+        args = checkArray(args);
+        const res = [];
+        for (let i = 0; i < arr.length; i++) {
+            res.push(func(arr[i], ...args));
+        }
+        return res;
+    }
+
+    const objectWrapper = (obj, func, args) => {
+        if ((!obj && obj !== 0) || !func) return NaN;
+        if (!isFunction(func)) return NaN;
+        obj = checkObject(obj);
+        if (!isNotEmpty(obj)) return NaN;
+        args = checkArray(args);
+        const res = {};
+        for (const key in obj) {
+            if (Object.hasOwnProperty.call(obj, key)) {
+                res[key] = func(obj[key], ...args);
+            }
+        }
+        return res;
+    }
+
+
+    // ===================================
+    // ======= Calculation helpers =======
+
+    const calc_val_tare = (x, x_tare = 0) => x - x_tare;
+    const calc_area = (b, h) => b * h;
+    const calc_moment_of_inertia = (b, h) => 1 / 12 * h * (b * b * b);
+    const calc_bend_modulus = (L, I, F, w) => (F * (L * L * L)) / (48 * I * w);
+    const calc_stress = (F, A) => F / A;
+    const calc_speed = (d, t) => d / t;
+    const calc_indentation_diameter = (h, D) => 2 * Math.sqrt(h * ((2 * D) - h));
+    const calc_hardness_brinell = (F, D, d) => (2 * F) / (Math.PI * D * (D - Math.sqrt((D * D) - (d * d))));
+
+    // =====================================================================
+    // =====================================================================
+
+
+    // -------------------- Pomocné DOM utilitky --------------------
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+    const $$$ = (id) => document.getElementById(id);
+
+    const exists = async (id) => !!$$$(id);
+
+    // čtení čísla z inputu přes tvoje utility
+    const readNum = (id, positiveOnly = false) => {
+        const el = $$$(id);
+        if (!el) return NaN;
+        const val = getNumValue(el.value, "none");  // umožní čárku, ±, apod.
+        return !positiveOnly ? val : (val < 0 ? NaN : val);
+    };
+
+    // zápis do outputu jako čísla s fixní přesností
+    const writeOut = (id, value, dec = 3) => {
+        const el = $$$(id);
+        if (!el) return;
+        el.value = getCustomStrValue(value, dec, '.', false, false, "N/A");
+    };
+
+    // -------------------- Hlavní přepočet --------------------
+    function recomputeAll() {
+        // --- načtení společných vstupů (tare) ---
+        const F_tare = readNum("inputTareForce");      // N
+        const w_tare = readNum("inputTareDisp");       // mm
+
+        const expType = $$$("experimentDirectionDropdown")?.value.toLowerCase();
+
+        const isB = expType.endsWith("-b");
+        const isIB = expType.endsWith("-ib");
+        const isHB = expType.endsWith("-hb");
+
+        if (!isB && !isIB && !isHB) return; // nic dalšího nepřepočítáme
+
+        // --- B/IB/HB společné ---
+        const F_raw = readNum("inputForce");           // N
+        const w_raw = readNum("inputDisp");            // mm
+        const F = calc_val_tare(F_raw, F_tare)
+        const w = calc_val_tare(w_raw, w_tare)
+
+        const b = readNum("inputWidth", true);   // mm
+        const h = readNum("inputHeight", true);  // mm
+
+        // Zapiš základní "max" (rozuměj aktuální zadané) hodnoty, pokud výstupy existují
+        if (exists("outputForceMax")) writeOut("outputForceMax", F, 3);
+        if (exists("outputDisp")) writeOut("outputDisp", w, 3);
+
+
+        // -------------------- IB: průřez + napětí --------------------
+        if (isIB) {
+            // A = b*h
+            const A = calc_area(b, h); // mm^2
+            if (exists("outputArea")) writeOut("outputArea", A, 3);
+
+
+            // σ_max = F / A
+            const sigma = calc_stress(F, A) // N/mm^2 = MPa
+            if (exists("outputMaxStress")) writeOut("outputMaxStress", sigma, 3);
+
+        }
+
+        // -------------------- B: ohyb (I_y, E) --------------------
+        if (isB) {
+            const I = calc_moment_of_inertia(b, h); // mm^4
+            if (exists("outputIy")) writeOut("outputIy", I, 3);
+
+            // E = (F * L^3) / (48 * I * w)   (3-bodový ohyb uprostřed)
+            const L = readNum("inputSpan", true); // mm
+            const E = calc_bend_modulus(L, I, F, w) // vychází v N/mm^2 = MPa
+            if (exists("outputYModule")) writeOut("outputYModule", E, 3);
+
+
+        }
+
+        // -------------------- HB: Brinell --------------------
+        if (isHB) {
+            const D = readNum("inputIndDiameter", true); // mm (⌀ indenteru)
+            const hD = readNum("inputIndDepth", true);    // mm (hloubka vtisku)
+
+            // d = 2 * sqrt( h * (2D - h) )
+            const d = calc_indentation_diameter(hD, D)
+
+            if (exists("outputDiameterInd")) writeOut("outputDiameterInd", d, 3);
+
+            // HB = (2*F) / (π*D*(D - sqrt(D^2 - d^2)))
+            const HB = calc_hardness_brinell(F, D, d)
+            if (exists("outputHardness")) writeOut("outputHardness", HB, 3);
+
+
+            // Rychlost zatěžování: v = w_T / t
+            const wT = readNum("inputTargetDisp", true);  // mm
+            const t = readNum("inputLoadingTime", true); // s
+            const v = calc_speed(wT, t)
+            if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, 3);
+
+        }
+    }
+
+    // -------------------- Event wiring --------------------
+    function bindRecalcOnInputs() {
+        if (!exists("experimentDirectionDropdown")) return;
+
+        // jakýkoli input/number v blocích s class .data-eq spustí přepočet
+        const inputs = $$('.data-eq input[type="number"]');
+        inputs.forEach((el) => {
+            // "input" je plynulejší; "change" je až po opuštění pole. Dáme oboje.
+            el.addEventListener('input', async () => recomputeAll());
+        });
+        $$$('experimentDirectionDropdown')?.addEventListener('change', async () => recomputeAll());
+    }
+
+    // -------------------- Init --------------------
+    document.addEventListener('DOMContentLoaded', () => {
+        bindRecalcOnInputs();
+        recomputeAll();
+    });
+
+
     serviceWorkerRegistration();
 
     async function serviceWorkerRegistration() {
@@ -1333,7 +1978,6 @@
     let experimentEndPosition = 0;
 
     let isExperimentRunning = false;
-    let stopExperiment = false;
     let machineOccupation = false;
 
     let measureForces = null;
@@ -1347,22 +1991,22 @@
 
     // /////// UI Elements /////////
     const UI = {
-        regularLogContainer: document.getElementById("regularLog"),// Reference to the log display container
-        loadingLogContainer: document.getElementById("loadingLog"),// Reference to the loading log display container
-        toggleScrollBtn: document.getElementById("toggleScrollBtn"), // Button to toggle automatic scrolling
-        lineLockBtn: document.getElementById("toggleLineLockBtn"), // Button to lock the log view
-        commandInput: document.getElementById('commandInput'),// Input elements for command entry and settings
-        sendButton: document.getElementById('sendButton'),// Input elements for command entry and settings
-        chartsLiveButton: document.getElementById('toggleLive'),// Input elements for command entry and settings
-        connectionStatus: document.getElementById("connectionStatus"), // Display for connection status
-        USB: document.getElementById("connectBtnUSB"), // Button to connect via USB
-        progressBar: document.getElementById("experimentProgress"), // Progress bar for experiment status
-        progressLabel: document.getElementById("experimentProgressLabel"), // Label for progress percentage
-        timeChartContainer: document.getElementById("timeChart"),
-        distanceChartContainer: document.getElementById("distanceChart"),
-        chartsContainer: document.getElementById("chartsContainer"),
-        autoReturnPosition: document.getElementById("autoReturnPositionExperiment"),
-        autoReturnPositionLabel: document.getElementById("autoReturnPositionExperimentLabel"),
+        regularLogContainer: $$$("regularLog"),// Reference to the log display container
+        loadingLogContainer: $$$("loadingLog"),// Reference to the loading log display container
+        toggleScrollBtn: $$$("toggleScrollBtn"), // Button to toggle automatic scrolling
+        lineLockBtn: $$$("toggleLineLockBtn"), // Button to lock the log view
+        commandInput: $$$('commandInput'),// Input elements for command entry and settings
+        sendButton: $$$('sendButton'),// Input elements for command entry and settings
+        chartsLiveButton: $$$('toggleLive'),// Input elements for command entry and settings
+        connectionStatus: $$$("connectionStatus"), // Display for connection status
+        USB: $$$("connectBtnUSB"), // Button to connect via USB
+        progressBar: $$$("experimentProgress"), // Progress bar for experiment status
+        progressLabel: $$$("experimentProgressLabel"), // Label for progress percentage
+        timeChartContainer: $$$("timeChart"),
+        distanceChartContainer: $$$("distanceChart"),
+        chartsContainer: $$$("chartsContainer"),
+        autoReturnPosition: $$$("autoReturnPositionExperiment"),
+        autoReturnPositionLabel: $$$("autoReturnPositionExperimentLabel"),
     };
 
     // Connection status messages and colors
@@ -1377,15 +2021,15 @@
     // These were commented out, but they could be used to attach click events
 
 
-    document.getElementById("openResultsContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "resultsContainer"));
-    window.addEventListener("resize", () => controlContainerWidth("resultsContainer"));
-    document.getElementById("openSettingsContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "settingContainer"));
-    window.addEventListener("resize", () => controlContainerWidth("settingContainer"));
-    document.getElementById("openConsoleContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "consoleContainer"));
-    window.addEventListener("resize", () => controlContainerWidth("consoleContainer"));
+    $$$("openResultsContainer")?.addEventListener("click", async (event) => controlContainer(event.currentTarget, "resultsContainer"));
+    window.addEventListener("resize", async () => controlContainerWidth("resultsContainer"));
+    $$$("openSettingsContainer")?.addEventListener("click", async (event) => controlContainer(event.currentTarget, "settingContainer"));
+    window.addEventListener("resize", async () => controlContainerWidth("settingContainer"));
+    $$$("openConsoleContainer")?.addEventListener("click", async (event) => controlContainer(event.currentTarget, "consoleContainer"));
+    window.addEventListener("resize", async () => controlContainerWidth("consoleContainer"));
 
     // /////// Auto-scroll Toggle /////////
-    UI.toggleScrollBtn.addEventListener("click", () => {
+    UI.toggleScrollBtn.addEventListener("click", async () => {
         isAutoScroll = !isAutoScroll;
         UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
         UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${isAutoScroll ? "ON" : "OFF"}`;
@@ -1397,7 +2041,7 @@
 
 
     // Detects manual scrolling by the user
-    UI.regularLogContainer.addEventListener("scroll", () => {
+    UI.regularLogContainer.addEventListener("scroll", async () => {
         isScrolledToBottom = checkScrolledToBottom();
 
         if (!isScrolledToBottom) {
@@ -1414,14 +2058,17 @@
     });
 
     function controlContainerWidth(containerID) {
-        const container = document.getElementById(containerID);
+        const container = $$$(containerID);
+        if (!container) return;
         if (window.getComputedStyle(container).maxHeight !== "0px") {
             container.style.maxHeight = container.scrollHeight + "px"; // Adjust height on window resize
         }
     }
 
+
     function controlContainer(btn, containerID) {
-        const container = document.getElementById(containerID);
+        const container = $$$(containerID);
+        if (!container || !btn) return;
 
         if (window.getComputedStyle(container).maxHeight === "0px") {
             container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
@@ -1470,7 +2117,7 @@
             if (!isNaN(min)) newVal = min;
             else if (!isNaN(max)) newVal = max;
             else return;
-        } else {
+        } else if (typeof valueType === "string") {
             if (valueType === "intInput") {
                 newVal = Math.round(val);
             }
@@ -1482,19 +2129,38 @@
             if (!isNaN(max) && newVal > max) {
                 newVal = max;
             }
-        }
 
-        element.value = newVal;
-        element.dispatchEvent(new Event("change", {bubbles: true}));
+            if (valueType.includes("floatInput")) {
+                let roundTo = parseFloat(valueType.replace('floatInput', ''));
+                if (isNaN(roundTo)) {
+                    const step = element.step;
+                    if (step && !step.includes("any")) {
+                        const decimals = (step.replace(',', '.').split(".")[1] || "").length;
+                        const stepVal = Math.abs(parseFloat(step));
+                        if (!isNaN(stepVal) && stepVal > 0) {
+                            if (stepVal < 1 && decimals > 0) roundTo = decimals;
+                            // if (stepVal >= 1) roundTo = stepVal;
+                        }
+                    }
+                }
+                roundTo = Math.abs(Math.min(Math.round(roundTo), 12));
+
+                if (!isNaN(roundTo) && roundTo >= 0) newVal = roundDecimal(newVal, roundTo);
+            }
+        }
+        if (val !== newVal) {
+            element.value = newVal;
+            element.dispatchEvent(new Event("change", {bubbles: true}));
+        }
     }
 
 
     // Attaches validation checks to numeric inputs
-    document.querySelectorAll("input[type=number]").forEach(input => {
-        input.addEventListener("blur", (event) => {
+    $$("input[type=number]")?.forEach(input => {
+        input.addEventListener("change", async (event) => {
             checkInput(event.target, event.target.dataset.inputType);
         });
-        input.addEventListener("keydown", (event) => {
+        input.addEventListener("keydown", async (event) => {
             if (event.key === "Enter") {
                 checkInput(event.target, event.target.dataset.inputType);
                 event.target.blur();
@@ -1506,17 +2172,17 @@
     // /////// Command Input Handling /////////
 
     // Listens for the Enter key in the command input field and sends command
-    UI.commandInput.addEventListener("keydown", (event) => {
+    UI.commandInput.addEventListener("keydown", async (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            sendCommand(UI.commandInput.value.trim());
+            await sendCommand(UI.commandInput.value.trim());
         }
     });
 
     // Sends command when clicking the send-button
-    UI.sendButton.addEventListener('click', () => {
+    UI.sendButton.addEventListener('click', async () => {
         if (!serialPort) return;
-        sendCommand(UI.commandInput.value.trim());
+        await sendCommand(UI.commandInput.value.trim());
     });
 
     // /////// Auto-scroll Detection /////////
@@ -1580,9 +2246,9 @@
 
     function addData() {
         if (pageLoaded) {
-            document.getElementById("experimentType").value = initialData.experimentType || "";
-            document.getElementById("experimentCount").value = initialData.experimentCount || "";
-            document.getElementById("experimentDesc").value = initialData.experimentDesc || "";
+            $$$("experimentType").value = initialData.experimentType || "";
+            $$$("experimentCount").value = initialData.experimentCount || "";
+            $$$("experimentDesc").value = initialData.experimentDesc || "";
         } else {
             setTimeout(resolve => resolve, 500);
             addData();
@@ -1658,7 +2324,7 @@
      * Saves the stored log entries from IndexedDB to a downloadable CSV file.
      */
     // Event listener for the save button
-    document.getElementById("saveData").addEventListener("click", saveCSV);
+    $$$("saveData")?.addEventListener("click", async () => saveCSV);
 
 
     let handFolderSelect = false;
@@ -1671,11 +2337,11 @@
     async function saveCSV() {
         let dirHandle = null;
         const delimiter = ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
-        const expNum = parseInt(document.getElementById("experimentCount").value.trim()) || 0;
-        const experimentType = document.getElementById("experimentType").value.trim();
-        const experimentDesc = document.getElementById("experimentDesc").value.trim().replaceAll("\n", " ").replaceAll(delimiter, "|"); // Replace newlines with spaces and delimiters with spaces
+        const expNum = parseInt($$$("experimentCount").value.trim()) || 0;
+        const experimentType = $$$("experimentType").value.trim();
+        const experimentDesc = $$$("experimentDesc").value.trim().replaceAll("\n", " ").replaceAll(delimiter, "|"); // Replace newlines with spaces and delimiters with spaces
 
-        handFolderSelect = document.getElementById("storagePath").checked;
+        handFolderSelect = $$$("storagePath").checked;
 
         if (!experimentType) {
             alert("Unable to save the data.\n    Please enter the experiment type.");
@@ -1755,8 +2421,8 @@
             }
 
             if (expNum) {
-                document.getElementById("experimentCount").value = expNum + 1;
-                document.getElementById("experimentCount").dispatchEvent(new Event("change", {bubbles: true}));
+                $$$("experimentCount").value = expNum + 1;
+                $$$("experimentCount")?.dispatchEvent(new Event("change", {bubbles: true}));
             }
 
             console.log(`✅ Data saved to file: ${fileName}`);
@@ -1790,16 +2456,17 @@
 
     // /////// Serial Connection Handling /////////
 
-    UI.USB.addEventListener("click", startSerial);
+    UI.USB.addEventListener("click", async () => startSerial());
 
     /**
      * Starts the Serial (USB) connection by opening the database and initiating the connection.
      */
     async function startSerial() {
         if (isConnected) {
+            console.info("Already connected, disconnecting...");
             await disconnectSerial();
         } else {
-            console.log("🚀 Starting application...");
+            console.info("🚀 Starting application...");
             await connectSerial();
 
         }
@@ -2005,7 +2672,7 @@
                 const btn = document.createElement("button");
                 btn.innerText = name;
                 btn.onclick = () => sendFunction(name, command);
-                // document.getElementById("buttons").appendChild(btn);
+                // $$("buttons").appendChild(btn);
             }
         } catch (error) {
             await handleError(error, "loadCommands");
@@ -2069,6 +2736,7 @@
             console.log("🔍 Searching for available ports...", ports);
             if (ports && ports.length === 1) {
                 serialPort = ports[0];
+                console.info("Only one port found.");
                 await openPort(serialPort);
             } else {
                 if (ports && ports.length > 1) {
@@ -2082,7 +2750,7 @@
                     console.log("No previously connected devices found.");
                 }
                 if (!serialPort) serialPort = await serialFunctionRequestPort();
-                if (serialPort === null) return;
+                if (serialPort === null) throw new Error('Port is unavailable.');
                 await openPort(serialPort);
             }
         } catch (error) {
@@ -2119,7 +2787,7 @@
             }
 
             console.log("🔌 Opening new port...");
-            await comPort.open({baudRate: parseInt(document.getElementById("inputNumBaudRate").value)});
+            await comPort.open({baudRate: parseInt($$$("inputNumBaudRate").value)});
 
             // Get the writer and reader for the port after opening
             if (serialWriter) {
@@ -2133,6 +2801,9 @@
             isConnected = true;
             reconnectAttempts = 0;
 
+
+            await sendCommand("DATAC 0"); // Stop data collection
+
             readSerial();
 
             await checkSerialSignals(comPort);
@@ -2141,11 +2812,13 @@
 
             await logMessage("\n");
 
-            await sendCommand("MC STOP"); // Stop data collection
-            await sendCommand("DSLR STOP CYCLIC");
-            await sendCommand("DATAC 0"); // Stop data collection
+            await sendCommand("MC STOP"); // Stop movement
+            await sendCommand("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+            await sendCommand("DATA SET INTERVAL 50000"); // Stop data collection
 
             await logMessage("\n");
+
+            await unlockMovement();
 
             machineFirmware = `${await getFirmwareVersion()}`;
 
@@ -2215,14 +2888,13 @@
 
         try {
             try {
-                await sendCommand("MC STOP"); // Stop data collection
-                await sendCommand("DSLR STOP CYCLIC");
+                await sendCommand("MC STOP"); // Stop movement
+                await sendCommand("DSLR STOP CYCLIC"); // Stop DSLR cyclic
                 await sendCommand("DATAC 0"); // Stop data collection
             } catch (error) {
                 console.warn("⚠️ Error stopping data collection:", error);
             } finally {
                 machineOccupation = false;
-                stopExperiment = true;
                 isExperimentRunning = false;
             }
 
@@ -2269,12 +2941,10 @@
         parsedData = {time: NaN, distance: NaN, value: NaN, load: [NaN, NaN, NaN], photoIndex: NaN};
         liveUpdate = false
 
-
         UI.USB.innerText = "🔌 Connect via USB";
         updateConnectionStatus("disconnected");
 
         isExperimentRunning = false;
-        stopExperiment = true;
         machineOccupation = false;
         UI.loadingLogContainer.style.background = "#323232";
         experimentEndPosition = 0;
@@ -2294,7 +2964,20 @@
         serialWriter = null;
         reconnectAttempts = 0;
 
-        unblockMoveBy();
+        lockMovement();
+
+        // --------------------------------
+        // // Experiment parameters
+        // speedForward_mmps = 0;
+        // currentSpeed = null;
+        // currentAcceleration = null;
+        // takePhotos = false;
+        // dataInterval_us = null;
+        // initialForceLoadLim_N = null;
+        // experimentDoubleSpeed = false;
+        // stoppingForceLimit = null;
+        // holdForceTime = null;
+        // --------------------------------
     }
 
 
@@ -2450,7 +3133,7 @@
 
 
             if (msg.startsWith("DS")) {
-                await parseData(msg);
+                await parseData(msg.substring(2));
             } else {
                 await logMessage("📩\t" + msg);
             }
@@ -2559,8 +3242,6 @@
     let dataChartInterval = 1; // Interval for live chart update
     let startTime = null;
 
-    let isDelayed = false;
-
     // let firstPhoto = 0;
 
 
@@ -2595,26 +3276,79 @@
     }
 
 
-    function delayData() {
-        if (isDelayed) return;
-
-        isDelayed = true;
-        new Promise(() => setTimeout(() => isDelayed = false, 500)); // Call resolve() po 500 ms
-    }
-
-
     let aggregatedDataBetweenSteps = [];
     let minimumZeroSpeedCount = 2;
     let directionCorrection = 1;
     let forceDirectionCorrection = -1;
 
+    let loadcellErrRate = null;
+    let measurementErrRate = null;
+    let totalErrRate = null;
+
+    let endMeasurement = false;
+    let endMeasurementCounter = null;
+    const delayAfterEndMeasurement = 500; // microseconds
+
+    async function endMeasuring(timeout = 0, endText = '⛔ Experiment stopped.', immediateText = '', command = '') {
+        if (!endMeasurement) {
+
+            endMeasurement = true; // Set the flag to true
+
+            if (typeof command === 'string' && command.trim() !== '') await sendCommand(command);
+
+            if (immediateText) {
+                console.log(immediateText);
+                logMessage(immediateText);
+            }
+
+            endMeasurementCounter = setTimeout(async () => {
+
+                if (endText) {
+                    console.log(endText);
+                    logMessage(endText);
+                }
+
+                await sendCommand("MC STOP");
+                await sendCommand("DSLR STOP CYCLIC");
+                await sendCommand("DATAC 0");
+
+
+                isExperimentRunning = false;
+                dataCount = null;
+
+                UI.loadingLogContainer.style.background = "#323232";
+
+                if (aggregatedDataBetweenSteps.length > 0) {
+                    console.log("⚠️ Data not sent to chart.", aggregatedDataBetweenSteps.length);
+                    await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+                }
+                aggregatedDataBetweenSteps.length = 0
+
+                if (progress >= 99.9999990) {
+                    document.documentElement.style.setProperty('--progressColor', 'var(--blue-color)');
+                    UI.progressBar.value = 100;
+                    UI.progressLabel.textContent = `100%`;
+                }
+                // const lastData = await calculateAverageParsedData(aggregatedDataBetweenSteps);
+                // console.warn(lastData);
+                // aggregatedDataBetweenSteps.forEach(data => {
+                //     updateChart(data);
+                // });
+
+                clearTimeout(endMeasurementCounter);
+                endMeasurementCounter = null;
+
+            }, timeout * 1000 - 5);
+        }
+
+    }
+
     async function parseData(dataString) { //  TODO => move string handle to 'processMeasurements'
-        if (!takeMeasurements && !isExperimentRunning && !isDelayed) {
+        if (!takeMeasurements && !isExperimentRunning) {
             logMeasurements(dataString);
             return;
         }
 
-        dataString = dataString.substring(2);
         const parts = dataString.split(",");
 
         // Detect DSLR shoot event
@@ -2634,7 +3368,6 @@
 
         // Common parsing logic
         let loadVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // LoadCell values
-        // let loadVal = parts.slice(3).map(parseFloat);
 
         if (takeMeasurements) {
             loadVal.forEach((value, index) => measureForces[index].push(value * forceDirectionCorrection)); // Handle takeMeasurements
@@ -2649,11 +3382,9 @@
         // Handle regular data (not DSLR)
         if (startTime === null) {
             startTime = timeVal;
-            timeVal = 0;
-        } else { // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
-            timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6);
         }
 
+        timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6); // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
 
         // distVal = (distVal - startPosition) * directionCorrection;
         loadVal = loadVal.map((value, index) => roundDecimal((value * forceDirectionCorrection) - meanForces[index], 2));
@@ -2663,36 +3394,46 @@
 
         // If a pending DSLR timestamp exists, interpolate values
         if (takePhotos && pendingDSLR) {
-            await interpolateDSLRData(pendingDSLR, newData, parsedData); // TODO can chech if its valid with set INPUT
+            await interpolateDSLRData(pendingDSLR, newData, parsedData);
         }
 
         if (experimentDoubleSpeed && loadVal.some(value => !isNaN(value) && value >= initialForceLoadLim_N)) {
-            sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+            await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
             experimentDoubleSpeed = false;
         }
 
-        // Handle speed checks and experiment stopping
-        if (speedVal < 0.001 && !isDelayed && timeVal > 1) { // speedVal < 0.001 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
-            zero_speed_counter++;
-            if (zero_speed_counter > minimumZeroSpeedCount) {
-                console.log("🛑 Experiment stopped due to zero speed.");
-                logMessage("🛑 Experiment stopped due to zero speed.");
-                stopExperiment = true;
-            }
+        const sumForce = loadVal.reduce((acc, val) => acc + (isNaN(val) ? 0 : val), 0);
+
+        if (sumForce >= stoppingForceLimit) {
+
+            endMeasuring(holdForceTime, `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`, '', "MC STOP");
+
         } else {
-            zero_speed_counter = 0;
+
+            // Handle speed checks and experiment stopping
+            if (speedVal < (1 / 1e2) && timeVal > 1) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
+                zero_speed_counter++;
+                if (zero_speed_counter > minimumZeroSpeedCount) {
+
+                    endMeasuring(Math.max(delayAfterEndMeasurement / 2, 10), "🛑 Experiment stopped due to zero speed.");
+
+                }
+            } else {
+                zero_speed_counter = 0;
+            }
+
         }
 
         // Handle LoadCell limit checks
         for (let i = 0; i < 3; i++) {
             if (!isNaN(loadVal[i])) {
-                if (Math.abs(loadVal[i]) > maxLoad[i]) maxLoad[i] = Math.abs(loadVal[i]);
-                if (maxLoad[i] && !isDelayed) {
-                    if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] && (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
-                        // await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
-                        stopExperiment = true;
-                        console.log(`🛑 Experiment stopped due to LoadCell ${i + 1} drop.`);
-                        logMessage(`🛑 Experiment stopped due to LoadCell ${i + 1} drop.`);
+                const currForce = Math.abs(loadVal[i]);
+                if (currForce > maxLoad[i]) maxLoad[i] = currForce;
+                if (maxLoad[i] || maxLoad[i] === 0) {
+                    if ((maxLoad[i] * loadLimitDropPercent) > currForce && (maxLoad[i] - currForce) > loadLimitDropValue) {
+
+                        endMeasuring(10, `🛑 Experiment stopped due to LoadCell ${i + 1} drop.`, '', "MC STOP");
+
                         break; // Stop checking other LoadCells if one fails
                     }
                 }
@@ -2703,13 +3444,10 @@
         parsedData = newData;
 
         // Update Progress Bar
-        const progress = distVal / experimentEndPosition * 100;
-        if (progress >= 100 && !isDelayed) {
-            stopExperiment = true;
-            console.log("🏁 Experiment finished.");
-            logMessage("🏁 Experiment finished.");
+        const progressValue = roundDecimal(Math.min(Math.max(0, distVal / experimentEndPosition * 100), 100), 9);
+        if (progressValue >= 100) {
+            endMeasuring(delayAfterEndMeasurement, "🏁 Experiment finished.");
         }
-        const progressValue = Math.min(Math.max(0, distVal / experimentEndPosition * 100), 100);
         UI.progressBar.value = progressValue;
         UI.progressLabel.innerText = `${progressValue.toFixed(2)}%`; // .padStart(5, "0")
 
@@ -2727,32 +3465,6 @@
         if (dataCount % dataChartInterval === 0) {
             aggregatedDataBetweenSteps.length = 0;
         }
-
-
-        // Stop experiment and reset
-        if (stopExperiment && !isDelayed) {
-            console.log("🛑 Experiment stopped.");
-            isExperimentRunning = false;
-            UI.loadingLogContainer.style.background = "#323232";
-            dataCount = null;
-            // await delayData();
-
-            if (aggregatedDataBetweenSteps.length > 0) {
-                console.log("⚠️ Data not sent to chart.", aggregatedDataBetweenSteps.length);
-                await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
-            }
-            aggregatedDataBetweenSteps.length = 0
-
-            if (progressValue >= 99.99999900) {
-                document.documentElement.style.setProperty('--progressColor', 'var(--blue-color)');
-                UI.progressLabel.textContent = `100%`;
-            }
-            // const lastData = await calculateAverageParsedData(aggregatedDataBetweenSteps);
-            // console.warn(lastData);
-            // aggregatedDataBetweenSteps.forEach(data => {
-            //     updateChart(data);
-            // });
-        }
     }
 
 
@@ -2768,7 +3480,7 @@
         let command;
 
         if (name === "read Loadcell[#]") {
-            let loadcellId = parseInt(document.getElementById("inputNumLoadID").value);
+            let loadcellId = parseInt($$$("inputNumLoadID").value);
             command = replaceVariables(inputCommand, {loadcellId: loadcellId});
         } else {
             command = inputCommand;
@@ -2828,7 +3540,7 @@
     const MIN_HIDE_TIME = 20_000; // 20 seconds
 
     // Event listener for page visibility change
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener("visibilitychange", async () => {
         if (!isExperimentRunning) return;
         if (!liveUpdate && !liveUpdatePaused) return;
 
@@ -3021,7 +3733,7 @@
 
 
     // Attach live update toggle to button
-    UI.chartsLiveButton.addEventListener("click", chartUpdate);
+    UI.chartsLiveButton.addEventListener("click", async () => chartUpdate());
 
 
     // /////// uPlot Chart Initialization /////////
@@ -3043,7 +3755,7 @@
 
     function createChart(containerID, marker, seriesLabels, title = "Graph", labelX = "", labelY = "") {
         // Get the container element
-        let container = document.getElementById(containerID);
+        let container = $$$(containerID);
         if (!container) {
             console.error(`❌ Error: container s ID "${containerID}" not found.`);
             return null;
@@ -3098,7 +3810,7 @@
             },
             series: seriesLabels.map((label, index) => ({
                 label: label,
-                stroke: index === 0 ? "black" : ["red", "blue", "green"][index - 1] || "gray"
+                stroke: index === 0 ? "black" : ["#FF2730", "#2196F3", "#4CAF50"][index - 1] || "555555"
             })),
             plugins: [markerPlugin],
         };
@@ -3107,7 +3819,7 @@
         let chart = new uPlot(options, [[], ...seriesLabels.slice(1).map(() => [])], container);
 
         // Dynamic resizing of the chart
-        window.addEventListener("resize", () => {
+        window.addEventListener("resize", async () => {
             let newWidth = container.clientWidth || 400;
             let newHeight = container.clientHeight || 300;
             chart.setSize({width: newWidth, height: newHeight});
@@ -3122,7 +3834,7 @@
     let distanceChart = createChart("distanceChart", markersDist, ["Distance (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Distance Graph", "Displacement [mm]", "Force [N]");
 
     function getChartHeightIncludingLegend() {
-        let charts = document.querySelectorAll(".uplot");
+        let charts = $$(".uplot");
         let maxHeight = 0;
 
         charts.forEach(chart => {
@@ -3391,43 +4103,43 @@
     /////////////////////////////////////////////////////////////////
 
     // === Experiment Data Saving ===
-    document.getElementById("startExperiment").addEventListener('click', startExperiment);
+    $$$("startExperiment")?.addEventListener('click', async () => startExperiment());
 
-    document.getElementById("stopMachine").addEventListener('click', stopMachine);
+    $$$("stopMachine")?.addEventListener('click', async () => stopMachine());
 
-    document.getElementById("inputLoadLimitDropPercent").addEventListener('change', (event) => {
+    $$$("inputLoadLimitDropPercent")?.addEventListener('change', async (event) => {
         loadLimitDropPercent = 1 - parseFloat(event.target.value) / 100;
     });
-    document.getElementById("inputLoadLimitDropValue").addEventListener('change', (event) => {
+    $$$("inputLoadLimitDropValue")?.addEventListener('change', async (event) => {
         loadLimitDropValue = parseFloat(event.target.value);
     });
 
     // #TODO do better disabling of elements //////////////////////////////////////////////////
-    document.querySelectorAll('.prohibited').forEach(element => {
+    $$('.prohibited')?.forEach(element => {
         element.readOnly = true;
         element.tabindex = -1;
 
-        element.addEventListener("selectstart", e => e.preventDefault());
-        element.addEventListener("mousedown", e => e.preventDefault());
-        element.addEventListener("keydown", e => e.preventDefault());
+        element.addEventListener("selectstart", async (e) => e.preventDefault());
+        element.addEventListener("mousedown", async (e) => e.preventDefault());
+        element.addEventListener("keydown", async (e) => e.preventDefault());
     })
 
-    document.getElementById("inputTakePhotos").addEventListener('change', (event) => {
+    $$$("inputTakePhotos")?.addEventListener('change', async (event) => {
         if (event.target.checked) {
             // disable photo interval input
-            document.getElementById("inputPhotoInterval").classList.remove("disabled");
-            document.getElementById("inputPhotoInterval").readOnly = false;
-            document.getElementById("inputPhotoInterval").tabIndex = 1;
+            $$$("inputPhotoInterval")?.classList.remove("disabled");
+            $$$("inputPhotoInterval").readOnly = false;
+            $$$("inputPhotoInterval").tabIndex = 1;
 
             // disable photo interval input label
-            document.querySelector(`label[for='${"inputPhotoInterval"}']`).classList.remove("disabled");
+            $(`label[for='${"inputPhotoInterval"}']`)?.classList.remove("disabled");
         } else {
             // disable photo interval input
-            document.getElementById("inputPhotoInterval").classList.add("disabled");
-            document.getElementById("inputPhotoInterval").readOnly = true;
-            document.getElementById("inputPhotoInterval").tabIndex = -1;
+            $$$("inputPhotoInterval")?.classList.add("disabled");
+            $$$("inputPhotoInterval").readOnly = true;
+            $$$("inputPhotoInterval").tabIndex = -1;
             // disable photo interval input label
-            document.querySelector(`label[for='${"inputPhotoInterval"}']`).classList.add("disabled");
+            $(`label[for='${"inputPhotoInterval"}']`)?.classList.add("disabled");
         }
     });
 
@@ -3453,7 +4165,6 @@
 
     function stopMachine() {
         isExperimentRunning = false;
-        stopExperiment = true;
         machineOccupation = false;
         UI.progressBar.value = 0;
         UI.progressLabel.textContent = `0%`;
@@ -3461,7 +4172,27 @@
         sendCommand("DSLR STOP CYCLIC");
         sendCommand("DATAC 0");
         if (currentSpeed) sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
-        if (isMovingVal) unblockMoveBy();
+        if (currentAcceleration) sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+        unlockMovement();
+    }
+
+
+    function analyzeForces(fields) {
+        return fields.map(arr => {
+            let found = false;
+            let min = Infinity, max = -Infinity;
+
+            for (const v of arr) {
+                if (!isNaN(v)) {
+                    found = true;
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+
+            if (!found) return {min: NaN, max: NaN, allInvalid: true};
+            return {min, max, allInvalid: false};
+        });
     }
 
 
@@ -3472,6 +4203,8 @@
     let dataInterval_us = null;
     let initialForceLoadLim_N = null;
     let experimentDoubleSpeed = false;
+    let stoppingForceLimit = null;
+    let holdForceTime = null;
 
     async function startExperiment() {
 
@@ -3484,6 +4217,12 @@
         if (isExperimentRunning || machineOccupation) {
             console.warn("⚠️ Experiment is already running.");
             await logMessage("⚠️ Experiment is already running.");
+            return;
+        }
+
+        if (isMovingVal) {
+            console.warn("⚠️ Machine is currently moving. Please wait until it stops.");
+            await logMessage("⚠️ Machine is currently moving. Please wait until it stops.");
             return;
         }
 
@@ -3500,109 +4239,109 @@
         try {
             machineOccupation = true;
 
+            await lockMovement();
+
             await console.clear();
             await console.log("\n\n\n──────────── NEW EXPERIMENT ────────────\n\n\n");
             await console.groupCollapsed("New Experiment Section");
 
             // === Retrieve Parameters from Inputs ===
-            const distance_mm = Math.abs(parseFloat(document.getElementById("inputDistance").value));
-            const experimentType = document.getElementById("experimentDirectionDropdown").value.toLowerCase();
+            const distance_mm = Math.abs(parseFloat($$$("inputDistance").value));
+            const experimentType = $$$("experimentDirectionDropdown").value.toLowerCase();
             directionCorrection = experimentType.includes("down") ? 1 : -1;
-            speedForward_mmps = Math.abs(parseFloat(document.getElementById("inputSpeedForward").value));
-            // const speedBackward_mmps = parseFloat(document.getElementById("inputSpeedBackward").value);
-            dataInterval_us = Math.max(Math.abs(parseInt(document.getElementById("inputDataInterval").value)), 100);
-            const loadcellCapacity = Math.abs(parseInt(document.getElementById("inputLoadcellCapacity").value));
-            const loadcellOutput = Math.abs(parseFloat(document.getElementById("inputLoadcellOutput").value));
-            takePhotos = document.getElementById("inputTakePhotos").checked;
-            const photoInterval_ms = Math.abs(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000);
-            loadLimitDropPercent = 1 - (Math.abs(parseFloat(document.getElementById("inputLoadLimitDropPercent").value)) / 100);
-            loadLimitDropValue = Math.abs(parseFloat(document.getElementById("inputLoadLimitDropValue").value));
-            let initialSpeed_mmps;
+            speedForward_mmps = Math.abs(parseFloat($$$("inputSpeedForward").value));
+            // const speedBackward_mmps = parseFloat($$("inputSpeedBackward").value);
+            dataInterval_us = Math.max(Math.abs(parseInt($$$("inputDataInterval").value)), 100);
+            const loadcellCapacity = Math.abs(parseInt($$$("inputLoadcellCapacity").value));
+            const loadcellOutput = Math.abs(parseFloat($$$("inputLoadcellOutput").value));
+            takePhotos = $$$("inputTakePhotos").checked;
+            const photoInterval_ms = Math.abs(parseFloat($$$("inputPhotoInterval").value) * 1000);
+            loadLimitDropPercent = (1 - (Math.abs(parseFloat($$$("inputLoadLimitDropPercent").value)) / 100)) ?? Infinity;
+            loadLimitDropValue = Math.abs(parseFloat($$$("inputLoadLimitDropValue").value)) ?? Infinity;
+
+
+            let initialSpeed_mmps = speedForward_mmps;
+            initialForceLoadLim_N = null;
+            experimentDoubleSpeed = false;
+            stoppingForceLimit = Number.POSITIVE_INFINITY;
+            holdForceTime = null;
 
 
             const suffixes = ["-ib", "-hb"];
             if (suffixes.some(suf => experimentType.endsWith(suf))) {
-                initialSpeed_mmps = Math.abs(parseFloat(document.getElementById("inputInitialSpeed").value));
-                initialForceLoadLim_N = Math.abs(parseFloat(document.getElementById("inputInitialForce").value));
+                initialSpeed_mmps = Math.abs(parseFloat($$$("inputInitialSpeed").value));
+                initialForceLoadLim_N = Math.abs(parseFloat($$$("inputInitialForce").value));
                 experimentDoubleSpeed = true;
-            } else {
-                initialSpeed_mmps = speedForward_mmps;
-                initialForceLoadLim_N = null;
-                experimentDoubleSpeed = false;
+
+                if (experimentType.endsWith("-hb")) {
+                    stoppingForceLimit = $$$('inputStopForce');
+                    holdForceTime = $$$('inputEndDelay');
+                }
             }
+
 
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
 
             if (!distance_mm || distance_mm < minDistance) {
                 console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
                 await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                machineOccupation = false;
                 alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                return;
+                throw new Error("Distance error");
             } else if (!speedForward_mmps || speedForward_mmps < minFSpeed) {
                 console.warn(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 await logMessage(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
-                machineOccupation = false;
                 alert(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
-                return;
+                throw new Error("Speed error");
             } else if (!speedForward_mmps || speedForward_mmps > maxFSpeed) {
                 console.warn(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 await logMessage(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
-                machineOccupation = false;
                 alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
-                return;
+                throw new Error("Speed error");
             } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps < minFSpeed)) {
                 console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
-                machineOccupation = false;
                 alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
-                return;
+                throw new Error("Initial speed error");
             } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps > maxFSpeed)) {
                 console.warn(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                 await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
-                machineOccupation = false;
                 alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
-                return;
+                throw new Error("Initial speed error");
             } else if (experimentDoubleSpeed && (!initialForceLoadLim_N || initialForceLoadLim_N <= 0)) {
                 console.warn(`⚠️ Initial force load must be greater than 0 N.`);
                 await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
-                machineOccupation = false;
                 alert(`⚠️ Initial force load must be greater than 0 N.`);
-                return;
+                throw new Error("Initial force load error");
             } else if (!dataInterval_us || dataInterval_us < 1) {
                 console.warn(`⚠️ Data interval must be greater than 1 µs.`);
                 await logMessage(`⚠️ Data interval must be greater than 1 µs.`);
-                machineOccupation = false;
                 alert(`⚠️ Data interval must be greater than 1 µs.`);
-                return;
+                throw new Error("Data interval error");
             } else if (!loadcellCapacity || loadcellCapacity < minLoadCap) {
                 console.warn(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
-                machineOccupation = false;
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
-                return;
+                throw new Error("Loadcell capacity error");
             } else if (!loadcellOutput || loadcellOutput < minLoadOut) {
                 console.warn(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
-                machineOccupation = false;
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
-                return;
+                throw new Error("Loadcell output error");
             }
 
             if (takePhotos) {
                 if (!photoInterval_ms || photoInterval_ms < minPhotoInt) {
                     console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
-                    machineOccupation = false;
                     alert(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
-                    return;
+                    throw new Error("Photo interval error");
                 }
                 if (photoInterval_ms * 1000 < dataInterval_us) {
                     console.warn("⚠️ Photo interval must be bigger than data interval.");
                     await logMessage("⚠️ Photo interval must be bigger than data interval.");
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1000} µs ❗`);
                     dataInterval_us = photoInterval_ms * 1000;
-                    document.getElementById("inputDataInterval").value = dataInterval_us;
+                    $$$("inputDataInterval").value = dataInterval_us;
                 }
             }
 
@@ -3653,23 +4392,19 @@
                         if (!isSerial || !isConnected) {
                             console.warn("⚠️ Serial connection lost during calibration.");
                             await logMessage("⚠️ Serial connection lost during calibration.");
-                            return;
+                            throw new Error("Serial connection lost during calibration.");
                         }
                     }
 
-                    console.log("📐 Motors are calibrated.");
-                    await logMessage("📐 Motors are calibrated.\n\t🔃 Please restart the experiment.");
-                    alert("📐 Motors are calibrated.\n\t🔃 Please restart the experiment.");
+                    console.log("📐 Machine is calibrated.");
+                    await logMessage("📐 Machine is calibrated.\n\t🔃 Please restart the experiment.");
+                    alert("📐 Machine is calibrated.\n\t🔃 Please restart the experiment.");
                 } else {
                     await logMessage("❌ Calibration is required to start the experiment.");
                     console.error("❌ Calibration is required to start the experiment.");
                     alert("❌ Calibration is required to start the experiment.");
                 }
-
-                machineOccupation = false;
-                isExperimentRunning = false;
-                stopExperiment = true;
-                return;
+                throw new Error("Calibration stop");
             }
 
             await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
@@ -3689,7 +4424,6 @@
             // console.log("🚀 Starting experiment...");
             //
             // isExperimentRunning = true;
-            // stopExperiment = false;
             //
             // // === Progress Bar Setup ===
             // UI.progressBar.value = 0;
@@ -3770,6 +4504,8 @@
             await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
             console.log("🚀 Starting experiment...");
 
+            await lockMovement();
+
 
             // === Progress Bar Setup ===
             document.documentElement.style.setProperty('--progressColor', 'var(--darkorange-color)');
@@ -3806,10 +4542,10 @@
 
             // === Prepare Data Collection ===
             startPosition = await measurePosition();
-            document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
-            document.getElementById("returnPositionExperimentBtn").readOnly = false;
-            document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
-            document.getElementById("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${startPosition} mm`;
+            $$$("returnPositionExperimentBtn")?.classList.remove("disabled");
+            $$$("returnPositionExperimentBtn").readOnly = false;
+            $$$("returnPositionExperimentBtn").tabIndex = 1;
+            $$$("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${startPosition} mm`;
             await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
 
 
@@ -3821,9 +4557,9 @@
 
             forceDirectionCorrection = directionCorrection * -1;
             await addDataToLog({
-                experimentName: document.getElementById("experimentType").value.trim(),
-                experimentCounter: document.getElementById("experimentCount").value.trim(),
-                experimentDescription: document.getElementById("experimentDesc").value.trim(),
+                experimentName: $$$("experimentType").value.trim(),
+                experimentCounter: $$$("experimentCount").value.trim(),
+                experimentDescription: $$$("experimentDesc").value.trim(),
                 experimentDate: new Date().toLocaleString(),
                 loadDirection: directionCorrection,
                 loadDistance: distance_mm,
@@ -3852,49 +4588,86 @@
 
 
             await sendCommand('DATA SET INTERVAL 2000');
+
+            // --- 1) Take measurements ---
             takeMeasurements = true;
-
-
             await sendCommand("DATAC 1");
 
-            // Take measurements for one second
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Stop for 1 s
-
+            // Take measurements for 1.5 second
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait
 
             takeMeasurements = false;
-            await sendCommand("DATAC 0", 5);
-            meanForces = measureForces.map(force => roundDecimal(force.reduce((a, b) => a + b, 0) / force.length, 2));
-            const measuredForces = measureForces.map(force => Math.sum(force));
+            await sendCommand("DATAC 0");
+
+            // --- 2) Mean forces ---
+            meanForces = await measureForces.map(force => roundDecimal(force.reduce((a, b) => a + b, 0) / force.length, 2));
+
+            // --- 3) Analysis ---
+            const forceAnalysis = await analyzeForces(measureForces);
+            console.log("Force analysis:", forceAnalysis);
+            console.table(forceAnalysis);
+
+            // --- 4) Valid fields ---
+            const validFields = await forceAnalysis.filter(r => !r.allInvalid);
 
             await new Promise(resolve => setTimeout(resolve, 5));
 
-            measureForces = [[], [], []];
-
+            // --- 5) Check for errors ---
             // If more one force is not eaqule to zero, than Stop and Alert
-
             if (!experimentType.endsWith("-basic")) {
-                if (measuredForces.filter(f => f === 0).length > 1) {
+                if (validFields.length > 1) {
                     console.warn("⚠️ Multiple loadcells are connected.");
                     await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
-                } else if (measuredForces.every(f => f === 0)) {
+                    throw new Error("Multiple loadcells connected");
+
+                } else if (validFields.length === 0) {
                     console.warn("⚠️ No loadcell is connected.");
                     await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                     alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                    throw new Error("No loadcell connected");
                 }
             }
+
+            // --- 6) Valid dispersion ---
+            const diffs = validFields.flatMap(({
+                                                   min, max
+                                               }) => Number.isFinite(min) && Number.isFinite(max) ? [max - min] : []);
+            console.log("Valid dispersions:", diffs);
+
+            // --- 7) Error rates ---
+            measurementErrRate = await roundDecimal(await diffs.reduce((a, b) => a + b, 0) / diffs.length, 2);
+            console.log("Measurement error rate:", measurementErrRate, "N");
+
+            loadcellErrRate = await (loadcellCapacity * 9.81) / 2000; // 0.05% of the capacity
+            console.log("Loadcell error rate:", loadcellErrRate, "N");
+
+            // --- 8) Final error rate ---
+            const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
+            totalErrRate = alpha * measurementErrRate + (1 - alpha) * loadcellErrRate;
+            console.log("Final error rate:", totalErrRate, "N");
+
+            // --- 9) Clear force fields ---
+            measureForces = [[], [], []];
 
             await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
 
+            // ==================================
+            // === Reset Experiment Variables ===
+
             startTime = null;
             isExperimentRunning = true;
-            stopExperiment = false;
-            isDelayed = false;
+            endMeasurement = false;
+            clearInterval(endMeasurementCounter);
+            endMeasurementCounter = null;
+
+            // ==================================
+            // ==================================
 
 
             // === Enable Data Streaming and DSLR Shooting ===
-            await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`);
+            await sendCommand(`inde`);
             await sendCommand("DATAC 1");
             if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
 
@@ -3910,10 +4683,8 @@
 
 
             isExperimentRunning = false;
-            stopExperiment = true;
 
             await sendCommand('MC STOP');
-
             // === Stop Data Streaming and DSLR Shooting ===
             await sendCommand('DSLR STOP CYCLIC');
             await sendCommand('DATAC 0');
@@ -3947,13 +4718,13 @@
             } else {
                 // === Move Back ===
                 if (UI.autoReturnPosition.checked) {
-                    await moveToOriginalPosition(currentSpeed, currentAcceleration);
+                    await moveToOriginalPosition();
                 }
             }
 
 
-            await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
-            await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+            if (currentSpeed) await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+            if (currentAcceleration) await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
 
             machineOccupation = false;
 
@@ -3974,14 +4745,14 @@
         } finally {
             machineOccupation = false;
             isExperimentRunning = false;
-            stopExperiment = true;
             await sendCommand('MC STOP');
+            await unlockMovement();
             console.groupEnd();
         }
     }
 
 
-    async function moveToOriginalPosition(endSpeed, endAcceleration) {
+    async function moveToOriginalPosition() {
         if (!isConnected) return; // Not connected
         if (isExperimentRunning || machineOccupation) return; // Machine is busy
         if (!calibrationStatus) return; // Not calibrated
@@ -3994,6 +4765,7 @@
         if (!calibrationStatus) {
             console.warn("⚠️ Motor is not calibrated. Cannot return to the original position.");
             await logMessage("⚠️ Motor is not calibrated. Cannot return to the original position.");
+            await unlockMovement();
             return;
         }
 
@@ -4001,39 +4773,48 @@
 
         if (typeof startPosition !== "number" || typeof endPosition !== "number" ||
             (!endPosition && endPosition !== 0) || (!startPosition && startPosition !== 0)) {
-
-            document.getElementById("returnPositionExperimentBtn").classList.add("disabled");
-            document.getElementById("returnPositionExperimentBtn").readOnly = true;
-            document.getElementById("returnPositionExperimentBtn").tabIndex = -1;
+            await unlockMovement();
             return;
-
-        } else {
-            document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
-            document.getElementById("returnPositionExperimentBtn").readOnly = false;
-            document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
         }
 
         if (Math.abs(startPosition - endPosition) < 1e-2) {
+            await unlockMovement();
             console.log("🚩 Already at the original position.");
             return;
         }
 
-        endSpeed ||= await getSpeed();
-        endAcceleration ||= await getAcceleration();
+        currentSpeed ||= await getSpeed();
+        currentAcceleration ||= await getAcceleration();
         await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
 
         console.log("⬅️ Moving backward...");
         const movingSpeed = 15;
         const movingAcceleration = 100;
 
+
+        if (!movingSpeed || !movingAcceleration) {
+            console.warn("Invalid speed or acceleration.");
+            unlockMovement();
+            return;
+        }
+
+        const movingTime = await ((computeMotionTime(Math.abs(startPosition - endPosition), movingSpeed, movingAcceleration) * 1000) + 200);
+
+
         await sendCommand(`MC SET ACCELMM ${movingAcceleration}`);
         await sendCommand(`MC SET SPEEDMM ${movingSpeed}`);
+
+        await lockMovement();
 
         await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
         await sendCommand(`MC MOVEBY USER ${startPosition - endPosition}`);
 
-
-        await new Promise(resolve => setTimeout(resolve, ((computeMotionTime(Math.abs(startPosition - endPosition), movingSpeed, movingAcceleration) * 1000) + 200))); // Wait
+        await new Promise(resolve => {
+            movingTimeout = setTimeout(() => {
+                unlockMovement();
+                resolve();
+            }, movingTime);
+        });
 
         // TODO: Check if this is working correctly (not needed here?)
         // while (!await isMoving()) {
@@ -4041,8 +4822,9 @@
         // }
 
         console.log("🚩 Returning to original position completed.");
-        await sendCommand(`MC SET SPEEDMM ${endSpeed}`, 2);
-        await sendCommand(`MC SET ACCELMM ${endAcceleration}`, 2);
+        if (currentSpeed) await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+        if (currentAcceleration) await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+
     }
 
 
@@ -4090,6 +4872,8 @@
 
 
     document.addEventListener("DOMContentLoaded", function () {
+        lockMovement();
+
         Notification.requestPermission().then(permission => {
             if (permission === "granted") {
                 notificationsAllowed = true;
@@ -4141,26 +4925,26 @@
                     } else {
                         input.value = formData[input.id]; // Restore the input value
                     }
-
-                    // Trigger change event to update the UI
-                    input.dispatchEvent(new Event("change", {bubbles: true}));
-                    input.dispatchEvent(new Event("input", {bubbles: true}));
-                    input.dispatchEvent(new Event("blur", {bubbles: true}));
                 }
+
+                // Trigger change event to update the UI
+                input.dispatchEvent(new Event("change", {bubbles: true}));
+                input.dispatchEvent(new Event("input", {bubbles: true}));
+                input.dispatchEvent(new Event("blur", {bubbles: true}));
             });
         }
 
 
-        const optionsElements = document.querySelectorAll("input, select");
+        const optionsElements = $$("input, select");
 
         // Listen for changes in all inputs
         optionsElements.forEach(input => {
             if (input.dataset.nonremember !== "true") {
-                input.addEventListener("change", saveInputToLocalStorage);
+                input.addEventListener("change", async (event) => saveInputToLocalStorage(event));
             }
         });
 
-        let isBlinking = false;
+        let isBlinking = true;
 
         function blinkBorder(element) {
             if (isBlinking) return; // Prevent spam
@@ -4175,7 +4959,7 @@
             const maxBlinks = 4; // total blinks
             const interval = 200; // milliseconds between states
 
-            const blinkInterval = setInterval(() => {
+            let blinkInterval = setInterval(() => {
                 if (count % 2 === 0) {
                     element.style.borderColor = blinkBorderColor;
                     element.style.background = "Moccasin"; // LightGoldenRodYellow, Moccasin, LemonChiffon, PapayaWhip, PeachPuff, LightYellow, NavajoWhite, BlanchedAlmond
@@ -4189,6 +4973,7 @@
                 count++;
                 if (count >= maxBlinks * 2) { // 2x per blink (on + off)
                     clearInterval(blinkInterval);
+                    blinkInterval = null;
                     element.style.borderColor = originalBorderColor;
                     element.style.borderWidth = originalBorderWidth;
                     isBlinking = false;
@@ -4197,8 +4982,8 @@
         }
 
 
-        document.getElementById("experimentType").addEventListener("change", () => {
-            const countInput = document.getElementById("experimentCount");
+        $$$("experimentType")?.addEventListener("change", async () => {
+            const countInput = $$$("experimentCount");
             if (countInput) {
                 countInput.value = 1;
                 countInput.dispatchEvent(new Event("change", {bubbles: true}));
@@ -4207,45 +4992,95 @@
         });
 
 
-        document.getElementById("experimentDirectionDropdown").addEventListener("change", (event) => {
-            const selectedValue = event.target.value.toLowerCase();
-            const speedInput = document.getElementById("inputInitialSpeed");
-            const forceInput = document.getElementById("inputInitialForce");
-            const speedLabel = document.getElementById("inputInitialSpeedLabel");
-            const forceLabel = document.getElementById("inputInitialForceLabel");
+        // pouze ty .data-eq, které mají data-eq-type
+        const experiment_result_elements = $$(".data-eq[data-eq-type]");
+        // $$("experimentDirectionDropdown")?.dispatchEvent(new Event("change", {bubbles: true}));
 
-            const suffixes = ["-ib", "-hb"];
-            if (suffixes.some(suf => selectedValue.endsWith(suf))) {
+        $$$("experimentDirectionDropdown")?.addEventListener("change", async (event) => {
+
+
+            // helper: vytáhne "ib" | "hb" | "b" z konce hodnoty (oddělovače - _ / mezera)
+            const typeFrom = s =>
+                (String(s ?? '').toLowerCase().match(/(?:^|[-_\/\s])(ib|hb|b)$/)?.[1]) || '';
+
+            // helper: z data-eq-type udělá množinu typů (podporuje "HB,IB", "HB, IB", "HB|IB", "HB IB", "HB/IB")
+            const parseEqTypes = attr => new Set(
+                String(attr || '')
+                    .split(/[,\s;|/]+/)          // různé oddělovače
+                    .map(t => t.trim().toLowerCase())
+                    .filter(Boolean)
+            );
+
+            const selectedValue = (event.target.value ?? '').toLowerCase();
+            const selectedType = typeFrom(selectedValue); // <-- "ib" | "hb" | "b" | ""
+
+            const speedInput = $$$("inputInitialSpeed");
+            const forceInput = $$$("inputInitialForce");
+            const speedLabel = $$$("inputInitialSpeedLabel");
+            const forceLabel = $$$("inputInitialForceLabel");
+
+
+            // --- zobraz jen ty, jejichž data-eq-type je suffix selectedValue ---
+            experiment_result_elements.forEach(el => {
+                const types = parseEqTypes(el.dataset.eqType);
+                if (types) {
+                    el.style.display = types.has(selectedType) ? 'inline-flex' : 'none';
+                }
+            });
+            // ------------------------------------------------------------------------
+
+            requestAnimationFrame(() => {
+                controlContainerWidth("resultsContainer");
+            });
+
+            const suffixes = ["ib", "hb"];
+            if (suffixes.some(suf => suf === selectedType)) {
+                // povol vstupy
                 speedInput.disabled = false;
                 forceInput.disabled = false;
-                // volitelné: zvýraznění labelu
+
                 speedLabel.classList.remove("disabled");
                 forceLabel.classList.remove("disabled");
                 speedInput.classList.remove("disabled");
                 forceInput.classList.remove("disabled");
 
-                if (selectedValue.endsWith("-ib")) {
+                if (selectedType === "ib") {
                     UI.autoReturnPosition.disabled = true;
                     UI.autoReturnPosition.classList.add("disabled");
                     UI.autoReturnPositionLabel.classList.add("disabled");
+                    $$$('inputStopForceLabel')?.classList.add("disabled");
+                    $$$('inputEndDelayLabel')?.classList.add("disabled");
+                    $$$('inputStopForce')?.classList.add("disabled");
+                    $$$('inputEndDelay')?.classList.add("disabled");
                     return;
                 }
 
                 UI.autoReturnPosition.disabled = false;
                 UI.autoReturnPosition.classList.remove("disabled");
                 UI.autoReturnPositionLabel.classList.remove("disabled");
+                $$$('inputStopForceLabel')?.classList.remove("disabled");
+                $$$('inputEndDelayLabel')?.classList.remove("disabled");
+                $$$('inputStopForce')?.classList.remove("disabled");
+                $$$('inputEndDelay')?.classList.remove("disabled");
                 return;
             }
+
+            // jinak vstupy zakáž
             speedInput.disabled = true;
             forceInput.disabled = true;
-            // volitelné: ztlumení labelu
-            speedLabel.classList.add("disabled");
-            forceLabel.classList.add("disabled");
-            speedInput.classList.add("disabled");
-            forceInput.classList.add("disabled");
+
+            speedLabel?.classList.add("disabled");
+            forceLabel?.classList.add("disabled");
+            speedInput?.classList.add("disabled");
+            forceInput?.classList.add("disabled");
+
             UI.autoReturnPosition.disabled = false;
-            UI.autoReturnPosition.classList.remove("disabled");
-            UI.autoReturnPositionLabel.classList.remove("disabled");
+            UI.autoReturnPosition?.classList.remove("disabled");
+            UI.autoReturnPositionLabel?.classList.remove("disabled");
+            $$$('inputStopForceLabel')?.classList.add("disabled");
+            $$$('inputEndDelayLabel')?.classList.add("disabled");
+            $$$('inputStopForce')?.classList.add("disabled");
+            $$$('inputEndDelay')?.classList.add("disabled");
         });
 
 
@@ -4253,6 +5088,7 @@
         loadInputsFromLocalStorage();
         UI.chartsContainer.style.height = getChartHeightIncludingLegend() + "px";
         pageLoaded = true;
+        isBlinking = false;
     });
 
 
@@ -4530,14 +5366,14 @@
                             if (!entry[0]) continue; // Skip empty rows
 
 
-                            time = ((parseFloat(entry[0]) - firstTime) * (isMatlab ? 1e-6 : 1)) || 0; // Time (s)
+                            time = ((parseFloat(entry[0]) - firstTime) * (isMatlab ? 1e-6 : 1)) ?? 0; // Time (s)
 
 
-                            force = (parseFloat(entry[3]) || 0) + (parseFloat(entry[4]) || 0) + (parseFloat(entry[5]) || 0) - firstForce; // Force sum
+                            force = (parseFloat(entry[3]) ?? 0) + (parseFloat(entry[4]) ?? 0) + (parseFloat(entry[5]) ?? 0) - firstForce; // Force sum
 
                             // if (firstShiftAbove1 === null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                            shift = (parseFloat(entry[1]) - firstShift) || 0; // Displacement (mm)
+                            shift = (parseFloat(entry[1]) - firstShift) ?? 0; // Displacement (mm)
 
 
                             // deformation = (firstShiftAbove1 === null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
@@ -4646,23 +5482,28 @@
     //
     // tester();
 
-    function unblockMoveBy() {
+    function lockMovement() {
+        isMovingVal = true;
+        $$$("startExperiment")?.classList.add("disabled");
+        $$$("returnPositionExperimentBtn")?.classList.add("disabled");
+        $$$("moveMachineUP")?.classList.add("disabled");
+        $$$("moveMachineDOWN")?.classList.add("disabled");
+    }
+
+    function unlockMovement() {
         isMovingVal = false;
-        document.getElementById("moveMachineUP").classList.remove("disabled");
-        document.getElementById("moveMachineDOWN").classList.remove("disabled");
+        $$$("startExperiment")?.classList.remove("disabled");
+        $$$("returnPositionExperimentBtn")?.classList.remove("disabled");
+        $$$("moveMachineUP")?.classList.remove("disabled");
+        $$$("moveMachineDOWN")?.classList.remove("disabled");
 
         // Restore previous speed and acceleration
-        sendCommand(`MC SET ACCELMM ${currentAcceleration}`, 5);
-        sendCommand(`MC SET SPEEDMM ${currentSpeed}`, 5);
+        if (currentAcceleration) sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+        if (currentSpeed) sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
 
         clearTimeout(movingTimeout);
         movingTimeout = null;
 
-    }
-
-    function toNumber(value, defaultValue = 0) {
-        const num = parseFloat(value);
-        return isNaN(num) ? defaultValue : num;
     }
 
 
@@ -4681,9 +5522,7 @@
             console.warn("Machine is already moving. Please wait.");
             return;
         }
-        isMovingVal = true;
-        document.getElementById("moveMachineUP").classList.add("disabled");
-        document.getElementById("moveMachineDOWN").classList.add("disabled");
+        await lockMovement();
 
         currentSpeed = await getSpeed();
         currentAcceleration = await getAcceleration();
@@ -4691,15 +5530,20 @@
         const acceleration = 100; // Acceleration in mm/s²
         const speed = speedFromDistance(dist); // Speed in mm/s
 
+        if (!speed || !acceleration) {
+            console.warn("Invalid speed or acceleration.");
+            unlockMovement();
+            return;
+        }
 
         await sendCommand(`MC SET ACCELMM ${acceleration}`, 5);
         await sendCommand(`MC SET SPEEDMM ${speed}`, 5);
 
-        const movingTime = await (computeMotionTime(Math.abs(dist), speed, acceleration) * 1000) + 250;
+        const movingTime = await ((computeMotionTime(Math.abs(dist), speed, acceleration) * 1000) + 250);
 
         await sendCommand(`MC MOVEBY USER ${dist}`, 5);
 
-        movingTimeout = setTimeout(unblockMoveBy, movingTime);
+        movingTimeout = setTimeout(unlockMovement, movingTime);
     }
 </script>
 
@@ -4737,7 +5581,7 @@
             currentActive = null;
         };
 
-        const setup = (el) => {
+        const setup = async (el) => {
             if (el.parentElement?.classList.contains('copy-wrap')) return;
 
             // obal pro pozicování
@@ -4798,12 +5642,12 @@
                             }
                         }
                     };
-                    btn.addEventListener('transitionend', btn._onFadeEnd);
-                }, lingerMs);
+                    btn.addEventListener('transitionend', async () => btn._onFadeEnd);
+                }, lingerMs - 100);
             };
 
-            wrap.addEventListener('mouseenter', showBtn);
-            wrap.addEventListener('mouseleave', hideBtnLater);
+            wrap.addEventListener('mouseenter', async () => showBtn());
+            wrap.addEventListener('mouseleave', async () => hideBtnLater());
 
             // Nastaví stav ikony a zajistí exkluzivitu „poslední kopie“
             const setStateExclusive = (state) => {
@@ -4825,25 +5669,25 @@
             };
 
             const copyValue = async () => {
-                const val = el.value ?? el.textContent ?? '';
+                let ok = false;
+                const val = el.value.trim() ?? el.textContent.trim() ?? '';
                 try {
-                    if (!val) throw new Error('Empty');
+                    if (!hasValue(val)) throw new Error('Empty');
 
-                    await navigator.clipboard.writeText(val);
-                    // Exkluzivně označ OK
-                    el.classList.remove('copy-error');
-                    el.classList.add('copied');     // outline (animovaný přes transition v CSS)
-                    setStateExclusive('ok');
+                    const testVal = val.toLowerCase().replaceAll('\\', '/').replaceAll('.', '').replaceAll(',', '');
+                    if (!isInvalidValue(testVal)) {
+                        await navigator.clipboard.writeText(val);
+                        ok = true;
+                    }
                 } catch {
                     // fallback
-                    let ok = false;
                     try {
                         if (el.select) {
                             const s = el.selectionStart, e = el.selectionEnd;
                             el.focus();
                             el.select();
                             ok = document.execCommand('copy');
-                            if ((s != null && e != null) && (s < e) && (s !== 0 && e !== 0)) {
+                            if ((s != null && e != null) && (s <= e) && e !== 0) {
                                 el.setSelectionRange(s, e);
                             } else {
                                 ok = false;
@@ -4851,7 +5695,9 @@
                             el.blur();
                         }
                     } catch {
+                        ok = false;
                     }
+                } finally {
                     if (ok) {
                         el.classList.remove('copy-error');
                         el.classList.add('copied');
@@ -4861,18 +5707,21 @@
                         el.classList.add('copy-error');
                         setStateExclusive('err');
                     }
-                } finally {
+
                     // outline zase pryč po lingerMs (plynule díky transition)
-                    setTimeout(() => el.classList.remove('copied', 'copy-error'), lingerMs);
+                    setTimeout(() => {
+                        el.classList.remove('copied', 'copy-error');
+                        btn.dataset.state = 'idle';
+                    }, lingerMs);
                 }
             };
 
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 copyValue();
             });
-            el.addEventListener('keydown', (e) => {
+            el.addEventListener('keydown', async (e) => {
                 if (e.key === 'Enter' || (e.ctrlKey && e.key.toLowerCase() === 'c')) {
                     e.preventDefault();
                     showBtn();
@@ -4881,10 +5730,9 @@
             });
         };
 
-        document.querySelectorAll(selector).forEach(setup);
+        $$(selector)?.forEach(setup);
     })();
 </script>
-
 
 </body>
 </html>
