@@ -1,0 +1,104 @@
+<!-- shared-header.html -->
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Μοῖρα Controller</title>
+<!--<title>Μοῖρα Controller - Thymos</title>-->
+<!--<title>⡗⢺ ⢎⡱ ⡎ ⡯⡕ ⡮⢵  Controller - Thymos</title>-->
+
+<!-- Μοῖρα // ϻοῖρα -->
+
+<!-- https://lingojam.com/BoldTextGenerator
+    Ⓜⓞⓘⓡⓐ
+    🄼🄾🄸🅁🄰
+    🅼🅾🅸🆁🅰
+    𝕄𝕠𝕚𝕣𝕒
+    𝐌𝐨𝐢𝐫𝐚
+    𝗠𝗼𝗶𝗿𝗮
+    𝑴𝒐𝒊𝒓𝒂
+    𝙈𝙤𝙞𝙧𝙖
+    𝙼𝚘𝚒𝚛𝚊
+    𝙈𝙤𝙞𝙧𝙖
+    𝕸𝖔𝖎𝖗𝖆
+    冊回工尺丹
+    𝔐𝔬𝔦𝔯𝔞
+    𝕸𝖔𝖎𝖗𝖆
+    𝓜𝓸𝓲𝓻𝓪
+    𝑀𝑜𝒾𝓇𝒶
+    ᴹᵒⁱʳᵃ
+    ๓๏เгค
+    ⠠⠍⠕⠊⠗⠁
+-->
+
+<!--  A:'⠁', B:'⠃', C:'⠉', D:'⠙', E:'⠑', F:'⠋', G:'⠛', H:'⠓', I:'⠊', J:'⠚',-->
+<!--  K:'⠅', L:'⠇', M:'⠍', N:'⠝', O:'⠕', P:'⠏', Q:'⠟', R:'⠗', S:'⠎', T:'⠞',-->
+<!--  U:'⠥', V:'⠧', W:'⠺', X:'⠭', Y:'⠽', Z:'⠵'-->
+
+
+<!--  A:'⡁', B:'⡃', C:'⡉', D:'⡙', E:'⡑', F:'⡋', G:'⡛', H:'⡓', I:'⡊', J:'⡚',-->
+<!--  K:'⡅', L:'⡇', M:'⡍', N:'⡝', O:'⡕', P:'⡏', Q:'⡟', R:'⡗', S:'⡎', T:'⡞',-->
+<!--  U:'⡥', V:'⡧', W:'⡺', X:'⡭', Y:'⡽', Z:'⡵'-->
+
+
+<!--⠀ ⠁ ⠂ ⠃ ⠄ ⠅ ⠆ ⠇ ⠈ ⠉ ⠊ ⠋ ⠌ ⠍ ⠎ ⠏ ⠐ ⠑ ⠒ ⠓ ⠔ ⠕ ⠖ ⠗ ⠘ ⠙ ⠚ ⠛ ⠜ ⠝ ⠞ ⠟ ⠠ ⠡ ⠢ ⠣ ⠤ ⠥ ⠦ ⠧ ⠨ ⠩ ⠪ ⠫ ⠬ ⠭ ⠮ ⠯ ⠰ ⠱ ⠲ ⠳ ⠴ ⠵ ⠶-->
+<!--⠷ ⠸ ⠹ ⠺ ⠻ ⠼ ⠽ ⠾ ⠿ ⡀ ⡁ ⡂ ⡃ ⡄ ⡅ ⡆ ⡇ ⡈ ⡉ ⡊ ⡋ ⡌ ⡍ ⡎ ⡏ ⡐ ⡑ ⡒ ⡓ ⡔ ⡕ ⡖ ⡗ ⡘ ⡙ ⡚ ⡛ ⡜ ⡝ ⡞ ⡟ ⡠ ⡡ ⡢ ⡣ ⡤ ⡥ ⡦ ⡧ ⡨ ⡩ ⡪ ⡫ ⡬ ⡭-->
+<!--⡮ ⡯ ⡰ ⡱ ⡲ ⡳ ⡴ ⡵ ⡶ ⡷ ⡸ ⡹ ⡺ ⡻ ⡼ ⡽ ⡾ ⡿ ⢀ ⢁ ⢂ ⢃ ⢄ ⢅ ⢆ ⢇ ⢈ ⢉ ⢊ ⢋ ⢌ ⢍ ⢎ ⢏ ⢐ ⢑ ⢒ ⢓ ⢔ ⢕ ⢖ ⢗ ⢘ ⢙ ⢚ ⢛ ⢜ ⢝ ⢞ ⢟ ⢠ ⢡ ⢢ ⢣ ⢤-->
+<!--⢥ ⢦ ⢧ ⢨ ⢩ ⢪ ⢫ ⢬ ⢭ ⢮ ⢯ ⢰ ⢱ ⢲ ⢳ ⢴ ⢵ ⢶ ⢷ ⢸ ⢹ ⢺ ⢻ ⢼ ⢽ ⢾ ⢿ ⣀ ⣁ ⣂ ⣃ ⣄ ⣅ ⣆ ⣇ ⣈ ⣉ ⣊ ⣋ ⣌ ⣍ ⣎ ⣏ ⣐ ⣑ ⣒ ⣓ ⣔ ⣕ ⣖ ⣗ ⣘ ⣙ ⣚ ⣛-->
+<!--⣜ ⣝ ⣞ ⣟ ⣠ ⣡ ⣢ ⣣ ⣤ ⣥ ⣦ ⣧ ⣨ ⣩ ⣪ ⣫ ⣬ ⣭ ⣮ ⣯ ⣰ ⣱ ⣲ ⣳ ⣴ ⣵ ⣶ ⣷ ⣸ ⣹ ⣺ ⣻ ⣼ ⣽ ⣾ ⣿-->
+
+<!--Space (SP): -->
+
+<!--Ogham Space Mark:  -->
+
+<!--En Quad:  -->
+
+<!--Em Quad:  -->
+
+<!--En Space:  -->
+
+<!--Em Space:  -->
+
+<!--Three-Per-Em Space:  -->
+
+<!--Four-Per-Em Space:  -->
+
+<!--Six-Per-Em Space:  -->
+
+<!--Figure Space:  -->
+
+<!--Punctuation Space:  -->
+
+<!--Thin Space:  -->
+
+<!--Hair Space:  -->
+
+<!--Ideographic Space: 　-->
+
+<!-- https://www.htmlsymbols.xyz/geometric-symbols:   ⬚ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ 🝕 -->
+<!-- https://www.htmlsymbols.xyz/box-drawing:         ░ ▒ ▓ █ ▌▐ -->
+
+
+<!-- ⡗⢺ ⢎⡱ ⡎ ⡯⡕ ⡮⢵ -->
+
+<!-- 512x512 primary icon for modern browsers and PWA -->
+<link rel="icon" type="image/png" href="./images/favicon/pwa-app-manifest-512x512.png" sizes="512x512"/>
+<!-- 96x96 icon for legacy browsers -->
+<link rel="icon" type="image/png" href="./images/favicon/favicon-96x96.png" sizes="96x96"/>
+<!-- SVG icon for modern browsers -->
+<link rel="icon" type="image/svg+xml" href="./images/favicon/favicon.svg"/>
+<!-- favicon for all devices -->
+<link rel="shortcut icon" href="./images/favicon/favicon.ico" sizes="48x48"/>
+<!-- Android devices -->
+<link rel="icon" type="image/png" href="./images/favicon/pwa-app-manifest-192x192.png" sizes="192x192"/>
+<!-- Apple devices -->
+<link rel="apple-touch-icon" href="./images/favicon/apple-touch-icon.png" sizes="180x180"/>
+<meta name="apple-mobile-web-app-title" content="MOIRA"/>
+
+<!-- Manifest -->
+<link rel="manifest" href="./manifest.json">
+<!-- Theme color for Chrome on Android -->
+<link rel="manifest" href="./images/favicon/site.webmanifest"/>
+
+<!--<link rel="stylesheet" href="style.css" />-->
+<!--<script src="main.js" defer></script>-->
