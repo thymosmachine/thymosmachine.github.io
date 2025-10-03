@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+
+    <script>
+        fetch("header.html")
+            .then(res => res.text())
+            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+    </script>
+
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            background-color: #f0f0f0;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .tab:hover {
+            background-color: #e0e0e0;
+        }
+
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 4px solid #007bff;;
+        }
+
+        .tab-content {
+            padding: 2rem;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        code {
+            background: #eef;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .changelog-entry {
+            margin-bottom: 1.5rem;
+        }
+
+        .changelog-entry h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.1rem;
+            color: #444;
+        }
+
+        .changelog-entry ul {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('about')">About</div>
+        <div class="tab" onclick="showTab('manual')">Manual</div>
+        <div class="tab" onclick="showTab('changelog')">Changelog</div>
+    </div>
+
+    <div class="tab-content active" id="about">
+        <h2>About Μοῖρα</h2>
+        <p>This web application was designed to help users interact with hardware components in a clean and intuitive
+            interface.</p>
+        <ul>
+            <li>🌐 Built entirely using <strong>HTML, CSS, JavaScript</strong></li>
+            <li>🔌 Communicates with devices using Web Serial and WebSocket</li>
+            <li>📦 Supports JSON import/export, QR scanning, and dynamic data handling</li>
+        </ul>
+        <p>Developed with ❤️ by the THYMOS team.</p>
+    </div>
+
+    <div class="tab-content" id="manual">
+        <h2>User Manual</h2>
+        <div id="manual-content">Loading...</div>
+    </div>
+
+    <div class="tab-content" id="changelog">
+        <h2>Changelog</h2>
+        <div id="changelog-content">Loading...</div>
+    </div>
+</div>
+
+<!-- Markdown parser -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    function showTab(tabId) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.tab[onclick*="${tabId}"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    // Load manual.md and render as HTML
+    fetch('manual.md')
+        .then(res => res.text())
+        .then(md => {
+            const html = marked.parse(md);
+            document.getElementById('manual-content').innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('manual-content').textContent = "Failed to load manual.";
+        });
+
+    // Load changelog.json and render entries
+    fetch('changelog.json')
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('changelog-content');
+            container.innerHTML = '';
+            const locale = navigator.language || 'en-US';
+
+            data.forEach(entry => {
+                const date = new Date(entry.date);
+                const formattedDate = date.toLocaleDateString(locale, {
+                    year: 'numeric',
+                    month: 'numeric', // 'short' for abbreviated month, 'long' for full month name, 'numeric' for numeric month
+                    day: 'numeric'
+                });
+
+                const div = document.createElement('div');
+                div.className = 'changelog-entry';
+                div.innerHTML = `
+                    <h3>${entry.emoji} Version ${entry.version} – ${formattedDate}</h3>
+                    <ul>${entry.items.map(i => `<li>${i}</li>`).join('')}</ul>
+                  `;
+                container.appendChild(div);
+            });
+        })
+        .catch(err => {
+            document.getElementById('changelog-content').textContent = "Failed to load changelog.";
+        });
+
+</script>
+
+</body>
+</html>
