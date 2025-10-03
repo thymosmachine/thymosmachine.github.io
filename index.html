@@ -2,77 +2,389 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moira controller</title>
+
+    <script>
+        // Clear console - Fresh start
+        console.clear();
+
+        fetch("header.html")
+            .then(res => res.text())
+            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+    </script>
+
+    <!--
+          __  __       _                          __ _
+         |  \/  |     (_)                        / _| |
+         | \  / | ___  _ _ __ __ _     ___  ___ | |_| |___      ____ _ _ __ ___
+         | |\/| |/ _ \| | '__/ _` |   / __|/ _ \|  _| __\ \ /\ / / _` | '__/ _ \
+         | |  | | (_) | | | | (_| |   \__ \ (_) | | | |_ \ V  V / (_| | | |  __/
+         |_|  |_|\___/|_|_|  \__,_|   |___/\___/|_|  \__| \_/\_/ \__,_|_|  \___|
 
 
-    <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512x512.png">
-    <link rel="shortcut icon" href="/images/favicon.ico">
+    -->
+    <!-- https://patorjk.com/software/taag/#p=display&f=Big -->
 
 
-    <link rel="manifest" href="manifest.json">
-
-
+    <!-- External library -->
     <!-- uPlot -->
     <link rel="stylesheet" href="packages/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
     <script src="packages/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
 
+    <!-- External library -->
     <!-- XLSX -->
     <script async src="packages/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
 
 
-    <title>Moira Control - Thymos</title>
+    <script>
+        /**
+         * Zkusí načíst "debug.txt" (nebo libovolnou URL) a vyhodnotí, zda obsah je "true".
+         * - Soubor neexistuje / 404 / chyba -> false
+         * - Obsah po oříznutí a bez BOM je "true" (case-insensitive) -> true
+         * - Jinak -> false
+         */
+        async function checkDebugFlag(url = 'debug.txt', {timeoutMs = 5000, bustCache = true} = {}) {
+            // Timeout přes AbortController (ochrana proti visícím requestům)
+            const controller = new AbortController();
+            const t = setTimeout(() => controller.abort(), timeoutMs);
+
+            // Volitelně rozbít cache přidáním query parametru
+            const finalUrl = bustCache ? `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}` : url;
+
+            try {
+                const res = await fetch(finalUrl, {
+                    method: 'GET',
+                    // no-store, aby se nevracela stará verze (pokud máš server, který to respektuje)
+                    cache: 'no-store',
+                    headers: {'Accept': 'text/plain'},
+                    signal: controller.signal
+                });
+
+                if (!res.ok) {
+                    // např. 404 -> false
+                    return false;
+                }
+
+                let text = await res.text();
+                clearTimeout(t);
+
+                // Odstraň BOM, ořízni whitespace
+                text = text.replace(/^\uFEFF/, '').trim().toLowerCase();
+
+                // true/TRUE/True atd.
+                return text === 'true' || text === 'y' || text === 'yes';
+            } catch {
+                // síťová chyba, timeout, CORS atp. -> false
+                clearTimeout(t);
+                return false;
+            }
+        }
+
+        let debugging = false;
+        document.title = 'Μοῖρα Controller - Thymos';
+
+        document.addEventListener("DOMContentLoaded", () => {
+
+            (async () => {
+                debugging = await checkDebugFlag(); // hledá "debug.txt" vedle stránky
+                console.log(`%c\nDebug mode ${debugging ? 'ON' : 'OFF'}`, "color: orange; font-size: 16px; font-weight: bold;");
+
+
+                const endDebugBtn = await document.getElementById('endTestingBtn');
+                const debugWrapper = await document.getElementById('debuggingWrapper');
+
+                if (debugging) {
+
+                    debugWrapper.style.display = 'flex';
+                    const testBtn = await document.getElementById('runTestSequenceBtn');
+
+                    testBtn?.addEventListener('click', async () => testFce());
+
+                    document.querySelector('html').style.background = 'lightcoral';
+
+                    endDebugBtn?.addEventListener('click', () => {
+                        debugWrapper?.remove();
+                        debugging = false;
+                        document.querySelector('html').style.background = 'none';
+                    })
+
+                    async function testFce() {
+                        console.info("%cTest function running...", "color: orange; font-size: 16px; font-weight: bold;");
+
+                        // const ports = await navigator.serial.getPorts();
+                        // const devices = await navigator.usb.getDevices(); // requestDevice({ filters: [{ vendorId: 0x2341 }] })
+                        //
+                        // console.log("🔌 Serial ports:", ports);
+                        // console.log("🔌 USB devices:", devices);
+
+
+                        // const device = devices[0];
+                        // if (!device) {
+                        //     self.postMessage({error: 'No device'});
+                        //     return;
+                        // }
+                        //
+                        // await device.open();
+                        // (volitelně) await device.selectConfiguration(1);
+                        // (volitelně) await device.claimInterface(0);
+
+                        // příklad přenosu:
+                        // await device.transferOut(1, new Uint8Array([0x01, 0x02]));
+                        // const inRes = await device.transferIn(1, 64);
+
+
+                        // 1   4
+                        // 2   5
+                        // 3   6
+                        // 7   8
+                        //
+                        // ⡗ [1,2,3,7,5]
+                        // ⢺ [2,4,5,6,8]
+                        // ⢎ [2,3,4,8]
+                        // ⡱ [1,7,5,6]
+                        // ⡎ [2,3,7,4]
+                        // ⡯ [1,2,3,7,4,6]
+                        // ⡕ [1,3,7,5]
+                        // ⡮ [2,3,7,4,6]
+                        // ⢵ [1,3,5,6,8]
+
+
+                        const goal = {
+                            targets: [
+                                [1, 2, 3, 7, 5], // ⡗
+                                [2, 4, 5, 6, 8], // ⢺
+                                ' ',
+                                [2, 3, 4, 8], // ⢎
+                                [1, 7, 5, 6], // ⡱
+                                ' ',
+                                [2, 3, 7, 4], // ⡎
+                                ' ',
+                                [1, 2, 3, 7, 4, 6], // ⡯
+                                [1, 3, 7, 5], // ⡕
+                                ' ',
+                                [2, 3, 7, 4, 6], // ⡮
+                                [1, 3, 5, 6, 8], // ⢵
+                                '  ',
+                                'Controller',
+                                ' ',
+                                '-',
+                                ' ',
+                                'Thymos',
+                            ],
+                            full: '⡗⢺ ⢎⡱ ⡎ ⡯⡕ ⡮⢵  Controller - Thymos',
+                            empty: '𝅼'
+                        };
+
+
+                        // spusť
+                        await startBraille(goal.targets);
+
+                        setTimeout(() => {
+                            document.title = goal.empty;
+                        }, 500);
+                        setTimeout(() => {
+                            document.title = goal.full;
+                        }, 1500);
+                        setTimeout(() => {
+                            document.title = goal.empty;
+                        }, 2000);
+                        setTimeout(() => {
+                            document.title = goal.full;
+                        }, 3000);
+
+                        console.info("%cTest function completed.", "color: green; font-size: 16px; font-weight: bold;");
+                    }
+                } else {
+                    debugWrapper?.remove();
+                    document.querySelector('html').style.background = 'none';
+                }
+            })();
+        });
+    </script>
 
 
     <script>
-        let debugging = true;
+        // ===== 8-dot braille utils =====
+        const DOT_MASK = [0, 1, 2, 4, 8, 16, 32, 64, 128]; // index = dot #
+        const UNICODE_SPACE_RE = /^[\u0020\u00A0\u2000-\u200A\u202F\u205F\u3000]$/;
+        const COLS8 = [
+            [1, 2, 3, 7], // levý sloupec shora dolů (top = 1)
+            [4, 5, 6, 8]  // pravý sloupec shora dolů (top = 4)
+        ];
+        const BLANK = String.fromCodePoint(0x2800);
+        const toChar = (dotsSet) => {
+            let mask = 0;
+            for (const d of dotsSet) if (d >= 1 && d <= 8) mask |= DOT_MASK[d];
+            return String.fromCodePoint(0x2800 | mask);
+        };
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
+        /**
+         * „Sypání písku“ pro jeden znak:
+         * - Každý sloupec: seřaď cíle odspodu (nejnižší první).
+         * - Každá tečka startuje nahoře (1 nebo 4) a padá po řádcích dolů, dokud nedosáhne svého cíle.
+         * - Settlené tečky zůstávají svítit.
+         */
+        async function animateBrailleCharSand(targetDots, setChar, {
+            stepMs = 110,           // rychlost pádu (jeden řádek dolů)
+            pauseDropMs = 80,       // pauza po dosednutí jedné tečky
+            pauseColMs = 120,       // pauza po dokončení sloupce
+            cols = COLS8            // můžeš nahradit za [[1,2,3],[4,5,6]] pro 6-dot
+        } = {}) {
+            const target = new Set(targetDots.filter(d => d >= 1 && d <= 8));
+            const locked = new Set(); // trvale usazené tečky (celého znaku)
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const endDebugBtn = $$$('endTestingBtn');
-            const debugWrapper = $$$('debuggingWrapper');
+            // Pro každý sloupec zvlášť:
+            for (const col of cols) {
+                // cíle v tomto sloupci (shora dolů) a pak je obrátíme na „odspodu nahoru“
+                const targetsInColTopDown = col.filter(d => target.has(d));
+                if (targetsInColTopDown.length === 0) continue;
+                const targetsInColBottomUp = targetsInColTopDown.slice().reverse();
 
+                // pád každé tečky zvlášť (nejprve na nejnižší cíl)
+                for (const goal of targetsInColBottomUp) {
+                    // start index (0 = horní řádek sloupce)
+                    const goalIdx = col.indexOf(goal);
 
-            if (debugging) {
-                debugWrapper.style.display = 'flex';
-                const testBtn = $$$('runTestSequenceBtn');
+                    for (let i = 0; i <= goalIdx; i++) {
+                        const pos = col[i];             // aktuální řádek, kde je "padající" tečka
+                        const frame = new Set(locked);  // začni všemi už usazenými
+                        frame.add(pos);                 // přidej pohybující se tečku
+                        setChar(toChar(frame));
+                        await wait(stepMs);
+                    }
 
-                testBtn?.addEventListener('click', async () => testFce());
-
-                endDebugBtn?.addEventListener('click', () => {
-                    debugWrapper?.remove();
-                    debugging = false;
-                })
-
-                async function testFce() {
-                    console.info("%cTest function running...", "color: orange; font-size: 16px; font-weight: bold;");
-
-                    const ports = await navigator.serial.getPorts();
-                    const devices = await navigator.usb.getDevices(); // requestDevice({ filters: [{ vendorId: 0x2341 }] })
-
-                    console.log("🔌 Serial ports:", ports);
-                    console.log("🔌 USB devices:", devices);
-
-
-                    // const device = devices[0];
-                    // if (!device) {
-                    //     self.postMessage({error: 'No device'});
-                    //     return;
-                    // }
-                    //
-                    // await device.open();
-                    // (volitelně) await device.selectConfiguration(1);
-                    // (volitelně) await device.claimInterface(0);
-
-                    // příklad přenosu:
-                    // await device.transferOut(1, new Uint8Array([0x01, 0x02]));
-                    // const inRes = await device.transferIn(1, 64);
-
-                    console.info("%cTest function completed.", "color: green; font-size: 16px; font-weight: bold;");
+                    // dosednutí: přidej goal do locked a ukaž čistý stav
+                    locked.add(goal);
+                    setChar(toChar(locked));
+                    if (pauseDropMs) await wait(pauseDropMs);
                 }
-            } else {
-                debugWrapper?.remove();
+
+                if (pauseColMs) await wait(pauseColMs);
             }
-        });
+
+            // jistota: konečný stav přesně podle targetu
+            setChar(toChar(target));
+        }
+
+        /**
+         * Vypíše text do slotu i po znacích.
+         * - charMs: prodleva mezi znaky
+         * - spaceMs: prodleva pro znaky, které splní UNICODE_SPACE_RE (default 0)
+         * - instantSet: volitelný Set znaků, které se mají psát bez čekání (kromě mezer)
+         */
+        async function typeOutStringAt(i, text, setFrame, {
+            charMs = 40,
+            spaceMs = 0,
+            instantSet
+        } = {}) {
+            const instant = instantSet instanceof Set ? instantSet : new Set();
+            let buf = '';
+            for (const ch of [...text]) {           // správně iteruje i surrogates
+                buf += ch;
+                setFrame(i, buf);
+                let delay = charMs;
+                if (UNICODE_SPACE_RE.test(ch) || instant.has(ch)) delay = spaceMs;
+                if (delay > 0) await sleep(delay);
+            }
+        }
+
+        /**
+         * Sekvence: pole položek, kde položka je:
+         *  - Array<number> ... animovaný braille (pískem) přes animateBrailleCharSand
+         *  - string .......... vypisuje se po znacích (charMs/spaceMs)
+         */
+        async function animateBrailleSequenceSand(targetsList, setFrame, opts = {}) {
+            const {
+                // pro braille animaci (ponech stejné jako máš v animateBrailleCharSand):
+                stepMs = 110, pauseDropMs = 80, pauseColMs = 120, cols,
+                // pro psaní textu:
+                charMs = 40,
+                spaceMs = 0,
+                instantSet
+            } = opts;
+
+            for (let i = 0; i < targetsList.length; i++) {
+                const item = targetsList[i];
+
+                if (Array.isArray(item)) {
+                    // animovaný braille „pískem“
+                    await animateBrailleCharSand(item, ch => setFrame(i, ch), {stepMs, pauseDropMs, pauseColMs, cols});
+
+                } else if (typeof item === 'string') {
+                    // text po znacích
+                    // Před začátkem vynuluj slot (pokud chceš mít „psaní od nuly“):
+                    setFrame(i, '');
+                    await typeOutStringAt(i, item, setFrame, {charMs, spaceMs, instantSet});
+
+                } else {
+                    setFrame(i, BLANK);
+                }
+            }
+        }
+
+
+        async function startBraille(targets) {
+            // ===== Demo bez mezer mezi znaky =====
+            const out = document.getElementById('brailleOut');
+            // mix animovaných znaků a „rychlých“ symbolů
+            // const targets = [
+            //     [1, 2, 3, 7, 5], // ⡗
+            //     [2, 4, 5, 6, 8], // ⢺
+            //     ' ',
+            //     [2, 3, 4, 8], // ⢎
+            //     [1, 7, 5, 6], // ⡱
+            //     ' ',
+            //     [2, 3, 7, 4], // ⡎
+            //     ' ',
+            //     [1, 2, 3, 7, 4, 6], // ⡯
+            //     [1, 3, 7, 5], // ⡕
+            //     ' ',
+            //     [2, 3, 7, 4, 6], // ⡮
+            //     [1, 3, 5, 6, 8], // ⢵
+            //     '  ',
+            //     'Controller',
+            //     ' ',
+            //     '-',
+            //     ' ',
+            //     'Thymos',
+            // ];
+
+            // const targets = [
+            //     'Μ',
+            //     'ο',
+            //     'ῖ',
+            //     'ρ',
+            //     'α',
+            //     ' ',
+            //     'Controller',
+            //     ' ',
+            //     '-',
+            //     ' ',
+            //     'Thymos',
+            // ];
+
+            // předvyplň prázdnými braille U+2800 (stejná délka; žádné mezery navíc)
+            let frames = Array.from({length: targets.length}, () => BLANK);
+            document.title = frames.join('');
+
+            const setFrame = (i, ch) => {
+                frames[i] = ch;
+                document.title = frames.join('');
+            };
+
+            // spusť animaci
+            await animateBrailleSequenceSand(targets, setFrame, {
+                stepMs: 250,
+                pauseDropMs: 80,
+                pauseColMs: 110,
+                charMs: 250,
+                spaceMs: 80,
+                instantSet: new Set([' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '])
+                // cols: [[1,2,3],[4,5,6]] // odkomentuj pro 6-dot
+            });
+        }
+
     </script>
 
 
@@ -97,92 +409,94 @@
             }
         }
 
-        // is online?
-        const reallyOnline = hasInternet();
-        console.info("%c\n\t📶 Ping successful.\n\t\tUser is Online! 🌐", "color: blue; font-weight: bold;")
+        // try {
+        //     // Check if the File System Access API is supported
+        //     if ('showDirectoryPicker' in window) {
+        //         console.log("✅ File System Access API is supported.");
+        //     } else {
+        //         console.error("⛔ File System Access API is not supported.");
+        //     }
+        // } catch (error) {
+        //     console.error("⛔ Error checking File System Access API support:", error);
+        // }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            $$$("softwareInfo").innerText = `v${softwareVersion} , ${softwareDate}`;
-        });
+        function compareVersions(versionA, versionB) {
+            const a = versionA.trim().split('.').map(Number);
+            const b = versionB.trim().split('.').map(Number);
+            const maxLength = Math.max(a.length, b.length);
 
-        document.addEventListener("DOMContentLoaded", function () {
-            // try {
-            //     // Check if the File System Access API is supported
-            //     if ('showDirectoryPicker' in window) {
-            //         console.log("✅ File System Access API is supported.");
-            //     } else {
-            //         console.error("⛔ File System Access API is not supported.");
-            //     }
-            // } catch (error) {
-            //     console.error("⛔ Error checking File System Access API support:", error);
-            // }
+            for (let i = 0; i < maxLength; i++) {
+                const numA = a[i] || 0; // missing parts are treated as 0
+                const numB = b[i] || 0;
 
-            function compareVersions(versionA, versionB) {
-                const a = versionA.trim().split('.').map(Number);
-                const b = versionB.trim().split('.').map(Number);
-                const maxLength = Math.max(a.length, b.length);
-
-                for (let i = 0; i < maxLength; i++) {
-                    const numA = a[i] || 0; // missing parts are treated as 0
-                    const numB = b[i] || 0;
-
-                    if (numA > numB) return 1;  // A is newer
-                    if (numA < numB) return -1; // B is newer
-                }
-                return 0; // Versions are equal
+                if (numA > numB) return 1;  // A is newer
+                if (numA < numB) return -1; // B is newer
             }
+            return 0; // Versions are equal
+        }
+
+        let reallyOnline;
 
 
-            async function loadCurrentVersion() {
-                if (!reallyOnline) return;
+        async function loadCurrentVersion() {
+            if (!reallyOnline) return;
 
-                try {
-                    // Try to load the latest version of the app from the latest.txt [server]
-                    fetch(`/latest.txt?ts=${Date.now()}`, {
-                        cache: "no-store"
+            try {
+                // Try to load the latest version of the app from the latest.txt [server]
+                fetch(`/latest.txt?ts=${Date.now()}`, {
+                    cache: "no-store"
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error("Network response was not ok");
+                        }
+                        return response.text();
                     })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error("Network response was not ok");
-                            }
-                            return response.text();
-                        })
-                        .then(data => {
-                            // Trim the data to remove any extra spaces or newlines and take the first line
-                            const latestVersion = data.split("\n")[0].trim();
-                            const appStatus = compareVersions(softwareVersion, latestVersion);
+                    .then(data => {
+                        // Trim the data to remove any extra spaces or newlines and take the first line
+                        const latestVersion = data.split("\n")[0].trim();
+                        const appStatus = compareVersions(softwareVersion, latestVersion);
 
-                            if (appStatus === 0) {
-                                console.info("%c\n\t🔧\tApp is upto date!", "color: blue; font-weight: bold;");
-                            } else if (appStatus === 1) {
-                                console.warn("%c\n\t🔧\tAvaileble version is older than App!", "color: red; font-weight: bold;");
-                            } else {
-                                console.info("%c\n\t🔧\tNew version is availeble!", "color: orange; font-weight: bold;");
-                            }
+                        if (appStatus === 0) {
+                            console.info("%c\n\t🔧\tApp is upto date!", "color: blue; font-weight: bold;");
+                        } else if (appStatus === 1) {
+                            console.warn("%c\n\t🔧\tAvaileble version is older than App!", "color: red; font-weight: bold;");
+                        } else {
+                            console.info("%c\n\t🔧\tNew version is availeble!", "color: orange; font-weight: bold;");
+                        }
 
-                            if (appStatus !== 0) {
-                                $$$("updateHeader").style.visibility = "visible";
-                                $$$("updateHeaderVersion").innerText = `[from: v${softwareVersion} to v${latestVersion}]`;
-                            }
-                        })
-                        .catch(error => {
-                            console.error("⛔ Error fetching latest version:", error);
-                        });
-                } catch (error) {
-                    console.error("⛔ Error checking File System Access API support:", error);
-                }
+                        if (appStatus !== 0) {
+                            document.getElementById("updateHeader").style.visibility = "visible";
+                            document.getElementById("updateHeaderVersion").innerText = `[from: v${softwareVersion} to v${latestVersion}]`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error("⛔ Error fetching latest version:", error);
+                    });
+            } catch (error) {
+                console.error("⛔ Error checking File System Access API support:", error);
             }
+        }
 
-            loadCurrentVersion();
+        // is online?
+        document.addEventListener("DOMContentLoaded", async () => {
+            reallyOnline = await hasInternet();
+            if (reallyOnline) {
+                console.info("%c📶 Ping successful. User is Online! 🌐", "color: blue; font-weight: bold;");
 
+                document.getElementById("softwareInfo").innerText = `v${softwareVersion} , ${softwareDate}`;
+
+                await loadCurrentVersion();              // ať si klidně zůstane async
+            } else {
+                console.info("%c📴 Offline.", "color: gray; font-weight: bold;");
+            }
         });
     </script>
 
 
+    <!-- External library -->
     <!-- KaTeX -->
-    <!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">-->
-    <!--    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>-->
-    <!--    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>-->
+    <!-- source: "https://cdn.jsdelivr.net/npm/katex@0.16.9/" -->
     <link rel="stylesheet" href="packages/katex/katex.min.css">
     <script defer src="packages/katex/katex.min.js"></script>
     <script defer src="packages/katex/auto-render.min.js"></script>
@@ -201,12 +515,15 @@
 
     <style>
         :root {
+            --blue-dark-color: #004aa6;
             --blue-color: #007bff;
+            --blue-lighter-color: #2196F3;
             --blue-light-color: #4CA2FF;
             --green-color: #28a745;
             --green-light-color: #68C17C;
             --red-color: #dc3545;
             --red-light-color: #E6717C;
+            --yellow-color: #FFD580;
             --orange-color: #ffc107;
             --darkorange-color: #FF8C00;
             --cyan-color: #17a2b8;
@@ -214,23 +531,133 @@
             --mid-color: #e9ecef;
             --mid-dark-color: #adb5bd;
             --dark-color: #ced4da;
+            --dark-light-color: #495057;
             --darker-color: #343a40;
             --gray-color: #6c757d;
 
-            --progressColor: var(--darkorange-color); /* --blue-color // --orange-color  ///   linear-gradient(to right, #FFD580, #FF8C00) */
+
+            --progressOnGoing-color: linear-gradient(to right, var(--yellow-color), var(--orange-color), var(--darkorange-color)); /* Green color for ongoing progress */
+            --progressDone-color: linear-gradient(to right, var(--blue-light-color), var(--blue-lighter-color), var(--blue-color), var(--blue-dark-color)); /* Green color for completed progress */
+
+            --progressColor: var(--progressOnGoing-color); /* --blue-color // --orange-color  ///   linear-gradient(to right, #FFD580, #FF8C00) */
 
             --radius: 10px;
 
+            --inputLabelMinWidth: 275px;
+            --inputMinWidth: 230px;
+            --gap: 10px;
+        }
+
+
+        html * {
+            transition: color 0.4s ease, background 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+        }
+
+        body[data-theme="light"] {
+            --page-bg: white;
             --color-bg: var(--mid-color);
+            --containers-bg: var(--dark-color);
+
+            --chart-text: black;
             --charts-bg: var(--light-color);
+            --charts-bg-active: white;
+            --chart-border: lightgray;
+
+            --text-color: black;
+            --text-info-1-color: var(--blue-lighter-color);
+            --text-info-2-color: var(--blue-dark-color);
+
+            --slider-bg: #ddd;
+            --slider-fg: var(--blue-color);
+            --slider-btn: var(--blue-dark-color);
+            --input-bg: white;
+            --button-color: var(--light-color);
+            --button2-color: var(--blue-color);
+            --logBtn-bg: var(--gray-color);
+            --border-color: darkgray;
+            --headerPanel-color: darkgray;
+            --progress-bg: #eee;
+
+            --regular-log-color: darkgray;
+            --loading-log-color: #323232;
+            --command-log-color: #f5f5f5;
+
+
+            --startEpx-bg: lightblue;
+            --startEpx-color: var(--blue-color);
+            --stopEpx-bg: lightpink;
+            --stopEpx-color: var(--red-color);
+            --returnEpx-bg: lightgray;
+            --returnEpx-color: black;
+
+            --logo-bg: white;
+            --logo-fg: var(--blue-color);
+            --logo-text: var(--blue-color);
+        }
+
+        body[data-theme="dark"] {
+            /*--page-bg: var(--darker-color);*/
+            /*--color-bg: var(--dark-light-color);*/
+            /*--containers-bg: var(--gray-color);*/
+            /*--charts-bg: var(--gray-color);*/
+            /*--charts-bg-active: var(--mid-dark-color);*/
+            /*--text-color: white;*/
+            /*--slider-bg: var(--mid-dark-color);*/
+            /*--input-bg: var(--mid-dark-color);*/
+            /*--button-color: var(--mid-dark-color);*/
+            /*--button2-color: var(--blue-color);*/
+            /*--logBtn-bg: var(--dark-light-color);*/
+            /*--border-color: var(--gray-color);*/
+            /*--headerPanel-color: var(--gray-color);*/
+
+            --page-bg: #181818;
+            --color-bg: #212121;
+            --containers-bg: #303030;
+
+            --chart-text: black;
+            --charts-bg: #303030;
+            --charts-bg-active: var(--darker-color);
+            --chart-border: #4e4e4e;
+
+            --text-color: #b4b4b4;
+            --text-info-1-color: #4e4e4e;
+            --text-info-2-color: black;
+
+            --slider-bg: #4e4e4e;
+            --slider-fg: #303030;
+            --slider-btn: #212121;
+            --input-bg: #4e4e4e;
+            --button-color: #4e4e4e;
+            --button2-color: var(--dark-light-color);
+            --logBtn-bg: var(--dark-light-color);
+            --border-color: #303030;
+            --headerPanel-color: var(--gray-color);
+            --progress-bg: #4e4e4e;
+
+            --regular-log-color: #4e4e4e;
+            --loading-log-color: #181818;
+            --command-log-color: #212121;
+
+            --startEpx-bg: var(--blue-light-color);
+            --startEpx-color: lightblue;
+            --stopEpx-bg: var(--red-light-color);
+            --stopEpx-color: lightpink;
+            --returnEpx-bg: var(--gray-color);
+            --returnEpx-color: #181818;
+
+            --logo-bg: var(--blue-light-color);
+            --logo-fg: var(--page-bg);
+            --logo-text: var(--blue-light-color);
         }
 
         /* General styling for the body */
         body {
             font-family: Arial, sans-serif;
-            background: white;
             min-width: 650px;
             padding: 5px 20px 0;
+            border-radius: 1em;
+            background: var(--page-bg);
+            color: var(--text-color);
         }
 
         /* Button styling for spacing and cursor behavior */
@@ -238,24 +665,28 @@
             padding: 5px;
             cursor: pointer;
             border-radius: 10px;
-            border: 1px solid darkgray;
+            border: 1px solid var(--border-color);
             font-size: 14px;
-            background: var(--light-color);
+            background: var(--button-color);
         }
 
         button {
             user-select: none; /* Disables text selection */
             transition: filter 0.2s ease; /* for smooth transition */
+            color: color-mix(in srgb, var(--text-color) 10%, black);
         }
 
         /* When the button is hovered */
         button:hover {
             filter: brightness(1.15); /* 15% brighter */
+            transform: scale(1.05); /* Slightly larger */
+            z-index: 4;
         }
 
         /* When the button is clicked */
         button:active {
-            filter: brightness(0.95); /* 5% darker */
+            filter: brightness(0.85); /* 15% darker */
+            transform: scale(0.95); /* Slightly smaller */
         }
 
         /* Styling for textAreas used for user input */
@@ -266,19 +697,21 @@
         }
 
         input, select, .textareaWrapper {
-            border: 1px solid darkgray;
-            border-radius: 1vh;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
             padding: 0 6px;
         }
 
         input, select, textarea {
-            background: white;
+            background: var(--input-bg);
             min-height: 34px;
             box-sizing: border-box;
 
             font-family: Arial, sans-serif;
             font-size: 13px;
             font-weight: normal;
+
+            color: var(--text-color);
         }
 
         .textareaWrapper {
@@ -334,15 +767,9 @@
             justify-content: center;
         }
 
-        #appSettingsWrapperTemp {
-            display: flex;
-            justify-self: center;
-            justify-content: center;
-        }
-
         .input-group {
             display: inline-flex;
-            gap: 10px; /* Space between inputs and labels */
+            gap: var(--gap); /* Space between inputs and labels */
             white-space: nowrap; /* Prevents wrapping */
             padding-left: 20px;
             align-items: center;
@@ -354,7 +781,7 @@
             flex-shrink: 0; /* Prevents shrinking */
             text-align: right;
             width: max-content; /* Label width */
-            min-width: 275px;
+            min-width: var(--inputLabelMinWidth);
         }
 
         .input-group input {
@@ -364,7 +791,7 @@
         .input-group input[type="number"], .input-group input[type="text"] {
             flex-grow: 1; /* Input will grow if there is space */
             justify-self: left;
-            max-width: 230px;
+            max-width: var(--inputMinWidth);
         }
 
         input[type="checkbox"] {
@@ -398,14 +825,14 @@
             flex-direction: row;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: var(--gap);
         }
 
         #nameHeader {
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 10px;
+            gap: var(--gap);
         }
 
         #updateHeader {
@@ -414,20 +841,20 @@
             font-weight: bold;
             display: flex;
             flex-direction: column;
-            color: darkgray;
+            color: var(--headerPanel-color);
             font-size: 12px;
             text-align: right;
         }
 
         .statusContainer {
-            gap: 10px;
+            gap: var(--gap);
             display: flex;
             justify-self: center;
             justify-content: center;
             align-items: center;
             flex-direction: column;
 
-            background: var(--mid-color);
+            background: var(--color-bg);
             padding: 10px 20px;
             border-radius: var(--radius);
         }
@@ -446,12 +873,20 @@
             border-radius: 10px;
         }
 
+        .sectionTitle {
+            margin-top: 0;
+        }
+
         #usbContainer {
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: var(--gap);
+        }
+
+        #inputNumBaudRateWrapper {
+            display: none;
         }
 
         #inputNumBaudRate {
@@ -459,7 +894,7 @@
             height: 33px;
             border-radius: 10px;
             padding: 5px;
-            border: 1px solid darkgray;
+            border: 1px solid var(--border-color);
             background: #f0f0f0;
             text-align: center;
         }
@@ -471,7 +906,7 @@
 
         .graphBtnWrapper {
             display: flex;
-            gap: 10px;
+            gap: var(--gap);
         }
 
         #connectBtnUSB {
@@ -494,26 +929,139 @@
             height: 50px;
         }
 
-        #chartsContainer {
+        #chartsWrapper {
+            width: 100%;
+            min-height: min-content;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            gap: 20px;
+
+            color: var(--chart-text);
+            background: var(--charts-bg);
+            border-radius: 10px;
+            border: 2px solid var(--chart-border);
+            padding: 10px 0;
+        }
+
+        #chartsContainer, #chartsInfoContainer {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            height: 400px;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            /*background: #f5f5f5;*/
+            min-height: min-content;
             gap: 20px;
+        }
 
-            background: var(--charts-bg);
-            border-radius: 10px;
-            border: 2px solid lightgrey;
-            padding-top: 10px;
+        #chartsInfoContainer {
+            margin-top: calc(3 * var(--gap));
+            justify-content: space-around;
         }
 
 
-        .chartWrapper {
+        .chart {
             width: 49%;
             height: 400px;
+        }
+
+        /*.chartWrapper {*/
+        /*    display: flex;*/
+        /*    width: 49%;*/
+        /*    height: fit-content;*/
+        /*    flex-direction: column;*/
+        /*    gap: max(calc(var(--gap) * 2.5), 25px);*/
+        /*    justify-content: center;*/
+        /*    align-items: center;*/
+        /*}*/
+
+        /*.chart {*/
+        /*    display: flex;*/
+        /*    width: 100%;*/
+        /*    height: fit-content;*/
+        /*    max-height: 400px;*/
+        /*}*/
+
+
+        #controlContainer {
+            display: flex;
+            /*flex-direction: row;*/
+            gap: 30px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .controlBtn.moveBtnLeft, .controlBtn.moveBtnRight {
+            position: relative;
+            touch-action: none;
+            background: var(--button2-color);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            justify-content: center;
+            border-radius: 50vh 0 0 50vh;
+            min-width: 0;
+            width: 100px;
+            height: 50px;
+            border: none;
+        }
+
+        #moveUp {
+            padding-top: .2rem; /* menší nahoře */
+            padding-bottom: .8rem; /* větší dole -> text vypadá výš */
+        }
+
+        #moveDown {
+            padding-top: .6rem; /* větší nahoře */
+            padding-bottom: .4rem; /* menší dole -> text vypadá níž */
+        }
+
+
+        .controlBtn.moveBtnRight {
+            border-radius: 0 50vh 50vh 0;
+            font-size: 16px;
+            width: 70px;
+            font-style: italic;
+        }
+
+        .movementWrapper {
+            background: var(--button2-color);
+            border-radius: 50vh;
+            position: relative;
+            display: flex;
+        }
+
+        .controlBtn.moveBtnRight:hover {
+            transform: scale(1.05) translateX(calc(70px * 0.02));
+        }
+
+        .controlBtn.moveBtnLeft:hover {
+            transform: scale(1.05) translateX(calc(100px * -0.02));
+        }
+
+        /* svislá čára vlevo od 10% do 90% výšky */
+        .movementWrapper::before {
+            content: "";
+            position: absolute;
+            left: calc(100px - 3px / 2); /* přesně na levém kraji */
+            top: 15%;
+            bottom: 15%; /* => výška = 80 % */
+            width: 3px; /* tloušťka čáry */
+            background: var(--text-info-2-color); /* nebo např. #0ea5e9 */
+            border-radius: 2px; /* hezké zakončení */
+            pointer-events: none;
+            z-index: 5;
+        }
+
+
+        .controllerBtn {
+            touch-action: none;
+            background: var(--button2-color);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            justify-content: center;
+            border-radius: var(--radius);
+            border: none;
         }
 
         .machineControlContainer {
@@ -524,7 +1072,7 @@
             justify-content: center;
             margin-top: 20px;
 
-            background: var(--dark-color);
+            background: var(--containers-bg);
             border-radius: var(--radius);
             padding: 20px;
         }
@@ -533,7 +1081,7 @@
             display: flex;
             flex-direction: row;
             width: 100%;
-            gap: 10px;
+            gap: var(--gap);
             align-items: center;
             justify-content: center;
         }
@@ -546,6 +1094,7 @@
             padding: 20px;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
         }
 
         .controlBtnHalf {
@@ -554,15 +1103,21 @@
         }
 
         #startExperiment {
-            background: lightblue;
+            background: var(--startEpx-bg);
+            color: var(--startEpx-color);
+            border-color: color-mix(in srgb, var(--startEpx-color) 30%, transparent);
         }
 
         #stopMachine {
-            background: lightpink;
+            background: var(--stopEpx-bg);
+            color: var(--stopEpx-color);
+            border-color: color-mix(in srgb, var(--stopEpx-color) 30%, transparent);
         }
 
         #returnPositionExperimentBtn {
-            background: lightgrey;
+            background: var(--returnEpx-bg);
+            color: var(--returnEpx-color);
+            border-color: color-mix(in srgb, var(--returnEpx-color) 30%, transparent);
             width: 200px;
         }
 
@@ -584,7 +1139,7 @@
 
         /* For Chrome, Edge (outer frame of progressbar) */
         progress::-webkit-progress-bar {
-            background-color: #eee; /* background color */
+            background-color: var(--progress-bg); /* background color */
             border-radius: 50vh; /* roundness to 50% */
         }
 
@@ -612,7 +1167,7 @@
         #progressWrapper {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: var(--gap);
             flex-grow: 1;
             width: 100%;
             max-width: 650px;
@@ -623,7 +1178,7 @@
             display: flex;
             flex-direction: column;
             padding: 20px;
-            gap: 10px;
+            gap: var(--gap);
             left: 0;
             justify-self: center;
             align-items: center;
@@ -637,7 +1192,7 @@
         #experimentInputsWrapper {
             display: grid;
             grid-template-columns:  10fr 1fr;
-            gap: 10px;
+            gap: var(--gap);
             width: 100%;
         }
 
@@ -646,7 +1201,7 @@
             grid-template-columns: auto 1fr;
             max-width: 1220px;
             min-width: 300px;
-            gap: 10px;
+            gap: var(--gap);
             justify-items: left;
         }
 
@@ -673,9 +1228,9 @@
 
         #experimentBtnsWrapper {
             display: flex;
-            width: max-content;
+            width: fit-content;
             flex-direction: column;
-            gap: 10px;
+            gap: var(--gap);
         }
 
         #saveData {
@@ -692,9 +1247,9 @@
             display: flex;
             align-items: flex-start;
             width: 100%;
-            background: var(--dark-color);
+            background: var(--containers-bg);
             border-radius: calc(1px + 10px);
-            border: 1px solid darkgray
+            border: 1px solid var(--border-color);
         }
 
         .openingContainerBtn {
@@ -703,16 +1258,25 @@
 
         .inputsContainer {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(510px, 1fr)); /* Dynamic grid */
+            grid-template-columns: repeat(auto-fit, minmax(calc(var(--inputLabelMinWidth) + var(--gap) + var(--inputMinWidth)), 1fr)); /* Dynamic grid */
             overflow: hidden;
             width: -webkit-fill-available;
-            gap: 10px;
+            gap: var(--gap);
         }
 
         .inputsContainer .katex-display {
             margin: 0;
         }
 
+        .inputsContainer button {
+            width: 80%;
+        }
+
+
+        .autoGrid {
+            grid-template-columns: repeat(auto-fit, minmax(max-content, 1fr));
+            justify-items: center;
+        }
 
         #experimentDirectionDropdown {
             flex-grow: 1;
@@ -721,7 +1285,7 @@
         }
 
         #inputPhotoIntervalLabel {
-            min-width: max-content;
+            min-width: fit-content;
             width: 125px;
         }
 
@@ -745,7 +1309,7 @@
         #consoleContainer {
             display: grid;
             grid-template-columns: 100fr 1fr; /* One column */
-            gap: 10px;
+            gap: var(--gap);
             padding-top: 20px;
         }
 
@@ -754,7 +1318,7 @@
             min-width: 300px;
             flex-grow: 1;
             height: 200px;
-            background: darkgray;
+            background: var(--regular-log-color);
             margin: 0;
             border-radius: 10px;
             overflow-y: auto;
@@ -765,7 +1329,7 @@
             max-width: 1200px;
             min-width: 300px;
             height: 80px;
-            background: #323232;
+            background: var(--loading-log-color);
             border-radius: 10px;
             margin: 0;
         }
@@ -773,13 +1337,13 @@
         .logContainer {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: var(--gap);
         }
 
         .logBtn {
             height: -webkit-fill-available;
             width: 150px;
-            background: var(--gray-color, #6c757d);
+            background: var(--logBtn-bg);
             color: white;
         }
 
@@ -787,9 +1351,9 @@
             width: 100%;
             max-width: 1200px;
             min-width: 300px;
-            height: calc(100% - 20px);
+            height: 40px;
             border: none;
-            background: #f5f5f5;
+            background: var(--command-log-color);
             border-radius: 10px;
 
             padding: 7px 10px;
@@ -798,9 +1362,105 @@
 
         }
 
+        input[type="range"] {
+            accent-color: #007bff; /* změna barvy na modrou (nové prohlížeče) */
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--slider-bg);
+            border-radius: 3px;
+            outline: none;
+            /*border: none;*/
+        }
+
+        /* Styl pro slider track (Chrome, Safari) */
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--slider-fg);
+            height: 6px;
+            border-radius: 2px;
+        }
+
+        /* Styl pro slider thumb (Chrome, Safari) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 25%;
+            background: var(--slider-btn);
+            cursor: pointer;
+            margin-top: -5px;
+        }
+
+        /* Firefox: track */
+        input[type="range"]::-moz-range-track {
+            /*background: #007bff;*/
+            height: 6px;
+            border-radius: 3px;
+        }
+
+        /* Firefox: thumb */
+        input[type="range"]::-moz-range-thumb {
+            background: var(--slider-btn);
+            height: 16px;
+            width: 16px;
+            border-radius: 25%;
+            cursor: pointer;
+        }
+
+        .sliderInputLabel {
+            display: flex;
+            align-items: center;
+            min-width: 1.5em;
+            max-width: 3.5em;
+            font-size: 16px;
+            text-align: right;
+            color: var(--text-info-2-color);
+            font-weight: bold;
+            background: none;
+            border: 1px solid transparent;
+        }
+
+        .sliderInputLabel:hover {
+            cursor: pointer;
+            color: var(--text-info-2-color);
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+        }
+
+
+        .sliderInputLabel:focus {
+            outline: none;
+            color: var(--text-color);
+            background: var(--input-bg);
+            border: 1px solid var(--text-info-2-color);
+        }
+
+        .sliderInputLabel::-webkit-outer-spin-button,
+        .sliderInputLabel::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        #positionWrapper {
+            width: 0.1rem; /* tloušťka čáry */
+            height: 14px;
+            background: black;
+            opacity: 65%;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        button {
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
         .units-text {
-            /*display: inline-block;*/
-            /*width: 45px;*/
             font-size: 14px;
             color: #4f4f4f;
         }
@@ -810,34 +1470,32 @@
 
 
     <style>
-        /* wrapper pro přesné pozicování pilulky */
-        .copy-wrap {
+        /* ========== ZÁKLAD: sdílený wrapper pro akční pilulky ========== */
+        .action-wrap, .copy-wrap { /* .copy-wrap ponechána kvůli zpětné kompatibilitě */
             position: relative;
             display: inline-flex;
             flex-grow: 1;
             max-width: 230px;
         }
 
-        /* plovoucí tlačítko v pravém horním rohu */
-        .copy-pill {
-            /* výška: min 24px, „ideál“ 80 % výšky rodiče, max 40px */
-            height: clamp(24px, 80%, 40px);
-
-            /* šířka = výška (čtverec) */
-            aspect-ratio: 1 / 1;
-            width: auto; /* dopočítá se z výšky díky aspect-ratio */
+        /* Základ pilulek (kopírovat / nastavit) */
+        .action-pill,
+        .copy-pill, .adjust-pill { /* pro kompatibilitu: copy/adjust dědí z action-pill */
+            height: clamp(24px, 80%, 40px) !important;
+            aspect-ratio: 1/1 !important;
+            width: auto !important;
 
             position: absolute;
             top: 50%;
-            transform: translateY(-50%);
             right: 5px;
+            transform: translateY(-50%) !important;
             z-index: 9999;
 
             border: 0;
             padding: 6px;
             border-radius: 9999px;
 
-            background: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, .55);
             -webkit-backdrop-filter: blur(6px);
             backdrop-filter: blur(6px);
             box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
@@ -845,77 +1503,91 @@
             cursor: pointer;
             line-height: 0;
 
-            /* výchozí: skryté, ukazovat jen na hover/po kliknutí */
             opacity: 0;
             pointer-events: none;
             transition: opacity .15s ease, background .2s ease, transform .1s ease;
         }
 
-        .copy-pill:hover {
-            background: rgba(255, 255, 255, 0.7);
+        .action-pill:hover {
+            background: rgba(255, 255, 255, .7);
+            transform: translateY(-50%) !important;
         }
 
-        .copy-pill:active {
-            transform: scale(0.95) translateY(calc(-50% + 1px)) translateX(1px);
+        .action-pill:active {
+            transform: scale(.95) translateY(calc(-50% + 1px)) translateX(1px) !important;
         }
 
-        /* zobraz při hoveru nad obalem nebo když má .visible */
-        .copy-wrap:hover .copy-pill,
-        .copy-pill.visible {
+        .action-wrap:hover .action-pill,
+        .action-pill.visible {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .copyableInput {
-            transition: box-shadow .25s ease; /* animace outline */
+        .action-pill.hidden {
+            display: none !important;
         }
 
-        /* ikony: defaultně nic, zobraz podle data-state */
-        .copy-pill svg {
+        /* Ikony uvnitř pilulek (základ: schovat, dle stavu ukázat) */
+        .action-pill svg {
             display: none;
             width: 100%;
             height: 100%;
         }
 
-        /* šedá */
+        /* COPY: šedá/OK/ERR */
         .copy-pill[data-state="idle"] .icon-copy {
             display: block;
             stroke: #6b7280;
         }
 
-        /* zelená */
         .copy-pill[data-state="ok"] .icon-check {
             display: block;
             stroke: #22c55e;
         }
 
-        /* červená */
         .copy-pill[data-state="err"] .icon-x {
             display: block;
             stroke: #ef4444;
         }
 
-        /* vnitřní orámování hover když data-state="idle" */
-        .copy-wrap:hover > .copyableInput:not(:focus):not(.copied):not(.copy-error) {
+        /* ADJUST: šedá/OK/ERR */
+        .adjust-pill[data-state="idle"] .icon-wand {
+            display: block;
+            stroke: #6b7280;
+        }
+
+        .adjust-pill[data-state="ok"] .icon-check {
+            display: block;
+            stroke: #22c55e;
+        }
+
+        .adjust-pill[data-state="err"] .icon-x {
+            display: block;
+            stroke: #ef4444;
+        }
+
+        /* Vizuální zpětná vazba uvnitř wrapperu na hover (jen když není fokus/akce) */
+        .action-wrap:hover > .copyableInput:not(:focus):not(.action-ok):not(.action-err),
+        .action-wrap.has-auto:hover > .adjustableInput:not(:focus):not(.action-ok):not(.action-err) {
             outline: none;
             box-shadow: inset 0 0 0 2px #3b82f6;
             transition: box-shadow .1s ease;
         }
 
-
-        /* vnitřní orámování po akci */
-        .copy-wrap > .copied {
+        /* Po akci */
+        .action-wrap > .action-ok {
             outline: none;
             box-shadow: inset 0 0 0 2px #22c55e;
             transition: box-shadow .1s ease;
         }
 
-        .copy-wrap > .copy-error {
+        .action-wrap > .action-err {
             outline: none;
             box-shadow: inset 0 0 0 2px #ef4444;
             transition: box-shadow .1s ease;
         }
 
+        /* Pomocná utilita, pokud ji už někde používáš */
         .data-eq {
             display: inline-flex;
             align-items: center;
@@ -926,509 +1598,650 @@
 </head>
 
 <body>
-
-
-<div class="headerContainer">
-
-    <div id="nameHeader">
-        <img id="thymosLogo" src="./images/icon-512x512.png" alt="thymos">
-        <div style="display: flex; flex-direction: column; align-content: space-between;">
-            <span style="font-weight: bolder; font-size: 24px;">THYMOS - Μοῖρα controller</span>
-            <span id="softwareInfo" style="color: darkgray; font-size: 12px;">v0.0.0.0, 00.00.0000</span>
-        </div>
+<noscript>
+    <div style="color: red; font-weight: bold; text-align: center; margin-top: 20px;">
+        JavaScript is disabled in your browser. Please enable it to use this application.
     </div>
-    <div id="updateHeader">
-        <span style="font-size: 22px; color: darkorange;">Upgrade available</span>
-        <span id="updateHeaderVersion" style="color: coral; font-size: 12px;">[from: v0.0.3 to v0.0.4]</span>
-        (press 'F5')
-    </div>
-</div>
+</noscript>
 
-<div class="statusContainer">
-    <!-- USB Connection Section -->
-    <div id="usbContainer">
-        <button id="connectBtnUSB">🔌 Connect via USB</button>
-        <label for="inputNumBaudRate" class="prohibited">Baud-Rate:
-            <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                   value="921_600" min="1" class="prohibited">
-        </label>
-    </div>
-    <div id="connectionStatus"> 🔴 Disconnected</div>
-</div>
+<main>
+    <section class="headerContainer">
 
-<div id="debuggingWrapper" style="display: none; width: 100%; gap: 20px; margin-top: 20px; justify-content: center; align-items: center;
-border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box;">
-    <button id="runTestSequenceBtn" style="box-sizing: border-box; justify-self: center; width: 200px; height: 100px;">
-        🧪 Run Test Sequence (for debugging)
-    </button>
-    <button id="endTestingBtn" style="box-sizing: border-box; justify-self: center; width: 200px; height: 100px;">
-        🛑 End Testing (for debugging)
-    </button>
-</div>
+        <div id="nameHeader">
+            <svg id="thymosLogo" class="custom-icon" viewBox="0 0 177.81437 177.9034"
+                 xmlns="http://www.w3.org/2000/svg">
+                <style>
+                    .rect-bg {
+                        fill: var(--logo-bg, white);
+                        stroke: var(--logo-bg, white);
+                    }
 
-<!-- Graph Display Section -->
+                    .dot-shape, .main-shape {
+                        fill: var(--logo-fg, black);
+                        stroke: var(--logo-fg, black);
+                    }
+                </style>
 
-<div class="graphContainer">
-    <h3 style="margin-top: 0;">📈 Graphs:</h3>
-    <div class="graphBtnWrapper">
-        <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
-        <button class="btnGraph" onclick="clearCharts()">🧹 Clear Charts</button>
-        <button class="btnGraph" onclick="refreshCharts()">🔄 Refresh Charts</button>
-    </div>
-    <div id="chartsContainer">
-        <div id="timeChart" class="chartWrapper"></div>
-        <div id="distanceChart" class="chartWrapper"></div>
+                <g transform="translate(225.12939,129.3157)">
+                    <rect class="rect-bg" width="130.01212" height="130.01208" x="-201.22827" y="-105.37005"
+                          ry="9.1106987" rx="9.4112854" stroke-width="47.8913"/>
+                    <path class="main-shape"
+                          d="m -183.53862,7.9393313 0.37992,-28.6806303c -3.46806,-0.838763 -6.47358,-2.670752 -8.82206,-5.154387 -3.35392,-3.546427 -5.32276,-8.431072 -5.32276,-13.618672v -30.30165c 0,-9.89763 4.27076,-21.98757 12.85714,-30.761632 6.93867,-7.09086 16.65032,-12.05614 29.13465,-12.05614h 67.983775l 11.83638,83.692256 -18.4011,0.0017v 60.189316l -3.79175,0.439257c -0.15191,0.02838 -53.466715,6.885861 -53.466715,-57.521684h 8.55402c 0,44.888568 29.48901,49.136615 40.15129,49.207313v -60.833856h 17.131595l -9.42174,-66.617732h -60.575755c -9.92062,0 -17.59527,3.90532 -23.05376,9.483912 -6.93498,7.08604 -10.38374,16.82239 -10.38374,24.78041v 30.30165c 0,2.99757 1.10511,5.78559 2.98196,7.77034 1.70875,1.80842 4.10749,2.95469 6.91965,2.95469h 4.31732l -0.4861,36.8294603 -8.52222,-0.102216 z"
+                          stroke-width="4.63292"/>
+                    <path class="dot-shape"
+                          d="m -115.91317,-44.595488c 5.72369,0 10.36216,-4.63847 10.36216,-10.36102 0,-5.72256 -4.63847,-10.3613 -10.36216,-10.3613 -5.72255,0 -10.36102,4.63874 -10.36102,10.3613 0,5.72255 4.63847,10.36102 10.36102,10.36102"
+                          stroke-width="4.63292"/>
+                </g>
+            </svg>
 
-    </div>
-
-    <hr>
-
-    <!-- Progress Bar -->
-    <h3 style="margin-top: 0;">💻 Control Panel:</h3>
-    <div class="machineControlContainer">
-        <div class="btnControlWrapper">
-            <!-- Start Experiment Button -->
-            <button id="startExperiment" class="controlBtn"> ⚡ Start Experiment</button>
-
-            <!-- Stop Experiment Button -->
-            <button id="stopMachine" class="controlBtn"> 🛑 Stop Machine</button>
-
-            <!-- Return to the original position Button -->
-            <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()" class="controlBtn disabled"> ↩️
-                Return to start position
-            </button>
-
-            <!-- Automatic returning to the original position Checkmark -->
-            <label id="autoReturnPositionExperimentLabel" for="autoReturnPositionExperiment">↕️ Final
-                Auto-positioning:</label>
-            <input type="checkbox" id="autoReturnPositionExperiment">
-
-
-            <button id="moveMachineUP" class="controlBtnHalf" onclick="moveBy(-100);"> ⬆️ Move UP<br>(100 mm)</button>
-            <button id="moveMachineDOWN" class="controlBtnHalf" onclick="moveBy(100);"> ⬇️ Move DOWN<br>(100 mm)
-            </button>
-
-        </div>
-
-        <!-- Experiment Progress -->
-        <div id="progressWrapper">
-            <label for="experimentProgress">Experiment Progress:</label>
-            <progress id="experimentProgress" value="0" max="100"></progress>
-            <span id="experimentProgressLabel">0%</span>
-        </div>
-    </div>
-</div>
-
-
-<div class="experimentContainer">
-    <h3>📝 Experiment options:</h3>
-    <div id="experimentInputsWrapper">
-        <div id="experimentInputsContainer">
-
-            <label for="experimentType">🧪 Experiment Name:</label>
-            <div style="display: flex; width: 100%; gap: 10px;">
-                <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ..."
-                       data-nonremember="true">
-                <label for="experimentCount">🔢 Experiment count:</label>
-                <input type="number" id="experimentCount" placeholder="Num ..." min="1" max="999" value="1" step="1"
-                       data-input-type="intInput" data-nonremember="true">
+            <div style="display: flex; flex-direction: column; align-content: space-between;">
+                <div style="border-bottom: 2px solid var(--headerPanel-color); margin-bottom: 1px;"><span
+                        style="font-weight: bolder; font-size: 24px;"><span
+                        style="color: var(--logo-text); text-decoration: none;">THYMOS</span> - Μοῖρα controller</span>
+                </div>
+                <span id="softwareInfo"
+                      style="color: var(--headerPanel-color); font-size: 12px;">v0.0.0.0, 00.00.0000</span>
             </div>
-            <label for="experimentDesc">📄 Experiment description:</label>
-            <div class="textareaWrapper">
+        </div>
+        <div id="updateHeader">
+            <a style="font-size: 22px; color: darkorange;">Upgrade available</a>
+            <a id="updateHeaderVersion" style="color: coral; font-size: 12px;">[from: v0.0.3 to v0.0.4]</a>
+            (press 'F5')
+        </div>
+    </section>
+
+    <section class="statusContainer">
+        <!-- USB Connection Section -->
+        <div id="usbContainer">
+            <button id="connectBtnUSB" title="Connect to the Thymos machine by selecting USB port.">🔌 Connect via USB
+            </button>
+            <div id="inputNumBaudRateWrapper"><label for="inputNumBaudRate" class="prohibited">Baud-Rate:
+                <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
+                       value="921600" min="1" class="prohibited">
+            </label>
+            </div>
+        </div>
+        <div id="connectionStatus"> 🔴 Disconnected</div>
+    </section>
+
+    <section id="debuggingWrapper" style="display: none; width: 100%; gap: 20px; margin-top: 20px; justify-content: center; align-items: center;
+                border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box;">
+        <button id="runTestSequenceBtn"
+                style="box-sizing: border-box; justify-self: center; width: 200px; height: 100px;">
+            🧪 Run Test Sequence (for debugging)
+        </button>
+        <button id="endTestingBtn" style="box-sizing: border-box; justify-self: center; width: 200px; height: 100px;">
+            🛑 End Testing (for debugging)
+        </button>
+
+        <pre id="brailleOut"
+             style="border: 2px solid black;  width: 200px; height: 100px; font-size: 16px; letter-spacing: 0;"></pre>
+    </section>
+
+    <!-- Graph Display Section -->
+
+    <section class="graphContainer">
+        <h3 class="sectionTitle">📈 Graphs:</h3>
+        <nav class="graphBtnWrapper">
+            <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
+            <button class="btnGraph" onclick="clearCharts()">🧹 Clear Charts</button>
+            <button class="btnGraph" onclick="refreshCharts()">🔄 Refresh Charts</button>
+        </nav>
+
+
+        <div id="chartsWrapper">
+            <div id="chartsContainer">
+                <div id="timeChart" class="chart"></div>
+                <div id="distanceChart" class="chart"></div>
+            </div>
+            <div id="chartsInfoContainer">
+                <div>Max/Min:<span
+                        style="display: inline-flex; min-width: 100px; justify-content: center;">N/A</span><span
+                        style="display: inline-flex; min-width: 30px;  justify-content: center;">--</span>
+                </div>
+                <div>Max/Min:<span
+                        style="display: inline-flex; min-width: 100px; justify-content: center;">N/A</span><span
+                        style="display: inline-flex; min-width: 30px;  justify-content: center;">--</span>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Progress Bar -->
+        <h3 class="sectionTitle">💻 Control Panel:</h3>
+        <nav class="machineControlContainer">
+            <div class="btnControlWrapper">
+                <!-- Start Experiment Button -->
+                <button id="startExperiment" class="controlBtn"> ⚡ Start Experiment</button>
+
+                <!-- Stop Experiment Button -->
+                <button id="stopMachine" class="controlBtn"> 🛑 Stop Machine</button>
+
+                <!-- Return to the original position Button -->
+                <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()" class="controlBtn disabled">
+                    ↩️
+                    Return to start position
+                </button>
+
+                <!-- Automatic returning to the original position Checkmark -->
+                <label id="autoReturnPositionExperimentLabel" for="autoReturnPositionExperiment">↕️ Final
+                    Auto-positioning:</label>
+                <input type="checkbox" id="autoReturnPositionExperiment">
+
+
+                <button id="moveMachineUP" class="controlBtnHalf" onclick="moveBy(-100);"> ⬆️ Move UP<br>(100 mm)
+                </button>
+                <button id="moveMachineDOWN" class="controlBtnHalf" onclick="moveBy(100);"> ⬇️ Move DOWN<br>(100 mm)
+                </button>
+
+            </div>
+
+            <!-- Experiment Progress -->
+            <div id="progressWrapper">
+                <label for="experimentProgress">Experiment Progress:</label>
+                <progress id="experimentProgress" value="0" max="100"></progress>
+                <span id="experimentProgressLabel">0%</span>
+            </div>
+        </nav>
+    </section>
+
+
+    <section class="experimentContainer">
+        <h3>📝 Experiment options:</h3>
+        <section id="experimentInputsWrapper">
+            <div id="experimentInputsContainer">
+
+                <label for="experimentType">🧪 Experiment Name:</label>
+                <div style="display: flex; width: 100%; gap: var(--gap);">
+                    <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ..."
+                           data-nonremember="true">
+                    <label for="experimentCount">🔢 Experiment count:</label>
+                    <input type="number" id="experimentCount" placeholder="Num ..." min="1" max="999" value="1" step="1"
+                           data-input-type="intInput" data-nonremember="true">
+                </div>
+                <label for="experimentDesc">📄 Experiment description:</label>
+                <div class="textareaWrapper">
                 <textarea id="experimentDesc" placeholder="Short description of the experiment (optional)..."
                           data-nonremember="true"></textarea>
-            </div>
-            <label for="storagePath">📁 Handpick the folder:</label>
-            <div style="align-items: center; display: flex; gap: 10px;">
-                <input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
-                Downloads)
-            </div>
-        </div>
-
-
-        <div id="experimentBtnsWrapper">
-            <button id="saveData">💾 Save single CSV</button>
-            <button id="convertCSV" onclick="convertCSVtoXLSX_MATTES()">
-                📊 Convert CSV files to XLSX (MATTES)
-            </button>
-
-        </div>
-    </div>
-
-    <h3>📑 Experiment Results:</h3>
-    <div class="openingContainer">
-        <button id="openResultsContainer" class="openingContainerBtn">🔽</button>
-        <div id="resultsContainer" class="sizeableContainer">
-            <h4>✏️ Calculation inputs:</h4>
-            <div class="inputsContainer">
-                <div class="input-group data-eq">
-                    <label for="inputTareForce">Taring Force \( F_{\mathrm{Tare}} \) <span class="units-text">(N)</span>:
-                    </label>
-                    <input type="number" id="inputTareForce" data-nonremember="true" value="0" step="any">
                 </div>
-
-                <div class="input-group data-eq">
-                    <label for="inputTareDisp">Taring Displacement \( w_{\mathrm{Tare}} \) <span
-                            class="units-text">(mm)</span>:
-                    </label>
-                    <input type="number" id="inputTareDisp" data-nonremember="true" value="0" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="B, IB, HB">
-                    <label for="inputForce">Force \( F \) <span class="units-text">(N)</span>: </label>
-                    <input type="number" id="inputForce" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="B, IB, HB">
-                    <label for="inputDisp">Displacement \( w \) at \( F \) <span class="units-text">(mm)</span>:
-                    </label>
-                    <input type="number" id="inputDisp" data-nonremember="true" value="" step="any">
-                </div>
-
-
-                <div class="input-group data-eq" data-eq-type="B, IB">
-                    <label for="inputWidth">Cross-section width \( b \) <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="inputWidth" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="B, IB">
-                    <label for="inputHeight">Cross-section height \( h \) <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="inputHeight" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="B">
-                    <label for="inputSpan">Span \( L \) <span class="units-text">(mm)</span>: </label>
-                    <input type="number" id="inputSpan" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="inputIndDepth">Depth of indentation \( h_{D} \) <span class="units-text">(mm)</span>:
-                    </label>
-                    <input type="number" id="inputIndDepth" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="inputIndDiameter">Diameter of Indenter <b>⌀</b> \( D \) <span
-                            class="units-text">(mm)</span>:
-                    </label>
-                    <input type="number" id="inputIndDiameter" data-nonremember="true" value="10" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="inputTargetDisp">Displacement \( w_{T} \) at Target force <span
-                            class="units-text">(mm)</span>:
-                    </label>
-                    <input type="number" id="inputTargetDisp" data-nonremember="true" value="" step="any">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="inputLoadingTime">Target loading time \( t \) <span class="units-text">(s)</span>:
-                    </label>
-                    <input type="number" id="inputLoadingTime" data-nonremember="true" value="15" step="any">
+                <label for="storagePath">📁 Handpick the folder:</label>
+                <div style="align-items: center; display: flex; gap: var(--gap);">
+                    <input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
+                    Downloads)
                 </div>
             </div>
 
-            <hr>
 
-            <h4>🔣 Equations:</h4>
-            <div class="inputsContainer"
-                 style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
+            <div id="experimentBtnsWrapper">
+                <button id="saveData">💾 Save single CSV</button>
+                <button id="convertCSV" onclick="convertCSVtoXLSX_MATTES()">
+                    📊 Convert CSV files to XLSX (MATTES)
+                </button>
+
+            </div>
+        </section>
+
+        <h3>📑 Experiment Results:</h3>
+        <section class="openingContainer">
+            <button id="resultsContainerOpenBtn" class="openingContainerBtn">🔽</button>
+            <div id="resultsContainer" class="sizeableContainer">
+                <h4>✏️ Calculation inputs:</h4>
+                <div class="inputsContainer">
+                    <div class="input-group data-eq">
+                        <label for="inputTareForce">Taring Force \( F_{\mathrm{Tare}} \) <span
+                                class="units-text">(N)</span>:
+                        </label>
+                        <input type="number" id="inputTareForce" class="adjustableInput" data-nonremember="true"
+                               value="0" step="any">
+                    </div>
+
+                    <div class="input-group data-eq">
+                        <label for="inputTareDisp">Taring Displacement \( w_{\mathrm{Tare}} \) <span
+                                class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputTareDisp" class="adjustableInput" data-nonremember="true"
+                               value="0" step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="B, IB, HB">
+                        <label for="inputForce">Force \( F \) <span class="units-text">(N)</span>: </label>
+                        <input type="number" id="inputForce" class="adjustableInput" data-nonremember="true" value=""
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="B, IB, HB">
+                        <label for="inputDisp">Displacement \( w \) at \( F \) <span class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputDisp" class="adjustableInput" data-nonremember="true" value=""
+                               step="any">
+                    </div>
+
+
+                    <div class="input-group data-eq" data-eq-type="B, IB">
+                        <label for="inputWidth">Cross-section width \( b \) <span class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputWidth" class="adjustableInput" data-nonremember="true" value=""
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="B, IB">
+                        <label for="inputHeight">Cross-section height \( h \) <span class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputHeight" class="adjustableInput" data-nonremember="true" value=""
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="B">
+                        <label for="inputSpan">Span \( L \) <span class="units-text">(mm)</span>: </label>
+                        <input type="number" id="inputSpan" class="adjustableInput" data-nonremember="true" value=""
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="inputIndDepth">Depth of indentation \( h_{D} \) <span class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputIndDepth" class="adjustableInput" data-nonremember="true" value=""
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="inputIndDiameter">Diameter of Indenter <b>⌀</b> \( D \) <span
+                                class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputIndDiameter" class="adjustableInput" data-nonremember="true"
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="inputTargetDisp">Displacement \( w_{T} \) at Target force <span
+                                class="units-text">(mm)</span>:
+                        </label>
+                        <input type="number" id="inputTargetDisp" class="adjustableInput" data-nonremember="true"
+                               step="any">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="inputLoadingTime">Target loading time \( t \) <span class="units-text">(s)</span>:
+                        </label>
+                        <input type="number" id="inputLoadingTime" class="adjustableInput" data-nonremember="true"
+                               step="any">
+                    </div>
+                </div>
+
+                <hr>
+
+                <h4>🔣 Equations:</h4>
+                <div class="inputsContainer"
+                     style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
                 <span class="data-eq">
                     \[
                     F = F_{i} - F_{\mathrm{Tare}}
                     \]
                 </span>
-                <span class="data-eq">
+                    <span class="data-eq">
                     \[
                     w = w_{i} - w_{\mathrm{Tare}}
                     \]
                 </span>
-                <span class="data-eq" data-eq-type="B">
+                    <span class="data-eq" data-eq-type="B">
                     \[
                     I_{y} = \frac{1}{12} \cdot b \cdot h^{3}
                     \]
                 </span>
-                <span class="data-eq" data-eq-type="B">
+                    <span class="data-eq" data-eq-type="B">
                     \[
                     E = \frac{F\,L^{3}}{48\,I_{y}\,w}
                     \]
                 </span>
-                <span class="data-eq" data-eq-type="IB">
+                    <span class="data-eq" data-eq-type="IB">
                     \[
                     A = b \cdot h
                     \]
                 </span>
-                <span class="data-eq" data-eq-type="IB">
+                    <span class="data-eq" data-eq-type="IB">
                     \[ \sigma_{\mathrm{max}} = \dfrac{F_{\mathrm{max}}}{A} \]
                 </span>
-                <span class="data-eq" data-eq-type="HB">
+                    <span class="data-eq" data-eq-type="HB">
                     \[
                     d = 2\cdot\sqrt{\,h_{D}\,(2D - h_{D})\,}
                     \]
                 </span>
-                <span class="data-eq" data-eq-type="HB">
+                    <span class="data-eq" data-eq-type="HB">
                     \[
                     H_{BW} = \frac{2F}{\pi D\left( D - \sqrt{D^{2} - d^{2}} \right)}
                     \]
                 </span>
-                <span class="data-eq" data-eq-type="HB">
+                    <span class="data-eq" data-eq-type="HB">
                     \[
                     v = \frac{w}{t}
                     \]
                 </span>
+                </div>
+
+                <hr>
+
+                <h4>📐 Calculated values:</h4>
+                <div class="inputsContainer">
+                    <div class="input-group data-eq">
+                        <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \) <span class="units-text">(N)</span>:
+                        </label>
+                        <input type="text" id="outputForceMax" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq">
+                        <label for="outputDisp">Displacement \( w_{F_{\mathrm{max}}} \) at \( F_{\mathrm{max}} \) <span
+                                class="units-text">(mm)</span>:
+                        </label>
+                        <input type="text" id="outputDisp" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="B">
+                        <label for="outputIy">Moment of Inertia \( I_{y} \) <span
+                                class="units-text">(mm<sup>4</sup>)</span>: </label>
+                        <input type="text" id="outputIy" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="B">
+                        <label for="outputYModule">Young's Module \( E \) <span class="units-text">(MPa)</span>:
+                        </label>
+                        <input type="text" id="outputYModule" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="IB">
+                        <label for="outputArea">Cross-section Area \( A \) <span
+                                class="units-text">(mm<sup>2</sup>)</span>:
+                        </label>
+                        <input type="text" id="outputArea" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="IB">
+                        <label for="outputMaxStress">Max Stress \( \sigma_{\mathrm{max}} \) <span
+                                class="units-text">(MPa)</span>: </label>
+                        <input type="text" id="outputMaxStress" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d \) <span
+                                class="units-text">(mm)</span>:
+                        </label>
+                        <input type="text" id="outputDiameterInd" class="copyableInput" readonly
+                               data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="outputHardness">Hardness (Brinell) \( H_{\mathrm{BW}} \) <span
+                                class="units-text">(-)</span>:
+                        </label>
+                        <input type="text" id="outputHardness" class="copyableInput" readonly data-nonremember="true">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HB">
+                        <label for="outputLoadingSpeed">Loading speed \( v \) <span class="units-text">(mm/s)</span>:
+                        </label>
+                        <input type="text" id="outputLoadingSpeed" class="copyableInput" readonly
+                               data-nonremember="true">
+                    </div>
+                </div>
             </div>
-
-            <hr>
-
-            <h4>📐 Calculated values:</h4>
-            <div class="inputsContainer">
-                <div class="input-group data-eq">
-                    <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \) <span class="units-text">(N)</span>:
-                    </label>
-                    <input type="text" id="outputForceMax" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq">
-                    <label for="outputDisp">Displacement \( w_{F_{\mathrm{max}}} \) at \( F_{\mathrm{max}} \) <span
-                            class="units-text">(mm)</span>:
-                    </label>
-                    <input type="text" id="outputDisp" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="B">
-                    <label for="outputIy">Moment of Inertia \( I_{y} \) <span
-                            class="units-text">(mm<sup>4</sup>)</span>: </label>
-                    <input type="text" id="outputIy" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="B">
-                    <label for="outputYModule">Young's Module \( E \) <span class="units-text">(MPa)</span>: </label>
-                    <input type="text" id="outputYModule" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="IB">
-                    <label for="outputArea">Cross-section Area \( A \) <span class="units-text">(mm<sup>2</sup>)</span>:
-                    </label>
-                    <input type="text" id="outputArea" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="IB">
-                    <label for="outputMaxStress">Max Stress \( \sigma_{\mathrm{max}} \) <span
-                            class="units-text">(MPa)</span>: </label>
-                    <input type="text" id="outputMaxStress" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d \) <span
-                            class="units-text">(mm)</span>:
-                    </label>
-                    <input type="text" id="outputDiameterInd" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="outputHardness">Hardness (Brinell) \( H_{\mathrm{BW}} \) <span
-                            class="units-text">(-)</span>:
-                    </label>
-                    <input type="text" id="outputHardness" class="copyableInput" readonly data-nonremember="true">
-                </div>
-
-                <div class="input-group data-eq" data-eq-type="HB">
-                    <label for="outputLoadingSpeed">Loading speed \( v \) <span class="units-text">(mm/s)</span>:
-                    </label>
-                    <input type="text" id="outputLoadingSpeed" class="copyableInput" readonly data-nonremember="true">
-                </div>
-            </div>
-        </div>
-    </div>
+        </section>
 
 
-    <!-- Experiment Parameter Inputs -->
-    <h3>⚙️ Settings:</h3>
-    <div class="openingContainer">
-        <button id="openSettingsContainer" class="openingContainerBtn">🔽</button>
-        <div id="settingContainer" class="sizeableContainer">
+        <!-- Experiment Parameter Inputs -->
+        <h3>⚙️ Settings:</h3>
+        <section class="openingContainer">
+            <button id="settingsContainerOpenBtn" class="openingContainerBtn">🔽</button>
+            <div id="settingsContainer" class="sizeableContainer">
 
-            <h4>🛠️ Loading settings:</h4>
-            <div class="inputsContainer">
-                <div class="input-group">
-                    <label for="inputDistance">Distance <span class="units-text">(mm)</span>: </label>
-                    <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0.01"
-                           step="any"
-                           max="100000000">
-                </div>
+                <h4>🛠️ Loading settings:</h4>
+                <div class="inputsContainer">
+                    <div class="input-group">
+                        <label for="inputDistance">Distance <span class="units-text">(mm)</span>: </label>
+                        <input data-input-type="floatInput" type="number" id="inputDistance" value="20" min="0.01"
+                               step="any"
+                               max="100000000">
+                    </div>
 
-                <div class="input-group">
-                    <label for="experimentDirectionDropdown">Experiment type: </label>
-                    <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
+                    <div class="input-group">
+                        <label for="experimentDirectionDropdown">Experiment type: </label>
+                        <select id="experimentDirectionDropdown" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; color: #333;">
-                        <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
-                        </option>
-                        <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
-                        </option>
-                        <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
-                        </option>
-                        <option value="Option-DOWN-B">&nbsp;BENDING&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
-                        </option>
-                        <option value="Option-DOWN-HB">&nbsp;HARDNESS (Brinell)&nbsp;⏬
-                        </option>
-                    </select>
+                            <option value="Option-UP-BASIC">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
+                            </option>
+                            <option value="Option-UP-IB">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            </option>
+                            <option value="Option-DOWN-BASIC" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
+                            </option>
+                            <option value="Option-DOWN-B">&nbsp;BENDING&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            </option>
+                            <option value="Option-DOWN-HB">&nbsp;HARDNESS (Brinell)&nbsp;⏬
+                            </option>
+                        </select>
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputLoadLimitDropPercent">Force drop limit <span class="units-text">(%)</span>:
+                        </label>
+                        <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
+                               min="0"
+                               max="100">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputTakePhotos">Take photos: </label>
+                        <input type="checkbox" id="inputTakePhotos">
+                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval <span
+                                class="units-text">(s)</span>: </label>
+                        <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
+                               value="1"
+                               min="0" step="any"
+                               max="120000000">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputLoadLimitDropValue">Force drop limit <span class="units-text">(N)</span>:
+                        </label>
+                        <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputSpeedForward">Loading speed <span class="units-text">(mm/s)</span>: </label>
+                        <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0.01"
+                               step="any" max="25">
+                    </div>
+
+                    <div class="input-group"> <!-- TODO minimum na 10000 -->
+                        <label for="inputDataInterval">Data Interval <span class="units-text">(µs)</span>: </label>
+                        <input data-input-type="intInput" type="number" id="inputDataInterval" value="30000"
+                               min="10000"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group" style="display: none;">
+                        <label for="inputSpeedBackward" class="prohibited">Returning speed <span
+                                class="units-text">(mm/s)</span>:
+                        </label>
+                        <input data-input-type="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
+                               value="25"
+                               min="0"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="disabled" id="inputInitialSpeedLabel" for="inputInitialSpeed">Initial speed
+                            <span class="units-text">(mm/s)</span>:</label>
+                        <input class="disabled" data-input-type="floatInput" type="number"
+                               id="inputInitialSpeed" style="max-width: 60px; min-width: 25px;"
+                               value="1"
+                               min="0.01" step="any"
+                               max="25">
+                        <label class="disabled" id="inputInitialForceLabel" for="inputInitialForce"
+                               style="min-width: max-content;">Force lim.
+                            <span class="units-text">(N)</span>:</label>
+                        <input class="disabled" data-input-type="floatInput" type="number"
+                               id="inputInitialForce" style="max-width: 50px; min-width: 25px;"
+                               value="1"
+                               min="0" step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="disabled" id="inputStopForceLabel" for="inputStopForce">Stopping Force Limit <span
+                                class="units-text">(N)</span>: </label>
+                        <input class="disabled" data-input-type="floatInput" type="number" id="inputStopForce"
+                               value="1000"
+                               min="0"
+                               step="any" max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="disabled" id="inputEndDelayLabel" for="inputEndDelay">End load delay <span
+                                class="units-text">(s)</span>: </label>
+                        <input class="disabled" data-input-type="floatInput" type="number" id="inputEndDelay" value="25"
+                               min="0"
+                               step="any" max="120000000">
+                    </div>
                 </div>
 
+                <hr>
 
-                <div class="input-group">
-                    <label for="inputLoadLimitDropPercent">Force drop limit <span class="units-text">(%)</span>:
-                    </label>
-                    <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
-                           min="0"
-                           max="100">
+                <h4>📟 Machine settings:</h4>
+                <div class="inputsContainer">
+                    <div class="input-group">
+                        <label for="inputLoadcellCapacity">Loadcell Capacity <span class="units-text">(kg)</span>:
+                        </label>
+                        <input data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
+                               step="any"
+                               min="0" max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
+                        </label>
+                        <input data-input-type="floatInput2" type="number" id="inputLoadcellOutput"
+                               value="2.0" step="any" min="0" max="100000000">
+                    </div>
                 </div>
 
+                <hr>
 
-                <div class="input-group">
-                    <label for="inputTakePhotos">Take photos: </label>
-                    <input type="checkbox" id="inputTakePhotos">
-                    <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval <span
-                            class="units-text">(s)</span>: </label>
-                    <input class="disabled" data-input-type="floatInput" type="number" id="inputPhotoInterval"
-                           value="1"
-                           min="0" step="any"
-                           max="120000000">
-                </div>
+                <h4>🕹️ App settings:</h4>
+                <div class="inputsContainer autoGrid">
+                    <!--                    <div class="input-group prohibited">-->
+                    <!--                        <label for="inputAppInterval" style="min-width: max-content;">Data Interval <span class="units-text">(µs)</span>:</label>-->
+                    <!--                        <input data-input-type="intInput" type="number" id="inputAppInterval" value="30000"-->
+                    <!--                               min="1000"-->
+                    <!--                               step="any"-->
+                    <!--                               max="100000000" style="height: 48px; max-width: 100px;">-->
+                    <!--                    </div>-->
 
+                    <div class="input-group">
+                        <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol:</label>
+                        <select id="decimalSymbol" style="font-family: monospace; font-weight: bold;
+                                font-size: 16px; width: max-content; height: 50px;">
+                            <option value="Option-Dot" selected>&nbsp;Dot&nbsp;&nbsp;&nbsp;( . )&nbsp;</option>
+                            <option value="Option-Comma">&nbsp;Comma&nbsp;( , )&nbsp;</option>
+                        </select>
+                    </div>
 
-                <div class="input-group">
-                    <label for="inputLoadLimitDropValue">Force drop limit <span class="units-text">(N)</span>:
-                    </label>
-                    <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
-                           step="any"
-                           max="100000000">
-                </div>
+                    <div class="input-group">
+                        <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol:</label>
+                        <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold;
+                                font-size: 16px; width: max-content; height: 50px;">
+                            <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
+                            <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;
+                            </option>
+                            <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;
+                            </option>
+                            <option value="Option-Tab">&nbsp;Tab&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( \t )&nbsp;
+                            </option>
+                        </select>
+                    </div>
 
+                    <button id="darkModeButton" class="controlBtn" onclick="toggleDarkMode()">🌙 Dark mode</button>
 
-                <div class="input-group">
-                    <label for="inputSpeedForward">Loading speed <span class="units-text">(mm/s)</span>: </label>
-                    <input data-input-type="floatInput" type="number" id="inputSpeedForward" value="1" min="0.01"
-                           step="any" max="25">
-                </div>
+                    <button id="reportButton" class="controlBtn"
+                            style="color: var(--stopEpx-color); font-weight: bold;"
+                            onclick="">🐞 Report bug
+                    </button>
 
-                <div class="input-group"> <!-- TODO minimum na 10000 -->
-                    <label for="inputDataInterval">Data Interval <span class="units-text">(µs)</span>: </label>
-                    <input data-input-type="intInput" type="number" id="inputDataInterval" value="30000"
-                           min="10000"
-                           step="any"
-                           max="100000000">
-                </div>
+                    <button id="aboutButton" class="controlBtn" onclick="window.location.href='about.html'">ℹ️ About
+                        app
+                    </button>
 
-                <div class="input-group" style="display: none;">
-                    <label for="inputSpeedBackward" class="prohibited">Returning speed <span
-                            class="units-text">(mm/s)</span>:
-                    </label>
-                    <input data-input-type="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
-                           value="25"
-                           min="0"
-                           step="any"
-                           max="100000000">
-                </div>
-
-                <div class="input-group">
-                    <label class="disabled" id="inputInitialSpeedLabel" for="inputInitialSpeed">Initial speed
-                        <span class="units-text">(mm/s)</span>:</label>
-                    <input class="disabled" data-input-type="floatInput" type="number"
-                           id="inputInitialSpeed" style="max-width: 60px; min-width: 25px;"
-                           value="1"
-                           min="0.01" step="any"
-                           max="25">
-                    <label class="disabled" id="inputInitialForceLabel" for="inputInitialForce"
-                           style="min-width: max-content;">Force lim.
-                        <span class="units-text">(N)</span>:</label>
-                    <input class="disabled" data-input-type="floatInput" type="number"
-                           id="inputInitialForce" style="max-width: 50px; min-width: 25px;"
-                           value="1"
-                           min="0" step="any"
-                           max="100000000">
-                </div>
-
-                <div class="input-group">
-                    <label class="disabled" id="inputStopForceLabel" for="inputStopForce">Stopping Force Limit <span
-                            class="units-text">(N)</span>: </label>
-                    <input class="disabled" data-input-type="floatInput" type="number" id="inputStopForce" value="1000"
-                           min="0"
-                           step="any" max="100000000">
-                </div>
-
-                <div class="input-group">
-                    <label class="disabled" id="inputEndDelayLabel" for="inputEndDelay">End load delay <span
-                            class="units-text">(s)</span>: </label>
-                    <input class="disabled" data-input-type="floatInput" type="number" id="inputEndDelay" value="25"
-                           min="0"
-                           step="any" max="120000000">
-                </div>
-            </div>
-
-            <hr>
-
-            <h4>📟 Machine settings:</h4>
-            <div class="inputsContainer">
-                <div class="input-group">
-                    <label for="inputLoadcellCapacity">Loadcell Capacity <span class="units-text">(kg)</span>:
-                    </label>
-                    <input data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
-                           step="any"
-                           min="0" max="100000000">
-                </div>
-
-                <div class="input-group">
-                    <label for="inputLoadcellOutput">Loadcell Rated Output <span class="units-text">(mV/V)</span>:
-                    </label>
-                    <input data-input-type="floatInput2" type="number" id="inputLoadcellOutput"
-                           value="2.0" step="any" min="0" max="100000000">
-                </div>
-            </div>
-
-            <hr>
-
-            <h4>🕹️ App settings:</h4>
-            <div class="inputsContainer">
-                <div id="appSettingsWrapperTemp">
-                    <button id="clearStorageButton" onclick="clearLocalStorage()">🔁 Reset app
+                    <button id="clearStorageButton" class="controlBtn" onclick="clearLocalStorage()">🔁 Reset app
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Device Console Output Section -->
-    <h3>📋 Device Console:</h3>
-    <div class="openingContainer">
-        <button id="openConsoleContainer" class="openingContainerBtn">🔽</button>
-        <div id="consoleContainer" class="sizeableContainer">
-            <div class="logContainer">
-                <pre id="regularLog"> </pre>
-                <pre id="loadingLog"> </pre>
-                <div style="height: 40px;">
-                    <label for="commandInput"></label>
-                    <textarea id="commandInput" placeholder="Enter command..."></textarea>
+        <!-- Device Console Output Section -->
+        <h3>📋 Device Console:</h3>
+        <section class="openingContainer">
+            <button id="consoleContainerOpenBtn" class="openingContainerBtn">🔽</button>
+            <div id="consoleContainer" class="sizeableContainer">
+                <div class="logContainer">
+                    <pre id="regularLog"> </pre>
+                    <pre id="loadingLog"> </pre>
+                    <div style="height: 40px;">
+                        <label for="commandInput"></label>
+                        <textarea id="commandInput" placeholder="Enter command..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Log Control Buttons -->
+                <div class="logContainer">
+                    <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
+                    <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
+                    </button><!--                    prohibited-->
+                    <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
+                    <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton" class="logBtn">
+                        📡 Send Command
+                    </button>
+
                 </div>
             </div>
+        </section>
 
-            <!-- Log Control Buttons -->
-            <div class="logContainer">
-                <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
-                <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
-                </button><!--                    prohibited-->
-                <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
-                <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton" class="logBtn">
-                    📡 Send Command
-                </button>
+    </section>
 
-            </div>
-        </div>
-    </div>
-
-</div>
-
+</main>
 
 <script>
+
+
+    // delete all properties of '.prohibited' and '.disabled'
+    function clearClassDeclarations(selector) {
+        for (const sheet of Array.from(document.styleSheets)) {
+            let rules;
+            try {
+                rules = sheet.cssRules;
+            } catch {
+                continue;
+            }
+            for (const r of rules) {
+                if (r.type === CSSRule.STYLE_RULE && r.selectorText?.split(",").map(s => s.trim()).includes(selector)) {
+                    r.style.cssText = ""; // smaže VŠECHNY deklarace té třídy
+                }
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // if (debugging) clearClassDeclarations(".prohibited");
+        // if (debugging) clearClassDeclarations(".disabled");
+
+    });
+
 
     // =====================================================================
     // ====================      HELPERS      ==============================
@@ -1486,22 +2299,19 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     const toRounds = (x, digits = 0, way = 'round') => {
         const n = toNumber(x, true);
         if (!isNumberOrInfinity(n)) return NaN; // NaN/±Infinity
+
         if (way === 'round' || way === 'auto') {
+
             if (!Number.isFinite(n)) return n; // ±Infinity
-            digits = Math.round(toNumber(digits, true));
+            digits = Math.min(Math.abs(Math.round(toNumber(digits, true))), maxPrecision);
+
             if (!isFiniteInteger(digits)) return NaN;
-            digits = Math.min(Math.abs(0, digits), maxPrecision);
             return roundDecimalFast(n, digits);
         }
-        if (way === 'ceil' || way === 'up') {
-            return Math.ceil(n);
-        }
-        if (way === 'floor' || way === 'down') {
-            return Math.floor(n);
-        }
-        if (way === 'trunc' || way === 'drop') {
-            return Math.trunc(n);
-        }
+        if (way === 'ceil' || way === 'up') return Math.ceil(n);
+        if (way === 'floor' || way === 'down') return Math.floor(n);
+        if (way === 'trunc' || way === 'drop') return Math.trunc(n);
+        return NaN;
     };
 
     const toInteger = (x, way = 'drop', bigInt = false) => {
@@ -1550,6 +2360,9 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     // 5) „Má hodnotu“ – pokud potřebuješ zvlášť (0 projde, null/undef/"" ne)
     const hasValue = (x) => isDefined(x) && (isNumberOrInfinity(x) || isNonEmptyString(x));
 
+    // Varianta, která NEpovažuje false/true za „hodnotu“
+    const hasValueButNotBoolean = (x) => hasValue(x) && !isBoolean(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
+
     const isNotEmpty = (x) => {
         if (!isDefined(x)) return false;
         if (isBoolean(x)) return true; // false i true projde
@@ -1560,8 +2373,6 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
         return false;
     };
 
-    // Varianta, která NEpovažuje false a 0 za „hodnotu“
-    const hasValueButNotBoolean = (x) => hasValue(x) && x !== false && x !== true && x.toLowerCase() !== 'false' && x.toLowerCase() !== 'true';
 
     const isInvalidValue = (x, additionSet = []) => {
         if (!hasValue(x)) return true;
@@ -1574,7 +2385,12 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
             'none', 'no', 'n/o', 'not', 'nothing', 'never',
             'nan', 'nat', 'n/a', 'na', 'n/d', 'nd',
             'undefined', 'empty', 'missing', 'void', 'voided', 'forgotten', 'out',
-            'val', 'inv', 'invalid', 'not valid', 'disabled', 'expired', 'cancelled', 'not applicable'
+            'val', 'inv', 'invalid', 'not valid', 'disabled', 'expired', 'cancelled', 'not applicable', 'del',
+            'ⁿ/ₐ', '㎁', '␀', '␤', '␡',
+            'X', 'x',
+            '×', '╳', '☓', '✕', '✗', '✘', '⨉', '⨯', '🗙', '🗴', '🗶', '🞩', '✖', '✖️', '❌',
+            '❎', '☒', '⮽', '🗵', '🗷', '⊠', '⌧', '🝱',
+            '⮾', '⮿', '⊗', '⨂', '⭙',
         ]);
 
         for (const v of additionSet) {
@@ -1641,8 +2457,8 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     const decimalSymbol = (num, symbol = '.') => {
         if (!isAnyFiniteNumeric(num)) return "N/A";
         if (!isFiniteNumber(num)) num = String(num);
-        if (symbol === '.') return num;
-        return num.replace('.', symbol);
+        const s = String(num);
+        return symbol === '.' ? s : s.replace('.', symbol);
     };
 
     const getValue = (x, dec = "none", strOut = false) => {
@@ -1697,13 +2513,13 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
         return "0b" + num.toString(2);
     };
     const binaryToDecimal = (str) => {
-        if (!isString(x)) return NaN;
+        if (!isString(str)) return NaN;
         const s = str.trim();
         if (!/^0b[01]+$/i.test(s)) return NaN;
         return parseInt(s.slice(2), 2);
     };
     const hexToDecimal = (str) => {
-        if (!isString(x)) return NaN;
+        if (!isString(str)) return NaN;
         const s = str.trim();
         if (!/^0x[0-9a-f]+$/i.test(s)) return NaN;
         return parseInt(s.slice(2), 16);
@@ -1772,7 +2588,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
     const calc_val_tare = (x, x_tare = 0) => x - x_tare;
     const calc_area = (b, h) => b * h;
-    const calc_moment_of_inertia = (b, h) => 1 / 12 * h * (b * b * b);
+    const calc_moment_of_inertia = (b, h) => 1 / 12 * b * (h * h * h);
     const calc_bend_modulus = (L, I, F, w) => (F * (L * L * L)) / (48 * I * w);
     const calc_stress = (F, A) => F / A;
     const calc_speed = (d, t) => d / t;
@@ -1788,7 +2604,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     const $$ = (sel) => document.querySelectorAll(sel);
     const $$$ = (id) => document.getElementById(id);
 
-    const exists = async (id) => !!$$$(id);
+    const exists = (id) => !!$$$(id);
 
     // čtení čísla z inputu přes tvoje utility
     const readNum = (id, positiveOnly = false) => {
@@ -1802,7 +2618,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     const writeOut = (id, value, dec = 3) => {
         const el = $$$(id);
         if (!el) return;
-        el.value = getCustomStrValue(value, dec, '.', false, false, "N/A");
+        el.value = getCustomStrValue(value, dec, '.', false, false, "␀");
     };
 
     // -------------------- Hlavní přepočet --------------------
@@ -1810,6 +2626,16 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
         // --- načtení společných vstupů (tare) ---
         const F_tare = readNum("inputTareForce");      // N
         const w_tare = readNum("inputTareDisp");       // mm
+
+        // --- B/IB/HB společné ---
+        const F_raw = readNum("inputForce");           // N
+        const w_raw = readNum("inputDisp");            // mm
+        const F = calc_val_tare(F_raw, F_tare)
+        const w = calc_val_tare(w_raw, w_tare)
+
+        // Zapiš základní "max" (rozuměj aktuální zadané) hodnoty, pokud výstupy existují
+        if (exists("outputForceMax")) writeOut("outputForceMax", F, 3);
+        if (exists("outputDisp")) writeOut("outputDisp", w, 3);
 
         const expType = $$$("experimentDirectionDropdown")?.value.toLowerCase();
 
@@ -1819,18 +2645,8 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
         if (!isB && !isIB && !isHB) return; // nic dalšího nepřepočítáme
 
-        // --- B/IB/HB společné ---
-        const F_raw = readNum("inputForce");           // N
-        const w_raw = readNum("inputDisp");            // mm
-        const F = calc_val_tare(F_raw, F_tare)
-        const w = calc_val_tare(w_raw, w_tare)
-
         const b = readNum("inputWidth", true);   // mm
         const h = readNum("inputHeight", true);  // mm
-
-        // Zapiš základní "max" (rozuměj aktuální zadané) hodnoty, pokud výstupy existují
-        if (exists("outputForceMax")) writeOut("outputForceMax", F, 3);
-        if (exists("outputDisp")) writeOut("outputDisp", w, 3);
 
 
         // -------------------- IB: průřez + napětí --------------------
@@ -1898,10 +2714,39 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
     // -------------------- Init --------------------
     document.addEventListener('DOMContentLoaded', () => {
+
+        adjustSet('inputLoadingTime', 15);
+        adjustSet('inputIndDiameter', 10);
+
         bindRecalcOnInputs();
         recomputeAll();
+
+        (() => {
+            const allButtons = document.querySelectorAll('button');
+
+            allButtons.forEach(button => {
+                // block right-click context menu on buttons
+                button.addEventListener('contextmenu', event => event.preventDefault());
+            });
+        })();
     });
 
+
+    function toggleDarkMode() {
+        const body = document.body;
+        const currentTheme = body.dataset.theme;
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        $$$('darkModeButton').innerText = currentTheme === "dark" ? "🌙 Dark mode" : "☀️ Light mode";
+        body.dataset.theme = newTheme;
+        localStorage.setItem("theme", newTheme); // Save the theme to localStorage
+        console.log("Theme changed to:", newTheme);
+    }
+
+
+    // Load the saved theme from localStorage on initialization
+    const savedTheme = localStorage.getItem("theme") || "light";
+    if (exists('darkModeButton')) $$$('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
+    document.body.dataset.theme = savedTheme;
 
     serviceWorkerRegistration();
 
@@ -2019,55 +2864,53 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
     // /////// Event Listeners for UI Buttons /////////
     // These were commented out, but they could be used to attach click events
+    (() => {
+        const addControlContainer = (name) => {
+            const btn = $$$(name + "OpenBtn");
+            const el = $$$(name);
+            btn?.addEventListener('click', async () => controlContainer(btn, el));
+            window.addEventListener('resize', async () => controlContainerWidth(el));
+        };
 
+        addControlContainer("resultsContainer");
+        addControlContainer("settingsContainer");
+        addControlContainer("consoleContainer");
+    })();
 
-    $$$("openResultsContainer")?.addEventListener("click", async (event) => controlContainer(event.currentTarget, "resultsContainer"));
-    window.addEventListener("resize", async () => controlContainerWidth("resultsContainer"));
-    $$$("openSettingsContainer")?.addEventListener("click", async (event) => controlContainer(event.currentTarget, "settingContainer"));
-    window.addEventListener("resize", async () => controlContainerWidth("settingContainer"));
-    $$$("openConsoleContainer")?.addEventListener("click", async (event) => controlContainer(event.currentTarget, "consoleContainer"));
-    window.addEventListener("resize", async () => controlContainerWidth("consoleContainer"));
 
     // /////// Auto-scroll Toggle /////////
-    UI.toggleScrollBtn.addEventListener("click", async () => {
+    UI.toggleScrollBtn.addEventListener('click', async () => {
         isAutoScroll = !isAutoScroll;
-        UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
+        UI.toggleScrollBtn.classList.toggle('active', isAutoScroll);
         UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${isAutoScroll ? "ON" : "OFF"}`;
         if (isAutoScroll) {
             UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
         }
-
     });
 
 
     // Detects manual scrolling by the user
-    UI.regularLogContainer.addEventListener("scroll", async () => {
-        isScrolledToBottom = checkScrolledToBottom();
-
-        if (!isScrolledToBottom) {
-            isAutoScroll = false;
-            UI.toggleScrollBtn.textContent = "📌 Auto-scroll: OFF";
-        } else {
-            isAutoScroll = true;
-            UI.toggleScrollBtn.textContent = "📌 Auto-scroll: ON";
-            isLineLocker = true;
-            UI.lineLockBtn.textContent = "🔒 Fix Scroll: ON";
-            UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight
+    let lastAutoScroll = null;
+    UI.regularLogContainer.addEventListener('scroll', () => {
+        const atBottom = checkScrolledToBottom();
+        if (atBottom !== lastAutoScroll) {
+            lastAutoScroll = atBottom;
+            isAutoScroll = atBottom;
+            UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${atBottom ? "ON" : "OFF"}`;
+            UI.toggleScrollBtn.classList.toggle('active', atBottom);
         }
-        UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
     });
 
-    function controlContainerWidth(containerID) {
-        const container = $$$(containerID);
+    function controlContainerWidth(container) {
         if (!container) return;
+        if (isString(container)) container = $$$("resultsContainer");
         if (window.getComputedStyle(container).maxHeight !== "0px") {
             container.style.maxHeight = container.scrollHeight + "px"; // Adjust height on window resize
         }
     }
 
 
-    function controlContainer(btn, containerID) {
-        const container = $$$(containerID);
+    function controlContainer(btn, container) {
         if (!container || !btn) return;
 
         if (window.getComputedStyle(container).maxHeight === "0px") {
@@ -2306,16 +3149,28 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
     // /////// Adding Data to the Log /////////
 
+    const dbQueue = [];
+    let dbFlushTimer = null;
+
     /**
      * Adds a new data entry to IndexedDB.
      *@param {Object} data - The data object to be stored.
      */
     function addDataToLog(data) {
-        let transaction = db.transaction(STORE_NAME, "readwrite");
-        let store = transaction.objectStore(STORE_NAME);
+        dbQueue.push(data);
+        if (!dbFlushTimer) dbFlushTimer = setTimeout(flushDB, 500); // flush 2× in one second
+    }
 
-        // 📌 Adds the object with an auto-generated key
-        store.add(data);
+    function flushDB() {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        for (const item of dbQueue.splice(0)) store.add(item); // 📌 Adds the object with an auto-generated key
+        tx.oncomplete = () => {
+            dbFlushTimer = null;
+        };
+        tx.onerror = () => {
+            dbFlushTimer = null;
+        }; // případně log
     }
 
     // /////// Saving Log to File /////////
@@ -2324,7 +3179,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
      * Saves the stored log entries from IndexedDB to a downloadable CSV file.
      */
     // Event listener for the save button
-    $$$("saveData")?.addEventListener("click", async () => saveCSV);
+    $$$("saveData")?.addEventListener("click", saveCSV);
 
 
     let handFolderSelect = false;
@@ -2462,6 +3317,11 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
      * Starts the Serial (USB) connection by opening the database and initiating the connection.
      */
     async function startSerial() {
+        if (!('serial' in navigator)) {
+            alert('This broswer do not support serialPorts, try using Chrome/Edge.');
+            return;
+        }
+
         if (isConnected) {
             console.info("Already connected, disconnecting...");
             await disconnectSerial();
@@ -2592,7 +3452,8 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
 
     const visibleLines = Math.floor(UI.loadingLogContainer.clientHeight / 16);
-    UI.loadingLogContainer.style.fontStyle = "14px monospace";
+    UI.loadingLogContainer.style.fontFamily = "monospace";
+    UI.loadingLogContainer.style.fontSize = "14px";
     UI.loadingLogContainer.style.overflow = "hidden";
 
     function logMeasurements(msg) {
@@ -2729,11 +3590,11 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     /**
      * Establishes a connection with the ESP device via USB.
      */
-    async function connectSerial() {
+    async function connectSerialOLD() {
         isSerial = true;
         try {
             const ports = await serialFunctionGetPorts();
-            console.log("🔍 Searching for available ports...", ports);
+            console.log("🔍 Searching for available ports...");
             if (ports && ports.length === 1) {
                 serialPort = ports[0];
                 console.info("Only one port found.");
@@ -2761,6 +3622,31 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
             activeWatchDog = false;
             await disconnectSerial(true);
 
+        }
+    }
+
+
+    async function connectSerial() {
+        isSerial = true;
+        try {
+            // const granted = await navigator.serial.getPorts(); // dřív povolené
+            // if (granted?.length === 1) {
+            //     serialPort = granted[0];
+            //     await openPort(serialPort);
+            //     return;
+            // }
+            // vždy nech vybrat – a když uživatel zruší, prostě skonči
+            const port = await navigator.serial.requestPort();
+            if (!port) {
+                isSerial = false;
+                return;
+            }   // zrušeno
+            serialPort = port;
+            await openPort(serialPort);
+        } catch (e) {
+            isSerial = false;
+            // DŮLEŽITÉ: nevolej disconnectSerial(), pokud jsme nikdy neotevřeli port
+            await logMessage(`⚠️ connectSerial canceled/error: ${e?.name || e}`);
         }
     }
 
@@ -3152,7 +4038,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     }
 
 
-    function timeStepCheck(previous, current, stepSize, tolerance = null) {
+    function timeStepCheckOLD(previous, current, stepSize, tolerance = null) {
         if (!tolerance) {
             tolerance = stepSize * 0.1; // set default tolerance to 10% of step size
         }
@@ -3164,6 +4050,19 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
         }
         console.warn("⚠️ Step size mismatch:\n\tprevious:", previous, " current: ", current);
         return previous + stepSize;
+    }
+
+    // TODO: kontrola oproti starému
+    function timeStepCheck(prev, curr, step, tol = step * 0.1) {
+        if (curr >= prev) {
+            const delta = curr - prev;
+            const n = Math.round(delta / step);
+            if (Math.abs(delta - n * step) <= Math.max(tol, step * 0.25)) {
+                return prev + n * step; // posuň o celé násobky kroku
+            }
+        }
+        // fallback: věř přijatému času, ať poznáš drift/drop
+        return curr;
     }
 
 
@@ -3577,7 +4476,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
             console.log("\n📄 - ▶️ Page is visible");
             if (liveUpdatePaused) {
                 console.log("🔄 Resuming live update of charts.");
-                loadDataFromDBToChart(true);
+                await loadDataFromDBToChart(true);
                 liveUpdatePaused = false;
                 liveUpdate = true;
             }
@@ -3810,7 +4709,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
             },
             series: seriesLabels.map((label, index) => ({
                 label: label,
-                stroke: index === 0 ? "black" : ["#FF2730", "#2196F3", "#4CAF50"][index - 1] || "555555"
+                stroke: index === 0 ? "000000" : ["#FF2730", "#2196F3", "#4CAF50"][index - 1] || "#555555"
             })),
             plugins: [markerPlugin],
         };
@@ -4117,7 +5016,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     // #TODO do better disabling of elements //////////////////////////////////////////////////
     $$('.prohibited')?.forEach(element => {
         element.readOnly = true;
-        element.tabindex = -1;
+        element.tabIndex = -1;
 
         element.addEventListener("selectstart", async (e) => e.preventDefault());
         element.addEventListener("mousedown", async (e) => e.preventDefault());
@@ -4667,7 +5566,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
 
             // === Enable Data Streaming and DSLR Shooting ===
-            await sendCommand(`inde`);
+            await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`, 5);
             await sendCommand("DATAC 1");
             if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
 
@@ -5030,7 +5929,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
             // ------------------------------------------------------------------------
 
             requestAnimationFrame(() => {
-                controlContainerWidth("resultsContainer");
+                controlContainerWidth($$$("resultsContainer"));
             });
 
             const suffixes = ["ib", "hb"];
@@ -5092,7 +5991,23 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
     });
 
 
+    function waitForXLSX() {
+        return new Promise((resolve, reject) => {
+            const ok = () => window.XLSX ? resolve() : setTimeout(ok, 50);
+            ok();
+            setTimeout(() => reject(new Error("XLSX failed to load")), 5000);
+        });
+    }
+
+
     async function convertCSVtoXLSX_MATTES() {
+        try {
+            await waitForXLSX();
+        } catch (e) {
+            alert(e.message);
+            return;
+        }
+
         const input = document.createElement('input');
 
         const mattesMaxLines = 20_000; // Maximum number of lines in one file
@@ -5549,13 +6464,38 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
 
 <script>
     (() => {
-        const selector = '.copyableInput';
-        const lingerMs = 1000; // po opuštění hoveru zůstane tlačítko viditelné
+        /* ======= KONFIG ======= */
+        const COPY_SELECTOR = '.copyableInput';
+        const ADJUST_SELECTOR = '.adjustableInput';
+        const LINGER_MS = 1000; // jak dlouho zůstane pilulka viditelná po akci/opuštění
 
-        // Globální „posledně aktivní“ pro exkluzivitu
-        let currentActive = null; // { el, btn, clear() }
+        /* ======= POMOCNÉ FUNKCE (bezpečné fallbacky) ======= */
+        const normalize = (v) => String(v ?? '').toLowerCase()
+            .replaceAll('\\', '/').replaceAll('.', '').replaceAll(',', '').trim();
 
-        // Pomocné: zrušení hide-timeru a transitionend listeneru na tlačítku
+        // Pokud už máš globální isInvalidValue/hasValue, použij je:
+        const hasValue = (window.hasValue && typeof window.hasValue === 'function')
+            ? window.hasValue
+            : (v) => String(v ?? '').trim().length > 0;
+
+        const isInvalidValue = (window.isInvalidValue && typeof window.isInvalidValue === 'function')
+            ? window.isInvalidValue
+            : (s) => {
+                const t = normalize(s);
+                return t === '' || t === 'nan' || t === 'null' || t === 'undefined' || t === 'n/a' || t === 'na';
+            };
+
+        const isNaNStrict = (val) => (typeof val === 'number' && Number.isNaN(val));
+
+        const isValidAutoValue = (val) => {
+            if (isNaNStrict(val)) return false;
+            const str = String(val);
+            return hasValue(str) && !isInvalidValue(str);
+        };
+
+        /* ======= GLOBÁLNÍ EXKLUZIVITA POSLEDNÍ AKCE ======= */
+        let currentActive = null; // { el, btn }
+
         const cancelFadeListener = (btn) => {
             if (btn._onFadeEnd) {
                 btn.removeEventListener('transitionend', btn._onFadeEnd);
@@ -5568,119 +6508,164 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
                 btn._hideTimer = null;
             }
         };
-
-        // Deaktivuj aktuální aktivní (outline pryč, tlačítko skryj, stav idle)
         const deactivateCurrent = () => {
             if (!currentActive) return;
             const {el, btn} = currentActive;
             cancelHideTimer(btn);
             cancelFadeListener(btn);
-            el.classList.remove('copied', 'copy-error');
+            el.classList.remove('action-ok', 'action-err');
             btn.classList.remove('visible');
             btn.dataset.state = 'idle';
             currentActive = null;
         };
 
-        const setup = async (el) => {
-            if (el.parentElement?.classList.contains('copy-wrap')) return;
+        const setStateExclusive = (el, btn, state) => {
+            if (!currentActive || currentActive.btn !== btn) {
+                deactivateCurrent();
+                currentActive = {el, btn};
+            }
+            cancelFadeListener(btn);
+            btn.dataset.state = state;
+            btn.classList.add('visible');
+        };
 
-            // obal pro pozicování
+        const showBtn = (btn) => {
+            cancelHideTimer(btn);
+            cancelFadeListener(btn);
+            btn.classList.add('visible');
+        };
+        const hideBtnLater = (btn) => {
+            cancelHideTimer(btn);
+            btn._hideTimer = setTimeout(() => {
+                btn.classList.remove('visible');
+                cancelFadeListener(btn);
+                btn._onFadeEnd = (ev) => {
+                    if (ev.propertyName === 'opacity') {
+                        const op = getComputedStyle(btn).opacity;
+                        if (op === '0') {
+                            btn.dataset.state = 'idle';
+                            cancelFadeListener(btn);
+                        }
+                    }
+                };
+                btn.addEventListener('transitionend', btn._onFadeEnd);
+            }, LINGER_MS - 100);
+        };
+
+        // wand (idle)
+        const iconWand = '<svg class="icon-wand" viewBox="0 0 24 24" fill="none" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path stroke="none" d="M0 0h24v24H0z" fill="none"/> <path d="M4 8v-2a2 2 0 0 1 2 -2h2"/> <path d="M4 16v2a2 2 0 0 0 2 2h2"/> <path d="M16 4h2a2 2 0 0 1 2 2v2"/> <path d="M16 20h2a2 2 0 0 0 2 -2v-2"/> <path d="M9 16v-5.5a2 2 0 1 1 6 0v5.5"/> <path d="M9.5 13h5"/></svg>';
+        // Copy (idle)
+        const iconCopy = '<svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <rect width="13" height="16" x="8" y="7" rx="1.5" ry="1.5"/> <path d="M 3,15.5 V 3.5 C 3,2.7 3.7,2 4.5,2 H 15"/></svg>';
+        // check
+        const iconOK = '<svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M 4.8,13.4 9,17.6 19.6,7"/> </svg>';
+        // X
+        const iconX = '<svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M6 6 L18 18 M18 6 L6 18"/> </svg>';
+
+
+        /* ======= VYTVOŘENÍ WRAPPERU ======= */
+        const ensureWrap = (el) => {
+            const parent = el.parentElement;
+            if (parent && (parent.classList.contains('action-wrap') || parent.classList.contains('copy-wrap'))) {
+                // kompatibilita: pokud už existuje copy-wrap, povýšíme ho na action-wrap
+                parent.classList.add('action-wrap');
+                return parent;
+            }
             const wrap = document.createElement('span');
-            wrap.className = 'copy-wrap';
+            wrap.className = 'action-wrap';
             el.insertAdjacentElement('beforebegin', wrap);
             wrap.appendChild(el);
+            return wrap;
+        };
 
-            // tlačítko s ikonami
+        /* ======= PILULKY ======= */
+        const makeCopyButton = () => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'copy-pill';
+            btn.className = 'action-pill copy-pill';
             btn.dataset.state = 'idle';
             btn.setAttribute('aria-label', 'Zkopírovat hodnotu');
             btn.title = 'Zkopírovat';
-            btn.innerHTML = `
-                <!-- gray copy -->
-                <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect width="13" height="16" x="8" y="7" rx="1.5" ry="1.5"/>
-                    <path d="M 3,15.5 V 3.5 C 3,2.7 3.7,2 4.5,2 H 15"/>
-                    <!-- <path d="M 3,14 V 6.5 C 3,4 5,2 7.5,2 H 15"/>-->
-                </svg>
+            btn.innerHTML = `${iconCopy} ${iconOK} ${iconX}`;
+            return btn;
+        };
 
-                <!-- green check -->
-                <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M 4.8,13.4 9,17.6 19.6,7"/>
-                </svg>
+        const makeAdjustButton = () => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'action-pill adjust-pill';
+            btn.dataset.state = 'idle';
+            btn.setAttribute('aria-label', 'Automaticky nastavit hodnotu');
+            btn.title = 'Nastavit';
+            btn.innerHTML = `${iconWand} ${iconOK} ${iconX}`;
+            return btn;
+        };
 
-                <!-- red X -->
-                <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M6 6 L18 18 M18 6 L6 18"/>
-                </svg>
-                `;
+        /* ======= REGISTR AUTO-HODNOT ======= */
+        const _registry = {};
+        const ensureId = (el, prefix = 'adj') => {
+            if (el.id && el.id.trim().length) return el.id;
+            const auto = `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+            el.id = auto;
+            return auto;
+        };
+
+        // veřejné API
+        const adjustRegistryAPI = {
+            get(id) {
+                return _registry[id];
+            },
+            set(id, value) {
+                _registry[id] = value;
+                refreshAdjustButtonsFor(id); // UI refresh jen pro daný input
+            },
+            all() {
+                return Object.assign({}, _registry);
+            }
+        };
+        window.adjustRegistry = adjustRegistryAPI;        // čti/zapisuj přes metody
+        window.adjustSet = (id, v) => adjustRegistryAPI.set(id, v);
+        window.adjustGet = (id) => adjustRegistryAPI.get(id);
+
+        /* ======= VAZBA ID -> tlačítko pro rychlý refresh ======= */
+        const idToAdjustBtn = new Map();
+
+        const refreshAdjustButtonsFor = (id) => {
+            const btn = idToAdjustBtn.get(id);
+            if (!btn) return;
+            const val = adjustRegistryAPI.get(id);
+            const valid = isValidAutoValue(val);
+
+            const input = document.getElementById(id);
+            const wrap = input?.closest('.action-wrap');
+
+            if (valid) {
+                btn.classList.remove('hidden');
+                wrap?.classList.add('has-auto');
+            } else {
+                btn.classList.add('hidden');
+                btn.dataset.state = 'idle';
+                wrap?.classList.remove('has-auto');
+            }
+        };
+
+        window.adjustRefresh = () => idToAdjustBtn.forEach((_, id) => refreshAdjustButtonsFor(id));
+
+        /* ======= KOPÍROVACÍ LOGIKA ======= */
+        const bindCopy = (wrap, el) => {
+            const btn = makeCopyButton();
             wrap.appendChild(btn);
-
-            // Hover: vždy ukázat s idle ikonou, resetovat časovač
-            const showBtn = () => {
-                cancelHideTimer(btn);
-                cancelFadeListener(btn);
-                // btn.dataset.state = 'idle';
-                btn.classList.add('visible');
-            };
-
-            const hideBtnLater = () => {
-                cancelHideTimer(btn);
-                btn._hideTimer = setTimeout(() => {
-                    // spustíme fade-out: jen odebereme .visible
-                    btn.classList.remove('visible');
-
-                    // po dokončení opacity přepneme na idle (bez probliknutí)
-                    cancelFadeListener(btn);
-                    btn._onFadeEnd = (ev) => {
-                        if (ev.propertyName === 'opacity') {
-                            const op = getComputedStyle(btn).opacity;
-                            if (op === '0') {
-                                btn.dataset.state = 'idle';
-                                cancelFadeListener(btn);
-                            }
-                        }
-                    };
-                    btn.addEventListener('transitionend', async () => btn._onFadeEnd);
-                }, lingerMs - 100);
-            };
-
-            wrap.addEventListener('mouseenter', async () => showBtn());
-            wrap.addEventListener('mouseleave', async () => hideBtnLater());
-
-            // Nastaví stav ikony a zajistí exkluzivitu „poslední kopie“
-            const setStateExclusive = (state) => {
-                // Zruš předešlého aktivního
-                if (!currentActive || currentActive.btn !== btn) {
-                    deactivateCurrent();
-                    currentActive = {
-                        el,
-                        btn,
-                        clear() {
-                            deactivateCurrent();
-                        }
-                    };
-                }
-                cancelFadeListener(btn);
-                btn.dataset.state = state;
-                btn.classList.add('visible');
-                hideBtnLater();
-            };
 
             const copyValue = async () => {
                 let ok = false;
-                const val = el.value.trim() ?? el.textContent.trim() ?? '';
+                const val = (el.value ?? el.textContent ?? '').toString().trim();
                 try {
                     if (!hasValue(val)) throw new Error('Empty');
-
-                    const testVal = val.toLowerCase().replaceAll('\\', '/').replaceAll('.', '').replaceAll(',', '');
+                    const testVal = normalize(val);
                     if (!isInvalidValue(testVal)) {
                         await navigator.clipboard.writeText(val);
                         ok = true;
                     }
                 } catch {
-                    // fallback
                     try {
                         if (el.select) {
                             const s = el.selectionStart, e = el.selectionEnd;
@@ -5689,6 +6674,7 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
                             ok = document.execCommand('copy');
                             if ((s != null && e != null) && (s <= e) && e !== 0) {
                                 el.setSelectionRange(s, e);
+                                ok = true;
                             } else {
                                 ok = false;
                             }
@@ -5698,40 +6684,144 @@ border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box
                         ok = false;
                     }
                 } finally {
+                    el.classList.remove('action-err', 'action-ok');
                     if (ok) {
-                        el.classList.remove('copy-error');
-                        el.classList.add('copied');
-                        setStateExclusive('ok');
+                        el.classList.add('action-ok');
+                        setStateExclusive(el, btn, 'ok');
                     } else {
-                        el.classList.remove('copied');
-                        el.classList.add('copy-error');
-                        setStateExclusive('err');
+                        el.classList.add('action-err');
+                        setStateExclusive(el, btn, 'err');
                     }
-
-                    // outline zase pryč po lingerMs (plynule díky transition)
                     setTimeout(() => {
-                        el.classList.remove('copied', 'copy-error');
+                        el.classList.remove('action-ok', 'action-err');
                         btn.dataset.state = 'idle';
-                    }, lingerMs);
+                    }, LINGER_MS);
+                    hideBtnLater(btn);
                 }
             };
 
-            btn.addEventListener('click', async (e) => {
+            wrap.addEventListener('mouseenter', () => showBtn(btn));
+            wrap.addEventListener('mouseleave', () => hideBtnLater(btn));
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 copyValue();
             });
-            el.addEventListener('keydown', async (e) => {
+            el.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || (e.ctrlKey && e.key.toLowerCase() === 'c')) {
                     e.preventDefault();
-                    showBtn();
+                    showBtn(btn);
                     copyValue();
                 }
             });
         };
 
-        $$(selector)?.forEach(setup);
+        /* ======= NASTAVOVACÍ LOGIKA (.adjustableInput) ======= */
+        const bindAdjust = (wrap, el) => {
+            const id = ensureId(el);
+            if (!(_registry).hasOwnProperty(id)) _registry[id] = NaN; // init registru
+
+            const btn = makeAdjustButton();
+            idToAdjustBtn.set(id, btn);
+            wrap.appendChild(btn);
+
+            const applyValue = () => {
+                const raw = adjustRegistryAPI.get(id);
+                const valid = isValidAutoValue(raw);
+                if (!valid) {
+                    // ikona se nemá zobrazit ani nic vkládat
+                    btn.classList.add('hidden');
+                    btn.dataset.state = 'idle';
+                    return false;
+                }
+                const str = String(raw);
+                // vložit
+                try {
+                    const prev = {s: el.selectionStart, e: el.selectionEnd};
+                    el.value = str;
+                    // vyvolat standardní eventy
+                    el.dispatchEvent(new Event('input', {bubbles: true}));
+                    el.dispatchEvent(new Event('change', {bubbles: true}));
+                    // navrátit caret pokud dává smysl
+                    if (prev.s != null && prev.e != null && el.setSelectionRange) {
+                        const end = str.length;
+                        el.setSelectionRange(end, end);
+                    }
+                    return true;
+                } catch {
+                    return false;
+                }
+            };
+
+            const doAdjust = () => {
+                const ok = applyValue();
+                el.classList.remove('action-ok', 'action-err');
+                if (ok) {
+                    el.classList.add('action-ok');
+                    setStateExclusive(el, btn, 'ok');
+                } else {
+                    el.classList.add('action-err');
+                    setStateExclusive(el, btn, 'err');
+                }
+                setTimeout(() => {
+                    el.classList.remove('action-ok', 'action-err');
+                    btn.dataset.state = 'idle';
+                    refreshAdjustButtonsFor(id); // po animaci znovu zhodnotit viditelnost
+                }, LINGER_MS);
+                hideBtnLater(btn);
+            };
+
+            // počáteční viditelnost dle registru
+            refreshAdjustButtonsFor(id);
+
+            // interakce
+            wrap.addEventListener('mouseenter', () => showBtn(btn));
+            wrap.addEventListener('mouseleave', () => hideBtnLater(btn));
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                doAdjust();
+            });
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    showBtn(btn);
+                    doAdjust();
+                }
+            });
+        };
+
+        /* ======= SCAN & INIT ======= */
+        const setupOne = (el) => {
+            const wrap = ensureWrap(el);
+            // Pokud je to copyable, přidej copy pilulku
+            if (el.matches(COPY_SELECTOR) && !wrap.querySelector('.copy-pill')) bindCopy(wrap, el);
+            // Pokud je to adjustable, přidej adjust pilulku
+            if (el.matches(ADJUST_SELECTOR) && !wrap.querySelector('.adjust-pill')) bindAdjust(wrap, el);
+        };
+
+        const scan = () => {
+            document.querySelectorAll(`${COPY_SELECTOR}, ${ADJUST_SELECTOR}`).forEach(setupOne);
+        };
+
+        // Veřejné API pro dynamické DOM změny
+        window.adjustScan = scan;
+
+        // INIT
+        scan();
+
     })();
+</script>
+
+
+<script>
+
+    function brailleFromDots(dots = []) {
+        const maskByDot = [0, 1, 2, 4, 8, 16, 32, 64, 128]; // index = dot #
+        const mask = dots.reduce((m, d) => m | maskByDot[d], 0);
+        return String.fromCodePoint(0x2800 | mask);
+    }
+
 </script>
 
 </body>
