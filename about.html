@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
+    <title>Moira controller - About</title>
 
     <script>
-        fetch("header.html")
+        fetch("shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
@@ -111,7 +111,7 @@
             <li>🔌 Communicates with devices using Web Serial and WebSocket</li>
             <li>📦 Supports CSV import/export, in-app results evaluation, and dynamic data handling</li>
         </ul>
-        <p>Developed with ❤️ by the THYMOS team.</p>
+        <p>Developed with ❤️ by the <a href="http://www.thymos.cz">THYMOS</a> team.</p>
     </div>
 
     <div class="tab-content" id="manual">
@@ -126,7 +126,7 @@
 </div>
 
 <!-- Markdown parser -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="./packages/markdown/marked.min.js"></script>
 <script>
     function showTab(tabId) {
         document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
