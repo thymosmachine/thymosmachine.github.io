@@ -14,7 +14,7 @@
         // Clear console - Fresh start
         console.clear();
         console.info(`%c\n\nMoira Controller - Thymos\n`, "color: #007bff; font-size: 20px; font-weight: bold;");
-        console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp inicialization: ${new Date().toLocaleString()}\n`, "color: gray; font-size: 12px; font-weight: normal;");
+        console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp inicialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
 
         fetch("shared-header.html")
@@ -1206,7 +1206,7 @@
             justify-items: left;
         }
 
-        #experimentType, #experimentCount {
+        #experimentName, #experimentCount {
             flex-grow: 1;
             /*height: 24px;*/
             height: 44px;
@@ -1879,9 +1879,9 @@
         <!--        <section id="experimentInputsWrapper">-->
         <section id="experimentInputsContainer">
 
-            <label for="experimentType">🧪 Experiment Name:</label>
+            <label for="experimentName">🧪 Experiment Name:</label>
             <div style="display: flex; width: 100%; gap: var(--gap);">
-                <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ..."
+                <input type="text" id="experimentName" placeholder="Experiment name (mandatory) ..."
                        data-nonremember="true">
                 <label for="experimentCount">🔢 Experiment count:</label>
                 <input type="number" id="experimentCount" placeholder="Num ..."
@@ -2411,6 +2411,22 @@
                     <!--                               max="100000000" style="height: 48px; max-width: 100px;">-->
                     <!--                    </div>-->
 
+
+                    <div class="input-group">
+                        <label for="inputAutoSave">
+                            Save data after each experiment to CSV automatically:
+                        </label>
+                        <input type="checkbox" id="inputAutoSave" checked>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="inputClearCalculations">
+                            Clear calculation inputs at the start of each experiment:
+                        </label>
+                        <input type="checkbox" id="inputClearCalculations" checked>
+                    </div>
+
+
                     <div class="input-group">
                         <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                         <select id="decimalSymbol" style="font-family: monospace; font-weight: bold;
@@ -2435,14 +2451,6 @@
                         </select>
                     </div>
 
-
-                    <div class="input-group">
-                        <label for="inputClearCalculations">
-                            Clear calculation inputs at the start of each experiment:
-                        </label>
-                        <input type="checkbox" id="inputClearCalculations" checked>
-                    </div>
-
                     <!-- 🧼🧺🧽🧹🗑️💨🚮 ⌦ ⌫ ♻️ ♻ -->
                     <button id="clearCalculationsButton" class="controlBtn" onclick="clearCalculations()">🧼 Clear
                         calculations
@@ -2450,10 +2458,10 @@
 
                     <button id="darkModeButton" class="controlBtn" onclick="toggleDarkMode()">🌙 Dark mode</button>
 
-                    <button id="reportButton" class="controlBtn prohibited"
-                            style="color: var(--stopEpx-color); font-weight: bold;">
-                        🐞 Report bug
-                    </button>
+                    <!--                    <button id="reportButton" class="controlBtn prohibited"-->
+                    <!--                            style="color: var(&#45;&#45;stopEpx-color); font-weight: bold;">-->
+                    <!--                        🐞 Report bug-->
+                    <!--                    </button>-->
 
                     <button id="aboutButton" class="controlBtn" onclick="window.location.href='about.html'">ℹ️ About
                         app
@@ -3767,8 +3775,6 @@
      * Checks if there are existing log entries in IndexedDB.
      * If logs exist, prompts the user to either save or delete them.
      */
-    let initialData = {experimentType: "", experimentCount: "", experimentDesc: ""};
-
     let pageLoaded = false;
     let dataLoaded = false;
     let pageLoadTimeout = 0;
@@ -3784,15 +3790,17 @@
 
 
         if (pageLoaded && dataLoaded) {
-            $$$("experimentType").value = initialData.experimentType || "";
-            $$$("experimentCount").value = initialData.experimentCount || "1";
-            $$$("experimentDesc").value = initialData.experimentDesc || "";
-
             recomputeAll();
 
             await sleep(100);
 
-            startSerial(false);
+            await startSerial(false);
+
+
+            if (timeData.length > 1) {
+                console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
+                alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
+            }
         }
     }
 
@@ -3823,33 +3831,47 @@
             await loadDataFromDBToChart(false, true);
 
             if (request.result > 0) {
-                if (confirm("🔄 Old log exists. Save it or delete?\nOK = Save\nCancel = Delete and create new")) {
-                    saveCSV();
-                } else {
-                    // transaction = db.transaction(STORE_NAME, "readonly");
-                    // store = transaction.objectStore(STORE_NAME);
-                    request = store.getAll();
-                    request.onsuccess = async function () {
-                        let dataEntries = request.result;
-                        const experimentInfo = dataEntries[0];
+                // TODO: přemístit dotaz na 'stará data' až po načtení všeho a upravit dotaz, aby se ptal na smazání a chtěl to 2x potvrdit
+                // if (confirm("🔄 Old log exists. Keep it or delete?\nOK = Keep\nCancel = Delete")) {
+                //     saveCSV();
+                // } else {
 
-                        const expInfoV = experimentInfo.expSettings.version;
-                        let experimentKey = null;
-                        if (expInfoV === 1) {
-                            experimentKey = experimentInfo.expSettings.inputs.experimentDirectionDropdown.extra.essence;
-                        }
 
-                        const experimentLabel = expTypesLabels[experimentKey] || "";
+                // transaction = db.transaction(STORE_NAME, "readonly");
+                // store = transaction.objectStore(STORE_NAME);
+                request = store.getAll();
+                request.onsuccess = async function () {
+                    let dataEntries = request.result;
+                    const experimentInfo = dataEntries[0];
 
-                        initialData.experimentType = experimentInfo.experimentName || "";
-                        initialData.experimentCount = experimentInfo.experimentCounter || "";
-                        initialData.experimentDesc = "Loading direction: " + ((`${experimentInfo.loadDirection}` === "-1") ? "DOWN;  " : "UP;  ") + experimentLabel + (removeLoadingDirection(experimentInfo.experimentDescription) || "");
-                        dataLoaded = true;
-                    };
-                }
+
+                    let date = "Unknown date";
+                    const expDate = experimentInfo.experimentDate;
+                    if (expDate) {
+                        const dateFormat = getLocaleOrder();
+                        date = `${expDate} [${dateFormat.date} ${dateFormat.time}]`;
+                        console.info(`\t\n🕒 %cLast log date: ${date}`, "color: #0078d7; font-style: italic; font-weight: normal;");
+                    }
+
+                    const loadDirection = experimentInfo.loadDirection === "-1" ? "DOWN" : (experimentInfo.loadDirection === "1" ? "UP" : "N/A");
+
+                    const experimentLabel = experimentInfo.experimentLabel || "";
+
+                    const expBasicInformation = `(${date}); ` + "Loading direction: " + loadDirection + ";  " + experimentLabel;
+
+                    const description = expBasicInformation + ";  " + experimentInfo.experimentDescription.replace(expBasicInformation, "").replace(/(\r\n|\n|\r)/gm, " ").trim();
+
+                    $$$("experimentCount").value = experimentInfo.experimentCounter || "2";
+                    $$$("experimentName").value = experimentInfo.experimentName || "";
+                    $$$("experimentDesc").value = description || "";
+
+                    // TODO: odstranit?  "  + (removeLoadingDirection(experimentInfo.experimentDescription) || "")  "
+                    dataLoaded = true;
+                };
+                // }
             } else {
                 dataLoaded = true;
-                console.info("\t🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
+                console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
             }
         };
     }
@@ -4289,13 +4311,18 @@
         }
 
         const expNum = parseInt($$$("experimentCount").value.trim()) || 0;
-        const experimentType = $$$("experimentType").value.trim();
+        const experimentName = $$$("experimentName").value.trim();
         const experimentDesc = $$$("experimentDesc").value.trim(); // Remove delimiter from description to avoid confusion in CSV
 
 
+        if (delimiter !== " ") {
+            // If space is selected as delimiter, replace spaces in description to avoid confusion
+            experimentDesc.replaceAll(delimiter, "|")
+        }
+
         handFolderSelect = $$$("storagePath").checked ?? false;
 
-        if (!experimentType) {
+        if (!experimentName) {
             alert("Unable to save the data.\n    Please enter the experiment type.");
             return;
         }
@@ -4306,7 +4333,7 @@
         } else {
             experimentCount = "";
         }
-        const fileName = `${experimentType}${experimentCount}.csv`;
+        const fileName = `${experimentName}${experimentCount}.csv`;
 
         let fileHandle;
         if (handFolderSelect) {
@@ -4343,37 +4370,42 @@
                 alert("⚠️ No data to save. Ensure experiment has been run.");
                 return;
             }
-
             const experimentInfo = dataEntries[0];
+            dataEntries.shift(); // Skip the first entry (initial values)
+
             const settings = {};
 
-            const expSettings = experimentInfo.expSettings || {};
-            const calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
-
-            settings.expSettings = expSettings;
-            settings.calcSettings = calcSettings;
+            settings.headerVersion = 1;
+            settings.expSettings = experimentInfo.expSettings || {};
+            settings.calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
             settings.decimalSymbol = decimalSymbol;
             settings.delimiter = delimiter;
-            settings.softwareVersion = softwareVersion;
 
-            let content = await settingsToCsvPreamble(settings);
-            console.info(content);
-
-
-            content = content.replaceAll(/ /g, "").replace(/^\uFEFF/, "")
-
-            if (delimiter !== " ") {
-                // If space is selected as delimiter, replace spaces in description to avoid confusion
-                experimentDesc.replaceAll(delimiter, "|")
-            }
+            let content = '';
 
             const dateFormat = getLocaleOrder();
 
+            const basicInfo = [
+                `Date [${dateFormat.date} ${dateFormat.time}]:`, experimentInfo.experimentDate,
+                'Experiment type:', experimentInfo.experimentLabel,
+                'Experiment end:', experimentInfo.endStatus,
+                'Loading speed (mm/s):', experimentInfo.loadSpeed,
+                'Load distance (mm):', experimentInfo.loadDistance,
+                'Loadcell capacity (kg):', experimentInfo.loadcellCapacity.join('/'),
+                'Software version:', `v${experimentInfo.softWare}`,
+                'Firmware version:', `v${experimentInfo.machineFirmware}`,
+            ];
+
+            const head = [
+                'Time [s]', 'Distance [mm]', 'Speed [mm/s]', 'Loadcell 1 [N]', 'Loadcell 2 [N]', 'Loadcell 3 [N]', 'Photo Index'
+            ];
+
+            content += await settingsToCsvPreamble(settings).replaceAll(/ /g, "").replace(/^\uFEFF/, "");
             content += '\n';
-            content += `\nDate [${dateFormat.date} ${dateFormat.time}]:${delimiterPlaceHolder}${experimentInfo.experimentDate}${delimiterPlaceHolder}Loading speed (mm/s):${delimiterPlaceHolder}${experimentInfo.loadSpeed}${delimiterPlaceHolder}Load distance (mm):${delimiterPlaceHolder}${experimentInfo.loadDistance}${delimiterPlaceHolder}Loadcell capacity (kg):${delimiterPlaceHolder}${experimentInfo.loadcellCapacity.join('/')}${delimiterPlaceHolder}Software version:${delimiterPlaceHolder}v${softwareVersion}${delimiterPlaceHolder}Firmware version:${delimiterPlaceHolder}v${experimentInfo.machineFirmware}`;
+            content += `\n${basicInfo.join(delimiterPlaceHolder)}`;
             content += `\nDescription:${delimiterPlaceHolder}${experimentDesc}`;
             content += '\n';
-            content += `\nTime [s]${delimiterPlaceHolder}Distance [mm]${delimiterPlaceHolder}Speed [mm/s]${delimiterPlaceHolder}Loadcell 1 [N]${delimiterPlaceHolder}Loadcell 2 [N]${delimiterPlaceHolder}Loadcell 3 [N]${delimiterPlaceHolder}Photo Index`;
+            content += `\n${head.join(delimiterPlaceHolder)}`;
 
 
             if (delimiter === " ") {
@@ -4383,10 +4415,9 @@
 
             content = content.replaceAll(delimiterPlaceHolder, delimiter); // Replace placeholder with actual delimiter
 
-            dataEntries.shift(); // Skip the first entry (initial values)
-
             dataEntries.forEach(entry => {
-                content += `\n${rTime(entry.time)}${delimiter}${rDist(entry.distance)}${delimiter}${rSpeed(entry.speed)}${delimiter}${rForce(entry.load[0])}${delimiter}${rForce(entry.load[1])}${delimiter}${rForce(entry.load[2])}${delimiter}${rPhoto(entry.photoIndex)}`;
+                const dataRow = [rTime(entry.time), rDist(entry.distance), rSpeed(entry.speed), rForce(entry.load[0]), rForce(entry.load[1]), rForce(entry.load[2]), rPhoto(entry.photoIndex)];
+                if (dataRow.some(d => d !== "")) content += `\n${dataRow.join(delimiter)}`; // Only add rows with at least one non-empty value
             });
 
             if (handFolderSelect) {
@@ -7221,17 +7252,26 @@
             forceSignCorrection = displacementSignCorrection * -1;
             if (loadcellCapacity <= 50) forceSignCorrection *= -1; // Reverse direction if loadcell capacity is less than or equal to 50 N
 
+            const expInfoV = settings.expSettings.version;
+            let experimentKey = null;
+            if (expInfoV === 1) {
+                experimentKey = settings.expSettings.inputs.experimentDirectionDropdown.extra.essence;
+            }
+            const experimentLabel = expTypesLabels[experimentKey] || "";
+
             await addDataToLog({
                 expSettings: settings,
-                experimentName: $$$("experimentType").value.trim(),
+                experimentName: $$$("experimentName").value.trim(),
+                experimentLabel: experimentLabel.trim(),
                 experimentCounter: $$$("experimentCount").value.trim(),
                 experimentDescription: $$$("experimentDesc").value.trim(),
-                experimentDate: new Date().toLocaleString(),
+                experimentDate: (new Date().toLocaleString()).replaceAll(". ", "."),
                 loadDirection: displacementSignCorrection,
                 loadDistance: distance_mm,
                 loadSpeed: speedForward_mmps,
                 loadcellCapacity: [loadcellCapacity, loadcellCapacity, loadcellCapacity],
                 loadcellType: NaN,
+                softWare: window.softwareVersion,
                 machineFirmware: machineFirmware,
                 endStatus: endedBy,
             }, 0);
@@ -7402,8 +7442,10 @@
             machineOccupation = false;
 
             // === Save Data ===
-            console.info("💾 Saving data...");
-            await saveCSV();
+            if ($$$('inputAutoSave').checked) {
+                console.info("💾 Saving data...");
+                await saveCSV();
+            }
 
 
             console.info("✅ Experiment completed.");
@@ -7727,7 +7769,7 @@
         });
 
 
-        $$$("experimentType")?.addEventListener("change", async () => {
+        $$$("experimentName")?.addEventListener("change", async () => {
             const countInput = $$$("experimentCount");
             if (countInput && countInput.value !== '1') {
                 blinkBorder(countInput);
@@ -8113,8 +8155,7 @@
                 const version = null;                // Determine the file type
                 // const expInfoV = experimentInfo.expSettings.version;
                 // if (expInfoV === 1){
-                // const experimentKey = experimentInfo.expSettings.inputs.experimentDirectionDropdown.extra.essence;
-                // const experimentLabel = expTypesLabels[experimentKey] || "";
+                // const experimentLabel = experimentInfo.experimentLabel || "";
                 //     }
 
                 const isMoira = text.startsWith("##moira"); // Check if the file is from MOIRA
