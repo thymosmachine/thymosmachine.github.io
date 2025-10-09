@@ -2063,7 +2063,7 @@
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">🌂 <a class="u"> After drying</a>:</h4>
-                         <div class="input-group data-eq" data-eq-type="Flx">
+                        <div class="input-group data-eq" data-eq-type="Flx">
                             <label for="inputWidth-AfterDrying">Cross-section width \( b_{0} \)<span
                                     class="units-text"></span>:
                             </label>
@@ -2275,6 +2275,7 @@
                         <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent"
                                class="expInput"
                                value="30" min="0" max="1000000" data-unit="%" data-essence="ratio">
+                        <!-- % ‰ -->
                     </div>
 
 
@@ -3919,6 +3920,13 @@
         if (dbQueue.length === 0) {
             dbFlushTimer = null;
             return;
+        } else {
+            if (!db || !(pageLoaded && dataLoaded)) {
+                console.warn("❌ IndexedDB not ready, cannot flush log.");
+                // Wait for another 5 seconds and try again
+                dbFlushTimer = setTimeout(flushDB, 5_000);
+                return;
+            }
         }
 
         const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -3962,6 +3970,9 @@
      * - patch se merguje přes stávající hodnotu.
      */
     function updateLogById(id, patch, {upsert = true} = {}) {
+        if (id == null) return Promise.resolve(false);
+        if (!(dataLoaded && pageLoaded)) return Promise.resolve(false);
+        if (!db) return Promise.resolve(false);
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
@@ -7366,6 +7377,10 @@
                 }
             }
 
+            const setChart = (chart) => chart ? forceAnalysis.forEach((r, i) => chart.setSeries((i + 1), {show: r.allInvalid})) : null;
+            setChart(timeChart);
+            setChart(distanceChart);
+
             // --- 6) Valid dispersion ---
             const diffs = validFields.flatMap(({
                                                    min, max
@@ -8903,6 +8918,234 @@
 
     })
     ();
+</script>
+
+
+<script>
+
+    // ===== Rozměry a operace =====
+    const ZERO = [0, 0, 0, 0, 0, 0, 0]; // L, M, T, I, Θ, N, J (délka, hmota, čas, proud, teplota, látkové množství, svítivost)
+    const DIMS = {L: 0, M: 1, T: 2, I: 3, Th: 4, N: 5, J: 6};
+
+    const dim = (...d) => d;
+    const addDim = (a, b) => a.map((v, i) => v + b[i]);
+    const mulDim = (a, k) => a.map(v => v * k);
+    const sameDim = (a, b) => a.every((v, i) => v === b[i]);
+
+    // ===== SI předpony (vč. 'µ'/'μ' i fallback 'u') =====
+    const PREFIX = new Map(Object.entries({
+        Y: 1e24, Z: 1e21, E: 1e18, P: 1e15, T: 1e12, G: 1e9, M: 1e6, k: 1e3, h: 1e2, da: 1e1,
+        d: 1e-1, c: 1e-2, m: 1e-3, u: 1e-6, 'µ': 1e-6, n: 1e-9, p: 1e-12, f: 1e-15,
+        a: 1e-18, z: 1e-21, y: 1e-24
+    }));
+
+    // ===== Databáze jednotek =====
+    const UNITS = new Map(); // sym -> { dim, factor }
+    const def = (sym, dimv, factor = 1) => UNITS.set(sym, {dim: dimv, factor});
+
+    // Základní SI + pár běžných
+    def('m', dim(1, 0, 0, 0, 0, 0, 0));
+    def('s', dim(0, 0, 1, 0, 0, 0, 0));
+    def('A', dim(0, 0, 0, 1, 0, 0, 0));
+    def('K', dim(0, 0, 0, 0, 1, 0, 0));
+    def('mol', dim(0, 0, 0, 0, 0, 1, 0));
+    def('cd', dim(0, 0, 0, 0, 0, 0, 1));
+
+    def('kg', dim(0, 1, 0, 0, 0, 0, 0), 1);
+    def('g', dim(0, 1, 0, 0, 0, 0, 0), 1e-3); // gram jako 1e-3 kg
+
+    // Časové zkratky
+    def('min', dim(0, 0, 1, 0, 0, 0, 0), 60);     // minuta
+    def('h', dim(0, 0, 1, 0, 0, 0, 0), 3600);   // hodina
+
+    // Odvozené (faktor 1, jen dimenze)
+    const mD = UNITS.get('m').dim, sD = UNITS.get('s').dim, AD = UNITS.get('A').dim, kgD = UNITS.get('kg').dim,
+        cdD = UNITS.get('cd').dim;
+
+    const HzD = mulDim(sD, -1);
+    def('Hz', HzD, 1);
+
+    const ND = addDim(kgD, addDim(mD, mulDim(sD, -2)));
+    def('N', ND, 1);
+
+    const PaD = addDim(ND, mulDim(mD, -2));
+    def('Pa', PaD, 1);
+
+    const JD = addDim(ND, mD);
+    def('J', JD, 1);
+
+    const WD = addDim(JD, mulDim(sD, -1));
+    def('W', WD, 1);
+
+    const VD = addDim(WD, mulDim(AD, -1));
+    def('V', VD, 1);
+
+    // Nové: C, F, Ω/ohm, T, lx
+    const CD = addDim(AD, sD);
+    def('C', CD, 1);
+
+    const FD = addDim(CD, mulDim(VD, -1));
+    def('F', FD, 1);
+
+    // Ohm (var. znak i slovo)
+    const OhmD = addDim(VD, mulDim(AD, -1));
+    def('Ω', OhmD, 1);
+    def('ohm', OhmD, 1);
+    def('Ohm', OhmD, 1);
+
+    // Tesla
+    const TD = addDim(ND, addDim(mulDim(AD, -1), mulDim(mD, -1)));
+    def('T', TD, 1);
+
+    // Lux = cd / m^2
+    const lxD = addDim(cdD, mulDim(mD, -2));
+    def('lx', lxD, 1);
+
+    // Bezrozměrné pomocné (pro poměry, procenta)
+    def('1', ZERO.slice(), 1);
+    def('%', ZERO.slice(), 0.01);
+    def('‰', ZERO.slice(), 0.001);
+    def('ppm', ZERO.slice(), 1e-6);
+    def('ppb', ZERO.slice(), 1e-9);
+
+
+    const SECONDS_PER_DAY = 24 * 60 * 60;
+
+    def('d', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);        // den
+    def('day', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
+
+    def('wk', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);    // týden
+    def('week', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
+
+    def('mo', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);  // měsíc (30 dní)
+    def('month', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
+
+    def('yr', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);  // rok (365 dní)
+    def('year', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
+
+    // Dynamický seznam symbolů, seřazený dle délky (longest match)
+    let UNIT_SYMBOLS = Array.from(UNITS.keys()).sort((a, b) => b.length - a.length);
+
+    // ===== Parser jednotkového výrazu =====
+    function parseUnitExpr(input) {
+        if (!input || String(input).trim() === '' || input === '1') {
+            return {dim: ZERO.slice(), factor: 1};
+        }
+        let s = String(input)
+            .replace(/[·⋅•×]/g, '*')
+            .replace(/[–—−]/g, '-')     // různé "minusy"
+            .replace(/\s+/g, '*')       // mezery jako násobení
+            .replace(/[()]/g, '');      // (jednoduchý parser bez závorek)
+
+        const parts = s.split('/');
+        let acc = {dim: ZERO.slice(), factor: 1};
+
+        parts.forEach((segment, idx) => {
+            const sign = (idx === 0) ? +1 : -1; // čitatel / jmenovatel
+            const tokens = segment.split('*').filter(Boolean);
+            tokens.forEach(tok => {
+                const {dim, factor} = parseUnitToken(tok);
+                acc.dim = addDim(acc.dim, mulDim(dim, sign));
+                acc.factor *= Math.pow(factor, sign);
+            });
+        });
+
+        return acc;
+    }
+
+    function parseUnitToken(tok) {
+        let t = tok;
+        let exp = 1;
+
+        // exponent: ^{...} nebo ^...
+        const mPow = t.match(/\^(?:\{([^}]+)\}|(.+))$/);
+        if (mPow) {
+            const raw = (mPow[1] ?? mPow[2]).trim();
+            exp = parseInt(raw, 10);
+            t = t.slice(0, mPow.index);
+        }
+
+        // speciál: "kg" (nesmí se rozpadnout na 'k'+'g')
+        if (t === 'kg') {
+            return {dim: mulDim(UNITS.get('kg').dim, exp), factor: 1};
+            // (factor = 1^exp)
+        }
+
+        // najdi nejdelší známý symbol jednotky
+        const unit = UNIT_SYMBOLS.find(u => t.endsWith(u));
+        if (!unit) throw new Error(`Unknown unit: "${t}"`);
+
+        const prefixStr = t.slice(0, t.length - unit.length);
+        let base = UNITS.get(unit);
+        if (!base) throw new Error(`Unit "${unit}" is not supported`);
+
+        // předpona?
+        let pf = 1;
+        if (prefixStr) {
+            pf = PREFIX.get(prefixStr);
+            // speciál pro 'da' (dva znaky) už řešíme v mapě, ale necháme fallback:
+            if (pf == null && prefixStr === 'da') pf = 10;
+            if (pf == null) throw new Error(`Unknown prefix: "${prefixStr}" v "${tok}"`);
+        }
+
+        return {
+            dim: mulDim(base.dim, exp),
+            factor: Math.pow(base.factor * pf, exp)
+        };
+    }
+
+    // ===== API =====
+    function convertUnits(value, fromUnit, toUnit) {
+        const a = parseUnitExpr(fromUnit);
+        const b = parseUnitExpr(toUnit);
+        if (!sameDim(a.dim, b.dim)) {
+            throw new Error(`Noncompatible units: "${fromUnit}" vs "${toUnit}"`);
+        }
+
+        return value * (a.factor / b.factor);
+    }
+
+    // convertUnits(2, 'min', 's');             // 120
+    // convertUnits(1, 'h', 'min');             // 60
+    //
+    // convertUnits(1, 'mV/V', '1');            // 0.001  (bezrozměrné)
+    // convertUnits(1, 'mV/V', '%');            // 0.1    (%)
+    // convertUnits(2.5, 'mV/V', '‰');          // 2.5    (promile)
+    // convertUnits(500, 'ppm', '%');           // 0.05
+    //
+    // convertUnits(1, 'kΩ', 'ohm');            // 1000
+    // convertUnits(1, 'mA', 'A');              // 0.001
+    // convertUnits(1, 'C', 'A*s');             // 1
+    // convertUnits(1, 'F', 'C/V');             // 1
+    // convertUnits(1, 'T', 'N/(A*m)');         // 1
+    // convertUnits(1, 'lx', 'cd/m^2');         // 1
+    //
+    // convertUnits(2, 'mm/min', 'mm/s');
+    // convertUnits(2.5, 'mV/GV', 'GV/mV');
+    // convertUnits(4, 'mV/V', 'MV/GV');
+    // convertUnits(4, 'mV/V', 'GV/GV');
+    // convertUnits(4, 'mm^2', 'cm^2');
+    // convertUnits(4, 'µm^4', 'm^4');
+    // convertUnits(4, 'µm^4', 'm^4');
+    //
+    // convertUnits(1, 'd', 's');           // 86400
+    // convertUnits(2, 'wk', 'd');          // 14
+    // convertUnits(60, 'mo', 'd');         // 1800 (2 měsíce po 30 dnech)
+    // convertUnits(1, 'yr', 'h');          // 365 * 24 = 8760
+    // convertUnits(1, 'km/yr', 'm/d');      // ≈ 0.27778 (beze změny)
+    // convertUnits(1, 'mm/wk', 'mm/day');   // 60
+    //
+    // convertUnits(1, 'N', 'kg*m/s^2');     // 1
+    // convertUnits(10, 'N', 'kN');          // 0.01
+    //
+    // convertUnits(1, 'J', 'N*m');          // 1
+    // convertUnits(1, 'J', 'kg*m^2/s^2');   // 1
+    // convertUnits(500, 'kJ', 'MJ');        // 0.5
+    //
+    // convertUnits(1, 'W', 'J/s');          // 1
+    // convertUnits(2.5, 'kW', 'W');         // 2500
+    // convertUnits(1, 'W', 'kg*m^2/s^3');   // 1
+
 </script>
 
 <script type="text/plain">
