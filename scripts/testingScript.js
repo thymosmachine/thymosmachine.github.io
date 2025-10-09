@@ -129,3 +129,31 @@ function brailleFromDots(dots = []) {
     const mask = dots.reduce((m, d) => m | maskByDot[d], 0);
     return String.fromCodePoint(0x2800 | mask);
 }
+
+
+    // TODO : get data from ESP
+    //          async function handleFirmwareBlock(lines) {
+    //              console.log("📦 Firmware block received:");
+    //              for (const line of lines) {
+    //                  console.log("   ➤", line);
+    //                  await logMessage("🔧 " + line);
+    //              }
+    //          }
+
+
+    //TODO : random generator
+    //         if (Math.random() < 0.01) {
+    //             timeVal = timeVal * 100;
+    //             console.log("🎲 Random number:", timeVal);
+    //         } else {
+    //             console.log("🚫 No number.");
+    //         }
+
+
+    //TODO : Constantly log random numbers
+    //          async function tester() {
+    //              while (true) {
+    //                  await sleep(20); // Wait for 1 second
+    //                  logMessage(Math.random());
+    //              }
+    //          }
