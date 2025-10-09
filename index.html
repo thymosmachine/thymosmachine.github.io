@@ -1722,8 +1722,8 @@
         <h3 class="sectionTitle">📈 Graphs:</h3>
         <nav class="graphBtnWrapper">
             <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
-            <button class="btnGraph" onclick="clearCharts()">🧹 Clear Charts</button>
-            <button class="btnGraph" onclick="refreshCharts()">🔄 Refresh Charts</button>
+            <button id="clearChartBtn" class="btnGraph">🧹 Clear Charts</button>
+            <button id="refreshChartBtn" class="btnGraph">🔄 Refresh Charts</button>
         </nav>
 
 
@@ -1897,7 +1897,7 @@
                           data-nonremember="true"></textarea>
             </div>
 
-            <button id="convertCSV" onclick="convertCSVtoXLSX_MATTES()">
+            <button id="convertCSV">
                 📊 Convert CSV files to XLSX (MATTES)
             </button>
 
@@ -2029,33 +2029,33 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">☔ <a class="u"> Before drying</a>:</h4>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputWidth-BeforeDrying">Cross-section width \( b_{w} \)<span
+                            <label for="inputWidth_BeforeDrying">Cross-section width \( b_{w} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputWidth-BeforeDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputWidth_BeforeDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputHeight-BeforeDrying">Cross-section height \( h_{w} \)<span
+                            <label for="inputHeight_BeforeDrying">Cross-section height \( h_{w} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputHeight-BeforeDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputHeight_BeforeDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputLength-BeforeDrying">Length \( L_{w} \)<span class="units-text"></span>:
+                            <label for="inputLength_BeforeDrying">Length \( L_{w} \)<span class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputLength-BeforeDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputLength_BeforeDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputWeight-BeforeDrying">Cross-section weight \( m_{w} \)<span
+                            <label for="inputWeight_BeforeDrying">Cross-section weight \( m_{w} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputWeight-BeforeDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputWeight_BeforeDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="g"
                                    data-essence="weight">
                         </div>
@@ -2064,33 +2064,33 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">🌂 <a class="u"> After drying</a>:</h4>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputWidth-AfterDrying">Cross-section width \( b_{0} \)<span
+                            <label for="inputWidth_AfterDrying">Cross-section width \( b_{0} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputWidth-AfterDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputWidth_AfterDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputHeight-AfterDrying">Cross-section height \( h_{0} \)<span
+                            <label for="inputHeight_AfterDrying">Cross-section height \( h_{0} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputHeight-AfterDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputHeight_AfterDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputLength-AfterDrying">Length \( L_{0} \)<span class="units-text"></span>:
+                            <label for="inputLength_AfterDrying">Length \( L_{0} \)<span class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputLength-AfterDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputLength_AfterDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputWeight-AfterDrying">Cross-section weight \( m_{0} \)<span
+                            <label for="inputWeight_AfterDrying">Cross-section weight \( m_{0} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputWeight-AfterDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputWeight_AfterDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="g"
                                    data-essence="weight">
                         </div>
@@ -2176,9 +2176,9 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
-                        <label for="outputYModule">Young's Module \( E \)<span class="units-text"></span>:
+                        <label for="outputEModule">Young's Module \( E \)<span class="units-text"></span>:
                         </label>
-                        <input type="text" id="outputYModule" class="copyableInput calcInput" readonly
+                        <input type="text" id="outputEModule" class="copyableInput calcInput" readonly
                                data-nonremember="true" data-unit="MPa" data-essence="result, modulus">
                     </div>
 
@@ -2456,22 +2456,22 @@
                     </div>
 
                     <!-- 🧼🧺🧽🧹🗑️💨🚮 ⌦ ⌫ ♻️ ♻ -->
-                    <button id="clearCalculationsButton" class="controlBtn" onclick="clearCalculations()">🧼 Clear
+                    <button id="clearCalculationsButton" class="controlBtn">🧼 Clear
                         calculations
                     </button>
 
-                    <button id="darkModeButton" class="controlBtn" onclick="toggleDarkMode()">🌙 Dark mode</button>
+                    <button id="darkModeButton" class="controlBtn">🌙 Dark mode</button>
 
                     <!--                    <button id="reportButton" class="controlBtn prohibited"-->
                     <!--                            style="color: var(&#45;&#45;stopEpx-color); font-weight: bold;">-->
                     <!--                        🐞 Report bug-->
                     <!--                    </button>-->
 
-                    <button id="aboutButton" class="controlBtn" onclick="window.location.href='about.html'">ℹ️ About
+                    <button id="aboutButton" class="controlBtn" >ℹ️ About
                         app
                     </button>
 
-                    <button id="clearStorageButton" class="controlBtn" onclick="clearLocalStorage()">🔁 Reset app
+                    <button id="clearStorageButton" class="controlBtn">🔁 Reset app
                     </button>
                 </div>
             </div>
@@ -2494,9 +2494,9 @@
                 <!-- Log Control Buttons -->
                 <div class="logContainer">
                     <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
-                    <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
+                    <button id="toggleLineLockBtn" class="logBtn prohibited">🔒 Fix Scroll: ON
                     </button><!--                    prohibited-->
-                    <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
+                    <button id="clearRegularLog" class="logBtn">🗑️ Clear Log</button>
                     <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton" class="logBtn">
                         📡 Send Command
                     </button>
@@ -2510,6 +2510,46 @@
 </main>
 
 <script>
+    const expTypesLabels = {
+        "": "No selection",
+        "move_up": "Move up",
+        "move_down": "Move down",
+        "load": "Load test",
+        "unload": "Unload test",
+        "hold": "Hold test",
+        "static": "Static test",
+        "dynamic": "Dynamic test",
+        "fatigue": "Fatigue test",
+        "creep": "Creep test",
+        "impact": "Impact test",
+        "tensile": "Tensile test",
+        "internal_bond": "Internal bond test",
+        "compression": "Compression test",
+        "flexural": "Flexural test",
+        "bending": "Flexural test",
+        "shear": "Shear test",
+        "adhesion": "Adhesion test",
+        "peel": "Peel test",
+        "lap_shear": "Lap shear test",
+        "punch_shear": "Punch shear test",
+        "tear": "Tear test",
+        "burst": "Burst test",
+        "puncture": "Puncture test",
+        "indentation": "Indentation test",
+        "hardness": "Hardness test",
+        "hardness_br": "Brinell hardness test",
+        "hardness_vh": "Vickers hardness test",
+        "hardness_hb": "Rockwell hardness test",
+        "hardness_hr": "Rockwell hardness test",
+        "hardness_hc": "Rockwell hardness test",
+        "hardness_hd": "Rockwell hardness test",
+        "hardness_hf": "Rockwell hardness test",
+        "hardness_ho": "Rockwell hardness test",
+        "hardness_hk": "Knoop hardness test",
+        "other": "Other",
+    };
+
+
     // =====================================================================
     // ====================      HELPERS      ==============================
     // =====================================================================
@@ -3262,26 +3302,26 @@
             // E = (F * L^3) / (48 * I * w)   (3-bodový ohyb uprostřed)
             const L = readNum("inputSpan", true); // mm
             const E = calc_bend_modulus(L, I, F, w); // vychází v N/mm^2 = MPa
-            if (exists("outputYModule")) writeOut("outputYModule", E, 4);
+            if (exists("outputEModule")) writeOut("outputEModule", E, 4);
 
-            const b_dry = readNum("inputWidth-AfterDrying", true);     // mm
+            const b_dry = readNum("inputWidth_AfterDrying", true);     // mm
             applyAdjust('inputWidth', b_dry);
-            applyAdjust('inputWidth-AfterDrying', b);
+            applyAdjust('inputWidth_AfterDrying', b);
 
-            const h_dry = readNum("inputHeight-AfterDrying", true);   // mm
+            const h_dry = readNum("inputHeight_AfterDrying", true);   // mm
             applyAdjust('inputHeight', h_dry);
-            applyAdjust('inputHeight-AfterDrying', h);
+            applyAdjust('inputHeight_AfterDrying', h);
 
-            const L_dry = readNum("inputLength-AfterDrying", true);       // mm
+            const L_dry = readNum("inputLength_AfterDrying", true);       // mm
             applyAdjust('inputSpan', L_dry);
-            applyAdjust('inputLength-AfterDrying', L);
+            applyAdjust('inputLength_AfterDrying', L);
         } else {
             adjustDel('inputWidth');
             adjustDel('inputHeight');
-            adjustDel('inputWidth-AfterDrying');
-            adjustDel('inputHeight-AfterDrying');
+            adjustDel('inputWidth_AfterDrying');
+            adjustDel('inputHeight_AfterDrying');
             adjustDel('inputSpan');
-            adjustDel('inputLength-AfterDrying');
+            adjustDel('inputLength_AfterDrying');
         }
 
         // -------------------- HB: Brinell --------------------
@@ -4077,18 +4117,129 @@
         };
     }
 
-    function restoreExpSettingsToUI(settings, {selector, fireEvents = true} = {}) {
-        if (!settings?.inputs) return false;
-        selector = selector.trim();
-        if (isEmptyString(selector)) return false;
+    function restoreExpSettingsToUI(settings, {
+        customSelector = undefined,
+        customKey = undefined,
+        fireEvents = false,
+    } = {}) {
+
+        const keys = [];
+        if (customKey) {
+            keys.push(String(customKey));
+        } else {
+            if (settings?.generalSettings) keys.push('generalSettings');
+            if (settings?.machineSettings) keys.push('machineSettings');
+            if (settings?.deviceSettings) keys.push('deviceSettings');
+            if (settings?.chartSettings) keys.push('chartSettings');
+            if (settings?.expSettings) keys.push('expSettings');
+            if (settings?.calcSettings) keys.push('calcSettings');
+        }
+
+        const results = [];
+        for (const key of keys) {
+            if (!settings[key]) continue;
+            const r = restoreSettingsToUI(settings[key], {customSelector, fireEvents});
+            results.push({key, ...r});
+        }
+
+        const ok = results.some(r => r.ok);
+        const summary = results.reduce((acc, r) => {
+            acc.tried += 1;
+            acc.ok |= r.ok;
+            acc.totalNodes += r.foundNodes || 0;
+            acc.applied += r.appliedCount || 0;
+            acc.missingKeys += (r.missingKeys?.length || 0);
+            return acc;
+        }, {tried: 0, ok: false, totalNodes: 0, applied: 0, missingKeys: 0});
+
+        return {ok, results, summary};
+    }
+
+    const setElValue = (el, val) => {
+        const tag = el.tagName.toLowerCase();
+        const type = (el.type || "").toLowerCase();
+
+        if (type === "checkbox") {
+            el.checked = !!val;
+            fire(el);
+            return true;
+        }
+        if (type === "radio" && el.name) {
+            $$(`input[type="radio"][name="${CSS.escape(el.name)}"]`)
+                .forEach(r => {
+                    r.checked = (String(r.value) === String(val));
+                    fire(r);
+                });
+            return true;
+        }
+        if (tag === "select") {
+            if (el.multiple && Array.isArray(val)) {
+                const set = new Set(val.map(String));
+                Array.from(el.options).forEach(opt => {
+                    opt.selected = set.has(String(opt.value));
+                });
+            } else {
+                el.value = val ?? "";
+            }
+            fire(el);
+            return true;
+        }
+        if (type === "number" || type === "range") {
+            let v = val;
+            if (typeof v === "string" && v.includes(",")) v = v.replace(",", ".");
+            if (v == null || v === "") el.value = "";
+            else if (Number.isFinite(+v)) ("valueAsNumber" in el) ? el.valueAsNumber = +v : el.value = String(+v);
+            else el.value = "";
+            fire(el);
+            return true;
+        }
+        el.value = (val ?? "");
+        fire(el);
+        return true;
+    };
+
+    function restoreSettingsToUI(settings, {
+        customSelector = undefined,
+        fireEvents = false,
+    } = {}) {
+
+        const report = {
+            ok: false,
+            selector: null,
+            foundNodes: 0,
+            appliedCount: 0,
+            missingKeys: [],
+            unusedEls: [],
+            details: [] // {key, found, applied, reason}
+        };
+
+        let selector = customSelector;
+        if (!settings?.inputs) {
+            report.details.push({key: null, found: 0, applied: false, reason: 'no-inputs'});
+            return report;
+        }
+        if (!customSelector || isEmptyString(customSelector)) selector = settings.selector;
+        report.selector = selector;
+        if (!selector || isEmptyString(selector)) {
+            report.details.push({key: null, found: 0, applied: false, reason: 'no-selector'});
+            return report;
+        }
 
         const nodes = Array.from($$(selector));
-        if (!nodes.length) return false;
+        report.foundNodes = nodes.length;
+        if (!nodes.length) {
+            report.details.push({key: null, found: 0, applied: false, reason: 'no-nodes'});
+            return report;
+        }
 
+        // index dle data-key | name | id
         const index = new Map();
         for (const el of nodes) {
             const key = el.dataset.key || el.name || el.id;
-            if (!key) continue;
+            if (!key) {
+                report.unusedEls.push(el);
+                continue;
+            }
             (index.get(key) || index.set(key, []).get(key)).push(el);
         }
 
@@ -4099,126 +4250,76 @@
             el.dispatchEvent(new Event("blur", {bubbles: true}));
         };
 
-        const setElValue = (el, val) => {
-            const tag = el.tagName.toLowerCase();
-            const type = (el.type || "").toLowerCase();
 
-            if (type === "checkbox") {
-                el.checked = !!val;
-                fire(el);
-                return;
-            }
-
-            if (type === "radio" && el.name) {
-                $$(`input[type="radio"][name="${CSS.escape(el.name)}"]`)
-                    .forEach(r => {
-                        r.checked = (String(r.value) === String(val));
-                        fire(r);
-                    });
-                return;
-            }
-
-            if (tag === "select") {
-                if (el.multiple && Array.isArray(val)) {
-                    const set = new Set(val.map(String));
-                    Array.from(el.options).forEach(opt => {
-                        opt.selected = set.has(String(opt.value));
-                    });
-                } else {
-                    el.value = val ?? "";
-                }
-                fire(el);
-                return;
-            }
-
-            if (type === "number" || type === "range") {
-                let v = val;
-                if (typeof v === "string" && v.includes(",")) v = v.replace(",", ".");
-                if (v == null || v === "") el.value = "";
-                else if (Number.isFinite(+v)) ("valueAsNumber" in el) ? el.valueAsNumber = +v : el.value = String(+v);
-                else el.value = "";
-                fire(el);
-                return;
-            }
-
-            el.value = (val ?? "");
-            fire(el);
-        };
-
+        // aplikuj hodnoty
         for (const [key, meta] of Object.entries(settings.inputs)) {
             const els = index.get(key);
-            if (!els?.length) continue;
+            if (!els?.length) {
+                report.missingKeys.push(key);
+                report.details.push({key, found: 0, applied: false, reason: 'no-match'});
+                continue;
+            }
 
-            if (els[0].type === "radio") setElValue(els[0], meta.value);
-            else if (els[0].tagName.toLowerCase() === "select" && els[0].multiple)
-                setElValue(els[0], Array.isArray(meta.value) ? meta.value : [meta.value]);
-            else setElValue(els[0], meta.value);
+            try {
+                if (els[0].type === "radio") {
+                    setElValue(els[0], meta.value);
+                } else if (els[0].tagName.toLowerCase() === "select" && els[0].multiple) {
+                    setElValue(els[0], Array.isArray(meta.value) ? meta.value : [meta.value]);
+                } else {
+                    setElValue(els[0], meta.value);
+                }
+                report.appliedCount += 1;
+                report.details.push({key, found: els.length, applied: true});
+            } catch (e) {
+                report.details.push({key, found: els.length, applied: false, reason: String(e?.message || e)});
+            }
         }
-        return true;
+
+        report.ok = report.appliedCount > 0;
+        return report;
     }
 
     function applySettingsFromCsvToUI(csvText, opts) {
         const settings = parseSettingsFromCsv(csvText);
-        if (!settings) return null;
-        const ok = restoreExpSettingsToUI(settings, opts);
-        return ok ? settings : null;
+        if (!settings) return {ok: false, reason: 'parse-failed', settings: null, results: []};
+        const res = restoreExpSettingsToUI(settings, opts); // { ok, results, summary }
+        return {ok: !!res.ok, settings, ...res};
+    }
+
+    async function processFile(file) {
+        const text = await file.text();
+        const res = applySettingsFromCsvToUI(text, {fireEvents: true});
+
+        const nameEl = $$$("loadedFileName");
+
+        if (res.ok) {
+            nameEl.textContent = `✅Loaded: ${file.name} — applied ${res.summary.applied} fields`;
+            console.groupCollapsed(`✔️ Settings applied (${file.name})`);
+            console.table(res.results.map(r => ({
+                key: r.key,
+                selector: r.selector,
+                nodes: r.foundNodes,
+                applied: r.appliedCount,
+                missingKeys: r.missingKeys.length
+            })));
+            res.results.forEach(r => {
+                if (r.missingKeys.length) {
+                    console.groupCollapsed(`⚠️ Missing keys in ${r.key}`);
+                    console.log(r.missingKeys);
+                    console.groupEnd();
+                }
+            });
+            console.groupEnd();
+        } else {
+            nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
+            console.warn('Details:', res);
+            alert("⚠️ In file are missing meta data: (##MOIRA_EMETA=...).");
+        }
     }
 
     // ===== Ovládací logika tlačítka =====
     const btnLoadCSV = $$$("btnLoadSettings");
-    const input = $$$("appFileInput");
-    const nameEl = $$$("loadedFileName");
-
-    const expTypesLabels = {
-        "": "No selection",
-        "move_up": "Move up",
-        "move_down": "Move down",
-        "load": "Load test",
-        "unload": "Unload test",
-        "hold": "Hold test",
-        "static": "Static test",
-        "dynamic": "Dynamic test",
-        "fatigue": "Fatigue test",
-        "creep": "Creep test",
-        "impact": "Impact test",
-        "tensile": "Tensile test",
-        "internal_bond": "Internal bond test",
-        "compression": "Compression test",
-        "flexural": "Flexural test",
-        "bending": "Flexural test",
-        "shear": "Shear test",
-        "adhesion": "Adhesion test",
-        "peel": "Peel test",
-        "lap_shear": "Lap shear test",
-        "punch_shear": "Punch shear test",
-        "tear": "Tear test",
-        "burst": "Burst test",
-        "puncture": "Puncture test",
-        "indentation": "Indentation test",
-        "hardness": "Hardness test",
-        "hardness_br": "Brinell hardness test",
-        "hardness_vh": "Vickers hardness test",
-        "hardness_hb": "Rockwell hardness test",
-        "hardness_hr": "Rockwell hardness test",
-        "hardness_hc": "Rockwell hardness test",
-        "hardness_hd": "Rockwell hardness test",
-        "hardness_hf": "Rockwell hardness test",
-        "hardness_ho": "Rockwell hardness test",
-        "hardness_hk": "Knoop hardness test",
-        "other": "Other",
-    };
-
-    async function processFile(file) {
-        const text = await file.text();
-        const settings = applySettingsFromCsvToUI(text, {selector: ".expInput", fireEvents: true});
-        if (settings) {
-            nameEl.textContent = `✅ Načteno: ${file.name}`;
-            console.info("Settings applied:", settings);
-        } else {
-            nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
-            alert("⚠️ In file are missing meta data: (##MOIRA_EMETA=...).");
-        }
-    }
+    const inputLoadCSV = $$$("appFileInput");
 
     btnLoadCSV.addEventListener("click", async () => {
         if ("showOpenFilePicker" in window) {
@@ -4237,14 +4338,14 @@
             }
         }
         // fallback
-        input.click();
+        inputLoadCSV.click();
     });
 
-    input.addEventListener("change", async (e) => {
+    inputLoadCSV.addEventListener("change", async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         await processFile(file);
-        input.value = ""; // reset pro další výběr stejného souboru
+        inputLoadCSV.value = ""; // reset pro další výběr stejného souboru
     });
 
 
@@ -4413,6 +4514,8 @@
             settings.calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
             settings.decimalSymbol = decimalSymbol;
             settings.delimiter = delimiter;
+            settings.columns = 6;
+            settings.skipRows = 6;
 
             let content = '';
 
@@ -4442,7 +4545,7 @@
 
 
             if (delimiter === ",") experimentDesc.replaceAll(",", ".");
-             // Remove delimiter from description to avoid confusion in space-delimited files (CSV)
+            // Remove delimiter from description to avoid confusion in space-delimited files (CSV)
             if (delimiter === " ") {
                 content = content.replaceAll(/ /g, "_");
             } else {
@@ -6949,15 +7052,83 @@
     }
 
 
-    function softStopMachine() {
+   async function softStopMachine() {
         setAcceleration(200); // Set acceleration to 200 mm/s²
 
-        sendCommand("MC STOP");
+        await rampSpeed(currentSpeed, 0.05);
+
+        await sendCommand("MC STOP");
+
+        if (currentSpeed) await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
 
         activeWatchDog = false;
 
         if (isConnected) endedMoving();
     }
+
+    /**
+ * Ramping rychlosti s pevnými rozestupy 20ms, max. ~300ms celkem.
+ * @param {number} currentSpeed - aktuální rychlost (mm/s)
+ * @param {(cmd:string)=>any|Promise<any>} sendCommand - funkce pro odeslání příkazu
+ * @param {number} targetSpeed - cílová rychlost (mm/s), default 0.05
+ */
+async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
+  const INTERVAL_MS = 20;
+  const MAX_INTERVALS = 15; // 15 * 20ms = 300ms mezi 1. a posledním sendem
+  const PREFERRED_STEP = 1;   // mm/s
+  const MIN_STEP = 0.5;       // mm/s
+
+  const delta = targetSpeed - currentSpeed;
+  const dir = Math.sign(delta);
+  const absDelta = Math.abs(delta);
+
+  // Pokud už jsme na cíli (nebo velmi blízko), pošli rovnou přesný příkaz.
+  if (absDelta < 1e-9) {
+    return sendCommand(`MC SET SPEEDMM ${targetSpeed.toFixed(3)}`);
+  }
+
+  // Zvol krok: preferuj 1 mm/s; pokud by to nestihlo do 300 ms, krok zvětši.
+  // Max. počet SENDů je 16 (15 intervalů + finální příkaz).
+  let step = PREFERRED_STEP;
+  const neededWithPreferred = Math.ceil(absDelta / step);
+  // Počet intervalů je (počet_sendů - 1). Tj. max 16 sendů => 15 intervalů.
+  if (neededWithPreferred - 1 > MAX_INTERVALS) {
+    step = Math.max(MIN_STEP, absDelta / MAX_INTERVALS); // může být >1, když je potřeba
+  }
+
+  // Kolik mezikroků stihneme s vybraným krokem v rámci 15 intervalů
+  let intermediateSteps = Math.min(Math.floor(absDelta / step), MAX_INTERVALS);
+
+  // Pro jistotu zaokrouhluj výstup na 3 desetinná místa (0.001 mm/s)
+  const fmt = (v) => Number(v).toFixed(3);
+
+  let curr = currentSpeed;
+
+  // Posílej mezikroky po 20 ms (každý krok má velikost >= 0.5 mm/s)
+  for (let i = 0; i < intermediateSteps; i++) {
+    curr += dir * step;
+
+    // Ošetři přestřelení
+    if ((dir > 0 && curr > targetSpeed) || (dir < 0 && curr < targetSpeed)) {
+      curr = targetSpeed;
+    }
+
+    await sleep(INTERVAL_MS);
+    await sendCommand(`MC SET SPEEDMM ${fmt(curr)}`);
+
+    // Když jsme už na cíli, skonči dřív
+    if (Math.abs(curr - targetSpeed) < 1e-9) {
+      return;
+    }
+  }
+
+  // Pokud ještě nejsme přesně na cíli, pošli finální přesný příkaz.
+  // Tohle je poslední SEND (celkem max 16), opět s odstupem 20ms od předchozího.
+  if (Math.abs(curr - targetSpeed) >= 1e-9) {
+    await sleep(INTERVAL_MS);
+    await sendCommand(`MC SET SPEEDMM ${fmt(targetSpeed)}`);
+  }
+}
 
 
     function analyzeForces(fields) {
@@ -7652,7 +7823,7 @@
                 clearInterval(id);
                 restore(); // ← po doběhnutí vždy stejné barvy jako na začátku
             }
-        }, interval + 10);
+        }, interval + 50);
 
         _blinkLocks.set(el, {id, restore});
         return true;
@@ -7818,15 +7989,27 @@
         $$$("experimentName")?.addEventListener("change", async (event) => {
             const countInput = $$$("experimentCount");
             if (countInput && countInput.value !== '1') {
-                blinkBorder(countInput);
+                blinkBorder(countInput, {restart: true});
                 countInput.value = 1;
             }
             await updateLogById(0, {experimentName: event.target.value.trim()});
         });
 
+        $$$("experimentCount")?.addEventListener("change", async (event) => {
+            blinkBorder(event.target, {
+                restart: true,
+                color: '#2196F3',
+                backgroundOn: '#a7e7ff',
+                blinks: 2,
+            });
+        });
+
+
         $$$("experimentDesc")?.addEventListener("change", async (event) => {
             await updateLogById(0, {experimentDescription: event.target.value.trim()});
         });
+
+        // TODO: implement this button events 'click' !!!: clearChartBtn clearCharts() refreshChartBtn refreshCharts() convertCSV convertCSVtoXLSX_MATTES() clearCalculationsButton clearCalculations() darkModeButton toggleDarkMode() aboutButton window.location.href='about.html' clearStorageButton clearLocalStorage() toggleLineLockBtn lineLock() clearRegularLog clearLog()
 
         function attachHoldHandlers(element, onStart) {
             let isHolding = false;
@@ -8113,6 +8296,8 @@
         const input = document.createElement('input');
 
         const mattesMaxLines = 20_000; // Maximum number of lines in one file
+        const preferFoundDelimiter = false;
+
 
         input.type = 'file';
         input.accept = '.csv';
@@ -8161,7 +8346,10 @@
 
             // ==================== FILES LIST ==================== //
 
-            let fileIndexData = [["File Order", "File Name"]]; // Third sheet data
+            let fileIndexData = [["File Order", "File name", "Experiment type", "Material",
+                "b (mm)", "h (mm)", "L (mm)", "E (MPa)",
+                "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
+                "F_T (N)", "h_D (mm)", "H_BW (-)"]]; // Third sheet data
 
             // ================== LOADING DATA ================== //
 
@@ -8195,78 +8383,173 @@
             const rDist = (num) => roundDecimalFast(num, precisionDistance);
             const rForce = (num) => roundDecimalFast(num, precisionForce);
 
+
+            const delimiters = [";", ",", "\t", " "];
+            const parseNum = (n) => toNumber(n, false) || 0;
+
             // ----------------- LOOPING THROW CSV FILES ----------------- //
             let fileCount = 0;
             for (let file of files) {
                 fileCount++;
                 const text = file.text().toLowerCase(); // Read file content
 
-
-                // TODO ===================================================================================
-                const version = null;                // Determine the file type
-                // const expInfoV = experimentInfo.expSettings.version;
-                // if (expInfoV === 1){
-                // const experimentLabel = experimentInfo.experimentLabel || "";
-                //     }
-
-                const isMoira = text.startsWith("##moira"); // Check if the file is from MOIRA
-                const isMoiraLegacy = text.startsWith("date:"); // Check if the file is from MOIRA legacy
-                const isMatlab = !isMoira && text.startsWith("timestamp_us"); // Check if the file is from MATLAB
-
-                if (!isMoira && isMoiraLegacy && !isMatlab) {
-                    logMessage(`❓ Unknown file format: ${file.name}`);
-                    console.warn(`❓ Unknown file format: ${file.name}`);
-                }
-
-                // const delimiter = isMatlab ? "," : ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
-
-                const delimiters = [";", ",", "\t", " "];
-
                 let rows = text.split("\n"); // Split text into lines
 
 
-                if (rows.length <= 3) {  // Skip if the file has no data
+                let fileType = null;                // Determine the file type
+                let fileVersion = null;
+
+                const fileOpts = {
+                    delimiter: null,
+                    skipRows: 0,
+                    columns: null,
+                    filterPhotos: false,
+                    unitsConversion: {time: 1, distance: 1, force: 1}
+                }; // Options for parsing the file
+
+                const samplesInfo = {
+                    method: 3,  // Method (place 3)
+                    W: 0,       // W (place 0)
+                    hw: "",
+                    lw: "",
+                    ww: "",
+                    mw: "",
+                    h0: "",
+                    l0: "",
+                    w0: "",
+                    m0: "",
+                    lo: "",     // lo (empty)
+                }; // Sample information
+
+                const expResults = {
+                    experimentType: "", // Experiment type
+                    material: "",       // Material
+                    b: "",              // b (mm)
+                    h: "",              // h (mm)
+                    L: "",              // L (mm)
+                    E: "",              // E (MPa)
+                    F_max: "",          // F_max (N)
+                    w_Fmax: "",        // w_Fmax (mm)
+                    sigma_max: "",     // σ_max (MPa)
+                    F_T: "",           // F_T (N)
+                    h_D: "",           // h_D (mm)
+                    H_BW: ""           // H_BW (-)
+                }; // Experiment results
+
+
+                if (text.startsWith("##moira")) fileType = "moira";              // MOIRA
+                else if (text.startsWith("date:")) fileType = "moira-legacy";    // MOIRA legacy
+                else if (text.startsWith("timestamp_us")) fileType = "matlab";   // MATLAB
+                else fileType = "unknown";                                       // Unknown file type
+
+
+                const getDelimiter = (rows, minParts = 3) => {
+                    const testLine = rows[Math.ceil(2 * rows.length / 3)]; // data line of CSV file
+                    let delimiter = null; // Delimiter of data in a a CSV file
+
+                    for (const separator of delimiters) {
+                        const parts = testLine.split(separator);
+                        if (parts.length >= minParts) {
+                            delimiter = separator;
+                            break; // Found the delimiter
+                        }
+                    }
+
+                    return delimiter;
+                };
+
+                if (fileType === "moira") {
+                    const preambleMetaData = parseSettingsFromCsv(text);
+
+                    fileVersion = preambleMetaData?.version;
+
+                    if (fileVersion >= 1) fileOpts.unitsConversion = {time: 1, distance: 1, force: 1};
+
+                    fileOpts.delimiter = preambleMetaData?.delimiter;
+                    if (preambleMetaData?.headerVersion === 1) fileOpts.skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
+                    fileOpts.columns = preambleMetaData?.columns;
+
+                    if (fileOpts.columns >= 6) fileOpts.filterPhotos = true;
+
+
+                    const expInfoV = preambleMetaData?.expSettings.version;
+                    if (expInfoV >= 1) {
+                        expResults.experimentType = preambleMetaData?.experimentLabel || "";
+                        expResults.material = preambleMetaData.calcSettings.inputs?.inputMaterialName || "";
+                        expResults.b = preambleMetaData.calcSettings.inputs?.inputWidth || "";
+                        expResults.h = preambleMetaData.calcSettings.inputs?.inputHeight || "";
+                        expResults.L = preambleMetaData.calcSettings.inputs?.inputLength || "";
+                        expResults.E = preambleMetaData.calcSettings.inputs?.outputEModule || "";
+                        expResults.F_max = preambleMetaData.calcSettings.inputs?.outputForceMax || "";
+                        expResults.w_Fmax = preambleMetaData.calcSettings.inputs?.outputDisp || "";
+                        expResults.sigma_max = preambleMetaData.calcSettings.inputs?.outputMaxStress || "";
+                        expResults.F_T = preambleMetaData.calcSettings.inputs?.inputTargetForce || "";
+                        expResults.h_D = preambleMetaData.calcSettings.inputs?.inputIndDepth || "";
+                        expResults.H_BW = preambleMetaData.calcSettings.inputs?.outputHardness || "";
+                    }
+
+                    const calcInfoV = preambleMetaData?.expSettings.version;
+                    if (calcInfoV >= 1) {
+                        samplesInfo.hw = preambleMetaData.calcSettings.inputs?.inputHeight_BeforeDrying || "";
+                        samplesInfo.lw = preambleMetaData.calcSettings.inputs?.inputLength_BeforeDrying || "";
+                        samplesInfo.ww = preambleMetaData.calcSettings.inputs?.inputWidth_BeforeDrying || "";
+                        samplesInfo.mx = preambleMetaData.calcSettings.inputs?.inputWeight_BeforeDrying || "";
+                        samplesInfo.h0 = preambleMetaData.calcSettings.inputs?.inputHeight_AfterDrying || "";
+                        samplesInfo.l0 = preambleMetaData.calcSettings.inputs?.inputLength_AfterDrying || "";
+                        samplesInfo.w0 = preambleMetaData.calcSettings.inputs?.inputWidth_AfterDrying || "";
+                        samplesInfo.m0 = preambleMetaData.calcSettings.inputs?.inputWeight_AfterDrying || "";
+                    }
+
+
+                } else if (fileType === "moira-legacy") {
+                    fileOpts.delimiter = ";";
+                    fileOpts.skipRows = 3; // (Info) // (Description) // (Header)
+                    fileOpts.columns = 6;
+                    fileOpts.filterPhotos = true;
+
+                } else if (fileType === "matlab") {
+                    fileOpts.delimiter = ";";
+                    fileOpts.skipRows = 1;  // (Header)
+                    fileOpts.columns = 5;
+                    fileOpts.unitsConversion.time = 1e-6; // Convert time from microseconds to seconds
+
+                } else if (fileType === "unknown") {
+                    // find first row that starts with text 'time'
+                    const headerRowIndex = rows.findIndex(row => row.trim().startsWith("time"));
+                    fileOpts.skipRows = headerRowIndex !== -1 ? headerRowIndex : 0;
+                    fileOpts.columns = 4;
+                    // TODO: skip for now
+                    continue;
+                }
+
+                if (rows.length <= fileOpts.skipRows) {  // Skip if the file has no data
                     logMessage(`❌ Not enough data in file: ${file.name}`);
                     console.warn(`❌ Not enough data in file: ${file.name}`);
                     fileCount--;
                     continue;
                 }
 
+                const foundDelimiter = getDelimiter(rows.slice(fileOpts.skipRows), fileOpts.columns);
 
-                if (isMatlab) {
-                    rows.shift(); // Skip the first row (Header)
-                }
-                if (isMoiraLegacy) {
-                    rows.shift(); // Skip the first row (Info)
-                    rows.shift(); // Skip the second row (Description)
-                    rows.shift(); // Skip the third row (Header)
-                } else if (isMoira) {
-                    rows.shift(); // Skip the first row (Experiment settings)
-                    rows.shift(); // Skip the second row (Info)
-                    rows.shift(); // Skip the third row (Description)
-                    rows.shift(); // Skip the fourth row (Empty)
-                    rows.shift(); // Skip the fifth row (Header)
-                }
+                if (foundDelimiter !== fileOpts.delimiter) {
+                    logMessage(`❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
+                    console.warn(`❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
 
-
-                const testLine = rows[Math.ceil(rows.length / 2)]; // data line of CSV file
-                let delimiter = null; // Delimiter of data in a a CSV file
-
-                for (const separator of delimiters) {
-                    const parts = testLine.split(separator);
-                    if (parts.length >= 6) {
-                        delimiter = separator;
-                        break; // Found the delimiter
+                    if (!preferFoundDelimiter) {
+                        fileCount--;
+                        continue;
                     }
                 }
-                if (!delimiter) {
+
+
+                if (!fileOpts.delimiter) {
                     logMessage(`❌ Delimiter not found in file: ${file.name}`);
                     console.warn(`❌ Delimiter not found in file: ${file.name}`);
                     fileCount--;
                     continue;
                 }
 
-                rows = rows.map(row => row.split(delimiter)); // Parse CSV lines into an array
+                rows = rows.map(row => row.split(fileOpts.delimiter)); // Parse CSV lines into an array
 
                 let maxTries = 10;
                 let validRowFound = false;
@@ -8297,12 +8580,9 @@
                     continue;
                 }
 
-
                 const originalLength = rows.length; // Original number of rows
 
-                if (isMoira || isMoiraLegacy) {
-                    rows = rows.filter(row => row[6] === ""); // Filter out rows of taken photos
-                }
+                if (fileOpts.filterPhotos) rows = rows.filter(row => row[6] === ""); // Filter out rows of taken photos
 
                 const dataSize = rows.length; // Number of rows in one file
 
@@ -8313,7 +8593,6 @@
                     fileCount--;
                     continue;
                 }
-
 
                 console.info(file.name, ": 📊 Rows in file:", originalLength, "📦 Rows to process:", dataSize);
 
@@ -8330,18 +8609,89 @@
 
                 // ==================== FILES LIST ==================== //
 
-                fileIndexData.push([fileCount, file.name.replace(/\.csv$/i, "")]);
+                fileIndexData.push([
+                    fileCount,
+                    file.name.replace(/\.csv$/i, ""),
+                    expResults.experimentType,
+                    expResults.material,
+                    expResults.b,
+                    expResults.h,
+                    expResults.L,
+                    expResults.E,
+                    expResults.F_max,
+                    expResults.w_Fmax,
+                    expResults.sigma_max,
+                    expResults.F_T,
+                    expResults.h_D,
+                    expResults.H_BW,
+                ]);
+
+                // // 3) Do listu + pár „quality-of-life“ věcí (autofilter, šířky sloupců)
+                // const ws = XLSX.utils.aoa_to_sheet(rows);
+                //
+                // // rozsah
+                // ws['!ref'] = XLSX.utils.encode_range(
+                //   { s: { r:0, c:0 }, e: { r: rows.length-1, c: HEAD.length-1 } }
+                // );
+                //
+                // // autofilter přes hlavičku
+                // ws['!autofilter'] = { ref: XLSX.utils.encode_range(0, 0, rows.length-1, HEAD.length-1) };
+                // // šířky sloupců podle délky hlaviček
+                // const PAD = 2;      // rezerva, ať to není nalepené
+                // const MIN = 6;      // minimální šířka
+                // ws['!cols'] = HEAD.map(h => ({ wch: Math.max(MIN, h.length + PAD) }));
+                // function fitToCols(rows, { pad = 2, min = 6 } = {}) {
+                //   const cols = rows[0]?.length ?? 0;
+                //   const out = Array.from({ length: cols }, () => ({ wch: min }));
+                //
+                //   for (let c = 0; c < cols; c++) {
+                //     let maxLen = 0;
+                //     for (let r = 0; r < rows.length; r++) {
+                //       const v = rows[r][c];
+                //       const s = v == null ? "" : String(v);
+                //       if (s.length > maxLen) maxLen = s.length;
+                //     }
+                //     out[c].wch = Math.max(min, maxLen + pad);
+                //   }
+                //   return out;
+                // }
+                //
+                // ws['!cols'] = fitToCols(rows, { pad: 2, min: 6 });
+                // function setNumFmt(colIndex, fmt) {
+                //   for (let r = 1; r < rows.length; r++) {
+                //     const addr = XLSX.utils.encode_cell({ r, c: colIndex });
+                //     const cell = ws[addr];
+                //     if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
+                //   }
+                // }
+                // // příklady:
+                // setNumFmt(4,  "0.00"); // b (mm)
+                // setNumFmt(5,  "0.00"); // h (mm)
+                // setNumFmt(6,  "0");    // L (mm) – třeba celé mm
+                // setNumFmt(7,  "0");    // E (MPa)
+                // setNumFmt(8,  "0");    // F_max (N)
+                // setNumFmt(9,  "0.00"); // w_Fmax (mm)
+                // setNumFmt(10, "0");    // σ_max (MPa)
+                // setNumFmt(11, "0");    // F_T (N)
+                // setNumFmt(12, "0.00"); // h_D (mm)
+                // setNumFmt(13, "0.000"); // H_BW (-)
+                //
+                // // 5) Přidej list do workbooku
+                // XLSX.utils.book_append_sheet(wb, ws, "Experiments Summary");
+
 
                 // ================== SAMPLES TABLE ================== //
 
                 samplesTable.push([
-                    file.name.replace(/\.csv$/i, ""), // Code
-                    3,                             // Method (place 3)
-                    0,                             // W (place 0)
-                    fileCount,                     // Number (file count)
-                    "", "", "", "",                // hw, lw, vw, mw (empty)
-                    "", "", "", "",                // h0, l0, v0, m0 (empty)
-                    ""                             // lo (empty)
+                    file.name.replace(/\.csv$/i, ""),   // Code
+                    samplesInfo.method,                 // Method (place 3)
+                    samplesInfo.W,                      // W (place 0)
+                    fileCount,                          // Number (file count)
+                    samplesInfo.hw, samplesInfo.lw,     // hw, lw,
+                    samplesInfo.ww, samplesInfo.mx,     // ww, mw
+                    samplesInfo.h0, samplesInfo.l0,     // h0, l0,
+                    samplesInfo.w0, samplesInfo.m0,     // w0, m0
+                    samplesInfo.lo                      // lo (empty)
                 ]);
 
 
@@ -8355,10 +8705,9 @@
 
                 // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
 
-
-                const firstTime = parseFloat(rows[0][0]) || 0; // First time value
-                const firstShift = parseFloat(rows[0][1]) || 0; // First shift value
-                const firstForce = (parseFloat(rows[0][3]) || 0) + (parseFloat(rows[0][4]) || 0) + (parseFloat(rows[0][5]) || 0); // First force value
+                const firstTime = parseNum(rows[0][0]); // First time value
+                const firstShift = parseNum(rows[0][1]); // First shift value
+                const firstForce = (parseNum(rows[0][3]) + parseNum(rows[0][4]) + parseNum(rows[0][5])); // First force value
 
                 // Define headers for this section
                 let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
@@ -8407,16 +8756,13 @@
                         if (entry.length >= 6) {
                             if (!entry[0]) continue; // Skip empty rows
 
+                            time = ((parseNum(entry[0]) - firstTime) * fileOpts.unitsConversion.time) || 0; // Time (s)
 
-                            time = ((parseFloat(entry[0]) - firstTime) * (isMatlab ? 1e-6 : 1)) || 0; // Time (s)
-
-
-                            force = (parseFloat(entry[3]) || 0) + (parseFloat(entry[4]) || 0) + (parseFloat(entry[5]) || 0) - firstForce; // Force sum
+                            force = ((parseNum(entry[3]) + parseNum(entry[4]) + parseNum(entry[5]) - firstForce) * fileOpts.unitsConversion.force) || 0; // Force sum
 
                             // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                            shift = (parseFloat(entry[1]) - firstShift) || 0; // Displacement (mm)
-
+                            shift = ((parseNum(entry[1]) - firstShift) * fileOpts.unitsConversion.distance) || 0; // Displacement (mm)
 
                             // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
                             deformation = shift; // Calculate deformation
