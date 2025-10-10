@@ -7699,12 +7699,12 @@
 
         } catch (error) {
             await handleError(error, "Experiment");
-            await showNotification("Experiment Finished", "❌ Experiment failed. Please check the logs and machine.");
+            await alert(`Experiment Finished\n     ❌ Experiment failed. Please check the logs and machine.\n\n     Error:${error.message || error}`);
 
         } finally {
             await endMeasuring(0, null, '', '', '', '');
 
-            await sleep(50);
+            await sleep(10);
 
             clearTimeout(dbFlushTimer);
             dbFlushTimer = null;
@@ -8043,12 +8043,35 @@
             });
         });
 
-
         $$$("experimentDesc")?.addEventListener("change", async (event) => {
             await updateLogById(0, {experimentDescription: event.target.value.trim()});
         });
 
-        // TODO: implement this button events 'click' !!!: clearChartBtn clearCharts() refreshChartBtn refreshCharts() convertCSV convertCSVtoXLSX_MATTES() clearCalculationsButton clearCalculations() darkModeButton toggleDarkMode() aboutButton window.location.href='about.html' clearStorageButton clearLocalStorage() toggleLineLockBtn lineLock() clearRegularLog clearLog()
+        $$$("clearChartBtn")?.addEventListener("click", async () => clearCharts());
+
+        // TODO:  $$$("saveChartBtn")?.addEventListener("click", async () => saveChartsAsPNG());
+
+        $$$("refreshChartBtn")?.addEventListener("click", async () => refreshCharts());
+
+        $$$("convertCSV")?.addEventListener("click", async () => convertCSVtoXLSX_MATTES());
+
+        $$$("clearCalculationsButton")?.addEventListener("click", async () => clearCalculations());
+
+        $$$("darkModeButton")?.addEventListener("click", async () => toggleDarkMode());
+
+        $$$("aboutButton")?.addEventListener("click", async () => window.location.href = 'about.html');
+
+        $$$("clearStorageButton")?.addEventListener("click", async () => {
+            if (confirm("⚠️ This will clear all settings and disconnect the machine.\n\n     Are you sure?")) {
+                clearLocalStorage();
+            }
+        });
+
+        $$$("toggleLineLockBtn")?.addEventListener("click", async () => lineLock());
+
+        $$$("clearRegularLog")?.addEventListener("click", async () => clearLog());
+
+        // TODO: $$$("saveRegularLog")?.addEventListener("click", async () => saveLogAsText());
 
         function attachHoldHandlers(element, onStart) {
             let isHolding = false;
@@ -8328,7 +8351,7 @@
         try {
             await waitForXLSX();
         } catch (e) {
-            alert(e.message);
+            alert("❌ Failed to load XLSX library. Please check the logs and your internet connection and try again.");
             return;
         }
 
@@ -8344,7 +8367,8 @@
         input.onchange = async function (event) {
             let files = Array.from(event.target.files); // Convert FileList to Array
             if (!files.length) {
-                alert("❌ No files selected.");
+                console.warn("❌ No files selected.");
+                alert("❌ No files were selected. Please select one or more CSV files and try again.");
                 return;
             } else {
                 files.sort((a, b) => {
