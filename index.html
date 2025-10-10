@@ -8,8 +8,11 @@
         const softwareVersion = "0.0.2.0";
         const softwareDate = "06.10.2025";
 
+        // Initial title
+        const initialTitle = 'Μοῖρα Controller - Thymos';
 
-        document.title = 'Μοῖρα Controller - Thymos';
+
+        document.title = initialTitle;
 
         // Clear console - Fresh start
         console.clear();
@@ -679,6 +682,10 @@
 
             color: var(--text-color);
             box-shadow: inset 2px 2px 3px rgba(0, 0, 0, 0.15), inset -2px -2px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--blue-color);
         }
 
         pre {
@@ -1700,8 +1707,12 @@
             ❌<br>Delete 'Prohibited' Class
         </button>
         <button onclick="sendCommand('mc service')"
-                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #4CA2FF; color:white">
-            🛠️<br>Enter Service Mode
+                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #ff8c00; color:white">
+            🛠️<br>Service Mode<br><em style="font-weight: normal;">(MC SERVICE)</em>
+        </button>
+        <button onclick="sendCommand('datac')"
+                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #2196F3; color:white">
+            📊<br>Data Measurement<br><em style="font-weight: normal;">(DATAC)</em>
         </button>
         <button id="degubRunTestSequenceBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #4CAF50; color:white">
@@ -2247,9 +2258,18 @@
                                value="20" min="0.01" step="any" max="100000000" data-unit="mm" data-essence="distance">
                     </div>
 
+                    <!--                    // ✅✔️☑️❎❌✖️⭕️❗️❓❕❔⚠️-->
+                    <!--                    // ⛔🚫🛑🚨🚧⚡🔥💥💫💢💣💤💨💯-->
+                    <!--                    // 🔴🟠🟡🟢🔵🟣🟤⚫️⚪️-->
+                    <!--                    // 🟥🟧🟨🟩🟦🟪🟫⬛️⬜️-->
+                    <!--                    // 🔒🔓🔏🔐🔑🗝️-->
+                    <!--                    // 🆗🆕🆙🆒🆓-->
+                    <!--                    // 0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟-->
+                    <!--                    // ℹ️🔠🔢🔤#️⃣*️⃣🔀🔁🔂🔄🔃-->
+                    <!--                    // 🅰️🅱️🆎🆑🅾️🆘🆔🆚-->
                     <!--                    // 🆗🆑🅿️Ⓜ️♾️➰➿〰️〽️               -->
                     <!--                    // ⬆️↗️➡️↘️⬇️↙️⬅️↖️↔️↕️↩️↪️⤴️⤵️🔃🔄🔜🔙🔝🔚🆙🔛     -->
-                    <!--                    // ⏯️⏸️⏹️⏺️⏏️▶️⏩⏭️◀️⏪⏮️⏫🔼🔽⏬🔺🔻         -->
+                    <!--                    // 🟦⏯️⏸️⏹️⏺️⏏️▶️⏩⏭️◀️⏪⏮️⏫🔼🔽⏬🔺🔻         -->
                     <div class="input-group">
                         <label for="experimentDirectionDropdown">Experiment type: </label>
                         <select id="experimentDirectionDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
@@ -2467,7 +2487,7 @@
                     <!--                        🐞 Report bug-->
                     <!--                    </button>-->
 
-                    <button id="aboutButton" class="controlBtn" >ℹ️ About
+                    <button id="aboutButton" class="controlBtn">ℹ️ About
                         app
                     </button>
 
@@ -5264,7 +5284,7 @@
                         await port.close();
                     }
                 } else {
-                    console.info("No previously connected devices found.");
+                    console.info("\n\t❎ No previously connected devices found.");
                 }
                 if (userRequest) {
                     if (!serialPort) serialPort = await serialFunctionRequestPort();
@@ -6038,10 +6058,13 @@
             }
 
             // progress UI
-            if (toNumber(UI.progressBar.value) >= 99.99990) {
+            if (distanceProgress >= 99.99990) {
+                distanceProgress = 100;
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressDone-color)');
                 UI.progressBar.value = 100;
                 UI.progressLabel.textContent = `100%`;
+                document.title = `Μοῖρα - Experiment done (100%)`;
+                if (debugging) console.info("✅ Experiment done 💯");
             }
 
             aggregatedDataBetweenSteps = [];
@@ -6196,10 +6219,18 @@
         }
     }
 
+    let lastTitle = document.title;
+
     async function UIupdate() {
+        lastTitle = document.title;
         while (isExperimentRunning) {
             UI.progressBar.value = distanceProgress;
             UI.progressLabel.innerText = `${distanceProgress.toFixed(2)}%`; // .padStart(5, "0")
+            const newTitle = `Μοῖρα - ${Math.floor(distanceProgress)}%`;
+            if (lastTitle !== newTitle) {
+                document.title = newTitle;
+                lastTitle = newTitle;
+            }
             await sleep(50);
         }
     }
@@ -6450,7 +6481,7 @@
                 loadcellData = loadcellDataTemp;
             }
 
-            console.info("✅ Graph data loaded successfully.");
+            console.info("\n\t☑️ Graph data loaded successfully.");
         };
     }
 
@@ -7052,7 +7083,7 @@
     }
 
 
-   async function softStopMachine() {
+    async function softStopMachine() {
         setAcceleration(200); // Set acceleration to 200 mm/s²
 
         await rampSpeed(currentSpeed, 0.05);
@@ -7067,68 +7098,68 @@
     }
 
     /**
- * Ramping rychlosti s pevnými rozestupy 20ms, max. ~300ms celkem.
- * @param {number} currentSpeed - aktuální rychlost (mm/s)
- * @param {(cmd:string)=>any|Promise<any>} sendCommand - funkce pro odeslání příkazu
- * @param {number} targetSpeed - cílová rychlost (mm/s), default 0.05
- */
-async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
-  const INTERVAL_MS = 20;
-  const MAX_INTERVALS = 15; // 15 * 20ms = 300ms mezi 1. a posledním sendem
-  const PREFERRED_STEP = 1;   // mm/s
-  const MIN_STEP = 0.5;       // mm/s
+     * Ramping rychlosti s pevnými rozestupy 20ms, max. ~300ms celkem.
+     * @param {number} currentSpeed - aktuální rychlost (mm/s)
+     * @param {(cmd:string)=>any|Promise<any>} sendCommand - funkce pro odeslání příkazu
+     * @param {number} targetSpeed - cílová rychlost (mm/s), default 0.05
+     */
+    async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
+        const INTERVAL_MS = 20;
+        const MAX_INTERVALS = 15; // 15 * 20ms = 300ms mezi 1. a posledním sendem
+        const PREFERRED_STEP = 1;   // mm/s
+        const MIN_STEP = 0.5;       // mm/s
 
-  const delta = targetSpeed - currentSpeed;
-  const dir = Math.sign(delta);
-  const absDelta = Math.abs(delta);
+        const delta = targetSpeed - currentSpeed;
+        const dir = Math.sign(delta);
+        const absDelta = Math.abs(delta);
 
-  // Pokud už jsme na cíli (nebo velmi blízko), pošli rovnou přesný příkaz.
-  if (absDelta < 1e-9) {
-    return sendCommand(`MC SET SPEEDMM ${targetSpeed.toFixed(3)}`);
-  }
+        // Pokud už jsme na cíli (nebo velmi blízko), pošli rovnou přesný příkaz.
+        if (absDelta < 1e-9) {
+            return sendCommand(`MC SET SPEEDMM ${targetSpeed.toFixed(3)}`);
+        }
 
-  // Zvol krok: preferuj 1 mm/s; pokud by to nestihlo do 300 ms, krok zvětši.
-  // Max. počet SENDů je 16 (15 intervalů + finální příkaz).
-  let step = PREFERRED_STEP;
-  const neededWithPreferred = Math.ceil(absDelta / step);
-  // Počet intervalů je (počet_sendů - 1). Tj. max 16 sendů => 15 intervalů.
-  if (neededWithPreferred - 1 > MAX_INTERVALS) {
-    step = Math.max(MIN_STEP, absDelta / MAX_INTERVALS); // může být >1, když je potřeba
-  }
+        // Zvol krok: preferuj 1 mm/s; pokud by to nestihlo do 300 ms, krok zvětši.
+        // Max. počet SENDů je 16 (15 intervalů + finální příkaz).
+        let step = PREFERRED_STEP;
+        const neededWithPreferred = Math.ceil(absDelta / step);
+        // Počet intervalů je (počet_sendů - 1). Tj. max 16 sendů => 15 intervalů.
+        if (neededWithPreferred - 1 > MAX_INTERVALS) {
+            step = Math.max(MIN_STEP, absDelta / MAX_INTERVALS); // může být >1, když je potřeba
+        }
 
-  // Kolik mezikroků stihneme s vybraným krokem v rámci 15 intervalů
-  let intermediateSteps = Math.min(Math.floor(absDelta / step), MAX_INTERVALS);
+        // Kolik mezikroků stihneme s vybraným krokem v rámci 15 intervalů
+        let intermediateSteps = Math.min(Math.floor(absDelta / step), MAX_INTERVALS);
 
-  // Pro jistotu zaokrouhluj výstup na 3 desetinná místa (0.001 mm/s)
-  const fmt = (v) => Number(v).toFixed(3);
+        // Pro jistotu zaokrouhluj výstup na 3 desetinná místa (0.001 mm/s)
+        const fmt = (v) => Number(v).toFixed(3);
 
-  let curr = currentSpeed;
+        let curr = currentSpeed;
 
-  // Posílej mezikroky po 20 ms (každý krok má velikost >= 0.5 mm/s)
-  for (let i = 0; i < intermediateSteps; i++) {
-    curr += dir * step;
+        // Posílej mezikroky po 20 ms (každý krok má velikost >= 0.5 mm/s)
+        for (let i = 0; i < intermediateSteps; i++) {
+            curr += dir * step;
 
-    // Ošetři přestřelení
-    if ((dir > 0 && curr > targetSpeed) || (dir < 0 && curr < targetSpeed)) {
-      curr = targetSpeed;
+            // Ošetři přestřelení
+            if ((dir > 0 && curr > targetSpeed) || (dir < 0 && curr < targetSpeed)) {
+                curr = targetSpeed;
+            }
+
+            await sleep(INTERVAL_MS);
+            await sendCommand(`MC SET SPEEDMM ${fmt(curr)}`);
+
+            // Když jsme už na cíli, skonči dřív
+            if (Math.abs(curr - targetSpeed) < 1e-9) {
+                return;
+            }
+        }
+
+        // Pokud ještě nejsme přesně na cíli, pošli finální přesný příkaz.
+        // Tohle je poslední SEND (celkem max 16), opět s odstupem 20ms od předchozího.
+        if (Math.abs(curr - targetSpeed) >= 1e-9) {
+            await sleep(INTERVAL_MS);
+            await sendCommand(`MC SET SPEEDMM ${fmt(targetSpeed)}`);
+        }
     }
-
-    await sleep(INTERVAL_MS);
-    await sendCommand(`MC SET SPEEDMM ${fmt(curr)}`);
-
-    // Když jsme už na cíli, skonči dřív
-    if (Math.abs(curr - targetSpeed) < 1e-9) {
-      return;
-    }
-  }
-
-  // Pokud ještě nejsme přesně na cíli, pošli finální přesný příkaz.
-  // Tohle je poslední SEND (celkem max 16), opět s odstupem 20ms od předchozího.
-  if (Math.abs(curr - targetSpeed) >= 1e-9) {
-    await sleep(INTERVAL_MS);
-    await sendCommand(`MC SET SPEEDMM ${fmt(targetSpeed)}`);
-  }
-}
 
 
     function analyzeForces(fields) {
@@ -7395,7 +7426,7 @@ async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
             await sleep(10); // Stop for 10 ms
 
             await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
-            console.info("🚀 Starting experiment...");
+            await console.info("🧪 Starting experiment...");
 
             // === Progress Bar Setup ===
             document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
@@ -7482,6 +7513,7 @@ async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
                 endStatus: endedBy,
+                distanceProgress: distanceProgress,
             }, 0);
 
 
@@ -7586,9 +7618,11 @@ async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
             clearTimeout(endMeasurementCounter)
             endMeasurementCounter = null;
 
+            await sleep(10); // Stop for 10 ms
+
             UIupdate();
 
-            await sleep(50); // Stop for 10 ms
+            await sleep(10); // Stop for 10 ms
 
             // ==================================
             // ==================================
@@ -7600,7 +7634,7 @@ async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
             if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
 
             // === Move Forward ===
-            console.info("➡️ Moving forward...");
+            await console.info("➡️ Moving forward...");
             await sendCommand(`MC MOVEBY USER ${distance_mm * displacementSignCorrection}`);
 
 
@@ -7612,15 +7646,14 @@ async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
 
             isExperimentRunning = false;
 
-            await sendCommand('MC STOP');
             // === Stop Data Streaming and DSLR Shooting ===
+            await sendCommand('MC STOP');
             await sendCommand('DSLR STOP CYCLIC');
             await sendCommand('DATAC 0');
 
+            await logMessage("🎬 Measurements stopped.");
+            await console.info("🎬 Measurements stopped.");
 
-            const returningSpeed = roundDecimalFast(25, precisionSpeedSystem); // mm/s
-            const returningAcceleration = roundDecimalFast(100, precisionAccelerationSystem); // mm/s²
-            await setSpeedAndAcceleration(returningSpeed, returningAcceleration) // Set speed to 25 mm/s and acceleration to 100 mm/s²
 
             await sleep(10); // Stop for 10 ms
 
@@ -7655,29 +7688,35 @@ async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
 
             // === Save Data ===
             if ($$$('inputAutoSave').checked) {
-                console.info("💾 Saving data...");
+                await console.info("💾 Saving data...");
                 await saveCSV();
             }
 
             await sleep(5);
 
-            console.info("☑️ Experiment finished.");
+            await console.info("\n☑️ Experiment finished.");
             await showNotification("Experiment Finished", "The experiment has been completed successfully.");
 
         } catch (error) {
             await handleError(error, "Experiment");
-            alert("❌ Experiment failed. Please check the logs and machine.");
+            await showNotification("Experiment Finished", "❌ Experiment failed. Please check the logs and machine.");
 
         } finally {
             await endMeasuring(0, null, '', '', '', '');
+
+            await sleep(50);
+
             clearTimeout(dbFlushTimer);
             dbFlushTimer = null;
             await flushDB();
             await recomputeAll();
-            if (endedBy != null) await updateLogById(0, {endStatus: endedBy});
+            if (endedBy != null) await updateLogById(0, {endStatus: endedBy, distanceProgress: distanceProgress});
             if (isConnected) endedMoving();    // unlock UI and watchdog
-            console.groupEnd();
-            console.info("✅ Experiment completed.");
+            document.title = initialTitle;
+            await console.info("✅ Experiment completed.");
+
+            await console.groupEnd();
+
         }
     }
 
