@@ -141,192 +141,6 @@
 
     </script>
 
-
-    <script type="text/plain">
-        // ===== 8-dot braille utils =====
-        const DOT_MASK = [0, 1, 2, 4, 8, 16, 32, 64, 128]; // index = dot #
-        const UNICODE_SPACE_RE = /^[\u0020\u00A0\u2000-\u200A\u202F\u205F\u3000]$/;
-        const COLS8 = [
-            [1, 2, 3, 7], // levý sloupec shora dolů (top = 1)
-            [4, 5, 6, 8]  // pravý sloupec shora dolů (top = 4)
-        ];
-        const BLANK = String.fromCodePoint(0x2800);
-        const toChar = (dotsSet) => {
-            let mask = 0;
-            for (const d of dotsSet) if (d >= 1 && d <= 8) mask |= DOT_MASK[d];
-            return String.fromCodePoint(0x2800 | mask);
-        };
-        const wait = (ms) => new Promise(r => setTimeout(r, ms));
-
-        /**
-         * „Sypání písku“ pro jeden znak:
-         * - Každý sloupec: seřaď cíle odspodu (nejnižší první).
-         * - Každá tečka startuje nahoře (1 nebo 4) a padá po řádcích dolů, dokud nedosáhne svého cíle.
-         * - Settlené tečky zůstávají svítit.
-         */
-        async function animateBrailleCharSand(targetDots, setChar, {
-            stepMs = 110,           // rychlost pádu (jeden řádek dolů)
-            pauseDropMs = 80,       // pauza po dosednutí jedné tečky
-            pauseColMs = 120,       // pauza po dokončení sloupce
-            cols = COLS8            // můžeš nahradit za [[1,2,3],[4,5,6]] pro 6-dot
-        } = {}) {
-            const target = new Set(targetDots.filter(d => d >= 1 && d <= 8));
-            const locked = new Set(); // trvale usazené tečky (celého znaku)
-
-            // Pro každý sloupec zvlášť:
-            for (const col of cols) {
-                // cíle v tomto sloupci (shora dolů) a pak je obrátíme na „odspodu nahoru“
-                const targetsInColTopDown = col.filter(d => target.has(d));
-                if (targetsInColTopDown.length === 0) continue;
-                const targetsInColBottomUp = targetsInColTopDown.slice().reverse();
-
-                // pád každé tečky zvlášť (nejprve na nejnižší cíl)
-                for (const goal of targetsInColBottomUp) {
-                    // start index (0 = horní řádek sloupce)
-                    const goalIdx = col.indexOf(goal);
-
-                    for (let i = 0; i <= goalIdx; i++) {
-                        const pos = col[i];             // aktuální řádek, kde je "padající" tečka
-                        const frame = new Set(locked);  // začni všemi už usazenými
-                        frame.add(pos);                 // přidej pohybující se tečku
-                        setChar(toChar(frame));
-                        await wait(stepMs);
-                    }
-
-                    // dosednutí: přidej goal do locked a ukaž čistý stav
-                    locked.add(goal);
-                    setChar(toChar(locked));
-                    if (pauseDropMs) await wait(pauseDropMs);
-                }
-
-                if (pauseColMs) await wait(pauseColMs);
-            }
-
-            // jistota: konečný stav přesně podle targetu
-            setChar(toChar(target));
-        }
-
-        /**
-         * Vypíše text do slotu i po znacích.
-         * - charMs: prodleva mezi znaky
-         * - spaceMs: prodleva pro znaky, které splní UNICODE_SPACE_RE (default 0)
-         * - instantSet: volitelný Set znaků, které se mají psát bez čekání (kromě mezer)
-         */
-        async function typeOutStringAt(i, text, setFrame, {
-            charMs = 40,
-            spaceMs = 0,
-            instantSet
-        } = {}) {
-            const instant = instantSet instanceof Set ? instantSet : new Set();
-            let buf = '';
-            for (const ch of [...text]) {           // správně iteruje i surrogates
-                buf += ch;
-                setFrame(i, buf);
-                let delay = charMs;
-                if (UNICODE_SPACE_RE.test(ch) || instant.has(ch)) delay = spaceMs;
-                if (delay > 0) await sleep(delay);
-            }
-        }
-
-        /**
-         * Sekvence: pole položek, kde položka je:
-         *  - Array<number> ... animovaný braille (pískem) přes animateBrailleCharSand
-         *  - string .......... vypisuje se po znacích (charMs/spaceMs)
-         */
-        async function animateBrailleSequenceSand(targetsList, setFrame, opts = {}) {
-            const {
-                // pro braille animaci (ponech stejné jako máš v animateBrailleCharSand):
-                stepMs = 110, pauseDropMs = 80, pauseColMs = 120, cols,
-                // pro psaní textu:
-                charMs = 40,
-                spaceMs = 0,
-                instantSet
-            } = opts;
-
-            for (let i = 0; i < targetsList.length; i++) {
-                const item = targetsList[i];
-
-                if (Array.isArray(item)) {
-                    // animovaný braille „pískem“
-                    await animateBrailleCharSand(item, ch => setFrame(i, ch), {stepMs, pauseDropMs, pauseColMs, cols});
-
-                } else if (typeof item === 'string') {
-                    // text po znacích
-                    // Před začátkem vynuluj slot (pokud chceš mít „psaní od nuly“):
-                    setFrame(i, '');
-                    await typeOutStringAt(i, item, setFrame, {charMs, spaceMs, instantSet});
-
-                } else {
-                    setFrame(i, BLANK);
-                }
-            }
-        }
-
-
-        async function startBraille(targets) {
-            // ===== Demo bez mezer mezi znaky =====
-            const out = document.getElementById('brailleOut');
-            // mix animovaných znaků a „rychlých“ symbolů
-            // const targets = [
-            //     [1, 2, 3, 7, 5], // ⡗
-            //     [2, 4, 5, 6, 8], // ⢺
-            //     ' ',
-            //     [2, 3, 4, 8], // ⢎
-            //     [1, 7, 5, 6], // ⡱
-            //     ' ',
-            //     [2, 3, 7, 4], // ⡎
-            //     ' ',
-            //     [1, 2, 3, 7, 4, 6], // ⡯
-            //     [1, 3, 7, 5], // ⡕
-            //     ' ',
-            //     [2, 3, 7, 4, 6], // ⡮
-            //     [1, 3, 5, 6, 8], // ⢵
-            //     '  ',
-            //     'Controller',
-            //     ' ',
-            //     '-',
-            //     ' ',
-            //     'Thymos',
-            // ];
-
-            // const targets = [
-            //     'Μ',
-            //     'ο',
-            //     'ῖ',
-            //     'ρ',
-            //     'α',
-            //     ' ',
-            //     'Controller',
-            //     ' ',
-            //     '-',
-            //     ' ',
-            //     'Thymos',
-            // ];
-
-            // předvyplň prázdnými braille U+2800 (stejná délka; žádné mezery navíc)
-            let frames = Array.from({length: targets.length}, () => BLANK);
-            document.title = frames.join('');
-
-            const setFrame = (i, ch) => {
-                frames[i] = ch;
-                document.title = frames.join('');
-            };
-
-            // spusť animaci
-            await animateBrailleSequenceSand(targets, setFrame, {
-                stepMs: 250,
-                pauseDropMs: 80,
-                pauseColMs: 110,
-                charMs: 250,
-                spaceMs: 80,
-                instantSet: new Set([' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '])
-                // cols: [[1,2,3],[4,5,6]] // odkomentuj pro 6-dot
-            });
-        }
-
-    </script>
-
-
     <!--    <script type="text/plain" src="./scripts/appState.js"></script>-->
 
     <script>
@@ -1716,11 +1530,15 @@
         </button>
         <button id="degubRunTestSequenceBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #4CAF50; color:white">
-            🧪<br>Run Test Sequence (for debugging)
+            🧪<br>Run Test Sequence
+        </button>
+        <button onclick="clearAndResetAll()"
+                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #607d8b; color:white">
+            🗑️<br>Clear All Data
         </button>
         <button id="degubEndTestingBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #de364c; color:white">
-            🛑<br>End Testing (for debugging)
+            🛑<br>End Testing
         </button>
 
         <pre id="brailleOut"
@@ -1741,7 +1559,7 @@
         <div id="chartsWrapper" class="outsetShadow">
             <div id="chartsContainer">
                 <div id="timeChart" class="chart"></div>
-                <div id="distanceChart" class="chart"></div>
+                <div id="positionChart" class="chart"></div>
             </div>
             <div id="chartsInfoContainer" style="display: none;">
                 <div style="display: inline-block; gap: 10px;"><a>Min/Max:</a>
@@ -1953,7 +1771,7 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="number" id="inputTareDisp" class="adjustableInput calcInput"
-                               value="0" step="any" data-unit="mm" data-essence="distance">
+                               value="0" step="any" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx, InB, HBr">
@@ -1974,7 +1792,7 @@
                         <label for="inputDisp">Displacement \( w \) at \( F \)<span class="units-text"></span>:
                         </label>
                         <input type="number" id="inputDisp" class="adjustableInput calcInput"
-                               value="" step="any" data-unit="mm" data-essence="distance">
+                               value="" step="any" data-unit="mm" data-essence="position">
                     </div>
 
 
@@ -2004,7 +1822,7 @@
                         <label for="inputIndDepth">Depth of indentation \( h_{D} \)<span class="units-text"></span>:
                         </label>
                         <input type="number" id="inputIndDepth" class="adjustableInput calcInput"
-                               value="" step="any" data-unit="mm" data-essence="distance">
+                               value="" step="any" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
@@ -2163,19 +1981,19 @@
 
                 <h4>📐 Calculated values:</h4>
                 <div class="inputsContainer">
-                    <div class="input-group data-eq" data-eq-type="Flx, InB">
+                    <div class="input-group data-eq" data-eq-type="-HBr">
                         <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \)<span class="units-text"></span>:
                         </label>
                         <input type="text" id="outputForceMax" class="copyableInput calcInput" readonly
                                data-nonremember="true" data-unit="N" data-essence="force">
                     </div>
 
-                    <div class="input-group data-eq" data-eq-type="Flx, InB">
+                    <div class="input-group data-eq" data-eq-type="-HBr">
                         <label for="outputDisp">Displacement \( w_{F_{\mathrm{max}}} \) at \( F_{\mathrm{max}} \)<span
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputDisp" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm" data-essence="distance">
+                               data-nonremember="true" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
@@ -2187,9 +2005,9 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
-                        <label for="outputEModule">Young's Module \( E \)<span class="units-text"></span>:
+                        <label for="outputModulus">Young's Module \( E \)<span class="units-text"></span>:
                         </label>
-                        <input type="text" id="outputEModule" class="copyableInput calcInput" readonly
+                        <input type="text" id="outputModulus" class="copyableInput calcInput" readonly
                                data-nonremember="true" data-unit="MPa" data-essence="result, modulus">
                     </div>
 
@@ -2222,7 +2040,7 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="inputTargetDisp" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm" data-essence="distance">
+                               data-nonremember="true" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
@@ -2255,7 +2073,7 @@
                     <div class="input-group">
                         <label for="inputDistance">Distance<span class="units-text"></span>: </label>
                         <input data-input-type="floatInput" type="number" id="inputDistance" class="expInput"
-                               value="20" min="0.01" step="any" max="100000000" data-unit="mm" data-essence="distance">
+                               value="20" min="0.01" step="any" max="100000000" data-unit="mm" data-essence="position">
                     </div>
 
                     <!--                    // ✅✔️☑️❎❌✖️⭕️❗️❓❕❔⚠️-->
@@ -2274,17 +2092,17 @@
                         <label for="experimentDirectionDropdown">Experiment type: </label>
                         <select id="experimentDirectionDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px;">
-                            <option value="Option-UP-BASIC" data-essence="move_up">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
+                            <option value="Option-UP-POS-BASIC" data-essence="move_up">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
                             </option>
-                            <option value="Option-UP-Ten-BASIC" data-essence="tensile">&nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            <option value="Option-UP-POS-Ten-BASIC" data-essence="tensile">&nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
-                            <option value="Option-UP-InB" data-essence="internal_bond">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            <option value="Option-UP-POS-InB" data-essence="internal_bond">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
-                            <option value="Option-DOWN-BASIC" data-essence="move_down" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
+                            <option value="Option-DOWN-POS-BASIC" data-essence="move_down" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
                             </option>
-                            <option value="Option-DOWN-Flx" data-essence="flexural">&nbsp;FLEXURAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            <option value="Option-DOWN-POS-Flx" data-essence="flexural">&nbsp;FLEXURAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                             </option>
-                            <option value="Option-DOWN-HBr" data-essence="hardness_br">&nbsp;HARDNESS (Brinell)&nbsp;⏬
+                            <option value="Option-DOWN-POS-HBr" data-essence="hardness_br">&nbsp;HARDNESS (Brinell)&nbsp;⏬
                             </option>
                         </select>
                     </div>
@@ -2576,8 +2394,8 @@
 
     const maxPrecision = 12; // max počet platných desetinných míst u zaokrouhlování
     const precisionTime = 6;
-    const precisionDistance = 4;
-    const precisionDistanceSystem = precisionDistance;
+    const precisionPosition = 4;
+    const precisionPositionSystem = precisionPosition;
     const precisionForce = 2;
     const precisionForceSystem = 4;
     const precisionSpeed = 2;
@@ -2585,30 +2403,44 @@
     const precisionAcceleration = 4;
     const precisionAccelerationSystem = 2;
 
+    const loadCellNum = 3; // number of load cells supported
+
     // -------------------- Pomocné DOM utilitky --------------------
     const $ = (sel) => document.querySelector(String(sel));
     const $$ = (sel) => document.querySelectorAll(String(sel));
     const $$$ = (id) => document.getElementById(String(id));
     const exists = (id) => !!$$$(id);
 
+
     // 1) Základní typové kontroly
     const isNumber = (x) => typeof x === 'number';
     const isBigInt = (x) => typeof x === 'bigint';
-    const isArray = (x) => Array.isArray(x);
-    const isNonEmptyArray = (x) => isArray(x) && x.length > 0;
-    const isString = (x) => typeof x === 'string';
-    const isBoolean = (x) => typeof x === 'boolean';
-    const isFunction = (x) => typeof x === 'function';
-    const isObject = (x) => x !== null && typeof x === 'object' && !isArray(x);
+    const isArr = (x) => Array.isArray(x);
+    const isNonEmptyArr = (x) => isArr(x) && x.length > 0;
+    const isStr = (x) => typeof x === 'string';
+    const isBool = (x) => typeof x === 'boolean';
+    const isFunc = (x) => typeof x === 'function';
+    const isObj = (x) => x !== null && typeof x === 'object' && !isArr(x);
     const isSymbol = (x) => typeof x === 'symbol';
     const isUndefined = (x) => typeof x === 'undefined';
     const isNull = (x) => x === null;
-    const isDefined = (x) => x != null;
-    const isEmptyString = (x) => isString(x) && x.trim() === '';
-    const isNonEmptyString = (x) => isString(x) && x.trim() !== '';
+    const isDef = (x) => !isUndefined(x) && !isNull(x);
+    const isEmptyStr = (x) => isStr(x) && x.trim() === '';
+    const isNonEmptyStr = (x) => isStr(x) && x.trim() !== '';
 
     const isValidInput = (x) => isFiniteNumber(x, false) && x > 0;
 
+
+    const getInputDef = (x, d) => {
+        const v = toNumber(x, true);
+        return catchVal(v, d);
+    }
+    const getInputDefAbsFlt = (x, d) => Math.abs(getInput(x, d));
+    const getInputDefAbsInt = (x, d) => Math.round(getInputDefAbsFlt(x, d));
+
+    const catchVal = (val, def) => {
+        return isFiniteNumber(val, true) ? def : val;
+    }
 
     const isNumberOrBigInt = (x) =>
         isNumber(x) || isBigInt(x);
@@ -2626,11 +2458,11 @@
     const toNumber = (x, all = true) => {
         if (isNumber(x)) return x;
         if (isBigInt(x)) return Number(x); // Number(x) pozor na přesnost u velkých hodnot
-        return strToNumber(x, all); // if (isString(x))
+        return strToNumber(x, all); // if (isStr(x))
     };
     const toNumeric = (x, all = true) => {
         if (isNumberOrBigInt(x)) return x;
-        return strToNumber(x, all); // if (isString(x))
+        return strToNumber(x, all); // if (isStr(x))
     };
 
     const toRounds = (x, digits = 0, way = 'round') => {
@@ -2664,7 +2496,7 @@
     };
 
     const strToNumber = (x, all = false) => {
-        if (isString(x)) {
+        if (isStr(x)) {
             const s = x.trim();
             if (s === '') return NaN;
             const n = s.replaceAll(',', '.').replaceAll('±', ' ');
@@ -2696,18 +2528,18 @@
     };
 
     // 5) „Má hodnotu“ – pokud potřebuješ zvlášť (0 projde, null/undef/"" ne)
-    const hasValue = (x) => isDefined(x) && (isNumberOrInfinity(x) || isNonEmptyString(x));
+    const hasValue = (x) => isDef(x) && (isNumberOrInfinity(x) || isNonEmptyStr(x));
 
     // Varianta, která NEpovažuje false/true za „hodnotu“
-    const hasValueButNotBoolean = (x) => hasValue(x) && !isBoolean(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
+    const hasValueButNotBoolean = (x) => hasValue(x) && !isBool(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
 
     const isNotEmpty = (x) => {
-        if (!isDefined(x)) return false;
-        if (isBoolean(x)) return true; // false i true projde
+        if (!isDef(x)) return false;
+        if (isBool(x)) return true; // false i true projde
         if (isNumberOrInfinity(x) && !Number.isNaN(x)) return true; // 0 i ±Infinity projde,  0n i velké hodnoty projdou
-        if (isString(x)) return x.trim() !== '';
-        if (isArray(x)) return x.length > 0;
-        if (isObject(x)) return Object.keys(x).length > 0;
+        if (isStr(x)) return x.trim() !== '';
+        if (isArr(x)) return x.length > 0;
+        if (isObj(x)) return Object.keys(x).length > 0;
         return false;
     };
 
@@ -2747,7 +2579,7 @@
         ]);
 
 
-        const norm = v => String(v ?? '')
+        const norm = v => String(v || '')
             .normalize('NFKD')
             .replace(/\p{Diacritic}/gu, '') // odstraní diakritiku
             .replace(/[.,]/g, '')           // smaže čárky a tečky
@@ -2759,7 +2591,7 @@
 
         if (use_extended) for (const v of BAD_extended) BAD_basic.add(norm(v));
 
-        if (isNonEmptyArray(additionSet)) for (const v of additionSet) BAD_basic.add(norm(v));
+        if (isNonEmptyArr(additionSet)) for (const v of additionSet) BAD_basic.add(norm(v));
 
         return BAD_basic.has(norm(x));
     }
@@ -2770,20 +2602,20 @@
 
     const checkArray = (arr) => {
         if (!isNotEmpty(arr)) return NaN;
-        return isArray(arr) ? arr : [arr];
+        return isArr(arr) ? arr : [arr];
     }
 
     const checkObject = (obj) => {
         if (!isNotEmpty(obj)) return NaN;
-        if (isObject(obj)) return obj;
-        if (isArray(obj)) {
+        if (isObj(obj)) return obj;
+        if (isArr(obj)) {
             const res = {};
             for (let i = 0; i < obj.length; i++) {
                 res[i] = obj[i];
             }
             return res;
         }
-        if (isString(obj) || isNumberOrInfinity(obj) || isBoolean(obj)) {
+        if (isStr(obj) || isNumberOrInfinity(obj) || isBool(obj)) {
             return {0: obj};
         }
         return NaN;
@@ -2848,13 +2680,13 @@
         return "0b" + num.toString(2);
     };
     const binaryToDecimal = (str) => {
-        if (!isString(str)) return NaN;
+        if (!isStr(str)) return NaN;
         const s = str.trim();
         if (!/^0b[01]+$/i.test(s)) return NaN;
         return parseInt(s.slice(2), 2);
     };
     const hexToDecimal = (str) => {
-        if (!isString(str)) return NaN;
+        if (!isStr(str)) return NaN;
         const s = str.trim();
         if (!/^0x[0-9a-f]+$/i.test(s)) return NaN;
         return parseInt(s.slice(2), 16);
@@ -2881,8 +2713,8 @@
     };
 
     function roundDecimalFast(num, decimalPlace) {
-        num ??= 0;
-        decimalPlace ??= 0;
+        num ||= 0;
+        decimalPlace ||= 0;
         const p = Math.pow(10, decimalPlace)
         return Math.round(num * p) / p;
     }
@@ -2890,7 +2722,7 @@
     const arrayWrapper = (arr, func, args) => {
         // console.log(arrayWrapper([0.000, "0", 454214878181871n, 0n, "0n", "900800700600500400300200100", "   -45   ", "   +45   ", "   ±45±45   ", 488.45, "100.005  ", "100. 005  ", "12,34", "  56.78  ", "text", null, undefined, {}, [], "NaN", "Infinity", "-Infinity"], getCustomStrValue, [12, '.', false, true]));
         if ((!arr && arr !== 0) || !func) return NaN;
-        if (!isFunction(func)) return NaN;
+        if (!isFunc(func)) return NaN;
         arr = checkArray(arr);
         if (!isNotEmpty(arr)) return NaN;
         args = checkArray(args);
@@ -2903,7 +2735,7 @@
 
     const objectWrapper = (obj, func, args) => {
         if ((!obj && obj !== 0) || !func) return NaN;
-        if (!isFunction(func)) return NaN;
+        if (!isFunc(func)) return NaN;
         obj = checkObject(obj);
         if (!isNotEmpty(obj)) return NaN;
         args = checkArray(args);
@@ -3033,7 +2865,7 @@
     // ---------- 1D extrémy (sjednocené) ----------
     /** Hodnota extrému v 1D podle which='min'|'max' */
     const extremum1DValue = (arr, which = 'min', acceptInf = false) => {
-        if (!isArray(arr) || arr.length === 0) return NaN;
+        if (!isArr(arr) || arr.length === 0) return NaN;
         let best = which === 'min' ? Infinity : -Infinity;
         let seen = false;
         for (const v of arr) {
@@ -3050,7 +2882,7 @@
 
     /** Index extrému v 1D podle which='min'|'max' */
     const extremum1DIndex = (arr, which = 'min', acceptInf = false) => {
-        if (!isArray(arr) || arr.length === 0) return NaN;
+        if (!isArr(arr) || arr.length === 0) return NaN;
         let best = which === 'min' ? Infinity : -Infinity;
         let idx = -1;
         for (let i = 0; i < arr.length; i++) {
@@ -3322,7 +3154,7 @@
             // E = (F * L^3) / (48 * I * w)   (3-bodový ohyb uprostřed)
             const L = readNum("inputSpan", true); // mm
             const E = calc_bend_modulus(L, I, F, w); // vychází v N/mm^2 = MPa
-            if (exists("outputEModule")) writeOut("outputEModule", E, 4);
+            if (exists("outputModulus")) writeOut("outputModulus", E, 4);
 
             const b_dry = readNum("inputWidth_AfterDrying", true);     // mm
             applyAdjust('inputWidth', b_dry);
@@ -3352,7 +3184,7 @@
             // d = 2 * sqrt( h * (2r - h) )  ;  2r = D  ; d = 2 * sqrt( h * (D - h) )
             const d = calc_indentation_diameter(hD, D);
 
-            if (exists("outputDiameterInd")) writeOut("outputDiameterInd", (hD > D / 2) ? NaN : d, precisionDistanceSystem);
+            if (exists("outputDiameterInd")) writeOut("outputDiameterInd", (hD > D / 2) ? NaN : d, precisionPositionSystem);
 
             // HB = (2*F) / (π*D*(D - sqrt(D^2 - d^2)))
             const HB = calc_hardness_brinell(F, D, d);
@@ -3374,7 +3206,7 @@
 
         // jakýkoli input/number v blocích s class .data-eq spustí přepočet
         const inputs = $$('.data-eq input[type="number"]');
-        inputs.forEach((el) => {
+        inputs?.forEach((el) => {
             // "input" je plynulejší; "change" je až po opuštění pole. Dáme oboje.
             el.addEventListener('input', async () => recomputeAll());
         });
@@ -3385,8 +3217,8 @@
     const applyAdjust = (id, value) => (exists(id) && adjustGet(id) !== value) ? adjustSet(id, (!isInvalidValue(value) ? value : NaN)) : null;
 
     function fillComputableInputs() {
-        const forces = sumND(loadcellData, 2); // součet sil ze všech kanálů
-        const displacements = distanceData;
+        const forces = sumND(forceData, 2); // součet sil ze všech kanálů
+        const displacements = positionData;
         // const minimalForceID = minimumIdx(forces);
         const maximalForceID = maximumIdx(forces);
 
@@ -3401,18 +3233,18 @@
 
         // Zapiš základní "max" (rozuměj aktuální zadané) hodnoty, pokud výstupy existují
         if (exists("outputForceMax")) writeOut("outputForceMax", Fmax, precisionForceSystem);
-        if (exists("outputDisp")) writeOut("outputDisp", w_Fmax, precisionDistanceSystem);
+        if (exists("outputDisp")) writeOut("outputDisp", w_Fmax, precisionPositionSystem);
 
         const Ftarget_goal = readNum("inputTargetForce"); // N
         const [w_Ftarget_raw, FtargetInd] = findTargetForce(forces, displacements, Ftarget_goal);
         const w_Ftarget = calc_val_tare(w_Ftarget_raw, w_tare);
-        if (exists("inputTargetDisp")) writeOut('inputTargetDisp', w_Ftarget, precisionDistanceSystem + 1);
+        if (exists("inputTargetDisp")) writeOut('inputTargetDisp', w_Ftarget, precisionPositionSystem + 1);
 
         const inputForce = readNum("inputForce");
         const foundForce = nearest(forces, inputForce);
         const foundForceInd = foundForce.indexes;
         const isCloseForce = (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForce / 2)))));
-        const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd], precisionDistanceSystem) : NaN; // mm
+        const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd], precisionPositionSystem) : NaN; // mm
         applyAdjust('inputDisp', w_inputForce);
 
 
@@ -3423,29 +3255,26 @@
             const inputDisp = readNum("inputDisp");
             const foundDisp = nearest(displacements, inputDisp);
             const foundDispInd = foundDisp.indexes;
-            const isCloseDisp = (foundDisp.distance < Math.max((inputDisp * 0.02), (1 / Math.pow(10, Math.round(precisionDistance / 2)))));
+            const isCloseDisp = (foundDisp.distance < Math.max((inputDisp * 0.02), (1 / Math.pow(10, Math.round(precisionPosition / 2)))));
             const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd], precisionForceSystem) : NaN; // N
             applyAdjust('inputForce', F_inputDisp);
         }
-        const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FtargetInd], precisionDistanceSystem);
+        const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FtargetInd], precisionPositionSystem);
         applyAdjust('inputIndDepth', depthIndentation);
 
     }
 
     function clearCalculations() {
 
-        const clearInputs = $$$('inputClearCalculations').checked;
-        if (clearInputs) {
-            $$$('inputTareForce').value = '0';
-            $$$('inputTareDisp').value = '0';
-            $$$('inputMaterialName').value = '';
-            $$(".data-eq[data-eq-type]")?.forEach(el => {
-                el.querySelectorAll('input').forEach(input => {
-                    input.value = '';
-                });
+        $$$('inputTareForce').value = '0';
+        $$$('inputTareDisp').value = '0';
+        $$$('inputMaterialName').value = '';
+        $$(".data-eq[data-eq-type]")?.forEach(el => {
+            el.querySelectorAll('input')?.forEach(input => {
+                input.value = '';
             });
-            recomputeAll();
-        }
+        });
+        recomputeAll();
     }
 
     // -------------------- Init --------------------
@@ -3461,7 +3290,7 @@
         (() => {
             const allButtons = $$('button');
 
-            allButtons.forEach(button => {
+            allButtons?.forEach(button => {
                 // block right-click context menu on buttons
                 button.addEventListener('contextmenu', event => event.preventDefault());
             });
@@ -3532,7 +3361,7 @@
     let isScrolledToBottom = true;// Tracks whether the user has scrolled to the bottom of the log
     let logCount = 0; // Counter for received messages
     let logContentLines = []; // Array storing the log content
-    let parsedData = {time: NaN, distance: NaN, value: NaN, load: [NaN, NaN, NaN], photoIndex: NaN}; // Last data log
+    let parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN}; // Last data log
 
 
     // /////// Live Data Update and Chart Configuration /////////
@@ -3553,22 +3382,23 @@
 
 
     // /////// Experiment Configuration /////////
-    let loadLimitDropPercent = 0;
-    let loadLimitDropValue = 0;
+    let forceLimitDropPercent = 0;
+    let forceLimitDropValue = 0;
     let zero_speed_counter = 0;
     let over_limitForce_counter = 0;
     let startPosition = 0;
-    let experimentEndPosition = 0;
+    let experimentEndLimits = {position: null, force: null, time: null};
+    let expControl = '';
 
     let checkSpeed = true;
     let isExperimentRunning = false;
     let machineOccupation = false;
 
-    let maxLoad = [null, null, null];
+    let maxForces = Array(loadCellNum).fill(null);
 
-    let measureForces = [[], [], []];
+    let measureForces = Array(loadCellNum).fill([]);
     let takeMeasurements = false;
-    let meanForces = [0, 0, 0];
+    let meanForces = Array(loadCellNum).fill(0);
 
 
     // MOVING
@@ -3588,7 +3418,7 @@
         progressBar: $$$("experimentProgress"), // Progress bar for experiment status
         progressLabel: $$$("experimentProgressLabel"), // Label for progress percentage
         timeChartContainer: $$$("timeChart"),
-        distanceChartContainer: $$$("distanceChart"),
+        positionChartContainer: $$$("positionChart"),
         chartsContainer: $$$("chartsContainer"),
         autoReturnPosition: $$$("autoReturnPositionExperiment"),
         autoReturnPositionLabel: $$$("autoReturnPositionExperimentLabel"),
@@ -3664,7 +3494,7 @@
 
     function controlContainerWidth(container) {
         if (!container) return;
-        if (isString(container)) container = $$$("resultsContainer");
+        if (isStr(container)) container = $$$("resultsContainer");
         if (window.getComputedStyle(container).maxHeight !== "0px") {
             container.style.maxHeight = container.scrollHeight + "px"; // Adjust height on window resize
         }
@@ -4082,6 +3912,29 @@
     }
 
 
+    async function clearDatabase() {
+        if (!db) {
+            console.warn("❌ IndexedDB not ready, cannot clear database.");
+            return;
+        }
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE_NAME, "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            const clearRequest = store.clear();
+
+            clearRequest.onsuccess = () => {
+                console.info("🗑️ Database cleared successfully.");
+                resolve(true);
+            };
+
+            clearRequest.onerror = (event) => {
+                console.error("❌ Error clearing database:", event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+
     // /////// Saving Log to File /////////
 
     /**
@@ -4098,7 +3951,7 @@
     }
 
     function collectExpSettings(selector, schema = null) {
-        if (isEmptyString(selector)) return [];
+        if (isEmptyStr(selector)) return [];
         const nodes = Array.from($$(selector));
         const inputs = {};
 
@@ -4186,20 +4039,20 @@
         }
         if (type === "radio" && el.name) {
             $$(`input[type="radio"][name="${CSS.escape(el.name)}"]`)
-                .forEach(r => {
+                ?.forEach(r => {
                     r.checked = (String(r.value) === String(val));
                     fire(r);
                 });
             return true;
         }
         if (tag === "select") {
-            if (el.multiple && Array.isArray(val)) {
+            if (el.multiple && isArr(val)) {
                 const set = new Set(val.map(String));
-                Array.from(el.options).forEach(opt => {
+                Array.from(el.options)?.forEach(opt => {
                     opt.selected = set.has(String(opt.value));
                 });
             } else {
-                el.value = val ?? "";
+                el.value = val || "";
             }
             fire(el);
             return true;
@@ -4213,7 +4066,7 @@
             fire(el);
             return true;
         }
-        el.value = (val ?? "");
+        el.value = (val || "");
         fire(el);
         return true;
     };
@@ -4238,9 +4091,9 @@
             report.details.push({key: null, found: 0, applied: false, reason: 'no-inputs'});
             return report;
         }
-        if (!customSelector || isEmptyString(customSelector)) selector = settings.selector;
+        if (!customSelector || isEmptyStr(customSelector)) selector = settings.selector;
         report.selector = selector;
-        if (!selector || isEmptyString(selector)) {
+        if (!selector || isEmptyStr(selector)) {
             report.details.push({key: null, found: 0, applied: false, reason: 'no-selector'});
             return report;
         }
@@ -4284,7 +4137,7 @@
                 if (els[0].type === "radio") {
                     setElValue(els[0], meta.value);
                 } else if (els[0].tagName.toLowerCase() === "select" && els[0].multiple) {
-                    setElValue(els[0], Array.isArray(meta.value) ? meta.value : [meta.value]);
+                    setElValue(els[0], isArr(meta.value) ? meta.value : [meta.value]);
                 } else {
                     setElValue(els[0], meta.value);
                 }
@@ -4313,7 +4166,7 @@
         const nameEl = $$$("loadedFileName");
 
         if (res.ok) {
-            nameEl.textContent = `✅Loaded: ${file.name} — applied ${res.summary.applied} fields`;
+            nameEl.textContent = `✅ Loaded: ${file.name} — applied ${res.summary.applied} fields`;
             console.groupCollapsed(`✔️ Settings applied (${file.name})`);
             console.table(res.results.map(r => ({
                 key: r.key,
@@ -4322,7 +4175,7 @@
                 applied: r.appliedCount,
                 missingKeys: r.missingKeys.length
             })));
-            res.results.forEach(r => {
+            res.results?.forEach(r => {
                 if (r.missingKeys.length) {
                     console.groupCollapsed(`⚠️ Missing keys in ${r.key}`);
                     console.log(r.missingKeys);
@@ -4474,7 +4327,7 @@
         const experimentName = $$$("experimentName").value.trim();
         const experimentDesc = $$$("experimentDesc").value.replaceAll(/(\r\n|\n|\r)/gm, " ").trim();
 
-        handFolderSelect = $$$("storagePath").checked ?? false;
+        handFolderSelect = $$$("storagePath").checked || false;
 
         if (!experimentName) {
             alert("Unable to save the data.\n    Please enter the experiment type.");
@@ -4511,7 +4364,7 @@
         const getRoundVal = (x, dec, decSym) => getCustomStrValue(x, dec, decSym, false, true, "");
 
         const rTime = (num) => getRoundVal(num, precisionTime, decimalSymbol);
-        const rDist = (num) => getRoundVal(num, precisionDistance, decimalSymbol);
+        const rDist = (num) => getRoundVal(num, precisionPosition, decimalSymbol);
         const rForce = (num) => getRoundVal(num, precisionForce, decimalSymbol);
         const rSpeed = (num) => getRoundVal(num, precisionSpeed, decimalSymbol);
         const rPhoto = (num) => getRoundVal(num, 0, decimalSymbol);
@@ -4529,13 +4382,16 @@
 
             const settings = {};
 
-            settings.headerVersion = 1; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            settings.headerVersion = 1;
+            settings.columns = 6;
+            settings.skipRows = 6;
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
             settings.expSettings = experimentInfo.expSettings || {};
             settings.calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
             settings.decimalSymbol = decimalSymbol;
             settings.delimiter = delimiter;
-            settings.columns = 6;
-            settings.skipRows = 6;
 
             let content = '';
 
@@ -4553,7 +4409,7 @@
             ];
 
             const head = [
-                'Time [s]', 'Distance [mm]', 'Speed [mm/s]', 'Loadcell 1 [N]', 'Loadcell 2 [N]', 'Loadcell 3 [N]', 'Photo Index'
+                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', 'Loadcell 1 [N]', 'Loadcell 2 [N]', 'Loadcell 3 [N]', 'Photo Index'
             ];
 
             content += (await settingsToCsvPreamble(settings)).replace(/ /g, "").replace(/^\uFEFF/, "");
@@ -4575,8 +4431,8 @@
 
             content = content.replaceAll(delimiterPlaceHolder, delimiter); // Replace placeholder with actual delimiter
 
-            dataEntries.forEach(entry => {
-                const dataRow = [rTime(entry.time), rDist(entry.distance), rSpeed(entry.speed), rForce(entry.load[0]), rForce(entry.load[1]), rForce(entry.load[2]), rPhoto(entry.photoIndex)];
+            dataEntries?.forEach(entry => {
+                const dataRow = [rTime(entry.time), rDist(entry.position), rSpeed(entry.speed), ...entry.force.map(rForce), rPhoto(entry.photoIndex)];
                 if (dataRow.some(d => d !== "")) content += `\n${dataRow.join(delimiter)}`; // Only add rows with at least one non-empty value
             });
 
@@ -4801,21 +4657,21 @@
     }
 
     function disableInputsAndLabelsIn(root) {
-        root.querySelectorAll?.("input").forEach(inp => {
+        root.querySelectorAll?.("input")?.forEach(inp => {
             inp.disabled = true;
         });
 
-        root.querySelectorAll?.("*").forEach(el => {
+        root.querySelectorAll?.("*")?.forEach(el => {
             if (el.shadowRoot) disableInputsAndLabelsIn(el.shadowRoot);
         });
     }
 
     function enableInputsAndLabelsIn(root) {
-        root.querySelectorAll?.("input[disabled]").forEach(inp => {
+        root.querySelectorAll?.("input[disabled]")?.forEach(inp => {
             inp.disabled = false;
         });
 
-        root.querySelectorAll?.("*").forEach(el => {
+        root.querySelectorAll?.("*")?.forEach(el => {
             if (el.shadowRoot) enableInputsAndLabelsIn(el.shadowRoot);
         });
     }
@@ -4824,7 +4680,7 @@
     const movementElements = $$(".movementControlElement");
 
     function lockMovement() {
-        movementElements.forEach((el) => {
+        movementElements?.forEach((el) => {
             el?.classList.add("disabled");
             disableInputsAndLabelsIn(el);
         });
@@ -4832,7 +4688,7 @@
 
 
     function lockMovementExcept(exceptEl) {
-        movementElements.forEach(el => {
+        movementElements?.forEach(el => {
             const isExcept = el === exceptEl || el?.contains?.(exceptEl);
             if (!isExcept) {
                 el?.classList?.add("disabled");
@@ -4845,7 +4701,7 @@
     }
 
     function unlockMovement() {
-        movementElements.forEach((el) => {
+        movementElements?.forEach((el) => {
             el?.classList.remove("disabled");
             enableInputsAndLabelsIn(el);
         });
@@ -5247,7 +5103,7 @@
     function checkAllPorts() {
         let thymosPorts = [];
         navigator.serial.getPorts().then(ports => {
-            ports.forEach(port => {
+            ports?.forEach(port => {
                 if (port.manufacturer === "Thymos") {
                     thymosPorts.push(port);
                 }
@@ -5535,7 +5391,7 @@
 
 
     function resetValues() {
-        parsedData = {time: NaN, distance: NaN, value: NaN, load: [NaN, NaN, NaN], photoIndex: NaN};
+        parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN};
         liveUpdate = false
 
         UI.USB.innerText = "🔌 Connect via USB";
@@ -5545,16 +5401,17 @@
         machineOccupation = false;
         UI.loadingLogContainer.style.background = "#323232";
 
-        experimentEndPosition = 0;
+        experimentEndLimits = {position: null, force: null, time: null};
+        expControl = '';
         startTime = null;
         pendingDSLR = null;
         dataCount = null;
-        maxLoad = [null, null, null];
+        maxForces = Array(loadCellNum).fill(null);
         // timeData = [];
-        // distanceData = [];
-        measureForces = [[], [], []];
-        // loadcellData = [[], [], []];
-        meanForces = [0, 0, 0];
+        // positionData = [];
+        measureForces = Array(loadCellNum).fill([]);
+        // forceData = Array(loadCellNum).fill([]);
+        meanForces = Array(loadCellNum).fill(0);
         // markersTime = [];
         // markersDist = [];
         aggregatedDataBetweenSteps = [];
@@ -5569,7 +5426,7 @@
 
 
         displacementSignCorrection = 0;
-        forceSignCorrection = 0;
+        loadSignCorrections = Array(loadCellNum).fill(0);
 
         loadcellErrRate = null;
         measurementErrRate = null;
@@ -5584,42 +5441,32 @@
         serialReader = null;
         serialWriter = null;
         reconnectAttempts = 0;
-
-        // --------------------------------
-        // // Experiment parameters
-        // speedForward_mmps = 0;
-        // currentSpeed = null;
-        // currentAcceleration = null;
-        // takePhotos = false;
-        // dataInterval_us = null;
-        // initialForceLoadLim_N = null;
-        // experimentDoubleSpeed = false;
-        // stoppingForceLimit = null;
-        // holdForceTime = null;
-        // --------------------------------
     }
 
-    function resetValuesAll() {
-        parsedData = {time: NaN, distance: NaN, value: NaN, load: [NaN, NaN, NaN], photoIndex: NaN};
-        liveUpdate = false
+    async function clearAndResetAll() {
+        await disconnectSerial();
+        // clear DB
+        if (liveUpdate) await chartUpdate();
+        await clearDatabase();
+        await clearLocalStorage();
 
-        UI.USB.innerText = "🔌 Connect via USB";
-        updateConnectionStatus("disconnected");
+        parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN};
 
         isExperimentRunning = false;
         machineOccupation = false;
         UI.loadingLogContainer.style.background = "#323232";
 
-        experimentEndPosition = 0;
+        experimentEndLimits = {position: null, force: null, time: null};
+        expControl = '';
         startTime = null;
         pendingDSLR = null;
         dataCount = null;
-        maxLoad = [null, null, null];
+        maxForces = Array(loadCellNum).fill(null);
         timeData = [];
-        distanceData = [];
-        measureForces = [[], [], []];
-        loadcellData = [[], [], []];
-        meanForces = [0, 0, 0];
+        positionData = [];
+        measureForces = Array(loadCellNum).fill([]);
+        forceData = Array(loadCellNum).fill([]);
+        meanForces = Array(loadCellNum).fill(0);
         markersTime = [];
         markersDist = [];
         aggregatedDataBetweenSteps = [];
@@ -5634,7 +5481,7 @@
 
 
         displacementSignCorrection = 0;
-        forceSignCorrection = 0;
+        loadSignCorrections = Array(loadCellNum).fill(0);
 
         loadcellErrRate = null;
         measurementErrRate = null;
@@ -5651,16 +5498,16 @@
         reconnectAttempts = 0;
 
         // --------------------------------
-        // // Experiment parameters
-        // speedForward_mmps = 0;
-        // currentSpeed = null;
-        // currentAcceleration = null;
-        // takePhotos = false;
-        // dataInterval_us = null;
-        // initialForceLoadLim_N = null;
-        // experimentDoubleSpeed = false;
-        // stoppingForceLimit = null;
-        // holdForceTime = null;
+        // Experiment parameters
+        speedForward_mmps = 0;
+        currentSpeed = null;
+        currentAcceleration = null;
+        takePhotos = false;
+        dataInterval_us = null;
+        initialForceLim_N = null;
+        experimentDoubleSpeed = false;
+        stoppingForceLimit = null;
+        holdForceTimeMs = null;
         // --------------------------------
     }
 
@@ -5910,15 +5757,15 @@
             const t1 = prevData.time, t2 = nextData.time;
             const factor = (dslrTime - t1) / (t2 - t1);
 
-            const interpolatedDistance = roundDecimalFast(prevData.distance + factor * (nextData.distance - prevData.distance), precisionDistance);
+            const interpolatedPosition = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPosition);
             const interpolatedSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeed);
-            const interpolatedLoad = prevData.load.map((val, i) => roundDecimalFast(val + factor * (nextData.load[i] - val), precisionForce));
+            const interpolatedForce = prevData.force.map((val, i) => roundDecimalFast(val + factor * (nextData.force[i] - val), precisionForce));
 
             interpolatedData = {
                 time: dslrTime,
-                distance: interpolatedDistance,
+                position: interpolatedPosition,
                 speed: interpolatedSpeed,
-                load: interpolatedLoad,
+                force: interpolatedForce,
                 photoIndex: photoIndex // Store DSLR photo order
             };
 
@@ -5927,9 +5774,9 @@
 
             interpolatedData = {
                 time: roundDecimalFast((prevData.time + nextData.time) / 2, precisionTime),
-                distance: roundDecimalFast((prevData.distance + nextData.distance) / 2, precisionDistance),
+                position: roundDecimalFast((prevData.position + nextData.position) / 2, precisionPosition),
                 speed: roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeed),
-                load: prevData.load.map((val, i) => roundDecimalFast((val + nextData.load[i]) / 2, precisionForce)),
+                force: prevData.force.map((val, i) => roundDecimalFast((val + nextData.force[i]) / 2, precisionForce)),
                 photoIndex: photoIndex // Store DSLR photo order
             };
         }
@@ -5939,18 +5786,18 @@
 
 
         // Log interpolated data
-        // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedDistance + startPosition).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedLoad[0].toFixed(2)},${interpolatedLoad[1].toFixed(2)},${interpolatedLoad[2].toFixed(2)},    ${photoIndex}`);
+        // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedPosition + startPosition).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedForce[0].toFixed(2)},${interpolatedForce[1].toFixed(2)},${interpolatedForce[2].toFixed(2)},    ${photoIndex}`);
         addDataToLog(interpolatedData);
 
         addMarker(timeChart, markersTime, interpolatedData.time);
-        addMarker(distanceChart, markersDist, interpolatedData.distance);
+        addMarker(positionChart, markersDist, interpolatedData.position);
     }
 
 
     /**
      * Parses raw measurement data into a structured object.
      * @param {string} dataString - The raw data string received from ESP.
-     * @returns {Object} - Parsed data object containing time, distance, value, and load values.
+     * @returns {Object} - Parsed data object containing time, position, value, and load values.
      */
 
     let pendingDSLR = null; // Store DSLR event until the next data arrives
@@ -5966,28 +5813,28 @@
 
         if (totalEntries === 0) return {
             time: 0,
-            distance: 0,
-            load: [0, 0, 0]
+            position: 0,
+            force: Array(loadCellNum).fill(0)
         }; // Return zero values if no data
 
         let sumTime = 0;
-        let sumDistance = 0;
-        let sumLoad = [0, 0, 0]; // Empty list of `load` values
+        let sumPosition = 0;
+        let sumForce = Array(loadCellNum).fill(0); // Empty list of `force` values
 
-        parsedDataList.forEach(data => {
+        parsedDataList?.forEach(data => {
             sumTime += data.time;
-            sumDistance += data.distance;
+            sumPosition += data.position;
 
             // Sum all values in `load` list
-            data.load.forEach((value, index) => {
-                sumLoad[index] += value;
+            data.force?.forEach((value, index) => {
+                sumForce[index] += value;
             });
         });
 
         return {
             time: roundDecimalFast(sumTime / totalEntries, precisionTime),
-            distance: roundDecimalFast(sumDistance / totalEntries, precisionDistance),
-            load: sumLoad.map(value => roundDecimalFast(value / totalEntries, precisionForce)) // Average of `load` list values (per index)
+            position: roundDecimalFast(sumPosition / totalEntries, precisionPosition),
+            force: sumForce.map(value => roundDecimalFast(value / totalEntries, precisionForce)) // Average of `force` list values (per index)
         };
     }
 
@@ -5995,7 +5842,7 @@
     let aggregatedDataBetweenSteps = [];
     let minimumConditionCount = 2;
     let displacementSignCorrection = 1;
-    let forceSignCorrection = -1;
+    let loadSignCorrections = [-1, -1, -1];
 
     let loadcellErrRate = null;
     let measurementErrRate = null;
@@ -6005,7 +5852,7 @@
     let endMeasurementCounter = null;
     const delayMsAfterEndMeasurement = 100; // microseconds
 
-    let distanceProgress = 0;
+    let positionProgress = 0;
 
     let endedBy = null;
 
@@ -6022,10 +5869,10 @@
 
         if (timeoutMs == null || !isNumber(timeoutMs)) timeoutMs = 0;
 
-        if (isNonEmptyString(command)) {
+        if (isNonEmptyStr(command)) {
             await sendCommand(command);
         }
-        if (isNonEmptyString(immediateText)) {
+        if (isNonEmptyStr(immediateText)) {
             console.info(immediateText);
             logMessage(immediateText);
         }
@@ -6037,7 +5884,7 @@
 
 
         endMeasurementCounter = setTimeout(async () => {
-            if (isNonEmptyString(endText)) {
+            if (isNonEmptyStr(endText)) {
                 console.info(endText);
                 logMessage(endText);
             }
@@ -6058,8 +5905,8 @@
             }
 
             // progress UI
-            if (distanceProgress >= 99.99990) {
-                distanceProgress = 100;
+            if (positionProgress >= 99.99990) {
+                positionProgress = 100;
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressDone-color)');
                 UI.progressBar.value = 100;
                 UI.progressLabel.textContent = `100%`;
@@ -6087,6 +5934,11 @@
         }, totDelayMs);
     }
 
+    function progressCalculate(current, end) {
+        let progress = clamp((current / end) * 100, 0, 100);
+        return roundDecimalFast(progress, 6);
+    }
+
     async function processMeasurements(dataString) {
         if (!takeMeasurements && !isExperimentRunning) {
             logMeasurements(dataString);
@@ -6111,15 +5963,15 @@
         }
 
         // Common parsing logic
-        let loadVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // LoadCell values
+        let forceVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // LoadCell values
 
         if (takeMeasurements) {
-            loadVal.forEach((value, index) => measureForces[index].push(value * forceSignCorrection)); // Handle takeMeasurements
+            forceVal?.forEach((value, index) => measureForces[index].push(value * loadSignCorrections[index])); // Handle takeMeasurements
             return;
         }
 
         let timeVal = roundDecimalFast(parseFloat(parts[0]) * 1e-6, precisionTime); // Convert microseconds to seconds
-        let distVal = roundDecimalFast((parseFloat(parts[1]) - startPosition) * displacementSignCorrection, precisionDistance); // Distance value
+        let distVal = roundDecimalFast((parseFloat(parts[1]) - startPosition) * displacementSignCorrection, precisionPosition); // Position value
         const speedVal = roundDecimalFast(parseFloat(parts[2]) * displacementSignCorrection, precisionSpeed); // Speed value
 
 
@@ -6132,23 +5984,23 @@
         timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6); // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
 
         // TODO: do only Present loadcellls
-        loadVal = loadVal.map((value, index) => roundDecimalFast((value * forceSignCorrection) - meanForces[index], precisionForce));
+        forceVal = forceVal.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - meanForces[index], precisionForce));
 
 
-        const newData = {time: timeVal, distance: distVal, speed: speedVal, load: loadVal, photoIndex: NaN};
+        const newData = {time: timeVal, position: distVal, speed: speedVal, force: forceVal, photoIndex: NaN};
 
         // If a pending DSLR timestamp exists, interpolate values
         if (takePhotos && pendingDSLR) {
             await interpolateDSLRData(pendingDSLR, newData, parsedData);
         }
 
-        if (experimentDoubleSpeed && loadVal.some(value => !isNaN(value) && value >= initialForceLoadLim_N)) {
+        if (experimentDoubleSpeed && forceVal.some(value => !isNaN(value) && value >= initialForceLim_N)) {
             setSpeed(speedForward_mmps);
             experimentDoubleSpeed = false;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressSecondary-color)');
         }
 
-        const sumForce = loadVal.reduce((acc, val) => acc + (isNaN(val) ? 0 : val), 0);
+        const sumForce = forceVal.reduce((acc, val) => acc + (isNaN(val) ? 0 : val), 0);
 
         if (sumForce >= stoppingForceLimit) {
             over_limitForce_counter++;
@@ -6164,7 +6016,7 @@
 
 
         // Handle speed checks and experiment stopping
-        if (speedVal < (1 / 1e2) && timeVal > 1 && checkSpeed) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
+        if (checkSpeed && (speedVal < (1 / 1e2) && timeVal > 1)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
             zero_speed_counter++;
 
             if (zero_speed_counter > minimumConditionCount) {
@@ -6178,12 +6030,12 @@
 
         // Handle LoadCell limit checks
         for (let i = 0; i < 3; i++) {
-            if (!isNaN(loadVal[i])) {
-                const currForce = loadVal[i];
-                if (currForce > maxLoad[i]) maxLoad[i] = currForce;
-                if (maxLoad[i] || maxLoad[i] === 0) {
-                    if ((maxLoad[i] - currForce) > (Math.abs(maxLoad[i]) * loadLimitDropPercent) && (maxLoad[i] - currForce) > loadLimitDropValue) {
-                        endMeasuring(50, `loadCell[${i + 1}] drop`, `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxLoad[i] - currForce)} > ${(Math.abs(maxLoad[i]) * loadLimitDropPercent)} and Absolute: ${maxLoad[i] - currForce} > ${loadLimitDropValue}.`, '', "MC STOP");
+            if (!isNaN(forceVal[i])) {
+                const currForce = forceVal[i];
+                if (currForce > maxForces[i]) maxForces[i] = currForce;
+                if (maxForces[i] || maxForces[i] === 0) {
+                    if ((maxForces[i] - currForce) > (Math.abs(maxForces[i]) * forceLimitDropPercent) && (maxForces[i] - currForce) > forceLimitDropValue) {
+                        endMeasuring(50, `loadCell[${i + 1}] drop`, `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxForces[i] - currForce)} > ${(Math.abs(maxForces[i]) * forceLimitDropPercent)} and Absolute: ${maxForces[i] - currForce} > ${forceLimitDropValue}.`, '', "MC STOP");
                         break; // Stop checking other LoadCells if one fails
                     }
                 }
@@ -6194,15 +6046,17 @@
         await addDataToLog(newData);
 
         // Update Progress Bar
-        const progressValue = roundDecimalFast(clamp(0, distVal / experimentEndPosition * 100, 100), 9);
+        let progressValue;
+        progressValue = progressCalculate(newData[expControl], experimentEndLimits[expControl]);
+
         if (progressValue >= 100) {
-            if (distanceProgress < 100) {
+            if (positionProgress < 100) {
                 const delayMs = endMeasurement ? 0 : delayMsAfterEndMeasurement;
                 endMeasurement = false; // Overwrite to allow ending
                 endMeasuring(delayMs, 'end position', "🏁 Experiment finished.");
             }
         }
-        distanceProgress = progressValue;
+        positionProgress = progressValue;
 
         // Live chart update
         dataCount++;
@@ -6224,9 +6078,9 @@
     async function UIupdate() {
         lastTitle = document.title;
         while (isExperimentRunning) {
-            UI.progressBar.value = distanceProgress;
-            UI.progressLabel.innerText = `${distanceProgress.toFixed(2)}%`; // .padStart(5, "0")
-            const newTitle = `Μοῖρα - ${Math.floor(distanceProgress)}%`;
+            UI.progressBar.value = positionProgress;
+            UI.progressLabel.innerText = `${positionProgress.toFixed(2)}%`; // .padStart(5, "0")
+            const newTitle = `Μοῖρα - ${Math.floor(positionProgress)}%`;
             if (lastTitle !== newTitle) {
                 document.title = newTitle;
                 lastTitle = newTitle;
@@ -6319,7 +6173,7 @@
     });
 
 
-    function aggregateData(dataEntries, chunkSize, timeData, distanceData, loadcellData, overflowData) {
+    function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, overflowData) {
         if (!isFiniteNumber(chunkSize, false)) chunkSize = 1;
         chunkSize = Math.max(1, Math.round(chunkSize));
 
@@ -6328,10 +6182,8 @@
             for (let i = 0; i < dataEntries.length; i++) {
                 let entry = dataEntries[i];
                 timeData[i] = entry.time;
-                distanceData[i] = entry.distance;
-                loadcellData[0][i] = entry.load[0];
-                loadcellData[1][i] = entry.load[1];
-                loadcellData[2][i] = entry.load[2];
+                positionData[i] = entry.position;
+                entry.force?.forEach((value, index) => forceData[index][i] = value);
             }
             return;
         }
@@ -6342,34 +6194,30 @@
 
         // Predefine array size to match the new chunk count
         timeData.length = chunkCount;
-        distanceData.length = chunkCount;
-        loadcellData[0].length = chunkCount;
-        loadcellData[1].length = chunkCount;
-        loadcellData[2].length = chunkCount;
+        positionData.length = chunkCount;
+        forceData?.forEach(arr => arr.length = chunkCount);
 
-        let sumTime = 0, sumDistance = 0;
-        let sumLoad0 = 0, sumLoad1 = 0, sumLoad2 = 0;
+        let sumTime = 0, sumPosition = 0;
+        let sumForce = Array(loadCellNum).fill(0);
         let count = 0, chunkIndex = 0;
 
         for (let i = 0; i < fullChunks; i++) {
             let entry = dataEntries[i];
             sumTime += entry.time;
-            sumDistance += entry.distance;
-            sumLoad0 += entry.load[0];
-            sumLoad1 += entry.load[1];
-            sumLoad2 += entry.load[2];
+            sumPosition += entry.position;
+            entry.force?.forEach((value, index) => sumForce[index] += value);
             count++;
 
             if (count === chunkSize) {
                 let invCount = 1 / count; // Inverse count: quicker than '%' division operation
                 timeData[chunkIndex] = sumTime * invCount;
-                distanceData[chunkIndex] = sumDistance * invCount;
-                loadcellData[0][chunkIndex] = sumLoad0 * invCount;
-                loadcellData[1][chunkIndex] = sumLoad1 * invCount;
-                loadcellData[2][chunkIndex] = sumLoad2 * invCount;
+                positionData[chunkIndex] = sumPosition * invCount;
+                sumForce?.forEach((value, index) => {
+                    forceData[index][chunkIndex] = value * invCount;
+                    sumForce[index] = 0; // Reset for next chunk
+                });
 
-                sumTime = sumDistance = 0;
-                sumLoad0 = sumLoad1 = sumLoad2 = 0;
+                sumTime = sumPosition = 0;
                 count = 0;
                 chunkIndex++;
             }
@@ -6381,8 +6229,8 @@
             let entry = dataEntries[i];
             overflowData.push({
                 time: entry.time,
-                distance: entry.distance,
-                load: [entry.load[0], entry.load[1], entry.load[2]]
+                position: entry.position,
+                force: [...entry.force]
             });
         }
     }
@@ -6424,61 +6272,59 @@
             // const filteredEntries = dataEntries.filter((_, index) => index % dataChartInterval === 0);
             //
             // // ⏩ **Use `map` to extract specific data fields**
-            // timeData = filteredEntries.map(entry => entry.time);
-            // distanceData = filteredEntries.map(entry => entry.distance);
-            // loadcellData[0] = filteredEntries.map(entry => entry.load[0]);
-            // loadcellData[1] = filteredEntries.map(entry => entry.load[1]);
-            // loadcellData[2] = filteredEntries.map(entry => entry.load[2]);
+            // timeDataTemp = filteredEntries.map(entry => entry.time);
+            // positionDataTemp = filteredEntries.map(entry => entry.position);
+            // forceDataTemp = Array(loadCellNum).fill().map((_, i) => filteredEntries.map(entry => entry.force[i]));
+
 
             const timeDataTemp = [];
-            const distanceDataTemp = [];
-            const loadcellDataTemp = [[], [], []];
+            const positionDataTemp = [];
+            const forceDataTemp = Array(loadCellNum).fill([]);
             const aggregatedDataBetweenStepsTemp = [];
 
-            aggregateData(dataEntries, dataChartInterval, timeDataTemp, distanceDataTemp, loadcellDataTemp, aggregatedDataBetweenStepsTemp);
+            aggregateData(dataEntries, dataChartInterval, timeDataTemp, positionDataTemp, forceDataTemp, aggregatedDataBetweenStepsTemp);
 
-            dataEntries.forEach(entry => {
+            dataEntries?.forEach(entry => {
                 if (!isNaN(entry.photoIndex)) {
                     markersTime.push(entry.time); // Add `time` value to markersTime list
                 }
             });
 
-            dataEntries.forEach(entry => {
+            dataEntries?.forEach(entry => {
                 if (!isNaN(entry.photoIndex)) {
-                    markersDist.push(entry.distance); // Add `distance` value to markersTime list
+                    markersDist.push(entry.position); // Add `position` value to markersTime list
                 }
             });
 
-            timeChart.setData([timeDataTemp, ...loadcellDataTemp]);
-            distanceChart.setData([distanceDataTemp, ...loadcellDataTemp]);
+            timeChart.setData([timeDataTemp, ...forceDataTemp]);
+            positionChart.setData([positionDataTemp, ...forceDataTemp]);
 
-            const minTime = minND(timeDataTemp);
-            const maxTime = maxND(timeDataTemp);
+            const minTime = minND(timeDataTemp) || 0;
+            const maxTime = maxND(timeDataTemp) || 1e-10;
             const timeRange = (maxTime - minTime) * 0.005;
-            const minDist = minND(distanceDataTemp);
-            const maxDist = maxND(distanceDataTemp);
+            const minDist = minND(positionDataTemp) || 0;
+            const maxDist = maxND(positionDataTemp) || 1e-10;
             const distRange = (maxDist - minDist) * 0.005;
-            const loadMin = minND(loadcellDataTemp);
-            const loadMax = maxND(loadcellDataTemp);
-            const loadRange = (loadMax - loadMin) * 0.005;
-
+            const forceMin = minND(forceDataTemp) || 0;
+            const forceMax = maxND(forceDataTemp) || 1e-10;
+            const forceRange = (forceMax - forceMin) * 0.005;
 
             timeChart.setScale("x", {min: minTime - timeRange, max: maxTime + timeRange});
-            distanceChart.setScale("x", {min: minDist - distRange, max: maxDist + distRange});
-            timeChart.setScale("y", {min: loadMin - loadRange, max: loadMax + loadRange});
-            distanceChart.setScale("y", {min: loadMin - loadRange, max: loadMax + loadRange});
+            positionChart.setScale("x", {min: minDist - distRange, max: maxDist + distRange});
+            timeChart.setScale("y", {min: forceMin - forceRange, max: forceMax + forceRange});
+            positionChart.setScale("y", {min: forceMin - forceRange, max: forceMax + forceRange});
 
 
             // 🔄 Redraw graphs
             // timeChart.redraw();
-            // distanceChart.redraw();
+            // positionChart.redraw();
 
             liveUpdate = stateAtEnd;
 
             if (exportData) {
                 timeData = timeDataTemp;
-                distanceData = distanceDataTemp;
-                loadcellData = loadcellDataTemp;
+                positionData = positionDataTemp;
+                forceData = forceDataTemp;
             }
 
             console.info("\n\t☑️ Graph data loaded successfully.");
@@ -6499,16 +6345,16 @@
 
     // Store dataset
     let timeData = [];
-    let distanceData = [];
-    let loadcellData = [[], [], []];
+    let positionData = [];
+    let forceData = Array(loadCellNum).fill([]);
 
 
     let markersTime = []; // List of time markers
-    let markersDist = []; // List of distance markers
+    let markersDist = []; // List of position markers
 
 
     let timeChart;
-    let distanceChart;
+    let positionChart;
 
     function createChart(containerID, marker, seriesLabels, title = "Graph", labelX = "", labelY = "") {
         // Get the container element
@@ -6526,7 +6372,7 @@
                     ctx.save();
                     ctx.fillStyle = "darkorange"; // Marker color
 
-                    marker.forEach(xValue => {
+                    marker?.forEach(xValue => {
                         // let xPixel = Math.round(u.valToPos(xValue, "x", true)); // Rounding X coordinate
                         // let yPixel = Math.round(u.valToPos(0, "y", true)); // Rounding Y coordinate
 
@@ -6595,7 +6441,7 @@
         let charts = $$(".uplot");
         let maxHeight = 0;
 
-        charts.forEach(chart => {
+        charts?.forEach(chart => {
             maxHeight = Math.max(maxHeight, chart.clientHeight);
         });
 
@@ -6612,50 +6458,49 @@
     function updateChart(data) {
 
         // Check if the data is valid (not NaN)
-        if (isNaN(data.time) || isNaN(data.distance) || data.load.every(x => isNaN(x))) { //  || data.load.some(isNaN)
+        if (isNaN(data.time) || isNaN(data.position) || data.force.every(x => isNaN(x))) { //  || data.force.some(isNaN)
             return;
         }
 
         // Add new data points
         timeData.push(data.time);
-        distanceData.push(data.distance);
-        loadcellData[0].push(data.load[0]);
-        loadcellData[1].push(data.load[1]);
-        loadcellData[2].push(data.load[2]);
+        positionData.push(data.position);
+        data.force?.forEach((value, index) => forceData[index].push(value));
 
         // Maintain max data points
         if (timeData.length > maxDataPoints) {
             timeData.shift();
-            distanceData.shift();
-            loadcellData.forEach(dataset => dataset.shift());
+            positionData.shift();
+            forceData?.forEach(dataset => dataset.shift());
         }
 
         // Update charts
-        timeChart.setData([timeData, ...loadcellData]);
-        distanceChart.setData([distanceData, ...loadcellData]);
+        timeChart.setData([timeData, ...forceData]);
+        positionChart.setData([positionData, ...forceData]);
     }
 
     async function refreshCharts() {
         await loadDataFromDBToChart(liveUpdate);  // Load data from DB to charts will wait for the data to be loaded
         timeChart.redraw();
-        distanceChart.redraw();
+        positionChart.redraw();
     }
 
     async function clearCharts() {
+
         // Reset axis X and Y
         await timeChart.setScale("x", {min: 0, max: 1e-10});
-        await distanceChart.setScale("x", {min: 0, max: 1e-10});
+        await positionChart.setScale("x", {min: 0, max: 1e-10});
 
         timeData = [];
-        distanceData = [];
+        positionData = [];
         markersTime = [];
         markersDist = [];
-        loadcellData.forEach(dataset => []);
-        await timeChart.setData([[], [], [], []]);
-        await distanceChart.setData([[], [], [], []]);
+        forceData?.forEach((_) => []);
+        await timeChart.setData([...Array(loadCellNum + 1).fill([])]);
+        await positionChart.setData([...Array(loadCellNum + 1).fill([])]);
 
         await timeChart.setScale("y", {min: 0, max: 1e-10});
-        await distanceChart.setScale("y", {min: 0, max: 1e-10});
+        await positionChart.setScale("y", {min: 0, max: 1e-10});
 
 
         console.info("🧹 Charts cleared!");
@@ -6843,7 +6688,7 @@
                 throw new Error("Position is not a number.", position);
             }
             console.info(`\t📌 Current position: ${position} mm`);
-            return roundDecimalFast(position, precisionDistance);
+            return roundDecimalFast(position, precisionPosition);
         } catch (error) {
             console.error(error.message);
             throw new Error("Position not received.", error);
@@ -6985,10 +6830,10 @@
     $$$("stopMachine")?.addEventListener('click', async () => stopMachine('user'));
 
     $$$("inputLoadLimitDropPercent")?.addEventListener('change', async (event) => {
-        // loadLimitDropPercent = parseFloat(event.target.value) / 100;
+        // forceLimitDropPercent = parseFloat(event.target.value) / 100;
     });
     $$$("inputLoadLimitDropValue")?.addEventListener('change', async (event) => {
-        // loadLimitDropValue = parseFloat(event.target.value);
+        // forceLimitDropValue = parseFloat(event.target.value);
     });
 
     // #TODO do better disabling of elements //////////////////////////////////////////////////
@@ -7186,13 +7031,27 @@
         });
     }
 
+    function hasRequiredParsedKeys(experimentEndLimits, parsedData) {
+        if (!isObj(experimentEndLimits) || !isObj(parsedData)) return false;
+
+        // klíče, které opravdu vyžadujeme (hodnota není null ani NaN)
+        const required = Object.entries(experimentEndLimits)
+            .filter(([, v]) => v !== null && !(typeof v === 'number' && Number.isNaN(v)));
+
+        // musí existovat aspoň jeden požadovaný klíč
+        if (required.length === 0) return false;
+
+        // všechny požadované klíče musí být v parsedData
+        return required.every(([k]) => Object.prototype.hasOwnProperty.call(parsedData, k));
+    }
+
 
     let speedForward_mmps = 0;
     let currentSpeed = null;
     let currentAcceleration = null;
     let takePhotos = false;
     let dataInterval_us = null;
-    let initialForceLoadLim_N = null;
+    let initialForceLim_N = null;
     let experimentDoubleSpeed = false;
     let stoppingForceLimit = null;
     let holdForceTimeMs = null;
@@ -7238,22 +7097,26 @@
             await console.groupCollapsed("New Experiment Section");
 
             // === Retrieve Parameters from Inputs ===
-            const distance_mm = Math.abs(parseFloat($$$("inputDistance").value));
+            const distance_mm = getInputDefAbsFlt($$$("inputDistance").value, NaN);
             const experimentType = $$$("experimentDirectionDropdown").value.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
-            speedForward_mmps = Math.abs(parseFloat($$$("inputSpeedForward").value));
+            speedForward_mmps = getInputDefAbsFlt($$$("inputSpeedForward").value, NaN);
             // const speedBackward_mmps = parseFloat($$("inputSpeedBackward").value);
-            dataInterval_us = Math.max(Math.abs(parseInt($$$("inputDataInterval").value)), 100);
-            const loadcellCapacity = Math.abs(parseInt($$$("inputLoadcellCapacity").value));
-            const loadcellOutput = Math.abs(parseFloat($$$("inputLoadcellOutput").value));
+            dataInterval_us = Math.max(getInputDefAbsInt($$$("inputDataInterval").value, NaN), 100);
+            const loadcellCapacity = getInputDefAbsInt($$$("inputLoadcellCapacity").value, NaN);
+            const loadcellOutput = getInputDefAbsFlt($$$("inputLoadcellOutput").value, NaN);
             takePhotos = $$$("inputTakePhotos").checked;
-            const photoInterval_ms = Math.abs(parseFloat($$$("inputPhotoInterval").value) * 1000);
-            loadLimitDropPercent = (Math.abs(parseFloat($$$("inputLoadLimitDropPercent").value)) / 100) ?? Infinity;
-            loadLimitDropValue = Math.abs(parseFloat($$$("inputLoadLimitDropValue").value)) ?? Infinity;
+            const photoInterval_ms = Math.round(getInputDefAbsFlt($$$("inputPhotoInterval").value, NaN) * 1000);
+            forceLimitDropPercent = catchVal((toNumber($$$("inputLoadLimitDropPercent").value) / 100), Infinity);
+            forceLimitDropValue = getInputDefAbsFlt($$$("inputLoadLimitDropValue").value, Infinity);
 
+
+            // TODO: temporary disable loadcells
+            const loadcellCapacities = Array(loadCellNum).fill(loadcellCapacity);
+            const loadcellOutputs = Array(loadCellNum).fill(loadcellOutput);
 
             let initialSpeed_mmps = speedForward_mmps;
-            initialForceLoadLim_N = null;
+            initialForceLim_N = null;
             experimentDoubleSpeed = false;
             stoppingForceLimit = Number.POSITIVE_INFINITY;
             holdForceTimeMs = null;
@@ -7263,7 +7126,7 @@
             const suffixes = ["-inb", "-hbr"];
             if (suffixes.some(suf => experimentType.endsWith(suf))) {
                 initialSpeed_mmps = Math.abs(parseFloat($$$("inputInitialSpeed").value));
-                initialForceLoadLim_N = Math.abs(parseFloat($$$("inputInitialForce").value));
+                initialForceLim_N = Math.abs(parseFloat($$$("inputInitialForce").value));
                 experimentDoubleSpeed = true;
 
                 if (experimentType.endsWith("-hbr")) {
@@ -7272,68 +7135,93 @@
                 }
             }
 
+            if (experimentType.includes("-pos-")) {
+                experimentEndLimits = {position: distance_mm, force: null, time: null};  // The total distance to be moved; force and time limits are not used now
+                expControl = 'position'; // Control the experiment by position
+                console.info("\n\t\t➡️ Experiment type: Position controlled");
+                await logMessage("\t\t➡️ Experiment type: Position controlled");
+            } else {
+                throw new Error("Unknown Experiment type error");
+            }
+
 
             await sleep(5); // Stop for 5 ms
 
-            if (!distance_mm || distance_mm < minDistance) {
-                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                throw new Error("Distance error");
-            } else if (!speedForward_mmps || speedForward_mmps < minFSpeed) {
+            if (expControl === 'position') {
+                if (!isValidInput(distance_mm) || distance_mm < minDistance) {
+                    console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                    await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                    alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                    throw new Error("Distance error");
+                }
+            }
+
+            if (!isFiniteNumber(speedForward_mmps, false) || speedForward_mmps < minFSpeed) {
                 console.warn(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 await logMessage(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 alert(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 throw new Error("Speed error");
-            } else if (!speedForward_mmps || speedForward_mmps > maxFSpeed) {
+            } else if (speedForward_mmps > maxFSpeed) {
                 console.warn(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 await logMessage(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 throw new Error("Speed error");
-            } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps < minFSpeed)) {
-                console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
-                await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
-                alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
-                throw new Error("Initial speed error");
-            } else if (experimentDoubleSpeed && (!initialSpeed_mmps || initialSpeed_mmps > maxFSpeed)) {
-                console.warn(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
-                await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
-                alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
-                throw new Error("Initial speed error");
-            } else if (experimentDoubleSpeed && (!initialForceLoadLim_N || initialForceLoadLim_N <= 0)) {
-                console.warn(`⚠️ Initial force load must be greater than 0 N.`);
-                await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
-                alert(`⚠️ Initial force load must be greater than 0 N.`);
-                throw new Error("Initial force load error");
-            } else if (!dataInterval_us || dataInterval_us < 1) {
+            }
+
+            if (!isFiniteNumber(dataInterval_us, false) || dataInterval_us < 1) {
                 console.warn(`⚠️ Data interval must be greater than 1 µs.`);
                 await logMessage(`⚠️ Data interval must be greater than 1 µs.`);
                 alert(`⚠️ Data interval must be greater than 1 µs.`);
                 throw new Error("Data interval error");
-            } else if (!loadcellCapacity || loadcellCapacity < minLoadCap) {
+            }
+
+            if (!isArr(loadcellCapacities) || loadcellCapacities.some(cap => !isFiniteNumber(cap, false) || cap < minLoadCap)) {
                 console.warn(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 throw new Error("Loadcell capacity error");
-            } else if (!loadcellOutput || loadcellOutput < minLoadOut) {
+            } else if (!isArr(loadcellOutputs) || loadcellOutputs.some(out => !isFiniteNumber(out, false) || out < minLoadOut)) {
                 console.warn(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 throw new Error("Loadcell output error");
-            } else if (experimentType.endsWith("-hbr") && (!stoppingForceLimit || stoppingForceLimit <= 0)) {
-                console.warn(`⚠️ Stopping force must be greater than 0 N.`);
-                await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
-                alert(`⚠️ Stopping force must be greater than 0 N.`);
-                throw new Error("Stopping force error");
-            } else if (experimentType.endsWith("-hbr") && (!holdForceTimeMs || (holdForceTimeMs / 1000) < 0)) {
-                console.warn(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                throw new Error("Hold force time error");
+            }
+
+            if (experimentType.endsWith("-hbr")) {
+                if (!isValidInput(stoppingForceLimit)) {
+                    console.warn(`⚠️ Stopping force must be greater than 0 N.`);
+                    await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
+                    alert(`⚠️ Stopping force must be greater than 0 N.`);
+                    throw new Error("Stopping force error");
+                } else if (!isFiniteNumber(holdForceTimeMs, false) || (holdForceTimeMs / 1000) < 0) {
+                    console.warn(`⚠️ Hold force time must be equal or greater than 0 s.`);
+                    await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
+                    alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
+                    throw new Error("Hold force time error");
+                }
+            }
+
+            if (experimentDoubleSpeed) {
+                if (!isFiniteNumber(initialSpeed_mmps, false) || initialSpeed_mmps < minFSpeed) {
+                    console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                    await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                    alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                    throw new Error("Initial speed error");
+                } else if (initialSpeed_mmps > maxFSpeed) {
+                    console.warn(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                    await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                    alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                    throw new Error("Initial speed error");
+                } else if (!isValidInput(initialForceLim_N)) {
+                    console.warn(`⚠️ Initial force load must be greater than 0 N.`);
+                    await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
+                    alert(`⚠️ Initial force load must be greater than 0 N.`);
+                    throw new Error("Initial force load error");
+                }
             }
 
             if (takePhotos) {
-                if (!photoInterval_ms || photoInterval_ms < minPhotoInt) {
+                if (!isFiniteNumber(photoInterval_ms, false) || photoInterval_ms < minPhotoInt) {
                     console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     alert(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
@@ -7342,11 +7230,17 @@
                 if (photoInterval_ms * 1000 < dataInterval_us) {
                     console.warn("⚠️ Photo interval must be bigger than data interval.");
                     await logMessage("⚠️ Photo interval must be bigger than data interval.");
-                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1000} µs ❗`);
-                    dataInterval_us = photoInterval_ms * 1000;
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1000 * 0.9} µs ❗`);
+                    dataInterval_us = photoInterval_ms * 1000 * 0.9;
                     $$$("inputDataInterval").value = dataInterval_us;
                 }
             }
+
+            if (isEmptyStr(expControl)) throw new Error("Experiment control is not set.");
+            if (!experimentEndLimits[expControl]) throw new Error(`Experiment end limit for ${expControl} is not set.`);
+            if (!parsedData[expControl]) throw new Error(`Parsed data for ${expControl} is not available.`);
+            if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throw new Error("Experiment end limits are not properly set.");
+
 
             const settings = await collectExpSettings(".expInput", "Moira-exp-settings") || {};
 
@@ -7434,17 +7328,18 @@
             UI.progressLabel.textContent = `0%`;
 
             // === Experiment Parameters ===
-            experimentEndPosition = distance_mm; // The total distance to be moved
+            if (await $$$('inputClearCalculations').checked) await clearCalculations();
+
 
             // === Reset Variables ===
             startTime = null;
-            maxLoad = [null, null, null];
+            maxForces = Array(loadCellNum).fill(null);
             // firstPhoto = 0;
             timeData = [];
-            distanceData = [];
-            loadcellData = [[], [], []];
-            measureForces = [[], [], []];
-            meanForces = [0, 0, 0];
+            positionData = [];
+            forceData = Array(loadCellNum).fill([]);
+            measureForces = Array(loadCellNum).fill([]);
+            meanForces = Array(loadCellNum).fill(0);
             markersTime = [];
             markersDist = [];
             aggregatedDataBetweenSteps = [];
@@ -7454,8 +7349,14 @@
             startPosition = 0;
             checkSpeed = true;
             endedBy = null;
-
-            await clearCalculations();
+            pendingDSLR = null;
+            parsedData = {
+                time: 0,
+                position: 0,
+                speed: 0,
+                force: Array(loadCellNum).fill(0),
+                photoIndex: takePhotos ? 0 : NaN // Store DSLR photo order
+            };
 
 
             currentSpeed = (await getSpeed()) || 15;
@@ -7464,9 +7365,9 @@
 
 
             // === LoadCell Configuration ===
-            for (let i = 0; i < 3; i++) {
-                await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
-                await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
+            for (let i = 0; i < loadCellNum; i++) {
+                await sendCommand(`LC SET CAP ${i} ${loadcellCapacities[i]}`);
+                await sendCommand(`LC SET RO ${i} ${loadcellOutputs[i]}`);
             }
 
             // === Prepare Motor ===
@@ -7488,9 +7389,10 @@
                 await sendCommand('DSLR SHOOT');
             }
 
-            forceSignCorrection = displacementSignCorrection * -1;
-            if (loadcellCapacity <= 50) forceSignCorrection *= -1; // Reverse direction if loadcell capacity is less than or equal to 50 N
-
+            loadSignCorrections = Array(loadCellNum).fill(displacementSignCorrection * -1);
+            for (let i = 0; i < loadCellNum; i++) {
+                if (loadcellCapacities[i] <= 50) loadSignCorrections[i] *= -1; // Reverse direction if loadcell capacity is less than or equal to 50 N
+            }
             const expInfoV = settings.version;
             let experimentKey = null;
             if (expInfoV === 1) {
@@ -7508,23 +7410,24 @@
                 loadDirection: displacementSignCorrection,
                 loadDistance: distance_mm,
                 loadSpeed: speedForward_mmps,
-                loadcellCapacity: [loadcellCapacity, loadcellCapacity, loadcellCapacity],
+                loadcellCapacity: loadcellCapacities,
                 loadcellType: NaN,
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
                 endStatus: endedBy,
-                distanceProgress: distanceProgress,
+                positionProgress: positionProgress,
+                precisions: {
+                    time: precisionTime,
+                    position: precisionPosition,
+                    speed: precisionSpeed,
+                    acceleration: precisionAcceleration,
+                    force: precisionForce,
+                },
+                experimentLimits: experimentEndLimits,
+                experimentControl: expControl,
             }, 0);
 
 
-            pendingDSLR = null;
-            parsedData = {
-                time: 0,
-                distance: 0,
-                speed: 0,
-                load: [0, 0, 0],
-                photoIndex: takePhotos ? 0 : NaN // Store DSLR photo order
-            };
             await addDataToLog(parsedData);
             if (takePhotos) {
                 markersTime.push(0);
@@ -7580,14 +7483,14 @@
                 }
             }
 
-            const setChart = (chart) => chart ? forceAnalysis.forEach((r, i) => chart.setSeries((i + 1), {show: r.allInvalid})) : null;
+            const setChart = (chart) => chart ? forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: r.allInvalid})) : null;
             setChart(timeChart);
-            setChart(distanceChart);
+            setChart(positionChart);
 
             // --- 6) Valid dispersion ---
             const diffs = validFields.flatMap(({
                                                    min, max
-                                               }) => Number.isFinite(min) && Number.isFinite(max) ? [max - min] : []);
+                                               }) => (isFiniteNumber(min, false) && isFiniteNumber(max, false)) ? [max - min] : []);
             console.info("Valid dispersions:", diffs);
 
             // --- 7) Error rates ---
@@ -7603,7 +7506,7 @@
             console.info("Final error rate:", totalErrRate, "N");
 
             // --- 9) Clear force fields ---
-            measureForces = [[], [], []];
+            measureForces = Array(loadCellNum).fill([]);
 
             await sleep(5); // Stop for 5 ms
 
@@ -7611,7 +7514,7 @@
             // ==================================
             // === Reset Experiment Variables ===
 
-            distanceProgress = 0
+            positionProgress = 0
             startTime = null;
             isExperimentRunning = true;
             endMeasurement = false;
@@ -7710,7 +7613,7 @@
             dbFlushTimer = null;
             await flushDB();
             await recomputeAll();
-            if (endedBy != null) await updateLogById(0, {endStatus: endedBy, distanceProgress: distanceProgress});
+            if (endedBy != null) await updateLogById(0, {endStatus: endedBy, positionProgress: positionProgress});
             if (isConnected) endedMoving();    // unlock UI and watchdog
             document.title = initialTitle;
             await console.info("✅ Experiment completed.");
@@ -7925,8 +7828,8 @@
         });
 
         // Initialization of uPlot charts
-        timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Time Graph", "Time [s]", "Force [N]");
-        distanceChart = createChart("distanceChart", markersDist, ["Distance (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Distance Graph", "Displacement [mm]", "Force [N]");
+        timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Load-Time Graph", "Time [s]", "Force [N]");
+        positionChart = createChart("positionChart", markersDist, ["Position (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Position Graph", "Position [mm]", "Force [N]");
 
 
         // Function to save ONE input to localStorage
@@ -7945,7 +7848,7 @@
         function saveAllInputsToLocalStorage() {
             let formData = {};
 
-            optionsElements.forEach(input => {
+            optionsElements?.forEach(input => {
                 if (input.dataset.nonremember !== "true") {
                     formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
                 }
@@ -7962,7 +7865,7 @@
             const formData = JSON.parse(localStorage.getItem(storageKey)) || NaN; // Load the saved data
             if (!formData) saveAllInputsToLocalStorage();
 
-            optionsElements.forEach(input => {
+            optionsElements?.forEach(input => {
                 if (formData.hasOwnProperty(input.id)) {
                     if (input.type === "checkbox") {
                         input.checked = formData[input.id]; // Restore the checkbox state
@@ -7986,14 +7889,14 @@
         const optionsElements = $$("input, select");
 
         // Listen for changes in all inputs
-        optionsElements.forEach(input => {
+        optionsElements?.forEach(input => {
             if (input.dataset.nonremember !== "true") {
                 input.addEventListener("change", async (event) => saveInputToLocalStorage(event));
             }
         });
 
 
-        [...optionsElements].filter(el => el.matches('[id][data-unit]')).forEach((input) => {
+        [...optionsElements].filter(el => el.matches('[id][data-unit]'))?.forEach((input) => {
             updateUnitsLabel(input);
 
             // Use examples:
@@ -8148,7 +8051,7 @@
 
 
         // Set both elements' limits to match
-        [[UI.speedSlider, UI.speedLabel], [UI.accelerationSlider, UI.accelerationLabel]].forEach(pair => {
+        [[UI.speedSlider, UI.speedLabel], [UI.accelerationSlider, UI.accelerationLabel]]?.forEach(pair => {
             pair[1].min = pair[0].min;
             pair[1].max = pair[0].max;
             pair[1].value = pair[0].value;
@@ -8157,7 +8060,7 @@
             pair[1].dispatchEvent(new Event("input", {bubbles: true}));
         });
 
-        $$('.sliderInputLabel').forEach(input => {
+        $$('.sliderInputLabel')?.forEach(input => {
             input.addEventListener("change", (event) => {
                 checkInput(event.target, 'floatInput', 2);
                 const slider = document.getElementById(event.target.id.replaceAll("label", "movement"));
@@ -8192,9 +8095,9 @@
             const currentValue = delimSymbolElement.value;
             const commaOptions = delimSymbolElement.querySelectorAll('option[value="Option-Comma"]');
             if (isValueComma) {
-                commaOptions.forEach(o => o.disabled = true);
+                commaOptions?.forEach(o => o.disabled = true);
             } else {
-                commaOptions.forEach(o => o.disabled = false);
+                commaOptions?.forEach(o => o.disabled = false);
             }
             if (isValueComma === currentValue) {
                 delimSymbolElement.value = "Option-Semicolon";
@@ -8206,9 +8109,9 @@
             const currentValue = decSymbolElement.value;
             const commaOptions = decSymbolElement.querySelectorAll('option[value="Option-Comma"]');
             if (isValueComma) {
-                commaOptions.forEach(o => o.disabled = true);
+                commaOptions?.forEach(o => o.disabled = true);
             } else {
-                commaOptions.forEach(o => o.disabled = false);
+                commaOptions?.forEach(o => o.disabled = false);
             }
             if (isValueComma === currentValue) {
                 decSymbolElement.value = "Option-Dot";
@@ -8233,42 +8136,66 @@
         // pouze ty .data-eq, které mají data-eq-type
         const experiment_result_elements = $$("[data-eq-type]");
         $$$("experimentDirectionDropdown")?.addEventListener("change", async (event) => {
-
-            // helper: vytáhne "ib" | "hb" | "b" z konce hodnoty (oddělovače - _ / mezera)
+            // vytáhne typ ze suffixu hodnoty (oddělovače - _ / mezera)
             const typeFrom = s =>
-                (String(s ?? '').toLowerCase().match(/(?:^|[-_\/\s])(inb|hbr|flx)$/)?.[1]) || '';
+                (String(s || '').toLowerCase().match(/(?:^|[-_\/\s])(inb|hbr|flx)$/)?.[1]) || '';
 
-            // helper: z data-eq-type udělá množinu typů (podporuje "HB,IB", "HB, IB", "HB|IB", "HB IB", "HB/IB")
-            const parseEqTypes = attr => new Set(
-                String(attr || '')
-                    .split(/[,\s;|/]+/)          // různé oddělovače
+            // rozparsuje data-eq-type na inkluze/exkluze; podporuje "HB,IB", "HB|IB", "HB IB", "HB/IB", "-HBR"
+            const parseEqRule = attr => {
+                const tokens = String(attr || '')
+                    .split(/[,\s;|/]+/)
                     .map(t => t.trim().toLowerCase())
-                    .filter(Boolean)
-            );
+                    .filter(Boolean);
 
-            const selectedValue = (event.target.value ?? '').toLowerCase();
-            const selectedType = typeFrom(selectedValue); // <-- "ib" | "hb" | "b" | ""
+                const includes = new Set();
+                const excludes = new Set();
+
+                for (const t of tokens) {
+                    if (t.startsWith('-')) {
+                        const x = t.slice(1).trim();
+                        if (x) excludes.add(x);
+                    } else {
+                        includes.add(t);
+                    }
+                }
+                return {includes, excludes};
+            };
+
+            // vyhodnotí shodu se zvoleným typem
+            const matchesRule = (rule, selType) => {
+                const hasIncl = rule.includes.size > 0;
+                const hasExcl = rule.excludes.size > 0;
+
+                if (hasIncl) {
+                    return rule.includes.has(selType);
+                }
+                if (hasExcl) {
+                    return !rule.excludes.has(selType);
+                }
+
+                return true; // Empty rule matches all
+            };
+
+            const selectedValue = (event.target.value || '').toLowerCase();
+            const selectedType = typeFrom(selectedValue); // "inb" | "hbr" | "flx" | ""
 
             const speedInput = $$$("inputInitialSpeed");
             const forceInput = $$$("inputInitialForce");
             const speedLabel = $$$("inputInitialSpeedLabel");
             const forceLabel = $$$("inputInitialForceLabel");
 
-            // --- zobraz jen ty, jejichž data-eq-type je suffix selectedValue ---
             experiment_result_elements?.forEach(el => {
-                const types = parseEqTypes(el.dataset.eqType);
-                if (types) {
-                    const isType = types.has(selectedType);
-                    el.style.display = isType ? 'inline-flex' : 'none';
-                    el.style.visibility = isType ? 'visible' : 'hidden';
-                    // delete value of input elements inside if not relevant
-                    if (!isType) {
-                        el.querySelectorAll('input').forEach(input => {
-                            input.value = '';
-                            input.dispatchEvent(new Event("change", {bubbles: true}));
-                        });
+                const rule = parseEqRule(el.dataset.eqType);
+                const isType = matchesRule(rule, selectedType);
 
-                    }
+                el.style.display = isType ? 'inline-flex' : 'none';
+                el.style.visibility = isType ? 'visible' : 'hidden';
+
+                if (!isType) {
+                    el.querySelectorAll('input')?.forEach(input => {
+                        // input.value = '';
+                        input.dispatchEvent(new Event("change", {bubbles: true}));
+                    });
                 }
             });
             // ------------------------------------------------------------------------
@@ -8441,20 +8368,204 @@
                 {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
             ];
 
-            // Helper rounding functions
-            const rTime = (num) => roundDecimalFast(num, precisionTime);
-            const rDist = (num) => roundDecimalFast(num, precisionDistance);
-            const rForce = (num) => roundDecimalFast(num, precisionForce);
 
+            const outputsOpts = {
+                time: {key: 'time', unit: 's', precision: 12},
+                position: {key: 'dist, disp, position', unit: 'mm', precision: 12},
+                force: {key: 'force, load', unit: 'N', precision: 12},
+            };
 
             const delimiters = [";", ",", "\t", " "];
-            const parseNum = (n) => toNumber(n, false) || 0;
+            const getMetaValue = (metaData, key, unit = null) => {
+                if (isObj(metaData) && metaData.hasOwnProperty(key) && hasValue(metaData[key])) {
+                    const value = metaData[key].value;
+                    const valUnit = metaData[key].unit || null;
+                    if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) {
+                        return convertUnits(value, valUnit, unit) || "";
+                    }
+                    return value || "";
+                }
+                return "";
+            };
+
+            function setupParsers(head, fileSet, outputs) {
+                // --- sanity checks ---
+                if (!isArr(head)) {
+                    console.warn("⚠️ Cannot setup parsers, head is not an array.");
+                    return {};
+                }
+                if (!fileSet || !fileSet.delimiter) {
+                    console.warn("⚠️ Cannot setup parsers, missing delimiter or fileSet.");
+                    return {};
+                }
+                if (!fileSet.dataTypes) fileSet.dataTypes = {};
+
+                // --- helpers ---
+                const getUnitFromHeader = (header) => {
+                    if (isEmptyStr(header)) return null;
+                    // nechávám tvůj vzor; případně rozšířit o číslice, lomítka apod.
+                    const match = String(header).match(/[\(\[]\s*([a-zA-Z%μμmNnkgkPaasS]+)\s*[\)\]]/);
+                    return match ? match[1] : null;
+                };
+
+                // --- 1) hlavička ---
+                const headerRowIdx = Math.max(0, ((fileSet.skipRows | 0) - 1));
+                if (headerRowIdx >= head.length) {
+                    console.warn("⚠️ Cannot setup parsers, header row index out of bounds.");
+                    return {};
+                }
+
+                const headerParts = String(head[headerRowIdx]).split(fileSet.delimiter).map(s => String(s).trim());
+                const headerUnits = headerParts.map(part => getUnitFromHeader(part) || '');
+
+                // mapa synonym z outputs[*].key (čárkami oddělené)
+                const types = Object.keys(outputs || {});
+                const keysByType = Object.fromEntries(
+                    types.map(t => [
+                        t,
+                        String(outputs[t]?.key || t)
+                            .toLowerCase()
+                            .split(',')
+                            .map(s => s.trim())
+                            .filter(Boolean),
+                    ])
+                );
+
+                // pro každý sloupec rozhodni typ dle substringů
+                const headerTypes = headerParts.map(part => {
+                    const p = String(part).toLowerCase();
+                    for (const t of types) {
+                        if (keysByType[t].some(k => k && p.includes(k))) return t;
+                    }
+                    return null;
+                });
+
+                // --- 2) doplň/nenásilně nastav fileSet.dataTypes[*] ---
+                function ensureType(t) {
+                    const prev = fileSet.dataTypes[t] || {};
+                    const outCfgUnit = outputs[t]?.unit || '';
+
+                    // 2.1 Indexy
+                    let indexes = isArr(prev.indexes) && prev.indexes.length > 0
+                        ? prev.indexes.slice() // respektuj předem zadané indexy
+                        : headerTypes
+                            .map((tt, i) => (tt === t ? i : -1))
+                            .filter(i => i >= 0);
+
+                    // 2.2 Cílová jednotka (preferuj už dřív nastavenou)
+                    const targetUnit = isNonEmptyStr(prev.unit) ? prev.unit : outCfgUnit;
+
+                    // 2.3 Udrž jednotný "fromUnit" pro 1 společný conversion
+                    let fromUnit = '';
+                    if (!isNonEmptyArr(prev.indexes) && isNonEmptyArr(indexes)) {
+                        if (targetUnit) {
+                            // najdi první jednotku mezi kandidáty
+                            for (const i of indexes) {
+                                if (headerUnits[i]) {
+                                    fromUnit = headerUnits[i];
+                                    break;
+                                }
+                            }
+                            if (fromUnit) {
+                                // filtruj jen na sloupce se shodným fromUnit
+                                indexes = indexes.filter(i => (headerUnits[i] || '') === fromUnit);
+                            }
+                        } else {
+                            // bez targetUnit – drž jednotnost dle první nalezené (nebo prázdné)
+                            fromUnit = headerUnits[indexes[0]] || '';
+                            indexes = indexes.filter(i => (headerUnits[i] || '') === fromUnit);
+                        }
+                    } else if (isNonEmptyArr(prev.indexes)) {
+                        // indexy dány uživatelem → odvoď fromUnit (pokud jde)
+                        const i0 = prev.indexes[0];
+                        if (Number.isInteger(i0) && i0 >= 0 && i0 < headerUnits.length) {
+                            fromUnit = headerUnits[i0] || '';
+                        }
+                    }
+
+                    // 2.4 Konverze (preferuj předvyplněnou)
+                    let conversion = isDef(prev.conversion) ? toNumber(prev.conversion) : undefined;
+                    if (!isDef(conversion) || !isFiniteNumber(conversion, false)) {
+                        if (targetUnit && fromUnit) {
+                            try {
+                                conversion = convertUnits(1, fromUnit, targetUnit) || 1;
+                            } catch (_) {
+                                conversion = 1;
+                            }
+                        } else {
+                            conversion = 1;
+                        }
+                    }
+
+                    // 2.5 Zápis (zachovej případné další klíče v prev)
+                    fileSet.dataTypes[t] = {
+                        ...prev,
+                        indexes: isNonEmptyArr(prev.indexes) ? prev.indexes : indexes,
+                        unit: isNonEmptyStr(prev.unit) ? prev.unit : targetUnit,
+                        conversion,
+                    };
+                }
+
+                for (const t of types) ensureType(t);
+
+                // --- 3) gettery (přesnost z outputs[*].precision) ---
+                const getters = {};
+                for (const t of types) {
+                    const precision = outputs[t]?.precision ?? 12;
+
+                    getters[t] = (entry) => {
+                        const spec = fileSet.dataTypes[t];
+                        if (!spec || !isNonEmptyArr(spec.indexes)) return 0;
+
+                        const convRaw = toNumber(spec.conversion, true);
+                        const conv = Number.isFinite(convRaw) ? convRaw : 1;
+
+                        // vezmi první nenulovou / číselnou hodnotu
+                        for (let i = 0; i < spec.indexes.length; i++) {
+                            const idx = spec.indexes[i];
+                            const vRaw = toNumber(entry[idx], true);
+                            const v = Number.isFinite(vRaw) ? vRaw : 0;
+                            if (v !== 0) {
+                                return roundDecimalFast(v * conv, precision);
+                            }
+                        }
+                        return 0;
+                    };
+
+                    // metadata/utility metody (ne-sériovatelné a bezpečné)
+                    Object.defineProperties(getters[t], {
+                        indexes: {
+                            value: () => (fileSet.dataTypes?.[t]?.indexes ? [...fileSet.dataTypes[t].indexes] : []),
+                            enumerable: false
+                        },
+                        count: {
+                            value: () => (fileSet.dataTypes?.[t]?.indexes?.length ?? 0),
+                            enumerable: false
+                        },
+                        unit: {
+                            value: () => (fileSet.dataTypes?.[t]?.unit ?? ''),
+                            enumerable: false
+                        },
+                        conv: {
+                            value: () => {
+                                const c = toNumber?.(fileSet.dataTypes?.[t]?.conversion, false);
+                                return Number.isFinite(c) ? c : (fileSet.dataTypes?.[t]?.conversion ?? 1);
+                            },
+                            enumerable: false
+                        }
+                    });
+                }
+
+
+                return getters;
+            }
+
 
             // ----------------- LOOPING THROW CSV FILES ----------------- //
             let fileCount = 0;
             for (let file of files) {
                 fileCount++;
-                const text = file.text().toLowerCase(); // Read file content
+                const text = file.text().toLowerCase().trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n"); // Read file content
 
                 let rows = text.split("\n"); // Split text into lines
 
@@ -8466,8 +8577,7 @@
                     delimiter: null,
                     skipRows: 0,
                     columns: null,
-                    filterPhotos: false,
-                    unitsConversion: {time: 1, distance: 1, force: 1}
+                    dataTypes: {},
                 }; // Options for parsing the file
 
                 const samplesInfo = {
@@ -8522,45 +8632,50 @@
                 };
 
                 if (fileType === "moira") {
-                    const preambleMetaData = parseSettingsFromCsv(text);
+                    const preambleMetaData = await parseSettingsFromCsv(text) || {};
 
-                    fileVersion = preambleMetaData?.version;
+                    fileVersion = preambleMetaData?.version || 0;
 
-                    if (fileVersion >= 1) fileOpts.unitsConversion = {time: 1, distance: 1, force: 1};
-
-                    fileOpts.delimiter = preambleMetaData?.delimiter;
+                    fileOpts.delimiter = preambleMetaData?.delimiter || ";";
                     if (preambleMetaData?.headerVersion === 1) fileOpts.skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
                     fileOpts.columns = preambleMetaData?.columns;
 
-                    if (fileOpts.columns >= 6) fileOpts.filterPhotos = true;
 
+                    const precisions = preambleMetaData?.precisions || {};
+                    if (isObj(outputsOpts) && isNotEmpty(precisions)) {
+                        Object.keys(outputsOpts)?.forEach(key => {
+                            const n = toRounds(precisions[key]);
+                            if (isDef(n) && !isNaN(n)) outputsOpts[key].precision = clamp(Math.abs(n), 0, 12);
+                        });
+                    }
 
                     const expInfoV = preambleMetaData?.expSettings.version;
+                    const calcSettingsInputs = preambleMetaData?.calcSettings.inputs || {};
                     if (expInfoV >= 1) {
                         expResults.experimentType = preambleMetaData?.experimentLabel || "";
-                        expResults.material = preambleMetaData.calcSettings.inputs?.inputMaterialName || "";
-                        expResults.b = preambleMetaData.calcSettings.inputs?.inputWidth || "";
-                        expResults.h = preambleMetaData.calcSettings.inputs?.inputHeight || "";
-                        expResults.L = preambleMetaData.calcSettings.inputs?.inputLength || "";
-                        expResults.E = preambleMetaData.calcSettings.inputs?.outputEModule || "";
-                        expResults.F_max = preambleMetaData.calcSettings.inputs?.outputForceMax || "";
-                        expResults.w_Fmax = preambleMetaData.calcSettings.inputs?.outputDisp || "";
-                        expResults.sigma_max = preambleMetaData.calcSettings.inputs?.outputMaxStress || "";
-                        expResults.F_T = preambleMetaData.calcSettings.inputs?.inputTargetForce || "";
-                        expResults.h_D = preambleMetaData.calcSettings.inputs?.inputIndDepth || "";
-                        expResults.H_BW = preambleMetaData.calcSettings.inputs?.outputHardness || "";
+                        expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName", "mm");
+                        expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
+                        expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
+                        expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
+                        expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
+                        expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
+                        expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
+                        expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
+                        expResults.F_T = getMetaValue(calcSettingsInputs, "inputTargetForce", "N");
+                        expResults.h_D = getMetaValue(calcSettingsInputs, "inputIndDepth", "mm");
+                        expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
                     }
 
                     const calcInfoV = preambleMetaData?.expSettings.version;
                     if (calcInfoV >= 1) {
-                        samplesInfo.hw = preambleMetaData.calcSettings.inputs?.inputHeight_BeforeDrying || "";
-                        samplesInfo.lw = preambleMetaData.calcSettings.inputs?.inputLength_BeforeDrying || "";
-                        samplesInfo.ww = preambleMetaData.calcSettings.inputs?.inputWidth_BeforeDrying || "";
-                        samplesInfo.mx = preambleMetaData.calcSettings.inputs?.inputWeight_BeforeDrying || "";
-                        samplesInfo.h0 = preambleMetaData.calcSettings.inputs?.inputHeight_AfterDrying || "";
-                        samplesInfo.l0 = preambleMetaData.calcSettings.inputs?.inputLength_AfterDrying || "";
-                        samplesInfo.w0 = preambleMetaData.calcSettings.inputs?.inputWidth_AfterDrying || "";
-                        samplesInfo.m0 = preambleMetaData.calcSettings.inputs?.inputWeight_AfterDrying || "";
+                        samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
+                        samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
+                        samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputWidth_BeforeDrying", "mm");
+                        samplesInfo.mx = getMetaValue(calcSettingsInputs, "inputWeight_BeforeDrying", "g");
+                        samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputHeight_AfterDrying", "mm");
+                        samplesInfo.l0 = getMetaValue(calcSettingsInputs, "inputLength_AfterDrying", "mm");
+                        samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputWidth_AfterDrying", "mm");
+                        samplesInfo.m0 = getMetaValue(calcSettingsInputs, "inputWeight_AfterDrying", "g");
                     }
 
 
@@ -8568,13 +8683,12 @@
                     fileOpts.delimiter = ";";
                     fileOpts.skipRows = 3; // (Info) // (Description) // (Header)
                     fileOpts.columns = 6;
-                    fileOpts.filterPhotos = true;
 
                 } else if (fileType === "matlab") {
                     fileOpts.delimiter = ";";
                     fileOpts.skipRows = 1;  // (Header)
                     fileOpts.columns = 5;
-                    fileOpts.unitsConversion.time = 1e-6; // Convert time from microseconds to seconds
+                    fileOpts['dataTypes']['time']['conversion'] = 1e-6; // Convert time from microseconds to seconds
 
                 } else if (fileType === "unknown") {
                     // find first row that starts with text 'time'
@@ -8592,7 +8706,11 @@
                     continue;
                 }
 
-                const foundDelimiter = getDelimiter(rows.slice(fileOpts.skipRows), fileOpts.columns);
+
+                const head = rows.slice(0, fileOpts.skipRows);
+                rows = rows.slice(fileOpts.skipRows); // Remove header rows
+
+                const foundDelimiter = getDelimiter(rows, fileOpts.columns);
 
                 if (foundDelimiter !== fileOpts.delimiter) {
                     logMessage(`❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
@@ -8602,8 +8720,8 @@
                         fileCount--;
                         continue;
                     }
+                    fileOpts.delimiter = foundDelimiter;
                 }
-
 
                 if (!fileOpts.delimiter) {
                     logMessage(`❌ Delimiter not found in file: ${file.name}`);
@@ -8611,6 +8729,35 @@
                     fileCount--;
                     continue;
                 }
+
+
+                const getters = setupParsers(head, fileOpts, outputsOpts);
+
+
+                if (Object.keys(outputsOpts).some(k => !getters[k] || getters[k].count() === 0)) {
+                    logMessage(`❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
+                    console.warn(`❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
+                    fileCount--;
+                    continue;
+                }
+
+                if (getters['time'].count() !== 1) {
+                    logMessage(`❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
+                    console.warn(`❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
+                    fileCount--;
+                    continue;
+                }
+                if (getters['position'].count() !== 1) {
+                    logMessage(`❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
+                    console.warn(`❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
+                    fileCount--;
+                    continue;
+                }
+
+                const getTime = (cells) => getters['time'](cells);
+                const getPosition = (cells) => getters['position'](cells);
+                const getForce = (cells) => getters['force'](cells);
+
 
                 rows = rows.map(row => row.split(fileOpts.delimiter)); // Parse CSV lines into an array
 
@@ -8644,8 +8791,6 @@
                 }
 
                 const originalLength = rows.length; // Original number of rows
-
-                if (fileOpts.filterPhotos) rows = rows.filter(row => row[6] === ""); // Filter out rows of taken photos
 
                 const dataSize = rows.length; // Number of rows in one file
 
@@ -8768,9 +8913,9 @@
 
                 // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
 
-                const firstTime = parseNum(rows[0][0]); // First time value
-                const firstShift = parseNum(rows[0][1]); // First shift value
-                const firstForce = (parseNum(rows[0][3]) + parseNum(rows[0][4]) + parseNum(rows[0][5])); // First force value
+                const firstTime = getTime(rows[0]); // First time value
+                const firstShift = getPosition(rows[0]); // First shift value
+                const firstForce = getForce(rows[0]); // First force value
 
                 // Define headers for this section
                 let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
@@ -8780,10 +8925,10 @@
                 sectionHeader3[columnOffset + 1] = "Total distance covered by loading pin";
                 sectionHeader3[columnOffset + 2] = "Force";
                 sectionHeader3[columnOffset + 3] = "Deformation from F > 1N";
-                sectionHeader4[columnOffset] = "s";
-                sectionHeader4[columnOffset + 1] = "mm";
-                sectionHeader4[columnOffset + 2] = "N";
-                sectionHeader4[columnOffset + 3] = "mm";
+                sectionHeader4[columnOffset] = outputsOpts.time.unit;
+                sectionHeader4[columnOffset + 1] = outputsOpts.position.unit;
+                sectionHeader4[columnOffset + 2] = outputsOpts.force.unit;
+                sectionHeader4[columnOffset + 3] = outputsOpts.position.unit;
 
                 formattedMerges.push({
                     s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
@@ -8819,21 +8964,21 @@
                         if (entry.length >= 6) {
                             if (!entry[0]) continue; // Skip empty rows
 
-                            time = ((parseNum(entry[0]) - firstTime) * fileOpts.unitsConversion.time) || 0; // Time (s)
+                            time = (getTime(entry) - firstTime) || 0; // Time (s)
 
-                            force = ((parseNum(entry[3]) + parseNum(entry[4]) + parseNum(entry[5]) - firstForce) * fileOpts.unitsConversion.force) || 0; // Force sum
+                            force = (getForce(entry) - firstForce) || 0; // Force sum
 
                             // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                            shift = ((parseNum(entry[1]) - firstShift) * fileOpts.unitsConversion.distance) || 0; // Displacement (mm)
+                            shift = (getForce(entry) - firstShift) || 0; // Displacement (mm)
 
                             // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
                             deformation = shift; // Calculate deformation
 
-                            dataRow[columnOffset] = rTime(time);
-                            dataRow[columnOffset + 1] = rDist(shift);
-                            dataRow[columnOffset + 2] = rForce(force);
-                            dataRow[columnOffset + 3] = rDist(deformation);
+                            dataRow[columnOffset] = time;
+                            dataRow[columnOffset + 1] = shift;
+                            dataRow[columnOffset + 2] = force;
+                            dataRow[columnOffset + 3] = deformation;
                         }
                     }
                     formattedData[row + 3] = dataRow;
@@ -8911,7 +9056,7 @@
         const LINGER_MS = 1000; // jak dlouho zůstane pilulka viditelná po akci/opuštění
 
         /* ======= POMOCNÉ FUNKCE (bezpečné fallbacky) ======= */
-        const normalize = (v) => String(v ?? '').toLowerCase()
+        const normalize = (v) => String(v || '').toLowerCase()
             .replaceAll('\\', '/').replaceAll('.', '').replaceAll(',', '').trim();
 
         /* ======= GLOBÁLNÍ EXKLUZIVITA POSLEDNÍ AKCE ======= */
@@ -9137,7 +9282,7 @@
 
             const copyValue = async () => {
                 let ok = false;
-                const val = (el.value ?? el.textContent ?? '').toString().trim();
+                const val = (el.value || el.textContent || '').toString().trim();
                 try {
                     if (!hasValue(val)) throw new Error('Empty');
                     const testVal = normalize(val);
@@ -9285,7 +9430,7 @@
         };
 
         const scan = () => {
-            $$(`${COPY_SELECTOR}, ${ADJUST_SELECTOR}`).forEach(setupOne);
+            $$(`${COPY_SELECTOR}, ${ADJUST_SELECTOR}`)?.forEach(setupOne);
         };
 
         // Veřejné API pro dynamické DOM změny
@@ -9301,8 +9446,12 @@
 
 <script>
 
-    // ===== Rozměry a operace =====
-    const ZERO = [0, 0, 0, 0, 0, 0, 0]; // L, M, T, I, Θ, N, J (délka, hmota, čas, proud, teplota, látkové množství, svítivost)
+    // ==========================
+    // Jednotky, prefixy, parser
+    // ==========================
+
+    // --- Rozměry a operace ---
+    const ZERO = [0, 0, 0, 0, 0, 0, 0]; // L, M, T, I, Θ, N, J
     const DIMS = {L: 0, M: 1, T: 2, I: 3, Th: 4, N: 5, J: 6};
 
     const dim = (...d) => d;
@@ -9310,18 +9459,27 @@
     const mulDim = (a, k) => a.map(v => v * k);
     const sameDim = (a, b) => a.every((v, i) => v === b[i]);
 
-    // ===== SI předpony (vč. 'µ'/'μ' i fallback 'u') =====
+    // --- SI předpony (vč. 'µ' a fallback 'u') ---
     const PREFIX = new Map(Object.entries({
-        Y: 1e24, Z: 1e21, E: 1e18, P: 1e15, T: 1e12, G: 1e9, M: 1e6, k: 1e3, h: 1e2, da: 1e1,
-        d: 1e-1, c: 1e-2, m: 1e-3, u: 1e-6, 'µ': 1e-6, n: 1e-9, p: 1e-12, f: 1e-15,
-        a: 1e-18, z: 1e-21, y: 1e-24
+        Y: 1e24, Z: 1e21, E: 1e18, P: 1e15, T: 1e12, G: 1e9, M: 1e6,
+        k: 1e3, h: 1e2, da: 1e1,
+        d: 1e-1, c: 1e-2, m: 1e-3, u: 1e-6, 'µ': 1e-6,
+        n: 1e-9, p: 1e-12, f: 1e-15, a: 1e-18, z: 1e-21, y: 1e-24
     }));
 
-    // ===== Databáze jednotek =====
+    // --- Textové předpony (slova) → symbol předpony ---
+    const TEXT_PREFIX_ALIASES = new Map(Object.entries({
+        yotta: 'Y', zetta: 'Z', exa: 'E', peta: 'P', tera: 'T',
+        giga: 'G', mega: 'M', kilo: 'k', hecto: 'h', deka: 'da', deca: 'da',
+        deci: 'd', centi: 'c', milli: 'm', micro: 'u', nano: 'n',
+        pico: 'p', femto: 'f', atto: 'a', zepto: 'z', yocto: 'y'
+    }));
+
+    // --- Databáze jednotek ---
     const UNITS = new Map(); // sym -> { dim, factor }
     const def = (sym, dimv, factor = 1) => UNITS.set(sym, {dim: dimv, factor});
 
-    // Základní SI + pár běžných
+    /* Základní SI + pár běžných */
     def('m', dim(1, 0, 0, 0, 0, 0, 0));
     def('s', dim(0, 0, 1, 0, 0, 0, 0));
     def('A', dim(0, 0, 0, 1, 0, 0, 0));
@@ -9330,15 +9488,18 @@
     def('cd', dim(0, 0, 0, 0, 0, 0, 1));
 
     def('kg', dim(0, 1, 0, 0, 0, 0, 0), 1);
-    def('g', dim(0, 1, 0, 0, 0, 0, 0), 1e-3); // gram jako 1e-3 kg
+    def('g', dim(0, 1, 0, 0, 0, 0, 0), 1e-3); // 1 g = 1e-3 kg
 
     // Časové zkratky
-    def('min', dim(0, 0, 1, 0, 0, 0, 0), 60);     // minuta
-    def('h', dim(0, 0, 1, 0, 0, 0, 0), 3600);   // hodina
+    def('min', dim(0, 0, 1, 0, 0, 0, 0), 60);
+    def('h', dim(0, 0, 1, 0, 0, 0, 0), 3600);
 
     // Odvozené (faktor 1, jen dimenze)
-    const mD = UNITS.get('m').dim, sD = UNITS.get('s').dim, AD = UNITS.get('A').dim, kgD = UNITS.get('kg').dim,
-        cdD = UNITS.get('cd').dim;
+    const mD = UNITS.get('m').dim;
+    const sD = UNITS.get('s').dim;
+    const AD = UNITS.get('A').dim;
+    const kgD = UNITS.get('kg').dim;
+    const cdD = UNITS.get('cd').dim;
 
     const HzD = mulDim(sD, -1);
     def('Hz', HzD, 1);
@@ -9358,20 +9519,18 @@
     const VD = addDim(WD, mulDim(AD, -1));
     def('V', VD, 1);
 
-    // Nové: C, F, Ω/ohm, T, lx
+    // C, F, Ω/ohm, T, lx
     const CD = addDim(AD, sD);
     def('C', CD, 1);
 
     const FD = addDim(CD, mulDim(VD, -1));
     def('F', FD, 1);
 
-    // Ohm (var. znak i slovo)
     const OhmD = addDim(VD, mulDim(AD, -1));
     def('Ω', OhmD, 1);
     def('ohm', OhmD, 1);
     def('Ohm', OhmD, 1);
 
-    // Tesla
     const TD = addDim(ND, addDim(mulDim(AD, -1), mulDim(mD, -1)));
     def('T', TD, 1);
 
@@ -9379,41 +9538,131 @@
     const lxD = addDim(cdD, mulDim(mD, -2));
     def('lx', lxD, 1);
 
-    // Bezrozměrné pomocné (pro poměry, procenta)
+    // Bezrozměrné pomocné
     def('1', ZERO.slice(), 1);
     def('%', ZERO.slice(), 0.01);
     def('‰', ZERO.slice(), 0.001);
     def('ppm', ZERO.slice(), 1e-6);
     def('ppb', ZERO.slice(), 1e-9);
 
-
+    // Den, týden, měsíc(30d), rok(365d)
     const SECONDS_PER_DAY = 24 * 60 * 60;
-
-    def('d', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);        // den
+    def('d', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
     def('day', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
-
-    def('wk', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);    // týden
+    def('wk', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
     def('week', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
-
-    def('mo', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);  // měsíc (30 dní)
+    def('mo', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
     def('month', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
-
-    def('yr', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);  // rok (365 dní)
+    def('yr', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
     def('year', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
 
-    // Dynamický seznam symbolů, seřazený dle délky (longest match)
+    // Teploty – symbolické; afinní převod řeší convertUnits
+    def('degC', UNITS.get('K').dim, 1); // °C
+    def('degF', UNITS.get('K').dim, 1); // °F
+
+    // Seznam symbolů (nejdelší napřed)
     let UNIT_SYMBOLS = Array.from(UNITS.keys()).sort((a, b) => b.length - a.length);
 
-    // ===== Parser jednotkového výrazu =====
+    // --- Textové aliasy jednotek (plurály, názvy, překlepy) → kanonické symboly ---
+    const TEXT_UNIT_ALIASES = new Map(Object.entries({
+        // čas
+        sec: 's', secs: 's', second: 's', seconds: 's',
+        mins: 'min', minute: 'min', minutes: 'min',
+        hr: 'h', hrs: 'h', hour: 'h', hours: 'h',
+        day: 'd', days: 'd',
+        wks: 'wk', week: 'wk', weeks: 'wk',
+        mos: 'mo', month: 'mo', months: 'mo',
+        yrs: 'yr', year: 'yr', years: 'yr',
+
+        // délka / hmota
+        meter: 'm', meters: 'm', metre: 'm', metres: 'm',
+        gram: 'g', grams: 'g',
+
+        // základní SI
+        ampere: 'A', amperes: 'A',
+        kelvin: 'K',
+        mole: 'mol', moles: 'mol',
+        candela: 'cd',
+
+        // odvozené
+        newton: 'N', newtons: 'N',
+        pascal: 'Pa', pascals: 'Pa',
+        joule: 'J', joules: 'J',
+        watt: 'W', watts: 'W',
+        volt: 'V', volts: 'V',
+        coulomb: 'C', coulombs: 'C',
+        farad: 'F', farads: 'F',
+        ohm: 'ohm', ohms: 'ohm', Ohm: 'ohm',
+        tesla: 'T', teslas: 'T',
+        lux: 'lx',
+
+        // teploty (text)
+        celsius: 'degC', 'degree celsius': 'degC', degreecelsius: 'degC', 'degrees celsius': 'degC',
+        fahrenheit: 'degF', 'degree fahrenheit': 'degF', degreefahrenheit: 'degF', 'degrees fahrenheit': 'degF'
+    }));
+
+    const TEXT_UNIT_TYPO_ALIASES = new Map(Object.entries({
+        secnd: 's', minut: 'min', houer: 'h',
+        gramm: 'g',
+        nevtonn: 'N', newtonn: 'N', newtons: 'N',
+        pascalss: 'Pa', jouless: 'J', wattss: 'W', voltss: 'V',
+        coulombss: 'C', faradss: 'F', teslass: 'T',
+        luxx: 'lx', luxes: 'lx',
+        metre: 'm', metres: 'm' // (duplicitně pro jistotu)
+    }));
+
+    // --- Normalizace vstupu před parsováním ---
+    // 1) nahradí °C/°F → degC/degF
+    // 2) nahradí textové předpony & jednotky & překlepy
+    // 3) slepí "<prefix><mezera><unit>" → "<prefix><unit>" (např. "k m" → "km")
+    function normalizeUnitsString(input) {
+        if (input == null) return input;
+        let s = String(input);
+
+        // °C / °F → degC / degF
+        s = s.replace(/°\s*[cC]/g, 'degC')
+            .replace(/°\s*[fF]/g, 'degF');
+
+        const replaceWordMap = (map) => {
+            const keys = Array.from(map.keys()).sort((a, b) => b.length - a.length);
+            for (const k of keys) {
+                const re = new RegExp(`\\b${k}\\b`, 'gi');
+                s = s.replace(re, map.get(k));
+            }
+        };
+
+        // nejdřív slova-předpony, pak jednotky a překlepy
+        replaceWordMap(TEXT_PREFIX_ALIASES);
+        replaceWordMap(TEXT_UNIT_ALIASES);
+        replaceWordMap(TEXT_UNIT_TYPO_ALIASES);
+
+        // slep "prefix symbol"+"mezera"+"unit" → "prefix+unit"
+        const prefixSymbols = ['Y', 'Z', 'E', 'P', 'T', 'G', 'M', 'k', 'h', 'da', 'd', 'c', 'm', 'u', 'µ', 'n', 'p', 'f', 'a', 'z', 'y'];
+        for (const pre of prefixSymbols) {
+            for (const u of UNIT_SYMBOLS) {
+                if (u === 'kg') continue; // kg je speciál
+                const re = new RegExp(`\\b${pre}\\s+${u}\\b`, 'g');
+                s = s.replace(re, `${pre}${u}`);
+            }
+        }
+
+        return s;
+    }
+
+    // --- Parser jednotkového výrazu ---
     function parseUnitExpr(input) {
         if (!input || String(input).trim() === '' || input === '1') {
             return {dim: ZERO.slice(), factor: 1};
         }
-        let s = String(input)
+
+        // normalizace
+        let s = normalizeUnitsString(input);
+
+        s = String(s)
             .replace(/[·⋅•×]/g, '*')
-            .replace(/[–—−]/g, '-')     // různé "minusy"
-            .replace(/\s+/g, '*')       // mezery jako násobení
-            .replace(/[()]/g, '');      // (jednoduchý parser bez závorek)
+            .replace(/[–—−]/g, '-')   // různé minusy
+            .replace(/\s+/g, '*')     // mezery jako násobení
+            .replace(/[()]/g, '');    // bez závorek
 
         const parts = s.split('/');
         let acc = {dim: ZERO.slice(), factor: 1};
@@ -9432,38 +9681,42 @@
     }
 
     function parseUnitToken(tok) {
-        let t = tok;
+        let t = String(tok).trim();
+        if (!t) throw new Error(`Invalid unit token: "${tok}"`);
         let exp = 1;
 
-        // exponent: ^{...} nebo ^...
+        // exponent ^{...} nebo ^...
         const mPow = t.match(/\^(?:\{([^}]+)\}|(.+))$/);
         if (mPow) {
-            const raw = (mPow[1] ?? mPow[2]).trim();
+            const raw = (mPow[1] || mPow[2]).trim();
             exp = parseInt(raw, 10);
             t = t.slice(0, mPow.index);
+            if (!Number.isInteger(exp)) throw new Error(`Invalid exponent: "${raw}"`);
         }
 
-        // speciál: "kg" (nesmí se rozpadnout na 'k'+'g')
+        // unicode mocniny
+        t = t.replace(/²/g, '^2').replace(/³/g, '^3');
+        if (exp === 0) return {dim: ZERO.slice(), factor: 1};
+        if (t === '1') return {dim: ZERO.slice(), factor: 1};
+
+        // speciál: "kg" – nesmí se rozpadnout na k + g
         if (t === 'kg') {
             return {dim: mulDim(UNITS.get('kg').dim, exp), factor: 1};
-            // (factor = 1^exp)
         }
 
-        // najdi nejdelší známý symbol jednotky
+        // nejdelší známý symbol jednotky jako sufix
         const unit = UNIT_SYMBOLS.find(u => t.endsWith(u));
         if (!unit) throw new Error(`Unknown unit: "${t}"`);
 
-        const prefixStr = t.slice(0, t.length - unit.length);
-        let base = UNITS.get(unit);
+        const base = UNITS.get(unit);
         if (!base) throw new Error(`Unit "${unit}" is not supported`);
 
-        // předpona?
+        const prefixStr = t.slice(0, t.length - unit.length);
         let pf = 1;
         if (prefixStr) {
             pf = PREFIX.get(prefixStr);
-            // speciál pro 'da' (dva znaky) už řešíme v mapě, ale necháme fallback:
-            if (pf == null && prefixStr === 'da') pf = 10;
-            if (pf == null) throw new Error(`Unknown prefix: "${prefixStr}" v "${tok}"`);
+            if (pf == null && prefixStr === 'da') pf = 10; // fallback
+            if (pf == null) throw new Error(`Unknown prefix: "${prefixStr}" in "${tok}"`);
         }
 
         return {
@@ -9472,57 +9725,151 @@
         };
     }
 
-    // ===== API =====
+    // --- Teplotní helpery (čisté teploty jen) ---
+    const isPureTempUnit = (u) => {
+        const s = String(u).trim();
+        return s === 'K' || s === 'degC' || s === 'degF';
+    };
+    const toKelvin = (value, sym) => {
+        switch (sym) {
+            case 'K':
+                return value;
+            case 'degC':
+                return value + 273.15;
+            case 'degF':
+                return (value - 32) * (5 / 9) + 273.15;
+            default:
+                throw new Error(`Unsupported temperature unit: ${sym}`);
+        }
+    };
+    const fromKelvin = (valueK, sym) => {
+        switch (sym) {
+            case 'K':
+                return valueK;
+            case 'degC':
+                return valueK - 273.15;
+            case 'degF':
+                return (valueK - 273.15) * (9 / 5) + 32;
+            default:
+                throw new Error(`Unsupported temperature unit: ${sym}`);
+        }
+    };
+
+    // --- Veřejné API: konverze hodnoty mezi jednotkami ---
     function convertUnits(value, fromUnit, toUnit) {
-        const a = parseUnitExpr(fromUnit);
-        const b = parseUnitExpr(toUnit);
+        const fNorm = normalizeUnitsString(fromUnit);
+        const tNorm = normalizeUnitsString(toUnit);
+
+        const fIsTemp = isPureTempUnit(fNorm);
+        const tIsTemp = isPureTempUnit(tNorm);
+
+        if (fIsTemp || tIsTemp) {
+            // afinní převod smí být jen mezi čistými teplotami
+            if (!(fIsTemp && tIsTemp)) {
+                throw new Error(`Temperature units cannot be combined with other units: "${fromUnit}" → "${toUnit}"`);
+            }
+            const k = toKelvin(value, fNorm);
+            return fromKelvin(k, tNorm);
+        }
+
+        const a = parseUnitExpr(fNorm);
+        const b = parseUnitExpr(tNorm);
         if (!sameDim(a.dim, b.dim)) {
             throw new Error(`Noncompatible units: "${fromUnit}" vs "${toUnit}"`);
         }
-
         return value * (a.factor / b.factor);
     }
 
-    // convertUnits(2, 'min', 's');             // 120
-    // convertUnits(1, 'h', 'min');             // 60
+    // ==========================
+    // TESTY & VÝPIS DO KONZOLE
+    // ==========================
+    // function runTests() {
+    //     console.log('--- TEST: °C / °F / K ---');
+    //     console.log('normalize "°C" ->', normalizeUnitsString('°C')); // očekáváme "degC"
+    //     console.log('normalize "°F" ->', normalizeUnitsString('°F')); // očekáváme "degF');
     //
-    // convertUnits(1, 'mV/V', '1');            // 0.001  (bezrozměrné)
-    // convertUnits(1, 'mV/V', '%');            // 0.1    (%)
-    // convertUnits(2.5, 'mV/V', '‰');          // 2.5    (promile)
-    // convertUnits(500, 'ppm', '%');           // 0.05
+    //     const tC = 25;
+    //     console.log(`25 °C -> K: `, convertUnits(tC, '°C', 'K'));     // 298.15
+    //     console.log(`25 °C -> °F:`, convertUnits(tC, '°C', '°F'));    // 77
+    //     console.log(`300 K -> °C:`, convertUnits(300, 'K', 'degC'));  // 26.85
+    //     console.log(`77 °F -> °C:`, convertUnits(77, 'degF', 'degC')); // 25
     //
-    // convertUnits(1, 'kΩ', 'ohm');            // 1000
-    // convertUnits(1, 'mA', 'A');              // 0.001
-    // convertUnits(1, 'C', 'A*s');             // 1
-    // convertUnits(1, 'F', 'C/V');             // 1
-    // convertUnits(1, 'T', 'N/(A*m)');         // 1
-    // convertUnits(1, 'lx', 'cd/m^2');         // 1
+    //     console.log('\n--- TEST: textové názvy & překlepy ---');
+    //     console.log('normalize "seconds" ->', normalizeUnitsString('seconds')); // s
+    //     console.log('normalize "metres"  ->', normalizeUnitsString('metres'));  // m
+    //     console.log('normalize "gramm"   ->', normalizeUnitsString('gramm'));   // g
+    //     console.log('normalize "nevtonn" ->', normalizeUnitsString('nevtonn')); // N
     //
-    // convertUnits(2, 'mm/min', 'mm/s');
-    // convertUnits(2.5, 'mV/GV', 'GV/mV');
-    // convertUnits(4, 'mV/V', 'MV/GV');
-    // convertUnits(4, 'mV/V', 'GV/GV');
-    // convertUnits(4, 'mm^2', 'cm^2');
-    // convertUnits(4, 'µm^4', 'm^4');
-    // convertUnits(4, 'µm^4', 'm^4');
+    //     console.log('\n--- TEST: textové předpony ---');
+    //     console.log('normalize "kilo meter" ->', normalizeUnitsString('kilo meter')); // km
+    //     console.log('parse "kilo meter / second" == "km/s":',
+    //         JSON.stringify(parseUnitExpr('kilo meter / second')) === JSON.stringify(parseUnitExpr('km/s'))
+    //     );
     //
-    // convertUnits(1, 'd', 's');           // 86400
-    // convertUnits(2, 'wk', 'd');          // 14
-    // convertUnits(60, 'mo', 'd');         // 1800 (2 měsíce po 30 dnech)
-    // convertUnits(1, 'yr', 'h');          // 365 * 24 = 8760
-    // convertUnits(1, 'km/yr', 'm/d');      // ≈ 0.27778 (beze změny)
-    // convertUnits(1, 'mm/wk', 'mm/day');   // 60
+    //     console.log('\n--- TEST: běžné SI konverze ---');
+    //     console.log('1 km -> m:', convertUnits(1, 'km', 'm'));           // 1000
+    //     console.log('500 g -> kg:', convertUnits(500, 'g', 'kg'));       // 0.5
+    //     console.log('1 N·m -> J:', convertUnits(1, 'N*m', 'J'));         // 1
+    //     console.log('1 Pa -> N/m^2:', convertUnits(1, 'Pa', 'N/m^2'));   // 1
     //
-    // convertUnits(1, 'N', 'kg*m/s^2');     // 1
-    // convertUnits(10, 'N', 'kN');          // 0.01
+    //     console.log('\n--- TEST: chybové stavy ---');
+    //     try {
+    //         console.log('degC/s → K/s (nemělo by projít):', convertUnits(1, 'degC/s', 'K/s'));
+    //     } catch (e) {
+    //         console.log('Očekávaná chyba (afinní teplota v poměru):', e.message);
+    //     }
+    //     try {
+    //         console.log('neznámá jednotka:', convertUnits(1, 'smurf', 'm'));
+    //     } catch (e) {
+    //         console.log('Očekávaná chyba (unknown unit):', e.message);
+    //     }
     //
-    // convertUnits(1, 'J', 'N*m');          // 1
-    // convertUnits(1, 'J', 'kg*m^2/s^2');   // 1
-    // convertUnits(500, 'kJ', 'MJ');        // 0.5
     //
-    // convertUnits(1, 'W', 'J/s');          // 1
-    // convertUnits(2.5, 'kW', 'W');         // 2500
-    // convertUnits(1, 'W', 'kg*m^2/s^3');   // 1
+    //     convertUnits(2, 'min', 's');             // 120
+    //     convertUnits(1, 'h', 'min');             // 60
+    //
+    //     convertUnits(1, 'mV/V', '1');            // 0.001  (bezrozměrné)
+    //     convertUnits(1, 'mV/V', '%');            // 0.1    (%)
+    //     convertUnits(2.5, 'mV/V', '‰');          // 2.5    (promile)
+    //     convertUnits(500, 'ppm', '%');           // 0.05
+    //
+    //     convertUnits(1, 'kΩ', 'ohm');            // 1000
+    //     convertUnits(1, 'mA', 'A');              // 0.001
+    //     convertUnits(1, 'C', 'A*s');             // 1
+    //     convertUnits(1, 'F', 'C/V');             // 1
+    //     convertUnits(1, 'T', 'N/(A*m)');         // 1
+    //     convertUnits(1, 'lx', 'cd/m^2');         // 1
+    //
+    //     convertUnits(2, 'mm/min', 'mm/s');
+    //     convertUnits(2.5, 'mV/GV', 'GV/mV');
+    //     convertUnits(4, 'mV/V', 'MV/GV');
+    //     convertUnits(4, 'mV/V', 'GV/GV');
+    //     convertUnits(4, 'mm^2', 'cm^2');
+    //     convertUnits(4, 'µm^4', 'm^4');
+    //     convertUnits(4, 'µm^4', 'm^4');
+    //
+    //     convertUnits(1, 'd', 's');           // 86400
+    //     convertUnits(2, 'wk', 'd');          // 14
+    //     convertUnits(60, 'mo', 'd');         // 1800 (2 měsíce po 30 dnech)
+    //     convertUnits(1, 'yr', 'h');          // 365 * 24 = 8760
+    //     convertUnits(1, 'km/yr', 'm/d');      // ≈ 0.27778 (beze změny)
+    //     convertUnits(1, 'mm/wk', 'mm/day');   // 60
+    //
+    //     convertUnits(1, 'N', 'kg*m/s^2');     // 1
+    //     convertUnits(10, 'N', 'kN');          // 0.01
+    //
+    //     convertUnits(1, 'J', 'N*m');          // 1
+    //     convertUnits(1, 'J', 'kg*m^2/s^2');   // 1
+    //     convertUnits(500, 'kJ', 'MJ');        // 0.5
+    //
+    //     convertUnits(1, 'W', 'J/s');          // 1
+    //     convertUnits(2.5, 'kW', 'W');         // 2500
+    //     convertUnits(1, 'W', 'kg*m^2/s^3');   // 1
+    // }
+
+</script>
+
+<script>
 
 </script>
 
