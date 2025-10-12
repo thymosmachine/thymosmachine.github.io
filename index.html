@@ -7828,7 +7828,7 @@
         });
 
         // Initialization of uPlot charts
-        timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Load-Time Graph", "Time [s]", "Force [N]");
+        timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Time Graph", "Time [s]", "Force [N]");
         positionChart = createChart("positionChart", markersDist, ["Position (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Position Graph", "Position [mm]", "Force [N]");
 
 
@@ -8345,7 +8345,6 @@
 
             let formattedData = []; // First sheet data  -   Array to store ALL formatted measurement data
             let columnOffset = 0; // Column shift for each section
-            let formattedMerges = []; // Merge of the first two line of the header
 
 
             // ================== SAMPLES TABLE ================== //
@@ -8356,18 +8355,6 @@
                 ["", "", "", "", "hw", "lw", "ww", "mw", "h0", "l0", "w0", "m0", ""], // row 1
                 ["", "", "", "", "height (mm)", "length (mm)", "width (mm)", "(g)", "height (mm)", "length (mm)", "width (mm)", "(g)", ""] // row 2
             ];// Second sheet data
-
-            // Optional: force merges grouped headers in Excel
-            samplesTable["!merges"] = [
-                {s: {r: 0, c: 0}, e: {r: 2, c: 0}}, // Code
-                {s: {r: 0, c: 1}, e: {r: 2, c: 1}}, // Method
-                {s: {r: 0, c: 2}, e: {r: 2, c: 2}}, // W
-                {s: {r: 0, c: 3}, e: {r: 2, c: 3}}, // Number
-                {s: {r: 0, c: 4}, e: {r: 0, c: 7}}, // Dimensions before drying
-                {s: {r: 0, c: 8}, e: {r: 0, c: 11}}, // Dimensions after drying
-                {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
-            ];
-
 
             const outputsOpts = {
                 time: {key: 'time', unit: 's', precision: 12},
@@ -8834,58 +8821,65 @@
                     expResults.H_BW,
                 ]);
 
-                // // 3) Do listu + pár „quality-of-life“ věcí (autofilter, šířky sloupců)
-                // const ws = XLSX.utils.aoa_to_sheet(rows);
-                //
-                // // rozsah
-                // ws['!ref'] = XLSX.utils.encode_range(
-                //   { s: { r:0, c:0 }, e: { r: rows.length-1, c: HEAD.length-1 } }
-                // );
-                //
-                // // autofilter přes hlavičku
-                // ws['!autofilter'] = { ref: XLSX.utils.encode_range(0, 0, rows.length-1, HEAD.length-1) };
-                // // šířky sloupců podle délky hlaviček
-                // const PAD = 2;      // rezerva, ať to není nalepené
-                // const MIN = 6;      // minimální šířka
-                // ws['!cols'] = HEAD.map(h => ({ wch: Math.max(MIN, h.length + PAD) }));
-                // function fitToCols(rows, { pad = 2, min = 6 } = {}) {
-                //   const cols = rows[0]?.length ?? 0;
-                //   const out = Array.from({ length: cols }, () => ({ wch: min }));
-                //
-                //   for (let c = 0; c < cols; c++) {
-                //     let maxLen = 0;
-                //     for (let r = 0; r < rows.length; r++) {
-                //       const v = rows[r][c];
-                //       const s = v == null ? "" : String(v);
-                //       if (s.length > maxLen) maxLen = s.length;
-                //     }
-                //     out[c].wch = Math.max(min, maxLen + pad);
-                //   }
-                //   return out;
-                // }
-                //
-                // ws['!cols'] = fitToCols(rows, { pad: 2, min: 6 });
-                // function setNumFmt(colIndex, fmt) {
-                //   for (let r = 1; r < rows.length; r++) {
-                //     const addr = XLSX.utils.encode_cell({ r, c: colIndex });
-                //     const cell = ws[addr];
-                //     if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
-                //   }
-                // }
-                // // příklady:
-                // setNumFmt(4,  "0.00"); // b (mm)
-                // setNumFmt(5,  "0.00"); // h (mm)
-                // setNumFmt(6,  "0");    // L (mm) – třeba celé mm
-                // setNumFmt(7,  "0");    // E (MPa)
-                // setNumFmt(8,  "0");    // F_max (N)
-                // setNumFmt(9,  "0.00"); // w_Fmax (mm)
-                // setNumFmt(10, "0");    // σ_max (MPa)
-                // setNumFmt(11, "0");    // F_T (N)
-                // setNumFmt(12, "0.00"); // h_D (mm)
-                // setNumFmt(13, "0.000"); // H_BW (-)
-                //
-                // // 5) Přidej list do workbooku
-                // XLSX.utils.book_append_sheet(wb, ws, "Experiments Summary");
+                /* TODO: doplnit níže formátování + přidat šířku a typ dat pro ostatní Listy
+                    //
+                    //
+                    // 3) Do listu + pár „quality-of-life“ věcí (autofilter, šířky sloupců)
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    // rozsah
+                    //
+                    ws['!ref'] = XLSX.utils.encode_range(
+                      { s: { r:0, c:0 }, e: { r: rows.length-1, c: HEAD.length-1 } }
+                    );
+                    //
+                    // autofilter přes hlavičku
+                    ws['!autofilter'] = { ref: XLSX.utils.encode_range(0, 0, rows.length-1, HEAD.length-1) };
+                    //
+                    // šířky sloupců podle délky hlaviček
+                    const PAD = 2;      // rezerva, ať to není nalepené
+                    const MIN = 6;      // minimální šířka
+                    //
+                    ws['!cols'] = HEAD.map(h => ({ wch: Math.max(MIN, h.length + PAD) }));
+                    //
+                    function fitToCols(rows, { pad = 2, min = 6 } = {}) {
+                      const cols = rows[0]?.length ?? 0;
+                      const out = Array.from({ length: cols }, () => ({ wch: min }));
+                      for (let c = 0; c < cols; c++) {
+                        let maxLen = 0;
+                        for (let r = 0; r < rows.length; r++) {
+                          const v = rows[r][c];
+                          const s = v == null ? "" : String(v);
+                          if (s.length > maxLen) maxLen = s.length;
+                        }
+                        out[c].wch = Math.max(min, maxLen + pad);
+                      }
+                      return out;
+                    }
+                    //
+                    ws['!cols'] = fitToCols(rows, { pad: 2, min: 6 });
+                    function setNumFmt(colIndex, fmt) {
+                      for (let r = 1; r < rows.length; r++) {
+                        const addr = XLSX.utils.encode_cell({ r, c: colIndex });
+                        const cell = ws[addr];
+                        if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
+                      }
+                    }
+                    //
+                    // příklady:
+                    setNumFmt(4,  "0.00"); // b (mm)
+                    setNumFmt(5,  "0.00"); // h (mm)
+                    setNumFmt(6,  "0");    // L (mm) – třeba celé mm
+                    setNumFmt(7,  "0");    // E (MPa)
+                    setNumFmt(8,  "0");    // F_max (N)
+                    setNumFmt(9,  "0.00"); // w_Fmax (mm)
+                    setNumFmt(10, "0");    // σ_max (MPa)
+                    setNumFmt(11, "0");    // F_T (N)
+                    setNumFmt(12, "0.00"); // h_D (mm)
+                    setNumFmt(13, "0.000"); // H_BW (-)
+                    //
+                    // 5) Přidej list do workbooku
+                    XLSX.utils.book_append_sheet(wb, ws, "Experiments Summary");
+                */
 
 
                 // ================== SAMPLES TABLE ================== //
@@ -8904,15 +8898,7 @@
 
 
                 // ================== LOADING DATA ================== //
-
-                let shift = 0; // Displacement (mm)
-                let force = 0; // Force (N)
-                let time = 0; // Time (s)
-                let deformation = 0; // Deformation (mm)
-
-
                 // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
-
                 const firstTime = getTime(rows[0]); // First time value
                 const firstShift = getPosition(rows[0]); // First shift value
                 const firstForce = getForce(rows[0]); // First force value
@@ -8929,13 +8915,6 @@
                 sectionHeader4[columnOffset + 1] = outputsOpts.position.unit;
                 sectionHeader4[columnOffset + 2] = outputsOpts.force.unit;
                 sectionHeader4[columnOffset + 3] = outputsOpts.position.unit;
-
-                formattedMerges.push({
-                    s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
-                });
-                formattedMerges.push({
-                    s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
-                });
 
                 // Ensure headers are fully added for every section
                 if (formattedData.length === 0) {
@@ -8955,31 +8934,28 @@
                 }
 
                 // Add data to the section
-                for (let row = 0; row < dataSize; row++) {
-                    let index = row;
-                    let dataRow = formattedData[row + 3] || [];
+                for (let rowIndex = 0; rowIndex < dataSize; rowIndex++) {
+                    const dataRow = formattedData[row + 3] || [];
 
-                    if (index < rows.length) {
-                        let entry = rows[index];
-                        if (entry.length >= 6) {
-                            if (!entry[0]) continue; // Skip empty rows
+                    const entry = rows[rowIndex];
+                    if (entry.length >= 6) {
+                        if (!entry[0]) continue; // Skip empty rows
 
-                            time = (getTime(entry) - firstTime) || 0; // Time (s)
+                        const time = (getTime(entry) - firstTime) || 0; // Time (s)
 
-                            force = (getForce(entry) - firstForce) || 0; // Force sum
+                        const force = (getForce(entry) - firstForce) || 0; // Force sum
 
-                            // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
+                        // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                            shift = (getForce(entry) - firstShift) || 0; // Displacement (mm)
+                        const shift = (getForce(entry) - firstShift) || 0; // Displacement (mm)
 
-                            // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
-                            deformation = shift; // Calculate deformation
+                        // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                        const deformation = shift; // Calculate deformation
 
-                            dataRow[columnOffset] = time;
-                            dataRow[columnOffset + 1] = shift;
-                            dataRow[columnOffset + 2] = force;
-                            dataRow[columnOffset + 3] = deformation;
-                        }
+                        dataRow[columnOffset] = time;
+                        dataRow[columnOffset + 1] = shift;
+                        dataRow[columnOffset + 2] = force;
+                        dataRow[columnOffset + 3] = deformation;
                     }
                     formattedData[row + 3] = dataRow;
                 }
@@ -8988,13 +8964,28 @@
             }
 
             // Create the first sheet with data
-            let ws = XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
-            ws["!merges"] = formattedMerges;
+            const ws = XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
+            ws["!merges"] = (ws['!merges'] || []);
+            ws["!merges"].push({
+                s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
+            });
+            ws["!merges"].push({
+                s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
+            });
             XLSX.utils.book_append_sheet(wb, ws, sheetName); // Append a sheet to workbook
 
             // Create the second with file order index
-            let wsSamples = XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
-            wsSamples["!merges"] = samplesTable["!merges"]; // Merge cells
+            const wsSamples = XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
+            wsSamples["!merges"] = (wsSamples['!merges'] || []); // Merge cells
+            wsSamples['!merges'].push(
+                {s: {r: 0, c: 0}, e: {r: 2, c: 0}}, // Code
+                {s: {r: 0, c: 1}, e: {r: 2, c: 1}}, // Method
+                {s: {r: 0, c: 2}, e: {r: 2, c: 2}}, // W
+                {s: {r: 0, c: 3}, e: {r: 2, c: 3}}, // Number
+                {s: {r: 0, c: 4}, e: {r: 0, c: 7}}, // Dimensions before drying
+                {s: {r: 0, c: 8}, e: {r: 0, c: 11}}, // Dimensions after drying
+                {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
+            );
 
             // const range = XLSX.utils.decode_range(wsSamples['!ref']); // Get table size
             //
@@ -9036,7 +9027,7 @@
 
 
             // Create the third sheet with file order index
-            let wsIndex = XLSX.utils.aoa_to_sheet(fileIndexData);  // Convert data to Excel sheet
+            const wsIndex = XLSX.utils.aoa_to_sheet(fileIndexData);  // Convert data to Excel sheet
             XLSX.utils.book_append_sheet(wb, wsIndex, "File Order"); // Append a sheet to workbook
 
             // Save the file
