@@ -3817,7 +3817,7 @@
             return;
         } else {
             if (!db || !(pageLoaded && dataLoaded)) {
-                console.warn("❌ IndexedDB not ready, cannot flush log.");
+                console.warn("\n❌ IndexedDB not ready, cannot flush log.");
                 // Wait for another 5 seconds and try again
                 dbFlushTimer = setTimeout(flushDB, 5_000);
                 return;
@@ -3919,7 +3919,7 @@
 
     async function clearDatabase() {
         if (!db) {
-            console.warn("❌ IndexedDB not ready, cannot clear database.");
+            console.warn("\n❌ IndexedDB not ready, cannot clear database.");
             return;
         }
         return new Promise((resolve, reject) => {
@@ -4190,7 +4190,7 @@
             console.groupEnd();
         } else {
             nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
-            console.warn('Details:', res);
+            console.warn('\nDetails:', res);
             alert("⚠️ In file are missing meta data: (##MOIRA_EMETA=...).");
         }
     }
@@ -4378,7 +4378,7 @@
             let dataEntries = request.result;
 
             if (!dataEntries || dataEntries.length === 0) {
-                console.warn("⚠️ No data to save.");
+                console.warn("\n⚠️ No data to save.");
                 alert("⚠️ No data to save. Ensure experiment has been run.");
                 return;
             }
@@ -4693,7 +4693,7 @@
         await sleep(50);
 
         if (!calibrationStatus) {
-            const msg = "⚠️ Motors are not calibrated.";
+            const msg = "\n⚠️ Motors are not calibrated.";
             await lockMovementExcept(UI.calibrateBtn);
             console.warn(msg);
             await logMessage(msg);
@@ -4821,7 +4821,7 @@
         if (timeoutMs != null) {
             const delay = toInteger(timeoutMs, "round");
             if (!isNumber(delay)) {
-                console.warn("Invalid delay for beganMoving:", timeoutMs);
+                console.warn("\nInvalid delay for beganMoving:", timeoutMs);
                 endedMoving();
                 return;
             }
@@ -4897,7 +4897,7 @@
         if (!isConnected) return;
         if (isExperimentRunning) return;
         if (machineOccupation) {
-            console.warn("Machine is already busy. Please wait.");
+            console.warn("\nMachine is already busy. Please wait.");
             return;
         }
 
@@ -4907,7 +4907,7 @@
             await sleep(50);
 
             if (!calibrationStatus) {
-                const msg = "⚠️ Motors are not calibrated.";
+                const msg = "\n⚠️ Motors are not calibrated.";
                 await lockMovementExcept(UI.calibrateBtn);
                 console.warn(msg);
                 await logMessage(msg);
@@ -4924,7 +4924,7 @@
             const speed = requiredAcceleration || await speedFromDistance(dist, acceleration, 0.5, 25); // mm/s
 
             if (!speed || !acceleration) {
-                console.warn("Invalid speed or acceleration.");
+                console.warn("\n⚠️ Invalid speed or acceleration values.");
                 endedMoving();
                 return;
             }
@@ -5173,7 +5173,7 @@
             );
         } catch (error) {
             if (error.name === "NotFoundError") {
-                console.warn("⚠️ No port selected.");
+                console.warn("\n⚠️ No port selected.");
                 await logMessage("\n⚠️ No port selected.");
                 return null;
             } else {
@@ -5210,26 +5210,47 @@
         try {
             const ports = await serialFunctionGetPorts();
             console.info("🔍 Searching for available ports...");
+
             if (ports && ports.length === 1) {
                 serialPort = ports[0];
                 console.info("\t... Only one port found.");
-                await openPort(serialPort);
+
             } else {
+                let founds = false;
+
                 if (ports && ports.length > 1) {
                     console.info("Multiple ports found. Select one.");
+
                     // serialPort = checkAllPorts();
 
                     for (let port of ports) {
                         await port.close();
                     }
-                } else {
-                    console.info("\n\t❎ No previously connected devices found.");
+                    founds = true;
                 }
+
                 if (userRequest) {
                     if (!serialPort) serialPort = await serialFunctionRequestPort();
                 }
 
-                if (serialPort == null) throw new Error('Port is unavailable.');
+                if (serialPort == null) {
+                    isSerial = false;
+                    if (userRequest) {
+                        console.info("⚠️ No port selected, connection canceled.");
+                        await logMessage("\n⚠️ No port selected, connection canceled.");
+                    } else {
+                        if (founds) {
+                            console.info("⚠️ Multiple ports found, please select one.");
+                            await logMessage("\n⚠️ Multiple ports found, please select one.");
+                        } else {
+                            console.info("\n\t❎ No previously connected devices found.");
+                            await logMessage("\n❎ No previously connected devices found.");
+                        }
+                    }
+                    await disconnectSerial(true);
+                    return;
+                }
+
                 await openPort(serialPort);
             }
         } catch (error) {
@@ -5239,32 +5260,6 @@
             isConnected = false;
             activeWatchDog = false;
             await disconnectSerial(true);
-
-        }
-    }
-
-
-    async function connectSerialNEW() {
-        isSerial = true;
-        try {
-            // const granted = await navigator.serial.getPorts(); // dřív povolené
-            // if (granted?.length === 1) {
-            //     serialPort = granted[0];
-            //     await openPort(serialPort);
-            //     return;
-            // }
-            // vždy nech vybrat – a když uživatel zruší, prostě skonči
-            const port = await navigator.serial.requestPort();
-            if (!port) {
-                isSerial = false;
-                return;
-            }   // zrušeno
-            serialPort = port;
-            await openPort(serialPort);
-        } catch (e) {
-            isSerial = false;
-            // DŮLEŽITÉ: nevolej disconnectSerial(), pokud jsme nikdy neotevřeli port
-            await logMessage(`⚠️ connectSerial canceled/error: ${e?.name || e}`);
         }
     }
 
@@ -5303,6 +5298,8 @@
             const {usbVendorId, usbProductId} = comPort.getInfo();
             fingerprint = `${usbVendorId}:${usbProductId}`;
             console.info(`🆔 Port Fingerprint:\n\t\tusbVendorId:${usbVendorId}\n\t\tusbProductId:${usbProductId}`);
+
+            localStorage.setItem("lastFingerprint", fingerprint);
 
             await sleep(5);
 
@@ -5356,12 +5353,13 @@
 
             machineFirmware = `${await getFirmwareVersion()}`;
 
+            // TODO: implement getting machine name
+            // const machineName = await getMachineName(2000) || "UnnamedMachine";
 
             const speed = (await getSpeed(2000)) || 15;
             const acceleration = (await getAcceleration(2000)) || 150;
 
             setSpeedAndAcceleration(speed, acceleration);
-
 
             await sleep(5); // Stop for 5 ms
 
@@ -5416,7 +5414,7 @@
      */
     async function disconnectSerial(override = false) {
         if (!override && !isConnected) {
-            console.warn("⚠️ Port is not connected.");
+            console.warn("\n⚠️ Port is not connected.");
             return;
         }
 
@@ -5428,7 +5426,7 @@
                     await sendCommandGeneral("DATAC 0"); // Stop data collection
                 }
             } catch (error) {
-                console.warn("⚠️ Error stopping data collection:", error);
+                console.warn("\n⚠️ Error stopping data collection:", error);
             } finally {
                 machineOccupation = false;
                 isExperimentRunning = false;
@@ -5442,7 +5440,7 @@
                 try {
                     await serialReader.cancel(); // Cancel reading safely
                 } catch (err) {
-                    console.warn("⚠️ Error canceling reader:", err);
+                    console.warn("\n⚠️ Error canceling reader:", err);
                 }
                 serialReader.releaseLock(); // Release reader lock
                 serialReader = null;
@@ -5662,7 +5660,7 @@
 
     async function findPreferredPortIndex(showMessage = false) {
         if (!fingerprint) {
-            console.warn("⚠️ No fingerprint available.");
+            console.warn("\n⚠️ No fingerprint available.");
             return null;
         }
         const ports = await navigator.serial.getPorts();
@@ -5677,7 +5675,7 @@
         }
 
         if (showMessage) {
-            console.warn("⚠️ No matching port found.");
+            console.warn("\n⚠️ No matching port found.");
             await logMessage("\n⚠️ No matching port found.");
         }
         return null;
@@ -5687,12 +5685,12 @@
         console.info("%c\n🔄 Attempting to reconnect...", "color: blue; font-weight: bold;");
 
         if (isConnected || isReconnecting) {
-            console.warn("🚨 Reconnect aborted - Already connected or disconnect was expected.");
+            console.warn("\n🚧 Reconnect aborted - Already connected or disconnect was expected.");
             return;
         }
 
         if (reconnectAttempts >= maxReconnectAttempts) {
-            console.warn("⚠️ Stopping auto-reconnect. Maximum attempts reached.");
+            console.warn("\n⚠️ Stopping auto-reconnect. Maximum attempts reached.");
             await logMessage("\n⚠️ Stopping auto-reconnect.\n");
             isReconnecting = false;
             await disconnectSerial();
@@ -5720,6 +5718,7 @@
 
         try {
 
+            // TODO: implement also using machine name
             const port = await findPreferredPortIndex();
 
             if (port) {
@@ -5737,7 +5736,7 @@
                 throw new Error("Reconnect failed: not connected after openPort");
             }
         } catch (error) {
-            console.warn("⚠️ Reconnection failed:", error);
+            console.warn("\n⚠️ Reconnection failed:", error);
             await logMessage("\n❌ Reconnection failed: " + error.message);
 
             if (reconnectAttempts < maxReconnectAttempts) {
@@ -5746,7 +5745,7 @@
                     attemptReconnect();
                 }, 3000);
             } else {
-                console.warn("⚠️ Max reconnect attempts reached. Stopping.");
+                console.warn("\n⚠️ Max reconnect attempts reached. Stopping.");
                 await logMessage("\n❌ Max reconnect attempts reached. Stopping.\n");
                 await resetValues();
                 isReconnecting = false;
@@ -5810,7 +5809,7 @@
                 return current;
             }
         }
-        console.warn("⚠️ Step size mismatch:\n\tprevious:", previous, " current: ", current);
+        console.warn("\n⚠️ Step size mismatch:\n\tprevious:", previous, " current: ", current);
         return previous + stepSize;
     }
 
@@ -6352,7 +6351,7 @@
             if (!dataEntries || dataEntries.length === 0) {
                 return;
             } else if (dataEntries.length < 3) {
-                console.warn("⚠️ Not enough data to load.");
+                console.warn("\n⚠️ Not enough data to load.");
                 return;
             }
 
@@ -6616,7 +6615,7 @@
         ];
 
         if (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError") {
-            console.warn("⚠️ Connection lost! Attempting to reconnect...");
+            console.warn("\n⚠️ Connection lost! Attempting to reconnect...");
             isConnected = false;
             await attemptReconnect();
         } else {
@@ -6750,7 +6749,7 @@
     // === Firmware version ===
     async function getFirmwareVersion(timeOut = 1000) {
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6772,7 +6771,7 @@
     // === Measure Position ===
     async function measurePosition(timeOut = 2000) {
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6795,7 +6794,7 @@
     // === Measure Position ===
     async function readLoadcell(loadcellID, timeOut = 2000) {
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6819,7 +6818,7 @@
 
     async function isLoadcellsPresent(timeOut = 2000) {
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6849,7 +6848,7 @@
 
     async function getCalibrationStatus(timeOut = 2000) { // 30000
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6867,7 +6866,7 @@
 
     async function getSpeed(timeOut = 2000) { // 30000
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6891,7 +6890,7 @@
 
     async function getAcceleration(timeOut = 2000) { // 30000
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -6914,7 +6913,7 @@
 
     async function isMoving(timeOut = 100) {
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -7176,19 +7175,19 @@
     async function startExperiment() {
 
         if (!isConnected) {
-            console.warn("⚠️ ESP is not connected!");
+            console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
 
         if (isExperimentRunning) {
-            console.warn("⚠️ Experiment is already running.");
+            console.warn("\n⚠️ Experiment is already running.");
             await logMessage("⚠️ Experiment is already running.");
             return;
         }
 
         if (machineOccupation) {
-            console.warn("⚠️ Machine is currently moving. Please wait until it stops.");
+            console.warn("\n⚠️ Machine is currently moving. Please wait until it stops.");
             await logMessage("⚠️ Machine is currently moving. Please wait until it stops.");
             return;
         }
@@ -7264,7 +7263,7 @@
 
             if (expControl === 'position') {
                 if (!isValidInput(distance_mm) || distance_mm < minDistance) {
-                    console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                    console.warn(`\n⚠️ Distance must be greater than ${minDistance} mm.`);
                     await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
                     alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
                     throw new Error("Distance error");
@@ -7272,31 +7271,31 @@
             }
 
             if (!isFiniteNumber(speedForward_mmps, false) || speedForward_mmps < minFSpeed) {
-                console.warn(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
+                console.warn(`\n⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 await logMessage(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 alert(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 throw new Error("Speed error");
             } else if (speedForward_mmps > maxFSpeed) {
-                console.warn(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
+                console.warn(`\n⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 await logMessage(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 throw new Error("Speed error");
             }
 
             if (!isFiniteNumber(dataInterval_us, false) || dataInterval_us < 1) {
-                console.warn(`⚠️ Data interval must be greater than 1 µs.`);
+                console.warn(`\n⚠️ Data interval must be greater than 1 µs.`);
                 await logMessage(`⚠️ Data interval must be greater than 1 µs.`);
                 alert(`⚠️ Data interval must be greater than 1 µs.`);
                 throw new Error("Data interval error");
             }
 
             if (!isArr(loadcellCapacities) || loadcellCapacities.some(cap => !isFiniteNumber(cap, false) || cap < minLoadCap)) {
-                console.warn(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
+                console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 throw new Error("Loadcell capacity error");
             } else if (!isArr(loadcellOutputs) || loadcellOutputs.some(out => !isFiniteNumber(out, false) || out < minLoadOut)) {
-                console.warn(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
+                console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 throw new Error("Loadcell output error");
@@ -7304,12 +7303,12 @@
 
             if (experimentType.endsWith("-hbr")) {
                 if (!isValidInput(stoppingForceLimit)) {
-                    console.warn(`⚠️ Stopping force must be greater than 0 N.`);
+                    console.warn(`\n⚠️ Stopping force must be greater than 0 N.`);
                     await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
                     alert(`⚠️ Stopping force must be greater than 0 N.`);
                     throw new Error("Stopping force error");
                 } else if (!isFiniteNumber(holdForceTimeMs, false) || (holdForceTimeMs / 1000) < 0) {
-                    console.warn(`⚠️ Hold force time must be equal or greater than 0 s.`);
+                    console.warn(`\n⚠️ Hold force time must be equal or greater than 0 s.`);
                     await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
                     alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
                     throw new Error("Hold force time error");
@@ -7318,17 +7317,17 @@
 
             if (experimentDoubleSpeed) {
                 if (!isFiniteNumber(initialSpeed_mmps, false) || initialSpeed_mmps < minFSpeed) {
-                    console.warn(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
+                    console.warn(`\n⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     throw new Error("Initial speed error");
                 } else if (initialSpeed_mmps > maxFSpeed) {
-                    console.warn(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
+                    console.warn(`\n⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                     await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                     alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                     throw new Error("Initial speed error");
                 } else if (!isValidInput(initialForceLim_N)) {
-                    console.warn(`⚠️ Initial force load must be greater than 0 N.`);
+                    console.warn(`\n⚠️ Initial force load must be greater than 0 N.`);
                     await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
                     alert(`⚠️ Initial force load must be greater than 0 N.`);
                     throw new Error("Initial force load error");
@@ -7337,13 +7336,13 @@
 
             if (takePhotos) {
                 if (!isFiniteNumber(photoInterval_ms, false) || photoInterval_ms < minPhotoInt) {
-                    console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
+                    console.warn(`\n⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     alert(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     throw new Error("Photo interval error");
                 }
                 if (photoInterval_ms * 1000 < dataInterval_us) {
-                    console.warn("⚠️ Photo interval must be bigger than data interval.");
+                    console.warn("\n⚠️ Photo interval must be bigger than data interval.");
                     await logMessage("⚠️ Photo interval must be bigger than data interval.");
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1000 * 0.9} µs ❗`);
                     dataInterval_us = photoInterval_ms * 1000 * 0.9;
@@ -7380,7 +7379,7 @@
                 //     let confirmCalibrationCount = 0;
                 //
                 //     await logMessage("⚠️ Motors are not calibrated. Calibrating the motor...");
-                //     console.warn("⚠️ Motors are not calibrated. Calibrating the motor...");
+                //     console.warn("\n⚠️ Motors are not calibrated. Calibrating the motor...");
                 //     await sendCommandGeneral('MC CALIBRATE');
                 //     await sleep(5); // Stop for 5 ms
                 //
@@ -7401,7 +7400,7 @@
                 //         }
                 //
                 //         if (!isSerial || !isConnected) {
-                //             console.warn("⚠️ Serial connection lost during calibration.");
+                //             console.warn("\n⚠️ Serial connection lost during calibration.");
                 //             await logMessage("⚠️ Serial connection lost during calibration.");
                 //             throw new Error("Serial connection lost during calibration.");
                 //         }
@@ -7585,13 +7584,13 @@
             // If more one force is not eaqule to zero, than Stop and Alert
             if (!experimentType.endsWith("-basic")) {
                 if (validFields.length > 1) {
-                    console.warn("⚠️ Multiple loadcells are connected.");
+                    console.warn("\n⚠️ Multiple loadcells are connected.");
                     await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     throw new Error("Multiple loadcells connected");
 
                 } else if (validFields.length === 0) {
-                    console.warn("⚠️ No loadcell is connected.");
+                    console.warn("\n⚠️ No loadcell is connected.");
                     await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                     alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                     throw new Error("No loadcell connected");
@@ -8148,7 +8147,7 @@
                 calibrationStatus = await getCalibrationStatus(500);
                 if (!isSerial || !isConnected) {
                     calibrationStatus = false;
-                    console.warn("⚠️ Serial connection lost during calibration.");
+                    console.warn("\n⚠️ Serial connection lost during calibration.");
                     await logMessage("⚠️ Serial connection lost during calibration.");
                     break;
                 }
@@ -8409,7 +8408,7 @@
         input.onchange = async function (event) {
             let files = Array.from(event.target.files); // Convert FileList to Array
             if (!files.length) {
-                console.warn("❌ No files selected.");
+                console.warn("\n❌ No files selected.");
                 alert("❌ No files were selected. Please select one or more CSV files and try again.");
                 return;
             } else {
@@ -8493,11 +8492,11 @@
             function setupParsers(head, fileSet, outputs) {
                 // --- sanity checks ---
                 if (!isArr(head)) {
-                    console.warn("⚠️ Cannot setup parsers, head is not an array.");
+                    console.warn("\n⚠️ Cannot setup parsers, head is not an array.");
                     return {};
                 }
                 if (!fileSet || !fileSet.delimiter) {
-                    console.warn("⚠️ Cannot setup parsers, missing delimiter or fileSet.");
+                    console.warn("\n⚠️ Cannot setup parsers, missing delimiter or fileSet.");
                     return {};
                 }
                 if (!fileSet.dataTypes) fileSet.dataTypes = {};
@@ -8513,7 +8512,7 @@
                 // --- 1) hlavička ---
                 const headerRowIdx = Math.max(0, ((fileSet.skipRows | 0) - 1));
                 if (headerRowIdx >= head.length) {
-                    console.warn("⚠️ Cannot setup parsers, header row index out of bounds.");
+                    console.warn("\n⚠️ Cannot setup parsers, header row index out of bounds.");
                     return {};
                 }
 
@@ -8819,7 +8818,7 @@
 
                 if (rows.length <= fileOpts.skipRows) {  // Skip if the file has no data
                     logMessage(`❌ Not enough data in file: ${file.name}`);
-                    console.warn(`❌ Not enough data in file: ${file.name}`);
+                    console.warn(`\n❌ Not enough data in file: ${file.name}`);
                     fileCount--;
                     continue;
                 }
@@ -8832,7 +8831,7 @@
 
                 if (foundDelimiter !== fileOpts.delimiter) {
                     logMessage(`❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
-                    console.warn(`❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
+                    console.warn(`\n❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
 
                     if (!preferFoundDelimiter) {
                         fileCount--;
@@ -8843,7 +8842,7 @@
 
                 if (!fileOpts.delimiter) {
                     logMessage(`❌ Delimiter not found in file: ${file.name}`);
-                    console.warn(`❌ Delimiter not found in file: ${file.name}`);
+                    console.warn(`\n❌ Delimiter not found in file: ${file.name}`);
                     fileCount--;
                     continue;
                 }
@@ -8854,20 +8853,20 @@
 
                 if (Object.keys(outputsOpts).some(k => !getters[k] || getters[k].count() === 0)) {
                     logMessage(`❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
-                    console.warn(`❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
+                    console.warn(`\n❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
                     fileCount--;
                     continue;
                 }
 
                 if (getters['time'].count() !== 1) {
                     logMessage(`❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
-                    console.warn(`❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
+                    console.warn(`\n❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
                     fileCount--;
                     continue;
                 }
                 if (getters['position'].count() !== 1) {
                     logMessage(`❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
-                    console.warn(`❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
+                    console.warn(`\n❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
                     fileCount--;
                     continue;
                 }
@@ -8903,7 +8902,7 @@
 
                 if (!validRowFound) {
                     logMessage(`❌ No valid data found in file: ${file.name}`);
-                    console.warn("❌ No valid data found in file:", file.name);
+                    console.warn("\n❌ No valid data found in file:", file.name);
                     fileCount--;
                     continue;
                 }
@@ -8915,7 +8914,7 @@
 
                 if (dataSize === 0) {
                     logMessage(`❌ No data found in file: ${file.name}`);
-                    console.warn("❌ No data found in file:", file.name);
+                    console.warn("\n❌ No data found in file:", file.name);
                     fileCount--;
                     continue;
                 }
