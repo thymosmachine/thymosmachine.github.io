@@ -23,7 +23,7 @@
 
 # Ignorovat moduly NODE.JS
 node_modules/
-/.idea
+.idea/
 *.xml
 *.pem
 *.bat
