@@ -1520,11 +1520,11 @@
                 style="box-sizing: border-box; justify-self: center; width: 100px; height: 100px;">
             ❌<br>Delete 'Prohibited' Class
         </button>
-        <button onclick="sendCommand('mc service')"
+        <button onclick="sendCommandGeneral('mc service')"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #ff8c00; color:white">
             🛠️<br>Service Mode<br><em style="font-weight: normal;">(MC SERVICE)</em>
         </button>
-        <button onclick="sendCommand('datac')"
+        <button onclick="sendCommandGeneral('datac')"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #2196F3; color:white">
             📊<br>Data Measurement<br><em style="font-weight: normal;">(DATAC)</em>
         </button>
@@ -2076,18 +2076,25 @@
                                value="20" min="0.01" step="any" max="100000000" data-unit="mm" data-essence="position">
                     </div>
 
-                    <!--                    // ✅✔️☑️❎❌✖️⭕️❗️❓❕❔⚠️-->
-                    <!--                    // ⛔🚫🛑🚨🚧⚡🔥💥💫💢💣💤💨💯-->
-                    <!--                    // 🔴🟠🟡🟢🔵🟣🟤⚫️⚪️-->
-                    <!--                    // 🟥🟧🟨🟩🟦🟪🟫⬛️⬜️-->
-                    <!--                    // 🔒🔓🔏🔐🔑🗝️-->
-                    <!--                    // 🆗🆕🆙🆒🆓-->
-                    <!--                    // 0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟-->
-                    <!--                    // ℹ️🔠🔢🔤#️⃣*️⃣🔀🔁🔂🔄🔃-->
-                    <!--                    // 🅰️🅱️🆎🆑🅾️🆘🆔🆚-->
-                    <!--                    // 🆗🆑🅿️Ⓜ️♾️➰➿〰️〽️               -->
-                    <!--                    // ⬆️↗️➡️↘️⬇️↙️⬅️↖️↔️↕️↩️↪️⤴️⤵️🔃🔄🔜🔙🔝🔚🆙🔛     -->
-                    <!--                    // 🟦⏯️⏸️⏹️⏺️⏏️▶️⏩⏭️◀️⏪⏮️⏫🔼🔽⏬🔺🔻         -->
+                    <!--                    // ✅✔️☑️❎❌✖️⭕️❗️❓❕❔⚠️ -->
+                    <!--                    // ⛔🚫🛑🚨🚧⚡🔥💥💫💢💣💤💨💯 -->
+                    <!--                    // 🔴🟠🟡🟢🔵🟣🟤⚫️⚪️ -->
+                    <!--                    // 🟥🟧🟨🟩🟦🟪🟫⬛️⬜️🔳🔲◻️◽▫️◼️◾▪️ -->
+                    <!--                    // 🆗🆕🆙🆒🆓 -->
+                    <!--                    // 0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟 -->
+                    <!--                    // ℹ️🔠🔢🔤#️⃣*️⃣🔀🔁🔂🔄🔃🎦 -->
+                    <!--                    // 📶-->
+                    <!--                    // 🅰️🅱️🆎🆑🅾️🆘🆔🆚🆖 -->
+                    <!--                    // 🆗🆑🅿️Ⓜ️®️♾️➰➿〰️〽️ -->
+                    <!--                    // ⬆️↗️➡️↘️⬇️↙️⬅️↖️↔️↕️↩️↪️⤴️⤵️🔃🔄🔜🔙🔝🔚🆙🔛 -->
+                    <!--                    // 🟦⏯️⏸️⏹️⏺️⏏️▶️⏩⏭️◀️⏪⏮️⏫🔼🔽⏬🔺🔻 -->
+                    <!--                    // 🛂🛃 -->
+                    <!--                    // 🚮🧼🧺🧽🧹🗑️💨 ⌦ ⌫ ♻️ ♻ -->
+                    <!--                    // 🛅🔒🔓🔏🔐🔑🗝️ -->
+                    <!--                    // 🗣️👤👥🎓🖱️⌨️🎛️🎚️💻🖥️📺📻📟🎮🕹️👾🤖👩🏻‍💻🔘🚥🚦 -->
+                    <!--                    // 📣📢🎤🎙️📯💬💭🗨️🗯️💳🎫🎟️ -->
+                    <!--                    // 𝒊 𝐈𝐃 🇮🇩 ⓘ ⇄ -->
+
                     <div class="input-group">
                         <label for="experimentDirectionDropdown">Experiment type: </label>
                         <select id="experimentDirectionDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
@@ -2243,7 +2250,7 @@
 
                 <hr>
 
-                <h4>🕹️ App settings:</h4>
+                <h4>📺 App settings:</h4>
                 <div class="inputsContainer autoGrid">
                     <!--                    <div class="input-group prohibited">-->
                     <!--                        <label for="inputAppInterval" style="min-width: max-content;">Data Interval <span class="units-text">(µs)</span>:</label>-->
@@ -2293,7 +2300,6 @@
                         </select>
                     </div>
 
-                    <!-- 🧼🧺🧽🧹🗑️💨🚮 ⌦ ⌫ ♻️ ♻ -->
                     <button id="clearCalculationsButton" class="controlBtn">🧼 Clear
                         calculations
                     </button>
@@ -3610,14 +3616,13 @@
     UI.commandInput.addEventListener("keydown", async (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            await sendCommand(UI.commandInput.value.trim());
+            await sendCommandConsole(UI.commandInput.value.trim());
         }
     });
 
     // Sends command when clicking the send-button
     UI.sendButton.addEventListener('click', async () => {
-        if (!serialPort) return;
-        await sendCommand(UI.commandInput.value.trim());
+        await sendCommandConsole(UI.commandInput.value.trim());
     });
 
     // /////// Auto-scroll Detection /////////
@@ -4571,24 +4576,77 @@
      * Works with Serial (USB) connection;
      * @param {string} command - The command string to send.
      * @param timeOut
+     * @param type
      */
-    async function sendCommand(command, timeOut = 1) {
-        if (debugging) console.log("Preparing to send command:", command);
-        if (!isConnected || !serialPort?.writable) {
-            await logMessage("\n⚠️ No device is connected or port is unavailable!");
-            return;
+    async function sendCommand(command, type = "general", timeOut = 1) {
+        switch (type) {
+            case "console":
+                await sendCommandConsole(command);
+                break;
+            case "app":
+                await sendCommandApp(command);
+                break;
+            case "user":
+                await sendCommandUser(command);
+                break;
+            case "silent":
+                await sendCommandSilent(command);
+                break;
+            case "general":
+            default:
+                await sendCommandGeneral(command, timeOut);
         }
+    }
 
-        if (command.toLowerCase().includes(" nan")) {
-            await logMessage("\n⚠️ Command contains 'NaN' values. Please check the input.");
-            console.error("⚠️ Command contains 'NaN' values. Please check the input.");
-            alert("⚠️ Aborted command due to 'NaN' values in the input.");
-            return;
-        }
+    async function sendCommandGeneral(command, timeOut = 1) {
+        if (!checkCommand(command)) return;
+
+        await writeCommand(command);
 
         if (!isFiniteNumber(timeOut, false)) timeOut = 1;
         timeOut = Math.max(0, Math.round(timeOut));
 
+        if (command.toLowerCase() !== "syswr" && command.toLowerCase() !== "misc watchdog_reset") {
+            await logMessage("📤 General-Command sent: " + command);
+        }
+        await sleep(timeOut);  // Stop for at least 1 ms
+    }
+
+    async function sendCommandConsole(command) {
+        if (!checkCommand(command)) return;
+
+        await writeCommand(command);
+
+        // User feedback in console
+        await logMessage("  🗣️ User-Command sent: " + command);
+    }
+
+    async function sendCommandApp(command) {
+        if (!checkCommand(command)) return;
+
+        await writeCommand(command);
+
+        // User feedback in console
+        await logMessage("👾 App-Command sent: " + command);
+    }
+
+    async function sendCommandUser(command) {
+        if (!checkCommand(command)) return;
+
+        await writeCommand(command);
+
+        // User feedback in console
+        await logMessage("🕹️ User-Command sent: " + command);
+    }
+
+    async function sendCommandSilent(command) {
+        if (!checkCommand(command)) return;
+
+        await writeCommand(command);
+    }
+
+
+    async function writeCommand(text) {
         try {
             const encoder = new TextEncoder();
 
@@ -4597,16 +4655,31 @@
                 serialWriter = serialPort.writable.getWriter();
             }
 
-            await serialWriter.write(encoder.encode(command + "\n"));
+            await serialWriter.write(encoder.encode(text + "\n"));
 
-            if (command.toLowerCase() !== "syswr" && command.toLowerCase() !== "misc watchdog_reset") {
-                await logMessage("📤 Command sent: " + command);
-            }
-            await sleep(timeOut);  // Stop for at least 1 ms
-
+            return true;
         } catch (error) {
             await handleError(error, "sendCommand");
+
+            return false;
         }
+    }
+
+    function checkCommand(command) {
+        if (debugging) console.log("Preparing to send command:", command);
+        if (!isConnected || !serialPort?.writable) {
+            logMessage("\n⚠️ No device is connected or port is unavailable!");
+            return false;
+        }
+
+        if (command.toLowerCase().includes(" nan")) {
+            logMessage("\n⚠️ Command contains 'NaN' values. Please check the input.");
+            console.error("⚠️ Command contains 'NaN' values. Please check the input.");
+            alert("⚠️ Aborted command due to 'NaN' values in the input.");
+            return false;
+        }
+
+        return true;
     }
 
     let watchdogTimer = null;
@@ -4630,7 +4703,7 @@
         }
 
         // Watchdog řeší beganMoving/endedMoving, tady jen pošli příkaz
-        await sendCommand(command, pauseMs);
+        await sendCommandGeneral(command, pauseMs);
     }
 
 
@@ -4717,14 +4790,14 @@
         // Nastavení watchdog HW (předstihem ~5% + 10ms)
         const hwInterval = Math.ceil(interval * 1.05) + 10;
         // nezdržujeme — fire and forget
-        sendCommand(`MISC SET WATCHDOG_INTERVAL ${hwInterval}`, 5);
-        sendCommand(`MISC SET WATCHDOG_ENABLED 1`, 5);
+        sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${hwInterval}`, 5);
+        sendCommandGeneral(`MISC SET WATCHDOG_ENABLED 1`, 5);
         console.info("🐕 Watchdog is active.");
 
         watchdogTimer = setInterval(() => {
             // posílej SYSWR pouze když je to smysluplné
             if (!isConnected || !activeWatchDog || !machineOccupation) return;
-            sendCommand("SYSWR");
+            sendCommandGeneral("SYSWR");
         }, interval);
     }
 
@@ -4735,7 +4808,7 @@
             watchdogTimer = null;
         }
         // HW watchdog vypínat nemusíme — ale můžeme:
-        if (isConnected) sendCommand(`MISC SET WATCHDOG_ENABLED 0`);
+        if (isConnected) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED 0`);
     }
 
     // ------- Správa pohybu -------
@@ -4769,7 +4842,7 @@
 
         if (!isValidInput(timeOut)) timeOut = 1;
 
-        if (currentSpeed !== speed) sendCommand(`MC SET SPEEDMM ${speed}`, timeOut);
+        if (currentSpeed !== speed) sendCommandGeneral(`MC SET SPEEDMM ${speed}`, timeOut);
 
         currentSpeed = speed;
         UI.speedSlider.value = speed;
@@ -4782,7 +4855,7 @@
         if (!isValidInput(acceleration)) return;
         if (!isValidInput(timeOut)) timeOut = 1;
 
-        if (currentAcceleration !== acceleration) sendCommand(`MC SET ACCELMM ${acceleration}`, timeOut);
+        if (currentAcceleration !== acceleration) sendCommandGeneral(`MC SET ACCELMM ${acceleration}`, timeOut);
 
         currentAcceleration = acceleration;
         UI.accelerationSlider.value = acceleration;
@@ -5057,7 +5130,7 @@
             command = inputCommand;
         }
 
-        await sendCommand(command);
+        await sendCommandGeneral(command);
     }
 
     // /////// Template Variable Replacement /////////
@@ -5087,7 +5160,17 @@
 
     const serialFunctionRequestPort = async () => {
         try {
-            return await navigator.serial.requestPort();
+            return await navigator.serial.requestPort(
+                {
+                    // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
+                    filters: useFilteredPort ? [
+                        ...thymosFingerprints.map(fp => {
+                            const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                            return {usbVendorId: vendorId, usbProductId: productId};
+                        })
+                    ] : []
+                }
+            );
         } catch (error) {
             if (error.name === "NotFoundError") {
                 console.warn("⚠️ No port selected.");
@@ -5192,6 +5275,15 @@
     let machineFirmware = "NaN";
     let fingerprint = null;
 
+    const thymosFingerprints = [
+        // "6790:29987",   // Thymos ESP32-S3
+        // "6790:29986",   // Thymos ESP32-C3
+        // "6790:29985",   // Thymos ESP32-C6
+        "12346:4097",   // Thymos ESP32-C6 old
+        "0x303a:0x1001" // Thymos ESP32-S2
+    ];
+    let useFilteredPort = true;
+
     async function openPort(comPort, retry = false) {
         try {
             activeWatchDog = false;
@@ -5236,7 +5328,7 @@
             reconnectAttempts = 0;
 
 
-            await sendCommand("DATAC 0"); // Stop data collection
+            await sendCommandGeneral("DATAC 0"); // Stop data collection
 
             readSerial();
 
@@ -5247,10 +5339,10 @@
             await logMessage("\n");
 
 
-            await sendCommand("MC STOP"); // Stop movement
-            await sendCommand("MC ENDSTOPS ENABLE");
-            await sendCommand("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            await sendCommand("DATA SET INTERVAL 50000"); // Stop data collection
+            await sendCommandGeneral("MC STOP"); // Stop movement
+            await sendCommandGeneral("MC ENDSTOPS ENABLE");
+            await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+            await sendCommandGeneral("DATA SET INTERVAL 50000"); // Stop data collection
 
             await logMessage("\n");
 
@@ -5331,9 +5423,9 @@
         try {
             try {
                 if (serialPort?.writable) {
-                    await sendCommand("MC STOP"); // Stop movement
-                    await sendCommand("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-                    await sendCommand("DATAC 0"); // Stop data collection
+                    await sendCommandGeneral("MC STOP"); // Stop movement
+                    await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+                    await sendCommandGeneral("DATAC 0"); // Stop data collection
                 }
             } catch (error) {
                 console.warn("⚠️ Error stopping data collection:", error);
@@ -5686,20 +5778,23 @@
                 if (isExperimentRunning) {
                     isExperimentRunning = false;
                     await stopMachine("alarm");
-                    await logMessage("⚠️ Experiment stopped due to alarm.");
+                    logMessage("⚠️ Experiment stopped due to alarm.");
                 }
                 continue;
             }
 
             // First, try to match and resolve waiting messages in the queue
             const consumed = _tryMatchAndResolve(msg);
-            if (consumed) continue;             // If a message is consumed, skip further processing
+            if (consumed) {
+                if (debugging) logMessage(" 📯\t" + msg);
+                continue;             // If a message is consumed, skip further processing
+            }
 
             // Vaše ostatní logiky
             if (msg.startsWith("DS")) { // "S205:"
                 await processMeasurements(msg.substring(2));
             } else {
-                await logMessage("📩\t" + msg);
+                logMessage("📩\t" + msg);
             }
         }
     }
@@ -5870,7 +5965,7 @@
         if (timeoutMs == null || !isNumber(timeoutMs)) timeoutMs = 0;
 
         if (isNonEmptyStr(command)) {
-            await sendCommand(command);
+            await sendCommandGeneral(command);
         }
         if (isNonEmptyStr(immediateText)) {
             console.info(immediateText);
@@ -5889,9 +5984,9 @@
                 logMessage(endText);
             }
 
-            await sendCommand("MC STOP");
-            await sendCommand("DSLR STOP CYCLIC");
-            await sendCommand("DATAC 0");
+            await sendCommandGeneral("MC STOP");
+            await sendCommandGeneral("DSLR STOP CYCLIC");
+            await sendCommandGeneral("DATAC 0");
 
             isExperimentRunning = false;
             dataCount = null;
@@ -6637,7 +6732,7 @@
         const p = waitForFormat(format, valueIndex, timeout);
 
         // 2) Then, send the command to request the data
-        await sendCommand(command);
+        await sendCommandGeneral(command);
 
         // 3)
         return p;
@@ -6660,6 +6755,7 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tGet firmware version...");
             const version = `${await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut)}`;
 
             if (!version) {
@@ -6681,6 +6777,7 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tGet position...");
             const position = toNumber(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut), true);
             // const position = parseFloat(await getPromisedValue("MC GET POS", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
 
@@ -6704,9 +6801,11 @@
         }
         const ldID = toInteger(loadcellID);
         try {
-            if (ldID < 0 || ldID > 2) throw new Error("Loadcell ID must be 0, 1 or 2.");
+            if (debugging) logMessage(` 📢\tGet Loadcell ${ldID} reading...`);
 
-            const force = toNumber(await getPromisedValue(`read Loadcell${ldID}`, /.../, 1, timeOut), true);
+            if (ldID < 0 || ldID > (loadCellNum - 1)) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
+
+            const force = toNumber(await getPromisedValue(`LC READ LOADCELL[${ldID}]`, /.../, 1, timeOut), true);
 
             if (!isFiniteNumber(force, false)) {
                 throw new Error("Load is not a number.", force);
@@ -6725,9 +6824,11 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tCheck Loadcells presence...");
+
             const isPresent = [];
             for (let i = 0; i < 3; i++) {
-                const force = await getPromisedValue(`read Loadcell${i}`, /.../, 1, timeOut);
+                const force = await getPromisedValue(`LC READ LOADCELL[${i}]`, /.../, 1, timeOut);
 
                 if (!(force == null || isNaN(force) || force === '0' || force === '-0' || !isFiniteNumeric(force))) {
                     isPresent.push(true);
@@ -6753,6 +6854,8 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tGet calibration status...");
+
             return await getPromisedValue("MC GET ISCALIBRATED", /^Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
             // return await getPromisedValue("MC GET ISCALIBRATED", /S0:([01])/, 1, timeOut) === "1";
         } catch (error) {
@@ -6769,6 +6872,8 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tGet speed...");
+
             const speed = toNumber(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut), true);
             // const speed = parseFloat(await getPromisedValue("MC GET SPEED", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
             if (!isFiniteNumber(speed, false)) {
@@ -6791,6 +6896,8 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tGet acceleration...");
+
             const acceleration = toNumber(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut), true);
             // const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
             if (!isFiniteNumber(acceleration, false)) {
@@ -6812,6 +6919,8 @@
             return;
         }
         try {
+            if (debugging) logMessage(" 📢\tGet moving status...");
+
             return await getPromisedValue("MC GET RUNNING", /Motor running:\s[01]/, 1, timeOut) === "1";
             // return await getPromisedValue("MC GET RUNNING", /S0:([01])/, 1, timeOut) === "1";
         } catch (error) {
@@ -6888,37 +6997,43 @@
 
 
     function stopMachine(type = 'machine') {
-        setAcceleration(200); // Set acceleration to 200 mm/s²
-
         if (isConnected) {
-            sendCommand("MC STOP"); // Stop movement
-            sendCommand("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            sendCommand("DATAC 0"); // Stop data collection
+            setAcceleration(200); // Set acceleration to 200 mm/s²
+            sendCommandGeneral("MC STOP"); // Stop movement
+            sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+            sendCommandGeneral("DATAC 0"); // Stop data collection
         }
 
-
-        if (type === 'user') {
-            if (isExperimentRunning) {
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                endedBy = "user stop";
-            }
-        } else if (type === 'machine') {
-            if (isExperimentRunning) {
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressWarning-color)');
-                endedBy = "machine stop";
-            }
-        } else if (type === 'error') {
-            if (isExperimentRunning) {
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                endedBy = "error";
-            }
-        } else if (type === 'alarm') {
-            if (isExperimentRunning) {
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                endedBy = "machine alarm";
-            }
-        } else {
-            endedBy = "unknown";
+        switch (type) {
+            case 'user':
+                if (isExperimentRunning) {
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    endedBy = "user stop";
+                }
+                break;
+            case 'machine':
+                if (isExperimentRunning) {
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressWarning-color)');
+                    endedBy = "machine stop";
+                }
+                break;
+            case 'error':
+                if (isExperimentRunning) {
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    endedBy = "error";
+                }
+                break;
+            case 'alarm':
+                if (isExperimentRunning) {
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    endedBy = "machine alarm";
+                }
+                break;
+            default:
+                if (isExperimentRunning) {
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    endedBy = "unknown";
+                }
         }
 
         isExperimentRunning = false;
@@ -6933,9 +7048,9 @@
 
         await rampSpeed(currentSpeed, 0.05);
 
-        await sendCommand("MC STOP");
+        await sendCommandUser("MC STOP");
 
-        if (currentSpeed) await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+        if (currentSpeed) await sendCommandGeneral(`MC SET SPEEDMM ${currentSpeed}`);
 
         activeWatchDog = false;
 
@@ -6960,7 +7075,7 @@
 
         // Pokud už jsme na cíli (nebo velmi blízko), pošli rovnou přesný příkaz.
         if (absDelta < 1e-9) {
-            return sendCommand(`MC SET SPEEDMM ${targetSpeed.toFixed(3)}`);
+            return sendCommandSilent(`MC SET SPEEDMM ${targetSpeed.toFixed(3)}`);
         }
 
         // Zvol krok: preferuj 1 mm/s; pokud by to nestihlo do 300 ms, krok zvětši.
@@ -6990,7 +7105,7 @@
             }
 
             await sleep(INTERVAL_MS);
-            await sendCommand(`MC SET SPEEDMM ${fmt(curr)}`);
+            await sendCommandSilent(`MC SET SPEEDMM ${fmt(curr)}`);
 
             // Když jsme už na cíli, skonči dřív
             if (Math.abs(curr - targetSpeed) < 1e-9) {
@@ -7002,7 +7117,7 @@
         // Tohle je poslední SEND (celkem max 16), opět s odstupem 20ms od předchozího.
         if (Math.abs(curr - targetSpeed) >= 1e-9) {
             await sleep(INTERVAL_MS);
-            await sendCommand(`MC SET SPEEDMM ${fmt(targetSpeed)}`);
+            await sendCommandGeneral(`MC SET SPEEDMM ${fmt(targetSpeed)}`);
         }
     }
 
@@ -7266,7 +7381,7 @@
                 //
                 //     await logMessage("⚠️ Motors are not calibrated. Calibrating the motor...");
                 //     console.warn("⚠️ Motors are not calibrated. Calibrating the motor...");
-                //     await sendCommand('MC CALIBRATE');
+                //     await sendCommandGeneral('MC CALIBRATE');
                 //     await sleep(5); // Stop for 5 ms
                 //
                 //
@@ -7366,12 +7481,12 @@
 
             // === LoadCell Configuration ===
             for (let i = 0; i < loadCellNum; i++) {
-                await sendCommand(`LC SET CAP ${i} ${loadcellCapacities[i]}`);
-                await sendCommand(`LC SET RO ${i} ${loadcellOutputs[i]}`);
+                await sendCommandGeneral(`LC SET CAP ${i} ${loadcellCapacities[i]}`);
+                await sendCommandGeneral(`LC SET RO ${i} ${loadcellOutputs[i]}`);
             }
 
             // === Prepare Motor ===
-            await sendCommand("MC STOP");
+            await sendCommandGeneral("MC STOP");
             await setSpeedAndAcceleration(initialSpeed_mmps, 200);
 
 
@@ -7385,8 +7500,8 @@
 
 
             if (takePhotos) {
-                await sendCommand('DSLR RESET COUNTERS', 2);
-                await sendCommand('DSLR SHOOT');
+                await sendCommandGeneral('DSLR RESET COUNTERS', 2);
+                await sendCommandGeneral('DSLR SHOOT');
             }
 
             loadSignCorrections = Array(loadCellNum).fill(displacementSignCorrection * -1);
@@ -7437,17 +7552,17 @@
             await sleep(5); // Stop for 5 ms
 
 
-            await sendCommand('DATA SET INTERVAL 2000');
+            await sendCommandGeneral('DATA SET INTERVAL 2000');
 
             // --- 1) Take measurements ---
             takeMeasurements = true;
-            await sendCommand("DATAC 1");
+            await sendCommandGeneral("DATAC 1");
 
             // Take measurements for 1.5 second
             await sleep(1500); // Wait
 
             takeMeasurements = false;
-            await sendCommand("DATAC 0");
+            await sendCommandGeneral("DATAC 0");
 
             // --- 2) Mean forces ---
             meanForces = measureForces.map(force => roundDecimalFast(force.reduce((a, b) => a + b, 0) / force.length, 2));
@@ -7532,13 +7647,13 @@
 
 
             // === Enable Data Streaming and DSLR Shooting ===
-            await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`, 5);
-            await sendCommand("DATAC 1");
-            if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
+            await sendCommandGeneral(`DATA SET INTERVAL ${dataInterval_us}`, 5);
+            await sendCommandGeneral("DATAC 1");
+            if (takePhotos) await sendCommandGeneral(`DSLR START CYCLIC ${photoInterval_ms}`);
 
             // === Move Forward ===
             await console.info("➡️ Moving forward...");
-            await sendCommand(`MC MOVEBY USER ${distance_mm * displacementSignCorrection}`);
+            await sendCommandGeneral(`MC MOVEBY USER ${distance_mm * displacementSignCorrection}`);
 
 
             // === Data Collection Loop ===
@@ -7550,9 +7665,9 @@
             isExperimentRunning = false;
 
             // === Stop Data Streaming and DSLR Shooting ===
-            await sendCommand('MC STOP');
-            await sendCommand('DSLR STOP CYCLIC');
-            await sendCommand('DATAC 0');
+            await sendCommandGeneral('MC STOP');
+            await sendCommandGeneral('DSLR STOP CYCLIC');
+            await sendCommandGeneral('DATAC 0');
 
             await logMessage("🎬 Measurements stopped.");
             await console.info("🎬 Measurements stopped.");
@@ -7573,7 +7688,7 @@
                 //
                 //     console.info(`➡️ Moving further to ${endPosition - shift} mm...`);
                 //
-                //     await sendCommand(`MC MOVEBY USER -${shift}`);
+                //     await sendCommandGeneral(`MC MOVEBY USER -${shift}`);
                 //     await sleep(((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1000) + 500)); // Wait
                 //
                 //     endPosition = await measurePosition();
@@ -8020,9 +8135,9 @@
             calibrationStatus = false;
             await lockMovement();
 
-            await sendCommand('MC ENDSTOPS ENABLE');
-            await sendCommand('MISC SET WATCHDOG_ENABLED 0');
-            await sendCommand('MC CALIBRATE');
+            await sendCommandGeneral('MC ENDSTOPS ENABLE');
+            await sendCommandGeneral('MISC SET WATCHDOG_ENABLED 0');
+            await sendCommandGeneral('MC CALIBRATE');
 
             let confirmCalibrationCount = 0;
             // maximal 1 minute
@@ -8125,13 +8240,13 @@
             currentSpeed = roundDecimalFast(parseFloat(UI.speedSlider.value) || 15, precisionSpeedSystem);
             UI.speedLabel.value = `${currentSpeed.toFixed(precisionSpeedSystem)}`;
         });
-        UI.speedSlider.addEventListener("change", async () => isConnected ? sendCommand(`MC SET SPEEDMM ${UI.speedSlider.value}`) : null);
+        UI.speedSlider.addEventListener("change", async () => isConnected ? sendCommandGeneral(`MC SET SPEEDMM ${UI.speedSlider.value}`) : null);
 
         UI.accelerationSlider.addEventListener("input", () => {
             currentAcceleration = roundDecimalFast(parseFloat(UI.accelerationSlider.value) || 150, precisionAccelerationSystem);
             UI.accelerationLabel.value = currentAcceleration.toFixed(precisionAccelerationSystem);
         });
-        UI.accelerationSlider.addEventListener("change", async () => isConnected ? sendCommand(`MC SET ACCELMM ${UI.accelerationSlider.value}`) : null);
+        UI.accelerationSlider.addEventListener("change", async () => isConnected ? sendCommandGeneral(`MC SET ACCELMM ${UI.accelerationSlider.value}`) : null);
 
         // pouze ty .data-eq, které mají data-eq-type
         const experiment_result_elements = $$("[data-eq-type]");
@@ -8618,72 +8733,88 @@
                     return delimiter;
                 };
 
-                if (fileType === "moira") {
-                    const preambleMetaData = await parseSettingsFromCsv(text) || {};
+                switch (fileType) {
+                    case "moira":
+                        console.info(`📁 Processing MOIRA file: ${file.name}`);
 
-                    fileVersion = preambleMetaData?.version || 0;
+                        const preambleMetaData = await parseSettingsFromCsv(text) || {};
 
-                    fileOpts.delimiter = preambleMetaData?.delimiter || ";";
-                    if (preambleMetaData?.headerVersion === 1) fileOpts.skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
-                    fileOpts.columns = preambleMetaData?.columns;
+                        fileVersion = preambleMetaData?.version || 0;
 
-
-                    const precisions = preambleMetaData?.precisions || {};
-                    if (isObj(outputsOpts) && isNotEmpty(precisions)) {
-                        Object.keys(outputsOpts)?.forEach(key => {
-                            const n = toRounds(precisions[key]);
-                            if (isDef(n) && !isNaN(n)) outputsOpts[key].precision = clamp(Math.abs(n), 0, 12);
-                        });
-                    }
-
-                    const expInfoV = preambleMetaData?.expSettings.version;
-                    const calcSettingsInputs = preambleMetaData?.calcSettings.inputs || {};
-                    if (expInfoV >= 1) {
-                        expResults.experimentType = preambleMetaData?.experimentLabel || "";
-                        expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName", "mm");
-                        expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
-                        expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
-                        expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
-                        expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
-                        expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
-                        expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
-                        expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
-                        expResults.F_T = getMetaValue(calcSettingsInputs, "inputTargetForce", "N");
-                        expResults.h_D = getMetaValue(calcSettingsInputs, "inputIndDepth", "mm");
-                        expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
-                    }
-
-                    const calcInfoV = preambleMetaData?.expSettings.version;
-                    if (calcInfoV >= 1) {
-                        samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
-                        samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
-                        samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputWidth_BeforeDrying", "mm");
-                        samplesInfo.mx = getMetaValue(calcSettingsInputs, "inputWeight_BeforeDrying", "g");
-                        samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputHeight_AfterDrying", "mm");
-                        samplesInfo.l0 = getMetaValue(calcSettingsInputs, "inputLength_AfterDrying", "mm");
-                        samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputWidth_AfterDrying", "mm");
-                        samplesInfo.m0 = getMetaValue(calcSettingsInputs, "inputWeight_AfterDrying", "g");
-                    }
+                        fileOpts.delimiter = preambleMetaData?.delimiter || ";";
+                        if (preambleMetaData?.headerVersion === 1) fileOpts.skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
+                        fileOpts.columns = preambleMetaData?.columns;
 
 
-                } else if (fileType === "moira-legacy") {
-                    fileOpts.delimiter = ";";
-                    fileOpts.skipRows = 3; // (Info) // (Description) // (Header)
-                    fileOpts.columns = 6;
+                        const precisions = preambleMetaData?.precisions || {};
+                        if (isObj(outputsOpts) && isNotEmpty(precisions)) {
+                            Object.keys(outputsOpts)?.forEach(key => {
+                                const n = toRounds(precisions[key]);
+                                if (isDef(n) && !isNaN(n)) outputsOpts[key].precision = clamp(Math.abs(n), 0, 12);
+                            });
+                        }
 
-                } else if (fileType === "matlab") {
-                    fileOpts.delimiter = ";";
-                    fileOpts.skipRows = 1;  // (Header)
-                    fileOpts.columns = 5;
-                    fileOpts['dataTypes']['time']['conversion'] = 1e-6; // Convert time from microseconds to seconds
+                        const expInfoV = preambleMetaData?.expSettings.version;
+                        const calcSettingsInputs = preambleMetaData?.calcSettings.inputs || {};
+                        if (expInfoV >= 1) {
+                            expResults.experimentType = preambleMetaData?.experimentLabel || "";
+                            expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName", "mm");
+                            expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
+                            expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
+                            expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
+                            expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
+                            expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
+                            expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
+                            expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
+                            expResults.F_T = getMetaValue(calcSettingsInputs, "inputTargetForce", "N");
+                            expResults.h_D = getMetaValue(calcSettingsInputs, "inputIndDepth", "mm");
+                            expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
+                        }
 
-                } else if (fileType === "unknown") {
-                    // find first row that starts with text 'time'
-                    const headerRowIndex = rows.findIndex(row => row.trim().startsWith("time"));
-                    fileOpts.skipRows = headerRowIndex !== -1 ? headerRowIndex : 0;
-                    fileOpts.columns = 4;
-                    // TODO: skip for now
-                    continue;
+                        const calcInfoV = preambleMetaData?.expSettings.version;
+                        if (calcInfoV >= 1) {
+                            samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
+                            samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
+                            samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputWidth_BeforeDrying", "mm");
+                            samplesInfo.mx = getMetaValue(calcSettingsInputs, "inputWeight_BeforeDrying", "g");
+                            samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputHeight_AfterDrying", "mm");
+                            samplesInfo.l0 = getMetaValue(calcSettingsInputs, "inputLength_AfterDrying", "mm");
+                            samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputWidth_AfterDrying", "mm");
+                            samplesInfo.m0 = getMetaValue(calcSettingsInputs, "inputWeight_AfterDrying", "g");
+                        }
+
+                        break;
+
+                    case "moira-legacy":
+                        console.info(`📁 Processing MOIRA legacy file: ${file.name}`);
+
+                        fileOpts.delimiter = ";";
+                        fileOpts.skipRows = 3; // (Info) // (Description) // (Header)
+                        fileOpts.columns = 6;
+
+                        break;
+
+                    case "matlab":
+                        console.info(`📁 Processing MATLAB file: ${file.name}`);
+
+                        fileOpts.delimiter = ";";
+                        fileOpts.skipRows = 1;  // (Header)
+                        fileOpts.columns = 5;
+                        fileOpts['dataTypes']['time']['conversion'] = 1e-6; // Convert time from microseconds to seconds
+
+                        break;
+
+                    case "unknown":
+                    default:
+                        console.info(`📁 Processing unknown format file: ${file.name}`);
+
+                        // find first row that starts with text 'time'
+                        const headerRowIndex = rows.findIndex(row => row.trim().startsWith("time"));
+                        fileOpts.skipRows = headerRowIndex !== -1 ? headerRowIndex : 0;
+                        fileOpts.columns = 4;
+                        // TODO: skip for now
+                        fileCount--;
+                        continue;
                 }
 
                 if (rows.length <= fileOpts.skipRows) {  // Skip if the file has no data
