@@ -2425,6 +2425,9 @@
     const precisionAcceleration = 4;
     const precisionAccelerationSystem = 2;
 
+    const timeConversionDATAC = 1e-6; // převod sekund na mikrosekundy
+    const timeConversionDSLR = 1e-3; // převod sekund na mikrosekundy
+
     const loadCellNum = 3; // number of load cells supported
 
     // -------------------- Pomocné DOM utilitky --------------------
@@ -2450,8 +2453,13 @@
     const isEmptyStr = (x) => isStr(x) && x.trim() === '';
     const isNonEmptyStr = (x) => isStr(x) && x.trim() !== '';
 
-    const isValidInput = (x) => isFiniteNumber(x, false) && x > 0;
 
+    const isNum = (x) => isFiniteNumber(x, false); // only Finite numbers
+    const isVal = (x) => isNum(x) || !isEmptyStr(x); // only Finite numbers or non-empty strings
+    const isAny = (x) => isDef(x) && !Number.isNaN(x); // all except undefined, null and NaN
+    const isOk = (x) => isAny(x) && x !== false; // all except undefined, null, NaN and false
+
+    const isValidInput = (x) => isFiniteNumber(x, false) && x > 0;
 
     const getInputDef = (x, d) => {
         const v = toNumber(x, true);
@@ -2461,7 +2469,7 @@
     const getInputDefAbsInt = (x, d) => Math.round(getInputDefAbsFlt(x, d));
 
     const catchVal = (val, def) => {
-        return isFiniteNumber(val, true) ? val : def;
+        return isFiniteNumber(val, false) ? val : def;
     }
 
     const isNumberOrBigInt = (x) =>
@@ -2536,14 +2544,14 @@
 
     // 4) „Je to konečné numerické“ (bez NaN/±Infinity)
     const isFiniteNumeric = (x) => {
-        if (isFiniteNumber(x)) return true;
+        if (isFiniteNumber(x, true)) return true;
         const n = toNumeric(x, true);
         return Number.isFinite(n);
     };
 
     // (volitelné) „dá se to s rozumným výsledkem použít jako číslo“ – alias:
     const isAnyFiniteNumeric = (x) => {
-        if (isFiniteNumber(x)) return true;
+        if (isFiniteNumber(x, true)) return true;
         const n = toNumeric(x, true);
         if (isBigInt(n)) return true; // BigInt je OK
         return Number.isFinite(n);
@@ -2645,7 +2653,7 @@
 
     const decimalSymbol = (num, symbol = '.') => {
         if (!isAnyFiniteNumeric(num)) return "N/A";
-        if (!isFiniteNumber(num)) num = String(num);
+        if (!isFiniteNumber(num, true)) num = String(num);
         const s = String(num);
         return symbol === '.' ? s : s.replace('.', symbol);
     };
@@ -2679,7 +2687,7 @@
     const toBigInt = (x) => {
         if (isBigInt(x)) return x;
         let n = toNumber(x, true);
-        if (!isFiniteNumber(n)) return NaN;
+        if (!isFiniteNumber(n, true)) return NaN;
         if (!isFiniteInteger(n)) n = Math.round(n);
         try {
             return BigInt(n);
@@ -3384,8 +3392,8 @@
     let logCount = 0; // Counter for received messages
     let logContentLines = []; // Array storing the log content
 
-    // TODO: change to 'null' and handle it properly in the code everywhere !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    let parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN}; // Last data log
+
+    let parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null}; // Last data log
 
 
     // /////// Live Data Update and Chart Configuration /////////
@@ -3577,9 +3585,9 @@
         let newVal = val;
 
         // Validate input: if empty, set to a minimum or 0
-        if (isNaN(val)) {
-            if (!isNaN(min)) newVal = min;
-            else if (!isNaN(max)) newVal = max;
+        if (!isNum(val)) {
+            if (isNum(min)) newVal = min;
+            else if (isNum(max)) newVal = max;
             else return;
         } else if (typeof valueType === "string") {
             if (valueType === "intInput") {
@@ -3587,10 +3595,10 @@
             }
 
             // Enforce min/max constraints
-            if (!isNaN(min) && newVal < min) {
+            if (isNum(min) && newVal < min) {
                 newVal = min;
             }
-            if (!isNaN(max) && newVal > max) {
+            if (isNum(max) && newVal > max) {
                 newVal = max;
             }
 
@@ -3598,9 +3606,9 @@
 
                 decimalPlaces = toNumber(decimalPlaces);
                 let roundTo =
-                    isFiniteNumber(decimalPlaces, false) ? decimalPlaces : parseFloat(valueType.replace('floatInput', ''));
+                    isNum(decimalPlaces) ? decimalPlaces : parseFloat(valueType.replace('floatInput', ''));
 
-                if (isNaN(roundTo)) {
+                if (!isNum(roundTo)) {
                     roundTo = maxPrecision;
                     const step = element.step.trim();
 
@@ -3608,7 +3616,7 @@
                         const decimals = (step.replace(',', '.').split(".")[1] || "").length;
                         const stepVal = Math.abs(parseFloat(step));
 
-                        if (!isNaN(stepVal) && stepVal > 0) {
+                        if (isNum(stepVal) && stepVal > 0) {
                             if (stepVal < 1 && decimals > 0) roundTo = decimals;
                             if (stepVal >= 1) roundTo = stepVal;
                         }
@@ -3618,7 +3626,7 @@
                 }
 
 
-                if (!isFiniteNumber(roundTo, false)) roundTo = maxPrecision;
+                if (!isNum(roundTo)) roundTo = maxPrecision;
 
                 roundTo = Math.abs(Math.min(Math.round(roundTo), maxPrecision));
 
@@ -3792,11 +3800,12 @@
 
                     const experimentLabel = experimentInfo.experimentLabel || "";
 
-                    const expBasicInformation = `(${date}); ` + "Loading direction: " + loadDirection + ";  " + experimentLabel;
+                    const expBasicInformation = "§ " + `(${date}); ` + "Loading direction: " + loadDirection + ";  " + experimentLabel + " §";
 
-                    const description = expBasicInformation + ";  " + experimentInfo.experimentDescription.replace(expBasicInformation, "").replace(/(\r\n|\n|\r)/gm, " ").trim();
+                    // replace any original Basic Information in description - up new lines and §...§
+                    const description = expBasicInformation + ";  " + experimentInfo.experimentDescription.replace(/(\r\n|\n|\r)/gm, " ").replace(/§.*§;/gm, "").trim();
 
-                    $$$("experimentCount").value = experimentInfo.experimentCounter || "2";
+                    $$$("experimentCount").value = experimentInfo.experimentCounter || "1";
                     $$$("experimentName").value = experimentInfo.experimentName || "";
                     $$$("experimentDesc").value = description || "";
 
@@ -3996,7 +4005,6 @@
             else val = el.value;
 
             const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
-
 
 
             inputs[key] = {
@@ -4640,7 +4648,7 @@
 
         await writeCommand(command);
 
-        if (!isFiniteNumber(timeOut, false)) timeOut = 1;
+        if (!isNum(timeOut)) timeOut = 1;
         timeOut = Math.max(0, Math.round(timeOut));
 
         if (command.toLowerCase() !== "syswr" && command.toLowerCase() !== "misc watchdog_reset") {
@@ -4763,7 +4771,7 @@
         if (isExperimentRunning || machineOccupation) return;
 
         const endPosition = await measurePosition();
-        if (!(isFiniteNumber(startPosition, false) && isFiniteNumber(endPosition, false))) {
+        if (!(isNum(startPosition) && isNum(endPosition))) {
             endedMoving();
             return;
         }
@@ -5545,7 +5553,7 @@
 
 
     function resetValues() {
-        parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN};
+        parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null};
         liveUpdate = false
 
         UI.USB.innerText = "🔌 Connect via USB";
@@ -5604,7 +5612,7 @@
         await clearDatabase();
         await clearLocalStorage();
 
-        parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN};
+        parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null};
 
         isExperimentRunning = false;
         machineOccupation = false;
@@ -5704,7 +5712,7 @@
                     let dataChunk = buffer.slice(0, lastNewline).split("\n");
                     buffer = buffer.slice(lastNewline + 1);
 
-                    await processMessage(dataChunk);
+                    await handleIncomingChunkQueued(dataChunk);
                 }
             }
         } catch (error) {
@@ -5796,6 +5804,7 @@
                 isReconnecting = false;
                 await updateConnectionStatus("connected");
                 await logMessage("✅ Reconnected successfully!\n");
+                await unlockMovement();
             } else {
                 throw new Error("Reconnect failed: not connected after openPort");
             }
@@ -5853,32 +5862,45 @@
                 continue;             // If a message is consumed, skip further processing
             }
 
-            // Vaše ostatní logiky
-            if (msg.startsWith("DS")) { // "S205:"
-                await processMeasurements(msg.substring(2));
+            // ostatní logiky
+            // TODO: rozmyslet co používat:         split(":") // substring(measurementPrefix.length)
+            const measurementPrefix = "DS"; // "S205:"
+            if (msg.startsWith(measurementPrefix)) {
+                await processMeasurements(msg.substring(measurementPrefix.length));
             } else {
                 logMessage("📩\t" + msg);
             }
         }
     }
 
+    let _msgQueue = Promise.resolve();
 
-    function timeStepCheckOLD(previous, current, stepSize, tolerance = null) {
-        if (!tolerance) {
-            tolerance = stepSize * 0.1; // set default tolerance to 10% of step size
-        }
-        if (current >= previous) {
-            const actualStep = current - previous;
-            if ((stepSize - tolerance) <= actualStep && actualStep <= (stepSize + tolerance)) {
-                return current;
-            }
-        }
-        console.warn("\n⚠️ Step size mismatch:\n\tprevious:", previous, " current: ", current);
-        return previous + stepSize;
+    function handleIncomingChunkQueued(dataChunk) {
+        _msgQueue = _msgQueue
+            .then(() => processMessage(dataChunk))
+            .catch(err => console.error('processMessage failed:', err));
     }
 
-    // TODO: kontrola oproti starému
-    function timeStepCheck(prev, curr, step, tol = step * 0.1) {
+
+    function timeStepCheck(previous, current, stepSize, tolerance = null) {
+        if (!isNum(tolerance)) tolerance = (stepSize * 0.01); // set default tolerance to 2x 1% of step size
+
+        // TODO: optimalizovat tolerance dle rychlosti zpracování dat
+        tolerance = clamp(roundDecimalFast(Math.abs(tolerance), 9), 0.001, 0.1);
+
+
+        const actualStep = current - previous;
+
+        if (!((stepSize - tolerance) <= actualStep && actualStep <= (stepSize + tolerance))) {
+            console.warn("⚠️ Step size mismatch:", {previous, current, actualStep, stepSize, tolerance});
+            return previous + stepSize;
+        }
+
+        return current
+    }
+
+    // TODO: - je to špatně
+    function timeStepCheckNEW(prev, curr, step, tol = step * 0.1) {
         if (curr >= prev) {
             const delta = curr - prev;
             const n = Math.round(delta / step);
@@ -5888,6 +5910,70 @@
         }
         // fallback: věř přijatému času, ať poznáš drift/drop
         return curr;
+    }
+
+    function interpolateDSLRDataNEW(dslrEvent, nextData, prevData) {
+        if (!prevData || !nextData || !dslrEvent) {
+            console.info("⚠️ No valid data for interpolation.");
+            return null;
+        }
+
+        // TODO: zkontrolovat DSLR time relativně ke startu měření
+        const dslrTime = roundDecimalFastNEW(dslrEvent.time - startTime, precisionTime);
+        const photoIndex = dslrEvent.photoIndex;
+
+        if (!(prevData.time < nextData.time)) {
+            console.error("⚠️ Not enough data for interpolation.");
+            return null;
+        }
+
+        let interpolatedData;
+
+        if (prevData.time <= dslrTime && dslrTime <= nextData.time) {
+            const t1 = prevData.time, t2 = nextData.time;
+            const factor = (dslrTime - t1) / (t2 - t1);
+
+            const interpPos = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPosition);
+            const interpSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeed);
+
+            const interpForce = prevData.force.map((v1, i) => {
+                const v2 = nextData.force[i];
+                if (isNum(v1) && isNum(v2)) return roundDecimalFast(v1 + factor * (v2 - v1), precisionForce);
+                if (isNum(v1)) return v1;
+                if (isNum(v2)) return v2;
+                return null;
+            });
+
+            interpolatedData = {
+                time: dslrTime,
+                position: interpPos,
+                speed: interpSpeed,
+                force: interpForce,
+                photoIndex
+            };
+
+        } else {
+            console.warn("⚠️ DSLR time out of [prev,next] — using midpoint.");
+            const midT = roundDecimalFast((prevData.time + nextData.time) / 2, precisionTime);
+            const midPos = roundDecimalFast((prevData.position + nextData.position) / 2, precisionPosition);
+            const midSpeed = roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeed);
+            const midForce = prevData.force.map((v1, i) => {
+                const v2 = nextData.force[i];
+                if (isNum(v1) && isNum(v2)) return roundDecimalFast((v1 + v2) / 2, precisionForce);
+                return isNum(v1) ? v1 : (isNum(v2) ? v2 : null);
+            });
+
+            interpolatedData = {
+                time: midT,
+                position: midPos,
+                speed: midSpeed,
+                force: midForce,
+                photoIndex
+            };
+        }
+
+        console.info("📸 DSLR Interpolated Data @", interpolatedData.time);
+        return interpolatedData;
     }
 
 
@@ -5917,7 +6003,13 @@
 
             const interpolatedPosition = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPosition);
             const interpolatedSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeed);
-            const interpolatedForce = prevData.force.map((val, i) => roundDecimalFast(val + factor * (nextData.force[i] - val), precisionForce));
+            const interpolatedForce = prevData.force.map((f1, i) => {
+                const f2 = nextData.force[i];
+                if (isNum(f1) && isNum(f2)) return roundDecimalFast(f1 + factor * (f1 - v1), precisionForce);
+                if (isNum(f1)) return f1;
+                if (isNum(f2)) return f2;
+                return null;
+            });
 
             interpolatedData = {
                 time: dslrTime,
@@ -5938,9 +6030,6 @@
                 photoIndex: photoIndex // Store DSLR photo order
             };
         }
-        dataCount++;
-        aggregatedDataBetweenSteps.push(interpolatedData);
-        pendingDSLR = null;
 
 
         // Log interpolated data
@@ -5955,6 +6044,11 @@
         for (let i = 0; i < loadCellNum; i++) {
             forceData[i].push(interpolatedData.force[i]);
         }
+
+        //TODO: zvážit zda dělat přidávání dat do průměrů:
+        dataCount++;
+        aggregatedDataBetweenSteps.push(interpolatedData);
+        pendingDSLR = null;
 
 
         console.info("📸 DSLR Interpolated Data:", interpolatedData.time);
@@ -6107,6 +6201,8 @@
         return roundDecimalFast(progress, 6);
     }
 
+    let lastAcceptedTime = null;
+
     async function processMeasurements(dataString) {
         if (!takeMeasurements && !isExperimentRunning) {
             logMeasurements(dataString);
@@ -6116,9 +6212,10 @@
         const parts = dataString.split(",");
 
         // Detect DSLR shoot event
-        if (takePhotos && dataString.startsWith("LR shoot:")) {
+        const DSLRPrefix = "LR shoot:";
+        if (takePhotos && dataString.startsWith(DSLRPrefix)) {
             const [dslrTime, photoIndex] = dataString.split(":")[1].split(",");
-            pendingDSLR = {time: parseFloat(dslrTime) * 1e-3, photoIndex: parseInt(photoIndex) - 1};
+            pendingDSLR = {time: parseFloat(dslrTime) * timeConversionDSLR, photoIndex: parseInt(photoIndex) - 1};
             logMeasurements("Photo" + dataString.substring(2));
             return;
         }
@@ -6131,45 +6228,62 @@
         }
 
         // Common parsing logic
-        let forceVal = parts.slice(3).map(num => num === "0" ? NaN : parseFloat(num)); // LoadCell values
+        let forceVal = parts.slice(3).map(num => num === "0" ? null : parseFloat(num)); // LoadCell values
 
         if (takeMeasurements) {
             forceVal?.forEach((value, index) => measureForces[index].push(value * loadSignCorrections[index])); // Handle takeMeasurements
             return;
         }
 
-        let timeVal = roundDecimalFast(parseFloat(parts[0]) * 1e-6, precisionTime); // Convert microseconds to seconds
+        let timeVal = parseFloat(parts[0]) * timeConversionDATAC; // Convert microseconds to seconds
         let distVal = roundDecimalFast((parseFloat(parts[1]) - startPosition) * displacementSignCorrection, precisionPosition); // Position value
         const speedVal = roundDecimalFast(parseFloat(parts[2]) * displacementSignCorrection, precisionSpeed); // Speed value
+
+        if (!isNum(timeVal) || !isNum(distVal)) {
+            console.warn("⚠️ Invalid data received:", {timeVal, distVal});
+            endMeasuring(0, 'data error', "⏹️ Movement stopped due to data error.", '', "MC STOP");
+            document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+            UI.experimentStageLabel.textContent = `Error`;
+            return;
+        }
 
 
         // Handle regular data (not DSLR)
         if (startTime === null) {
             startTime = timeVal;
+            timeVal = 0;
+            lastAcceptedTime = 0;
+        } else {
+            // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
+            const rawCurrent = (timeVal - startTime);
+            const corrected = timeStepCheck(lastAcceptedTime ?? parsedData.time, rawCurrent, dataInterval_us * timeConversionDATAC);
+            timeVal = roundDecimalFast(corrected, precisionTime);
+            lastAcceptedTime = timeVal; // okamžitě posuň "previous"
         }
 
-
-        timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6); // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
 
         // TODO: do only Present loadcellls
         forceVal = forceVal.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - meanForces[index], precisionForce));
 
 
-        const newData = {time: timeVal, position: distVal, speed: speedVal, force: forceVal, photoIndex: NaN};
+        const newData = {time: timeVal, position: distVal, speed: speedVal, force: forceVal, photoIndex: null};
 
         // If a pending DSLR timestamp exists, interpolate values
         if (takePhotos && pendingDSLR) {
-            await interpolateDSLRData(pendingDSLR, newData, parsedData);
+            const clone = structuredClone(parsedData); // TODO: zkontrolovat zda to má smysl a funguje
+            interpolateDSLRData(pendingDSLR, newData, clone);
         }
 
-        if (experimentDoubleSpeed && forceVal.some(value => !isNaN(value) && value >= initialForceLim_N)) {
+        parsedData = newData;
+
+        if (experimentDoubleSpeed && forceVal.some(value => isNum(value) && value >= initialForceLim_N)) {
             setSpeed(speedForward_mmps);
             experimentDoubleSpeed = false;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressSecondary-color)');
             UI.experimentStageLabel.textContent = `Loading`;
         }
 
-        const sumForce = forceVal.reduce((acc, val) => acc + (isNaN(val) ? 0 : val), 0);
+        const sumForce = forceVal.reduce((acc, val) => acc + (isNum(val) ? val : 0), 0);
 
         if (sumForce >= stoppingForceLimit) {
             over_limitForce_counter++;
@@ -6202,7 +6316,7 @@
 
         // Handle LoadCell limit checks
         for (let i = 0; i < 3; i++) {
-            if (!isNaN(forceVal[i])) {
+            if (isNum(forceVal[i])) {
                 const currForce = forceVal[i];
                 if (currForce > maxForces[i]) maxForces[i] = currForce;
                 if (maxForces[i] || maxForces[i] === 0) {
@@ -6215,8 +6329,7 @@
             }
         }
 
-        parsedData = newData;
-        await addDataToLog(newData);
+        addDataToLog(newData);
 
         // Update Progress Bar
         let progressValue;
@@ -6364,7 +6477,7 @@
 
 
     function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, photoData, overflowData) {
-        if (!isFiniteNumber(chunkSize, false)) chunkSize = 1;
+        if (!isNum(chunkSize)) chunkSize = 1;
         chunkSize = Math.max(1, Math.round(chunkSize));
 
         // const photoValidStep = dataEntries.findIndex((entry, i) => isFiniteNumber(entry.photoIndex, false) && i > 0);
@@ -6380,15 +6493,15 @@
                 timeData[i] = entry.time;
                 positionData[i] = entry.position;
                 entry.force?.forEach((value, index) => forceData[index][i] = value);
-                photoData[i] = isFiniteNumber(entry.photoIndex, false) ? 0 : null; // Mark photo event
+                photoData[i] = isNum(entry.photoIndex) ? 0 : null; // Mark photo event
             }
             return;
         }
 
-        const photosCount = dataEntries.reduce((count, entry) => count + (isFiniteNumber(entry.photoIndex, false) ? 1 : 0), 0);
+        // const photosCount = dataEntries.reduce((count, entry) => count + (isNum(entry.photoIndex) ? 1 : 0), 0);
 
         let fullChunks = Math.floor(dataEntries.length / chunkSize) * chunkSize;
-        let chunkCount = Math.floor(dataEntries.length / chunkSize) + photosCount; // Block count
+        // let chunkCount = Math.floor(dataEntries.length / chunkSize) + photosCount; // Block count
         let remainderStart = fullChunks; // First index of data
 
         // Predefine array size to match the new chunk count
@@ -6408,7 +6521,7 @@
             entry.force?.forEach((value, index) => sumForce[index] += value);
             count++;
 
-            if (isFiniteNumber(entry.photoIndex, false)) {
+            if (isNum(entry.photoIndex)) {
                 // If a photo event is detected, add data immediately to the current chunk
                 // timeData[chunkIndex] = entry.time;
                 // positionData[chunkIndex] = entry.position;
@@ -6430,7 +6543,7 @@
                     forceData[index][chunkIndex] = value * invCount;
                     sumForce[index] = 0; // Reset for next chunk
                 });
-                photoData[chunkIndex] = isFiniteNumber(entry.photoIndex, false) ? 0 : null; // Mark photo event
+                photoData[chunkIndex] = isNum(entry.photoIndex) ? 0 : null; // Mark photo event
 
                 sumTime = sumPosition = 0;
                 count = 0;
@@ -6512,7 +6625,7 @@
 
 
             // dataEntries?.forEach(entry => {
-            //     if (!isNaN(entry.photoIndex)) {
+            //     if (isNum(entry.photoIndex)) {
             //         // markersTimeTemp.push(entry.time); // Add `time` value to markersTime list
             //         // markersDistTemp.push(entry.position); // Add `position` value to markersTime list
             // });
@@ -6650,8 +6763,8 @@
 
     function updateChart(data) {
 
-        // Check if the data is valid (not NaN)
-        if (isNaN(data.time) || isNaN(data.position) || data.force.every(x => isNaN(x))) { //  || data.force.some(isNaN)
+        // Check if the data is valid
+        if (!isNum(data.time) || !isNum(data.position) || data.force.every(x => !isNum(x))) { //  || data.force.some(!isNum)
             return;
         }
 
@@ -6889,7 +7002,7 @@
             const position = toNumber(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut), true);
             // const position = parseFloat(await getPromisedValue("MC GET POS", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
 
-            if (!isFiniteNumber(position, false)) {
+            if (!isNum(position)) {
                 throw new Error("Position is not a number.", position);
             }
             console.info(`\t📌 Current position: ${position} mm`);
@@ -6915,7 +7028,7 @@
 
             const force = toNumber(await getPromisedValue(`LC READ LOADCELL[${ldID}]`, /.../, 1, timeOut), true);
 
-            if (!isFiniteNumber(force, false)) {
+            if (!isNum(force)) {
                 throw new Error("Load is not a number.", force);
             }
             return roundDecimalFast(force, precisionForce);
@@ -6938,7 +7051,7 @@
             for (let i = 0; i < 3; i++) {
                 const force = await getPromisedValue(`LC READ LOADCELL[${i}]`, /.../, 1, timeOut);
 
-                if (!(force == null || isNaN(force) || force === '0' || force === '-0' || !isFiniteNumeric(force))) {
+                if (!(!isVal(force) || force === '0' || force === '-0')) {
                     isPresent.push(true);
                     continue;
                 }
@@ -6984,7 +7097,7 @@
 
             const speed = toNumber(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut), true);
             // const speed = parseFloat(await getPromisedValue("MC GET SPEED", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
-            if (!isFiniteNumber(speed, false)) {
+            if (!isNum(speed)) {
                 throw new Error("Speed is not a number.", speed);
             }
             console.info(`\t🚅 Current speed: ${speed} mm/s`);
@@ -7008,7 +7121,7 @@
 
             const acceleration = toNumber(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut), true);
             // const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
-            if (!isFiniteNumber(acceleration, false)) {
+            if (!isNum(acceleration)) {
                 throw new Error("Acceleration is not a number.", acceleration);
             }
             console.info(`\t🚝 Current acceleration: ${acceleration} mm/s²`);
@@ -7242,7 +7355,7 @@
             let min = Infinity, max = -Infinity;
 
             for (const v of arr) {
-                if (!isNaN(v)) {
+                if (isNum(v)) {
                     found = true;
                     if (v < min) min = v;
                     if (v > max) max = v;
@@ -7264,8 +7377,7 @@
         if (!isObj(experimentEndLimits) || !isObj(parsedData)) return false;
 
         // klíče, které opravdu vyžadujeme (hodnota není null ani NaN)
-        const required = Object.entries(experimentEndLimits)
-            .filter(([, v]) => v !== null && !(typeof v === 'number' && Number.isNaN(v)));
+        const required = Object.entries(experimentEndLimits).filter(([, v]) => !isNum(v));
 
         // musí existovat aspoň jeden požadovaný klíč
         if (required.length === 0) return false;
@@ -7387,7 +7499,7 @@
                 }
             }
 
-            if (!isFiniteNumber(speedForward_mmps, false) || speedForward_mmps < minFSpeed) {
+            if (!isNum(speedForward_mmps) || speedForward_mmps < minFSpeed) {
                 console.warn(`\n⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 await logMessage(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 alert(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
@@ -7399,19 +7511,19 @@
                 throw new Error("Speed error");
             }
 
-            if (!isFiniteNumber(dataInterval_us, false) || dataInterval_us < 1) {
+            if (!isNum(dataInterval_us) || dataInterval_us < 1) {
                 console.warn(`\n⚠️ Data interval must be greater than 1 µs.`);
                 await logMessage(`⚠️ Data interval must be greater than 1 µs.`);
                 alert(`⚠️ Data interval must be greater than 1 µs.`);
                 throw new Error("Data interval error");
             }
 
-            if (!isArr(loadcellCapacities) || loadcellCapacities.some(cap => !isFiniteNumber(cap, false) || cap < minLoadCap)) {
+            if (!isArr(loadcellCapacities) || loadcellCapacities.some(cap => !isNum(cap) || cap < minLoadCap)) {
                 console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
                 throw new Error("Loadcell capacity error");
-            } else if (!isArr(loadcellOutputs) || loadcellOutputs.some(out => !isFiniteNumber(out, false) || out < minLoadOut)) {
+            } else if (!isArr(loadcellOutputs) || loadcellOutputs.some(out => !isNum(out) || out < minLoadOut)) {
                 console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
@@ -7424,7 +7536,7 @@
                     await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
                     alert(`⚠️ Stopping force must be greater than 0 N.`);
                     throw new Error("Stopping force error");
-                } else if (!isFiniteNumber(holdForceTimeMs, false) || (holdForceTimeMs / 1000) < 0) {
+                } else if (!isNum(holdForceTimeMs) || (holdForceTimeMs / 1000) < 0) {
                     console.warn(`\n⚠️ Hold force time must be equal or greater than 0 s.`);
                     await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
                     alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
@@ -7433,7 +7545,7 @@
             }
 
             if (experimentDoubleSpeed) {
-                if (!isFiniteNumber(initialSpeed_mmps, false) || initialSpeed_mmps < minFSpeed) {
+                if (!isNum(initialSpeed_mmps) || initialSpeed_mmps < minFSpeed) {
                     console.warn(`\n⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
@@ -7452,7 +7564,7 @@
             }
 
             if (takePhotos) {
-                if (!isFiniteNumber(photoInterval_ms, false) || photoInterval_ms < minPhotoInt) {
+                if (!isNum(photoInterval_ms) || photoInterval_ms < minPhotoInt) {
                     console.warn(`\n⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
                     alert(`⚠️ Photo interval must be greater than ${minPhotoInt * 1000} s.`);
@@ -7589,7 +7701,7 @@
                 position: 0,
                 speed: 0,
                 force: Array(loadCellNum).fill(0),
-                photoIndex: takePhotos ? 0 : NaN // Store DSLR photo order
+                photoIndex: takePhotos ? 0 : null // Store DSLR photo order
             };
 
 
@@ -7726,7 +7838,7 @@
             // --- 6) Valid dispersion ---
             const diffs = validFields.flatMap(({
                                                    min, max
-                                               }) => (isFiniteNumber(min, false) && isFiniteNumber(max, false)) ? [max - min] : []);
+                                               }) => (isNum(min) && isNum(max)) ? [max - min] : []);
             console.info("Valid dispersions:", diffs);
 
             // --- 7) Error rates ---
@@ -8689,7 +8801,7 @@
 
                     // 2.4 Konverze (preferuj předvyplněnou)
                     let conversion = isDef(prev.conversion) ? toNumber(prev.conversion) : undefined;
-                    if (!isDef(conversion) || !isFiniteNumber(conversion, false)) {
+                    if (!isDef(conversion) || !isNum(conversion)) {
                         if (targetUnit && fromUnit) {
                             try {
                                 conversion = convertUnits(1, fromUnit, targetUnit) || 1;
@@ -8762,6 +8874,33 @@
 
 
                 return getters;
+            }
+
+            // šířky sloupců podle délky hlaviček
+            const PAD = 2;      // rezerva, ať to není nalepené
+            const MIN = 6;      // minimální šířka
+
+            function fitToCols(rows, {pad = 2, min = 6} = {}) {
+                const cols = rows[0]?.length ?? 0;
+                const out = Array.from({length: cols}, () => ({wch: min}));
+                for (let c = 0; c < cols; c++) {
+                    let maxLen = 0;
+                    for (let r = 0; r < rows.length; r++) {
+                        const v = rows[r][c];
+                        const s = v == null ? "" : String(v);
+                        if (s.length > maxLen) maxLen = s.length;
+                    }
+                    out[c].wch = Math.max(min, maxLen + pad);
+                }
+                return out;
+            }
+
+            function setNumFmt(colIndex, fmt, data, ws) {
+                for (let r = 1; r < data.length; r++) {
+                    const addr = XLSX.utils.encode_cell({r, c: colIndex});
+                    const cell = ws[addr];
+                    if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
+                }
             }
 
 
@@ -8856,7 +8995,7 @@
                         if (isObj(outputsOpts) && isNotEmpty(precisions)) {
                             Object.keys(outputsOpts)?.forEach(key => {
                                 const n = toRounds(precisions[key]);
-                                if (isDef(n) && !isNaN(n)) outputsOpts[key].precision = clamp(Math.abs(n), 0, 12);
+                                if (isDef(n) && isNum(n)) outputsOpts[key].precision = clamp(Math.abs(n), 0, 12);
                             });
                         }
 
@@ -9002,7 +9141,7 @@
                         continue;
                     }
 
-                    const allValid = values.every(val => !isNaN(val));
+                    const allValid = values.every(val => isNum(val));
 
                     if (allValid) {
                         validRowFound = true;
@@ -9146,6 +9285,12 @@
             }
 
 
+            if (fileCount === 0 || !isNotEmpty(formattedData)) {
+                console.error("\n❌ No valid files were processed.");
+                alert("❌ No valid files were processed. Please check the file formats and try again.");
+                return;
+            }
+
             // Create the first sheet with data
             const wsMattes = await XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
             wsMattes["!merges"] = (wsMattes['!merges'] || []);
@@ -9222,47 +9367,19 @@
             // autofilter přes hlavičku
             // wsResults['!autofilter'] = {ref: XLSX.utils.encode_range(0, 0, resultsData.length - 1, HEAD.length - 1)};
 
-            // šířky sloupců podle délky hlaviček
-            const PAD = 2;      // rezerva, ať to není nalepené
-            const MIN = 6;      // minimální šířka
+            wsResults['!cols'] = fitToCols(resultsData, {pad: PAD, min: MIN}); // wsResults['!cols'] = HEAD.map(h => ({wch: Math.max(MIN, h.length + PAD)}));
 
-            wsResults['!cols'] = HEAD.map(h => ({wch: Math.max(MIN, h.length + PAD)}));
 
-            function fitToCols(rows, {pad = 2, min = 6} = {}) {
-                const cols = rows[0]?.length ?? 0;
-                const out = Array.from({length: cols}, () => ({wch: min}));
-                for (let c = 0; c < cols; c++) {
-                    let maxLen = 0;
-                    for (let r = 0; r < rows.length; r++) {
-                        const v = rows[r][c];
-                        const s = v == null ? "" : String(v);
-                        if (s.length > maxLen) maxLen = s.length;
-                    }
-                    out[c].wch = Math.max(min, maxLen + pad);
-                }
-                return out;
-            }
-
-            wsResults['!cols'] = fitToCols(resultsData, {pad: 2, min: 6});
-
-            function setNumFmt(colIndex, fmt) {
-                for (let r = 1; r < resultsData.length; r++) {
-                    const addr = XLSX.utils.encode_cell({r, c: colIndex});
-                    const cell = wsResults[addr];
-                    if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
-                }
-            }
-
-            setNumFmt(4, "0.00");      // b (mm)
-            setNumFmt(5, "0.00");      // h (mm)
-            setNumFmt(6, "0.00");      // L (mm)
-            setNumFmt(7, "0.000");     // E (MPa)
-            setNumFmt(8, "0.00");      // F_max (N)
-            setNumFmt(9, "0.00");      // w_Fmax (mm)
-            setNumFmt(10, "0.000");     // σ_max (MPa)
-            setNumFmt(11, "0.00");      // F_T (N)
-            setNumFmt(12, "0.00");      // h_D (mm)
-            setNumFmt(13, "0.000");     // H_BW (-)
+            setNumFmt(4, "0.00", resultsData, wsResults);      // b (mm)
+            setNumFmt(5, "0.00", resultsData, wsResults);      // h (mm)
+            setNumFmt(6, "0.00", resultsData, wsResults);      // L (mm)
+            setNumFmt(7, "0.000", resultsData, wsResults);     // E (MPa)
+            setNumFmt(8, "0.00", resultsData, wsResults);      // F_max (N)
+            setNumFmt(9, "0.00", resultsData, wsResults);      // w_Fmax (mm)
+            setNumFmt(10, "0.000", resultsData, wsResults);    // σ_max (MPa)
+            setNumFmt(11, "0.00", resultsData, wsResults);     // F_T (N)
+            setNumFmt(12, "0.00", resultsData, wsResults);     // h_D (mm)
+            setNumFmt(13, "0.000", resultsData, wsResults);    // H_BW (-)
 
 
             XLSX.utils.book_append_sheet(wb, wsMattes, sheetName); // Append a sheet to workbook
@@ -9450,23 +9567,23 @@
             const el = $$$(id);
             const val = toNumber(v);
 
-            if (!hasValue(el.value) && !isNaN(val)) blinkBorder(el, {
+            if (!hasValue(el.value) && isNum(val)) blinkBorder(el, {
                 restart: true,
                 color: '#2196F3',
                 backgroundOn: '#a7e7ff',
                 blinks: 3,
             });
 
-            else if (!isNaN(val) && val === toNumber(el.value)) blinkBorder(el, {
+            else if (isNum(val) && val === toNumber(el.value)) blinkBorder(el, {
                 restart: true,
                 color: '#4CAF50',
                 backgroundOn: '#a9ffa9',
                 blinks: 3,
             });
 
-            else if (!isNaN(val) && val !== adjustGet(id)) blinkBorder(el, {restart: true});
+            else if (isNum(val) && val !== adjustGet(id)) blinkBorder(el, {restart: true});
 
-            else if (isNaN(val) && !isNaN(adjustGet(id))) blinkBorder(el, {
+            else if (!isNum(val) && isNum(adjustGet(id))) blinkBorder(el, {
                 restart: true,
                 color: '#DC143C',
                 backgroundOn: '#ffaeb9',
