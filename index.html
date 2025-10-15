@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <title>Moira controller</title>
 
+    <!--
+          __  __       _                          __ _
+         |  \/  |     (_)                        / _| |
+         | \  / | ___  _ _ __ __ _     ___  ___ | |_| |___      ____ _ _ __ ___
+         | |\/| |/ _ \| | '__/ _` |   / __|/ _ \|  _| __\ \ /\ / / _` | '__/ _ \
+         | |  | | (_) | | | | (_| |   \__ \ (_) | | | |_ \ V  V / (_| | | |  __/
+         |_|  |_|\___/|_|_|  \__,_|   |___/\___/|_|  \__| \_/\_/ \__,_|_|  \___|
+
+
+    -->
+    <!-- https://patorjk.com/software/taag/#p=display&f=Big -->
+
+
+    <meta name="description"
+          content="Moira Controller: Open Source software for controlling scientific experiments and machines.">
+    <meta name="author" content="Matěj Porubský, Czech Republic">
+    <meta name="keywords"
+          content="Moira, Controller, Thymos, Machine, Control, Software, Experiment, Science, Standards, Open Source">
+
+
     <script>
         const softwareVersion = "0.0.2.0";
         const softwareDate = "06.10.2025";
@@ -25,19 +45,6 @@
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
 
-    <!--
-          __  __       _                          __ _
-         |  \/  |     (_)                        / _| |
-         | \  / | ___  _ _ __ __ _     ___  ___ | |_| |___      ____ _ _ __ ___
-         | |\/| |/ _ \| | '__/ _` |   / __|/ _ \|  _| __\ \ /\ / / _` | '__/ _ \
-         | |  | | (_) | | | | (_| |   \__ \ (_) | | | |_ \ V  V / (_| | | |  __/
-         |_|  |_|\___/|_|_|  \__,_|   |___/\___/|_|  \__| \_/\_/ \__,_|_|  \___|
-
-
-    -->
-    <!-- https://patorjk.com/software/taag/#p=display&f=Big -->
-
-
     <!-- External libraries: -->
     <!-- uPlot -->
     <link rel="stylesheet" href="packages/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
@@ -45,6 +52,7 @@
 
     <!-- XLSX -->
     <script async src="packages/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
+    <!--    <script async src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>-->
 
     <!-- ZIP -->
     <!--    <script async src="packages/zip/jszip.min.js"></script> &lt;!&ndash; Add JSZip JavaScript &ndash;&gt;-->
@@ -782,8 +790,8 @@
 
 
         #controlContainer {
-            display: flex;
-            /*flex-direction: row;*/
+            display: grid;
+            grid-template-columns:  1fr auto;
             gap: 30px;
             width: 100%;
             justify-content: center;
@@ -887,7 +895,7 @@
             flex-grow: 1;
             flex-direction: column;
             gap: 15px;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             margin-top: 20px;
 
@@ -902,7 +910,7 @@
             width: 100%;
             gap: var(--gap);
             align-items: center;
-            justify-content: center;
+            justify-content: left;
         }
 
         .controlBtn {
@@ -988,11 +996,12 @@
         #progressWrapper {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: var(--gap);
             flex-grow: 1;
             width: 100%;
-            max-width: 650px;
             min-width: 50px;
+            padding-left: 5px;
         }
 
         .experimentContainer {
@@ -1008,13 +1017,6 @@
 
             background: var(--color-bg);
             border-radius: var(--radius);
-        }
-
-        #experimentInputsWrapper {
-            display: grid;
-            grid-template-columns:  10fr 1fr;
-            gap: var(--gap);
-            width: 100%;
         }
 
         #experimentInputsContainer {
@@ -1106,7 +1108,7 @@
             justify-items: center;
         }
 
-        #experimentDirectionDropdown {
+        #experimentTypeDropdown {
             flex-grow: 1;
             min-width: 0;
             max-width: 230px;
@@ -1141,16 +1143,25 @@
             padding-top: 20px;
         }
 
-        #regularLog {
+        #regularLogWrapper {
             max-width: 1200px;
             min-width: 300px;
             flex-grow: 1;
             height: 200px;
             background: var(--regular-log-color);
+            border: 2px solid var(--regular-log-color);
             margin: 0;
             border-radius: 10px;
-            overflow-y: auto;
+            overflow: hidden;
             font-size: 12px;
+        }
+
+        #regularLog {
+            width: -webkit-fill-available;
+            height: -webkit-fill-available;
+            overflow-y: auto;
+            box-sizing: border-box;
+            margin: 0;
         }
 
         #loadingLog {
@@ -1543,6 +1554,13 @@
 
         <pre id="brailleOut"
              style="font-weight: normal; border: 2px solid black;  width: 200px; height: 100px; font-size: 16px; letter-spacing: 0;"></pre>
+
+
+        <label for="testInput"></label>
+        <input id="testInput"
+               type="number" inputmode="decimal" step="any"
+               style="font-weight: normal; border: 2px solid black;  width: 200px; height: 100px; font-size: 16px; letter-spacing: 0;"
+               placeholder="Type here..."/>
     </section>
 
     <!-- Graph Display Section -->
@@ -1610,16 +1628,30 @@
                         </button>
 
                         <!-- Automatic returning to the original position Checkmark -->
-                        <label id="autoReturnPositionExperimentLabel" for="autoReturnPositionExperiment">↕️ Final
-                            Auto-positioning:</label>
-                        <input type="checkbox" id="autoReturnPositionExperiment">
+                        <div style="
+            display: inline-flex;
+            gap: var(--gap);
+            padding-left: var(--gap);
+            align-items: center;
+            justify-content: center;"
+                             data-eq-type="-InB">
+                            <label id="autoReturnPositionExperimentLabel" for="autoReturnPositionExperiment">↕️ Final
+                                Auto-positioning:</label>
+                            <input type="checkbox" id="autoReturnPositionExperiment">
+                        </div>
                     </div>
 
                     <!-- Experiment Progress -->
                     <div id="progressWrapper">
-                        <label for="experimentProgress">Experiment Progress:</label>
-                        <progress id="experimentProgress" value="0" max="100"></progress>
-                        <span id="experimentProgressLabel"></span>
+                        <div style="flex-grow: 1; display: flex; align-items: center; gap: 10px; max-width: 630px;">
+                            <label for="experimentProgress">Experiment Progress:</label>
+                            <progress id="experimentProgress" value="0" max="100"></progress>
+                            <span id="experimentProgressLabel"></span>
+                        </div>
+                        <div style="width: 135px;">
+                            <b>Stage:</b>
+                            <span id="experimentStage">None</span>
+                        </div>
                     </div>
                 </nav>
 
@@ -1705,7 +1737,6 @@
 
     <section class="experimentContainer outsetShadow">
         <h3>📝 Experiment options:</h3>
-        <!--        <section id="experimentInputsWrapper">-->
         <section id="experimentInputsContainer">
 
             <label for="experimentName">🧪 Experiment Name:</label>
@@ -1737,7 +1768,7 @@
             </div>
 
             <div>
-                <button type="button" id="btnLoadSettings">🗃️ Load experiment settings from CSV</button>
+                <button type="button" id="btnLoadSettings">🗃️ Load experiment data (CSV)</button>
                 <div hidden>
                     <span id="loadedFileName" aria-live="polite"></span>
                     <input type="file" id="appFileInput" accept=".csv,text/csv">
@@ -1750,7 +1781,6 @@
 
 
         <!--            </div>-->
-        <!--        </section>-->
 
         <h3>📑 Experiment Results:</h3>
         <section class="openingContainer insetShadow">
@@ -2076,36 +2106,19 @@
                                value="20" min="0.01" step="any" max="100000000" data-unit="mm" data-essence="position">
                     </div>
 
-                    <!--                    // ✅✔️☑️❎❌✖️⭕️❗️❓❕❔⚠️ -->
-                    <!--                    // ⛔🚫🛑🚨🚧⚡🔥💥💫💢💣💤💨💯 -->
-                    <!--                    // 🔴🟠🟡🟢🔵🟣🟤⚫️⚪️ -->
-                    <!--                    // 🟥🟧🟨🟩🟦🟪🟫⬛️⬜️🔳🔲◻️◽▫️◼️◾▪️ -->
-                    <!--                    // 🆗🆕🆙🆒🆓 -->
-                    <!--                    // 0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟 -->
-                    <!--                    // ℹ️🔠🔢🔤#️⃣*️⃣🔀🔁🔂🔄🔃🎦 -->
-                    <!--                    // 📶-->
-                    <!--                    // 🅰️🅱️🆎🆑🅾️🆘🆔🆚🆖 -->
-                    <!--                    // 🆗🆑🅿️Ⓜ️®️♾️➰➿〰️〽️ -->
-                    <!--                    // ⬆️↗️➡️↘️⬇️↙️⬅️↖️↔️↕️↩️↪️⤴️⤵️🔃🔄🔜🔙🔝🔚🆙🔛 -->
-                    <!--                    // 🟦⏯️⏸️⏹️⏺️⏏️▶️⏩⏭️◀️⏪⏮️⏫🔼🔽⏬🔺🔻 -->
-                    <!--                    // 🛂🛃 -->
-                    <!--                    // 🚮🧼🧺🧽🧹🗑️💨 ⌦ ⌫ ♻️ ♻ -->
-                    <!--                    // 🛅🔒🔓🔏🔐🔑🗝️ -->
-                    <!--                    // 🗣️👤👥🎓🖱️⌨️🎛️🎚️💻🖥️📺📻📟🎮🕹️👾🤖👩🏻‍💻🔘🚥🚦 -->
-                    <!--                    // 📣📢🎤🎙️📯💬💭🗨️🗯️💳🎫🎟️ -->
-                    <!--                    // 𝒊 𝐈𝐃 🇮🇩 ⓘ ⇄ -->
-
                     <div class="input-group">
-                        <label for="experimentDirectionDropdown">Experiment type: </label>
-                        <select id="experimentDirectionDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
+                        <label for="experimentTypeDropdown">Experiment type: </label>
+                        <select id="experimentTypeDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px;">
                             <option value="Option-UP-POS-BASIC" data-essence="move_up">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
                             </option>
-                            <option value="Option-UP-POS-Ten-BASIC" data-essence="tensile">&nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            <option value="Option-UP-POS-Ten" disabled data-essence="tensile">&nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
                             <option value="Option-UP-POS-InB" data-essence="internal_bond">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
                             <option value="Option-DOWN-POS-BASIC" data-essence="move_down" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
+                            </option>
+                            <option value="Option-UP-POS-Com" disabled data-essence="compression">&nbsp;COMPRESION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                             </option>
                             <option value="Option-DOWN-POS-Flx" data-essence="flexural">&nbsp;FLEXURAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                             </option>
@@ -2154,7 +2167,7 @@
                                value="30000" min="10000" step="any" max="100000000" data-unit="µs" data-essence="time">
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group" data-eq-type="InB, HBr">
                         <label id="inputInitialSpeedLabel" for="inputInitialSpeed">Initial speed<span
                                 class="units-text"></span>:</label>
                         <input data-input-type="floatInput" type="number"
@@ -2168,14 +2181,14 @@
                                value="1" min="0" step="any" max="100000000" data-unit="N" data-essence="force">
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group" data-eq-type="HBr">
                         <label id="inputStopForceLabel" for="inputStopForce">Stopping Force Limit<span
                                 class="units-text"></span>: </label>
                         <input data-input-type="floatInput" type="number" id="inputStopForce" class="expInput"
                                value="1000" min="0" step="any" max="100000000" data-unit="N" data-essence="force">
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group" data-eq-type="HBr">
                         <label id="inputEndDelayLabel" for="inputEndDelay">End load delay<span
                                 class="units-text"></span>: </label>
                         <input data-input-type="floatInput" type="number" id="inputEndDelay" class="expInput"
@@ -2327,8 +2340,10 @@
             <button id="consoleContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="consoleContainer" class="sizeableContainer">
                 <div class="logContainer">
-                    <pre id="regularLog"> </pre>
-                    <pre id="loadingLog"> </pre>
+                    <div id="regularLogWrapper">
+                        <pre id="regularLog"></pre>
+                    </div>
+                    <pre id="loadingLog"></pre>
                     <div style="height: 40px;">
                         <label for="commandInput"></label>
                         <textarea id="commandInput" placeholder="Enter command..."></textarea>
@@ -2369,6 +2384,7 @@
         "tensile": "Tensile test",
         "internal_bond": "Internal bond test",
         "compression": "Compression test",
+        "pressure": "Compression test",
         "flexural": "Flexural test",
         "bending": "Flexural test",
         "shear": "Shear test",
@@ -2441,11 +2457,11 @@
         const v = toNumber(x, true);
         return catchVal(v, d);
     }
-    const getInputDefAbsFlt = (x, d) => Math.abs(getInput(x, d));
+    const getInputDefAbsFlt = (x, d) => Math.abs(getInputDef(x, d));
     const getInputDefAbsInt = (x, d) => Math.round(getInputDefAbsFlt(x, d));
 
     const catchVal = (val, def) => {
-        return isFiniteNumber(val, true) ? def : val;
+        return isFiniteNumber(val, true) ? val : def;
     }
 
     const isNumberOrBigInt = (x) =>
@@ -3127,7 +3143,7 @@
         const F = calc_val_tare(F_raw, F_tare);
         const w = calc_val_tare(w_raw, w_tare);
 
-        const expType = $$$("experimentDirectionDropdown")?.value.toLowerCase();
+        const expType = $$$("experimentTypeDropdown")?.value.toLowerCase();
 
         const isB = expType.endsWith("-flx");
         const isIB = expType.endsWith("-inb");
@@ -3208,7 +3224,7 @@
 
     // -------------------- Event wiring --------------------
     function bindRecalcOnInputs() {
-        if (!exists("experimentDirectionDropdown")) return;
+        if (!exists("experimentTypeDropdown")) return;
 
         // jakýkoli input/number v blocích s class .data-eq spustí přepočet
         const inputs = $$('.data-eq input[type="number"]');
@@ -3217,7 +3233,7 @@
             el.addEventListener('input', async () => recomputeAll());
         });
 
-        $$$('experimentDirectionDropdown')?.addEventListener('change', async () => recomputeAll());
+        $$$('experimentTypeDropdown')?.addEventListener('change', async () => recomputeAll());
     }
 
     const applyAdjust = (id, value) => (exists(id) && adjustGet(id) !== value) ? adjustSet(id, (!isInvalidValue(value) ? value : NaN)) : null;
@@ -3232,7 +3248,7 @@
         const w_tare = readNum("inputTareDisp");       // mm
 
         const Fmax_raw = forces[maximalForceID];            // N
-        const w_Fmax_raw = displacements[maximalForceID];    // mm
+        const w_Fmax_raw = displacements[maximalForceID];   // mm
 
         const Fmax = calc_val_tare(Fmax_raw, F_tare)
         const w_Fmax = calc_val_tare(w_Fmax_raw, w_tare)
@@ -3254,7 +3270,7 @@
         applyAdjust('inputDisp', w_inputForce);
 
 
-        if ($$$("experimentDirectionDropdown")?.value.toLowerCase().endsWith("-hbr")) {
+        if ($$$("experimentTypeDropdown")?.value.toLowerCase().endsWith("-hbr")) {
             const finalForce = roundDecimalFast(mean1D(forces.slice(FtargetInd)), precisionForceSystem);
             applyAdjust('inputForce', finalForce);
         } else {
@@ -3367,6 +3383,8 @@
     let isScrolledToBottom = true;// Tracks whether the user has scrolled to the bottom of the log
     let logCount = 0; // Counter for received messages
     let logContentLines = []; // Array storing the log content
+
+    // TODO: change to 'null' and handle it properly in the code everywhere !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     let parsedData = {time: NaN, position: NaN, value: NaN, force: Array(loadCellNum).fill(NaN), photoIndex: NaN}; // Last data log
 
 
@@ -3402,7 +3420,7 @@
 
     let maxForces = Array(loadCellNum).fill(null);
 
-    let measureForces = Array(loadCellNum).fill([]);
+    let measureForces = Array(loadCellNum).fill(0).map(() => []);
     let takeMeasurements = false;
     let meanForces = Array(loadCellNum).fill(0);
 
@@ -3421,11 +3439,15 @@
         chartsLiveButton: $$$('toggleLive'),// Input elements for command entry and settings
         connectionStatus: $$$("connectionStatus"), // Display for connection status
         USB: $$$("connectBtnUSB"), // Button to connect via USB
+
         progressBar: $$$("experimentProgress"), // Progress bar for experiment status
         progressLabel: $$$("experimentProgressLabel"), // Label for progress percentage
+        experimentStageLabel: $$$("experimentStage"), // Label for current experiment stage
+
         timeChartContainer: $$$("timeChart"),
         positionChartContainer: $$$("positionChart"),
         chartsContainer: $$$("chartsContainer"),
+
         autoReturnPosition: $$$("autoReturnPositionExperiment"),
         autoReturnPositionLabel: $$$("autoReturnPositionExperimentLabel"),
 
@@ -3682,6 +3704,7 @@
      */
     let pageLoaded = false;
     let dataLoaded = false;
+    let allLoaded = false;
     let pageLoadTimeout = 0;
 
     async function onLoad() {
@@ -3711,6 +3734,8 @@
                 $$$("experimentDesc").value = "";
                 await clearCalculations();
             }
+
+            allLoaded = true;
         }
     }
 
@@ -3738,7 +3763,7 @@
         const request = store.count();
 
         request.onsuccess = async function () {
-            await loadDataFromDBToChart(false, true);
+            await loadDataFromDBToChart(false);
 
             if (request.result > 0) {
                 // TODO: přemístit dotaz na 'stará data' až po načtení všeho a upravit dotaz, aby se ptal na smazání a chtěl to 2x potvrdit
@@ -3898,15 +3923,15 @@
                             store.put(updated, id);
                         }
                     };
+
+
+                    getReq.onerror = (err) => reject(err);
                 } else {
                     // nic není, nelze update
                     resolve(false);
                 }
             };
             countReq.onerror = (err) => reject(err);
-
-
-            getReq.onerror = (err) => reject(err);
 
             tx.oncomplete = () => resolve(true);
             tx.onerror = (e) => {
@@ -3972,8 +3997,10 @@
 
             const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
 
+
+
             inputs[key] = {
-                value: val,
+                value: isInvalidValue(val) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('±', '') : val), // null pro prázdné/invalidní hodnoty
                 type: el.type || el.tagName.toLowerCase(),         // např. "number", "checkbox", "text", "select"
                 label: el.dataset.label || el.placeholder || key,  // volitelně pro hezčí zobrazení
                 classes: el.className || null,                     // volitelně pro další filtrování
@@ -3995,7 +4022,7 @@
         };
     }
 
-    function restoreExpSettingsToUI(settings, {
+    async function restoreExpSettingsToUI(settings, {
         customSelector = undefined,
         customKey = undefined,
         fireEvents = false,
@@ -4016,7 +4043,7 @@
         const results = [];
         for (const key of keys) {
             if (!settings[key]) continue;
-            const r = restoreSettingsToUI(settings[key], {customSelector, fireEvents});
+            const r = await restoreSettingsToUI(settings[key], {customSelector, fireEvents});
             results.push({key, ...r});
         }
 
@@ -4033,9 +4060,16 @@
         return {ok, results, summary};
     }
 
-    const setElValue = (el, val) => {
+    const setElValue = (el, val, fire) => {
         const tag = el.tagName.toLowerCase();
         const type = (el.type || "").toLowerCase();
+
+        if (fire == null) fire = (el) => {
+            if (!fireEvents) return;
+            el.dispatchEvent(new Event("input", {bubbles: true}));
+            el.dispatchEvent(new Event("change", {bubbles: true}));
+            el.dispatchEvent(new Event("blur", {bubbles: true}));
+        };
 
         if (type === "checkbox") {
             el.checked = !!val;
@@ -4076,7 +4110,7 @@
         return true;
     };
 
-    function restoreSettingsToUI(settings, {
+    async function restoreSettingsToUI(settings, {
         customSelector = undefined,
         fireEvents = false,
     } = {}) {
@@ -4140,11 +4174,11 @@
 
             try {
                 if (els[0].type === "radio") {
-                    setElValue(els[0], meta.value);
+                    setElValue(els[0], meta.value, fire);
                 } else if (els[0].tagName.toLowerCase() === "select" && els[0].multiple) {
-                    setElValue(els[0], isArr(meta.value) ? meta.value : [meta.value]);
+                    setElValue(els[0], isArr(meta.value) ? meta.value : [meta.value], fire);
                 } else {
-                    setElValue(els[0], meta.value);
+                    setElValue(els[0], meta.value, fire);
                 }
                 report.appliedCount += 1;
                 report.details.push({key, found: els.length, applied: true});
@@ -4157,16 +4191,16 @@
         return report;
     }
 
-    function applySettingsFromCsvToUI(csvText, opts) {
-        const settings = parseSettingsFromCsv(csvText);
+    async function applyCsvToUI(csvText, opts) {
+        const settings = await parseSettingsFromCsv(csvText);
         if (!settings) return {ok: false, reason: 'parse-failed', settings: null, results: []};
-        const res = restoreExpSettingsToUI(settings, opts); // { ok, results, summary }
+        const res = await restoreExpSettingsToUI(settings, opts); // { ok, results, summary }
         return {ok: !!res.ok, settings, ...res};
     }
 
     async function processFile(file) {
         const text = await file.text();
-        const res = applySettingsFromCsvToUI(text, {fireEvents: true});
+        const res = await applyCsvToUI(text, {fireEvents: true});
 
         const nameEl = $$$("loadedFileName");
 
@@ -4183,7 +4217,7 @@
             res.results?.forEach(r => {
                 if (r.missingKeys.length) {
                     console.groupCollapsed(`⚠️ Missing keys in ${r.key}`);
-                    console.log(r.missingKeys);
+                    console.info(r.missingKeys);
                     console.groupEnd();
                 }
             });
@@ -4191,7 +4225,7 @@
         } else {
             nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
             console.warn('\nDetails:', res);
-            alert("⚠️ In file are missing meta data: (##MOIRA_EMETA=...).");
+            alert("⚠️ In file are missing or are invalid meta data: (##MOIRA_EMETA=...).");
         }
     }
 
@@ -4383,9 +4417,11 @@
                 return;
             }
             const experimentInfo = dataEntries[0];
+
             dataEntries.shift(); // Skip the first entry (initial values)
 
-            const settings = {};
+            const settings = experimentInfo || {};
+            settings.id = undefined; // Remove id from metadata
 
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             settings.headerVersion = 1;
@@ -4393,7 +4429,6 @@
             settings.skipRows = 6;
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            settings.expSettings = experimentInfo.expSettings || {};
             settings.calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
             settings.decimalSymbol = decimalSymbol;
             settings.delimiter = delimiter;
@@ -4417,6 +4452,8 @@
                 'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', 'Loadcell 1 [N]', 'Loadcell 2 [N]', 'Loadcell 3 [N]', 'Photo Index'
             ];
 
+
+            console.log(settings);
             content += (await settingsToCsvPreamble(settings)).replace(/ /g, "").replace(/^\uFEFF/, "");
             content += '\n';
             content += `\n${basicInfo.join(delimiterPlaceHolder)}`;
@@ -4615,7 +4652,21 @@
     async function sendCommandConsole(command) {
         if (!checkCommand(command)) return;
 
-        await writeCommand(command);
+
+        switch (command.trim().toLowerCase()) {
+            case "toggle port filter":
+                useFilteredPort = !useFilteredPort;
+                await logMessage(`\n🔀 Toggled port filter: ${useFilteredPort ? "ON" : "OFF"}`);
+                return;
+
+            case "toggle port autoconnect":
+                usePortAutoConnect = !usePortAutoConnect;
+                await logMessage(`\n🔀 Toggled port auto-connect: ${usePortAutoConnect ? "ON" : "OFF"}`);
+                return;
+
+            default:
+                await writeCommand(command);
+        }
 
         // User feedback in console
         await logMessage("  🗣️ User-Command sent: " + command);
@@ -5208,17 +5259,22 @@
     async function connectSerial(userRequest = true) {
         isSerial = true;
         try {
-            const ports = await serialFunctionGetPorts();
-            console.info("🔍 Searching for available ports...");
+            let ports = null;
 
-            if (ports && ports.length === 1) {
+            if (usePortAutoConnect) {
+                ports = await serialFunctionGetPorts();
+                console.info("🔍 Searching for available ports...");
+            }
+
+
+            if (isArr(ports) && ports.length === 1) {
                 serialPort = ports[0];
                 console.info("\t... Only one port found.");
 
             } else {
                 let founds = false;
 
-                if (ports && ports.length > 1) {
+                if (isArr(ports) && ports.length > 1) {
                     console.info("Multiple ports found. Select one.");
 
                     // serialPort = checkAllPorts();
@@ -5247,12 +5303,18 @@
                             await logMessage("\n❎ No previously connected devices found.");
                         }
                     }
+
+                    console.info("🔌 Connecting canceled.");
                     await disconnectSerial(true);
                     return;
                 }
-
-                await openPort(serialPort);
             }
+
+            if (!serialPort) throw new Error("No serial port available.");
+
+
+            await openPort(serialPort);
+
         } catch (error) {
 
             await handleError(error, "connectSerial");
@@ -5278,6 +5340,7 @@
         "0x303a:0x1001" // Thymos ESP32-S2
     ];
     let useFilteredPort = true;
+    let usePortAutoConnect = true;
 
     async function openPort(comPort, retry = false) {
         try {
@@ -5324,7 +5387,6 @@
             isConnected = true;
             reconnectAttempts = 0;
 
-
             await sendCommandGeneral("DATAC 0"); // Stop data collection
 
             readSerial();
@@ -5353,8 +5415,10 @@
 
             machineFirmware = `${await getFirmwareVersion()}`;
 
-            // TODO: implement getting machine name
-            // const machineName = await getMachineName(2000) || "UnnamedMachine";
+            /* TODO: implement getting machine name
+                // const machineName = await getMachineName(2000) || "UnnamedMachine";
+                // const machineID = await getMachineID(2000) || "1";
+             */
 
             const speed = (await getSpeed(2000)) || 15;
             const acceleration = (await getAcceleration(2000)) || 150;
@@ -5499,8 +5563,8 @@
         maxForces = Array(loadCellNum).fill(null);
         // timeData = [];
         // positionData = [];
-        measureForces = Array(loadCellNum).fill([]);
-        // forceData = Array(loadCellNum).fill([]);
+        measureForces = Array(loadCellNum).fill(0).map(() => []);
+        // forceData = Array(loadCellNum).fill(0).map(() => []);
         meanForces = Array(loadCellNum).fill(0);
         // markersTime = [];
         // markersDist = [];
@@ -5530,7 +5594,7 @@
         serialPort = null;
         serialReader = null;
         serialWriter = null;
-        reconnectAttempts = 0;
+        // reconnectAttempts = 0;
     }
 
     async function clearAndResetAll() {
@@ -5554,11 +5618,11 @@
         maxForces = Array(loadCellNum).fill(null);
         timeData = [];
         positionData = [];
-        measureForces = Array(loadCellNum).fill([]);
-        forceData = Array(loadCellNum).fill([]);
+        measureForces = Array(loadCellNum).fill(0).map(() => []);
+        forceData = Array(loadCellNum).fill(0).map(() => []);
         meanForces = Array(loadCellNum).fill(0);
-        markersTime = [];
-        markersDist = [];
+        photoData = [];
+        // markersDist = [];
         aggregatedDataBetweenSteps = [];
         zero_speed_counter = 0;
         over_limitForce_counter = 0;
@@ -5883,8 +5947,17 @@
         // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedPosition + startPosition).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedForce[0].toFixed(2)},${interpolatedForce[1].toFixed(2)},${interpolatedForce[2].toFixed(2)},    ${photoIndex}`);
         addDataToLog(interpolatedData);
 
-        addMarker(timeChart, markersTime, interpolatedData.time);
-        addMarker(positionChart, markersDist, interpolatedData.position);
+        // addMarker(timeChart, markersTime, interpolatedData.time);
+        // addMarker(positionChart, markersDist, interpolatedData.position);
+        photoData.push(0);
+        timeData.push(interpolatedData.time);
+        positionData.push(interpolatedData.position);
+        for (let i = 0; i < loadCellNum; i++) {
+            forceData[i].push(interpolatedData.force[i]);
+        }
+
+
+        console.info("📸 DSLR Interpolated Data:", interpolatedData.time);
     }
 
 
@@ -6002,6 +6075,7 @@
             if (positionProgress >= 99.99990) {
                 positionProgress = 100;
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressDone-color)');
+                UI.experimentStageLabel.textContent = `Finished`;
                 UI.progressBar.value = 100;
                 UI.progressLabel.textContent = `100%`;
                 document.title = `Μοῖρα - Experiment done (100%)`;
@@ -6092,6 +6166,7 @@
             setSpeed(speedForward_mmps);
             experimentDoubleSpeed = false;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressSecondary-color)');
+            UI.experimentStageLabel.textContent = `Loading`;
         }
 
         const sumForce = forceVal.reduce((acc, val) => acc + (isNaN(val) ? 0 : val), 0);
@@ -6103,6 +6178,7 @@
                 checkSpeed = false; // disable speed check
                 endMeasuring(holdForceTimeMs, 'force limit', `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`, '', "MC STOP");
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressOnHold-color)');
+                UI.experimentStageLabel.textContent = `Holding`;
             }
         } else {
             over_limitForce_counter = 0;
@@ -6116,6 +6192,8 @@
             if (zero_speed_counter > minimumConditionCount) {
                 endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), 'zero speed', "🛑 Experiment stopped due to zero speed.");
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
+                UI.experimentStageLabel.textContent = `Stopped`;
+                if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
             }
         } else {
             zero_speed_counter = 0;
@@ -6130,6 +6208,7 @@
                 if (maxForces[i] || maxForces[i] === 0) {
                     if ((maxForces[i] - currForce) > (Math.abs(maxForces[i]) * forceLimitDropPercent) && (maxForces[i] - currForce) > forceLimitDropValue) {
                         endMeasuring(50, `loadCell[${i + 1}] drop`, `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxForces[i] - currForce)} > ${(Math.abs(maxForces[i]) * forceLimitDropPercent)} and Absolute: ${maxForces[i] - currForce} > ${forceLimitDropValue}.`, '', "MC STOP");
+                        if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
                         break; // Stop checking other LoadCells if one fails
                     }
                 }
@@ -6148,6 +6227,7 @@
                 const delayMs = endMeasurement ? 0 : delayMsAfterEndMeasurement;
                 endMeasurement = false; // Overwrite to allow ending
                 endMeasuring(delayMs, 'end position', "🏁 Experiment finished.");
+                if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
             }
         }
         positionProgress = progressValue;
@@ -6158,8 +6238,10 @@
         if (liveUpdate) {
             if (dataChartInterval === 1) {
                 await updateChart(newData);
+                photoData.push(null);
             } else if (dataCount % dataChartInterval === 0) {
                 await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+                photoData.push(null);
             }
         }
         if (dataCount % dataChartInterval === 0) {
@@ -6204,6 +6286,20 @@
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
+
+
+    // Store dataset
+    let timeData = [];
+    let positionData = [];
+    let forceData = Array(loadCellNum).fill(0).map(() => []);
+
+
+    let photoData = []; // List of time markers
+    // let markersDist = []; // List of position markers
+
+
+    let timeChart;
+    let positionChart;
 
 
     // /////// Toggle Live Update /////////
@@ -6267,9 +6363,15 @@
     });
 
 
-    function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, overflowData) {
+    function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, photoData, overflowData) {
         if (!isFiniteNumber(chunkSize, false)) chunkSize = 1;
         chunkSize = Math.max(1, Math.round(chunkSize));
+
+        // const photoValidStep = dataEntries.findIndex((entry, i) => isFiniteNumber(entry.photoIndex, false) && i > 0);
+        // if (photoValidStep > 0 && chunkSize > photoValidStep) {
+        //     chunkSize = photoValidStep; // Ensure chunkSize does not exceed the first photo event step
+        //     console.warn(`⚠️ Adjusted chunkSize to ${chunkSize} to capture first photo event.`);
+        // }
 
         if (chunkSize === 1) {
             // If chunkSize = 1, no aggregation is needed (1:1 mapping)
@@ -6278,29 +6380,47 @@
                 timeData[i] = entry.time;
                 positionData[i] = entry.position;
                 entry.force?.forEach((value, index) => forceData[index][i] = value);
+                photoData[i] = isFiniteNumber(entry.photoIndex, false) ? 0 : null; // Mark photo event
             }
             return;
         }
 
+        const photosCount = dataEntries.reduce((count, entry) => count + (isFiniteNumber(entry.photoIndex, false) ? 1 : 0), 0);
+
         let fullChunks = Math.floor(dataEntries.length / chunkSize) * chunkSize;
-        let chunkCount = Math.floor(dataEntries.length / chunkSize); // Block count
+        let chunkCount = Math.floor(dataEntries.length / chunkSize) + photosCount; // Block count
         let remainderStart = fullChunks; // First index of data
 
         // Predefine array size to match the new chunk count
-        timeData.length = chunkCount;
-        positionData.length = chunkCount;
-        forceData?.forEach(arr => arr.length = chunkCount);
+        // timeData.length = chunkCount;
+        // positionData.length = chunkCount;
+        // photoData.length = chunkCount;
+        // forceData?.forEach(arr => arr.length = chunkCount);
 
         let sumTime = 0, sumPosition = 0;
         let sumForce = Array(loadCellNum).fill(0);
         let count = 0, chunkIndex = 0;
 
         for (let i = 0; i < fullChunks; i++) {
-            let entry = dataEntries[i];
+            const entry = dataEntries[i];
             sumTime += entry.time;
             sumPosition += entry.position;
             entry.force?.forEach((value, index) => sumForce[index] += value);
             count++;
+
+            if (isFiniteNumber(entry.photoIndex, false)) {
+                // If a photo event is detected, add data immediately to the current chunk
+                // timeData[chunkIndex] = entry.time;
+                // positionData[chunkIndex] = entry.position;
+                // sumForce?.forEach((value, index) => {
+                //     forceData[index][chunkIndex] = value;
+                // });
+                timeData[chunkIndex] = null;
+                positionData[chunkIndex] = null;
+                forceData[index] = [...Array(loadCellNum).fill(null)];
+                photoData[chunkIndex] = 0; // Mark photo event
+                chunkIndex++;
+            }
 
             if (count === chunkSize) {
                 let invCount = 1 / count; // Inverse count: quicker than '%' division operation
@@ -6310,6 +6430,7 @@
                     forceData[index][chunkIndex] = value * invCount;
                     sumForce[index] = 0; // Reset for next chunk
                 });
+                photoData[chunkIndex] = isFiniteNumber(entry.photoIndex, false) ? 0 : null; // Mark photo event
 
                 sumTime = sumPosition = 0;
                 count = 0;
@@ -6330,7 +6451,7 @@
     }
 
 
-    async function loadDataFromDBToChart(stateAtEnd = false, exportData = false) {
+    async function loadDataFromDBToChart(stateAtEnd = false) {
         if (!db) {
             console.error("⚠️ IndexedDB is not available (not opened).");
             return;
@@ -6346,7 +6467,7 @@
         let store = transaction.objectStore(STORE_NAME);
         let request = store.getAll();
 
-        request.onsuccess = function () {
+        request.onsuccess = async function () {
             let dataEntries = request.result;
             if (!dataEntries || dataEntries.length === 0) {
                 return;
@@ -6370,28 +6491,14 @@
             // positionDataTemp = filteredEntries.map(entry => entry.position);
             // forceDataTemp = Array(loadCellNum).fill().map((_, i) => filteredEntries.map(entry => entry.force[i]));
 
-
             const timeDataTemp = [];
             const positionDataTemp = [];
-            const forceDataTemp = Array(loadCellNum).fill([]);
+            const forceDataTemp = Array(loadCellNum).fill(0).map(() => []);
             const aggregatedDataBetweenStepsTemp = [];
+            const photoDataTemp = [];
 
-            aggregateData(dataEntries, dataChartInterval, timeDataTemp, positionDataTemp, forceDataTemp, aggregatedDataBetweenStepsTemp);
+            aggregateData(dataEntries, dataChartInterval, timeDataTemp, positionDataTemp, forceDataTemp, photoDataTemp, aggregatedDataBetweenStepsTemp);
 
-            dataEntries?.forEach(entry => {
-                if (!isNaN(entry.photoIndex)) {
-                    markersTime.push(entry.time); // Add `time` value to markersTime list
-                }
-            });
-
-            dataEntries?.forEach(entry => {
-                if (!isNaN(entry.photoIndex)) {
-                    markersDist.push(entry.position); // Add `position` value to markersTime list
-                }
-            });
-
-            timeChart.setData([timeDataTemp, ...forceDataTemp]);
-            positionChart.setData([positionDataTemp, ...forceDataTemp]);
 
             const minTime = minND(timeDataTemp) || 0;
             const maxTime = maxND(timeDataTemp) || 1e-10;
@@ -6403,23 +6510,33 @@
             const forceMax = maxND(forceDataTemp) || 1e-10;
             const forceRange = (forceMax - forceMin) * 0.005;
 
+
+            // dataEntries?.forEach(entry => {
+            //     if (!isNaN(entry.photoIndex)) {
+            //         // markersTimeTemp.push(entry.time); // Add `time` value to markersTime list
+            //         // markersDistTemp.push(entry.position); // Add `position` value to markersTime list
+            // });
+
+
+            timeData = timeDataTemp;
+            positionData = positionDataTemp;
+            forceData = forceDataTemp;
+            photoData = photoDataTemp;
+
+            liveUpdate = stateAtEnd;
+
+            timeChart.setData([timeDataTemp, ...forceDataTemp, photoDataTemp]);
+            positionChart.setData([positionDataTemp, ...forceDataTemp, photoDataTemp]);
+
             timeChart.setScale("x", {min: minTime - timeRange, max: maxTime + timeRange});
             positionChart.setScale("x", {min: minDist - distRange, max: maxDist + distRange});
             timeChart.setScale("y", {min: forceMin - forceRange, max: forceMax + forceRange});
             positionChart.setScale("y", {min: forceMin - forceRange, max: forceMax + forceRange});
 
-
-            // 🔄 Redraw graphs
+            // // 🔄 Redraw graphs
             // timeChart.redraw();
             // positionChart.redraw();
 
-            liveUpdate = stateAtEnd;
-
-            if (exportData) {
-                timeData = timeDataTemp;
-                positionData = positionDataTemp;
-                forceData = forceDataTemp;
-            }
 
             console.info("\n\t☑️ Graph data loaded successfully.");
         };
@@ -6437,20 +6554,7 @@
         // uplotInstance.redraw(); // Redraw graph
     }
 
-    // Store dataset
-    let timeData = [];
-    let positionData = [];
-    let forceData = Array(loadCellNum).fill([]);
-
-
-    let markersTime = []; // List of time markers
-    let markersDist = []; // List of position markers
-
-
-    let timeChart;
-    let positionChart;
-
-    function createChart(containerID, marker, seriesLabels, title = "Graph", labelX = "", labelY = "") {
+    function createChart(containerID, seriesLabels, title = "Graph", labelX = "", labelY = "") {
         // Get the container element
         let container = $$$(containerID);
         if (!container) {
@@ -6458,31 +6562,6 @@
             return null;
         }
 
-
-        const markerPlugin = {
-            hooks: {
-                draw: (u) => {
-                    const ctx = u.ctx;
-                    ctx.save();
-                    ctx.fillStyle = "darkorange"; // Marker color
-
-                    marker?.forEach(xValue => {
-                        // let xPixel = Math.round(u.valToPos(xValue, "x", true)); // Rounding X coordinate
-                        // let yPixel = Math.round(u.valToPos(0, "y", true)); // Rounding Y coordinate
-
-                        // TODO: Check if this is correct (rounding needed?)
-                        let xPixel = u.valToPos(xValue, "x", true); // Rounding X coordinate
-                        let yPixel = u.valToPos(0, "y", true); // Rounding Y coordinate
-
-                        ctx.beginPath();
-                        ctx.arc(xPixel, yPixel, 3.5, 0, 2 * Math.PI); // Marker point size: 3.5 px
-                        ctx.fill();
-                    });
-
-                    ctx.restore();
-                }
-            }
-        };
 
         // Get the container dimensions
         let width = container.clientWidth || 400; // Default width if the container is empty
@@ -6505,11 +6584,30 @@
                 x: {time: false},
                 y: {auto: true}
             },
-            series: seriesLabels.map((label, index) => ({
+            series: [...seriesLabels.map((label, index) => ({
                 label: label,
                 stroke: index === 0 ? "000000" : ["#FF2730", "#2196F3", "#4CAF50"][index - 1] || "#555555"
             })),
-            plugins: [markerPlugin],
+                {
+                    label: "Photo",          // použijeme pro nalezení řádku legendy a skryjeme ho níže
+                    // points-only: nejefektivnější je vypnout cesty (žádná čára)
+                    // points-only: nejefektivnější je vypnout cesty (žádná čára)
+                    paths: () => null,      // ofiko doporučení pro „pouze body“
+                    points: {show: true, size: 8, width: 2.5}, // velikost a tloušťka bodů
+                    stroke: "#FF8C00", fill: "#FF8C00", // u bodů stačí points.show
+                },],
+
+            // hooks: {
+            //     init: [
+            //         (u) => {
+            //             // najdi řádek s textem "Photo" a schovej ho
+            //             u.root.querySelectorAll(".u-legend tr").forEach((tr) => {
+            //                 if (tr.textContent?.trim().startsWith("Photo")) tr.style.display = "none";
+            //             });
+            //         },
+            //     ],
+            // },
+
         };
 
         // Create the uPlot chart
@@ -6549,6 +6647,7 @@
     /**
      * Updates the charts with new data.
      */
+
     function updateChart(data) {
 
         // Check if the data is valid (not NaN)
@@ -6561,6 +6660,7 @@
         positionData.push(data.position);
         data.force?.forEach((value, index) => forceData[index].push(value));
 
+
         // Maintain max data points
         if (timeData.length > maxDataPoints) {
             timeData.shift();
@@ -6569,14 +6669,16 @@
         }
 
         // Update charts
-        timeChart.setData([timeData, ...forceData]);
-        positionChart.setData([positionData, ...forceData]);
+        timeChart.setData([timeData, ...forceData, photoData]);
+        positionChart.setData([positionData, ...forceData, photoData]);
+
     }
 
     async function refreshCharts() {
         await loadDataFromDBToChart(liveUpdate);  // Load data from DB to charts will wait for the data to be loaded
         timeChart.redraw();
         positionChart.redraw();
+        console.info("🔁 Charts refreshed.");
     }
 
     async function clearCharts() {
@@ -6585,13 +6687,13 @@
         await timeChart.setScale("x", {min: 0, max: 1e-10});
         await positionChart.setScale("x", {min: 0, max: 1e-10});
 
-        timeData = [];
-        positionData = [];
-        markersTime = [];
-        markersDist = [];
-        forceData?.forEach((_) => []);
-        await timeChart.setData([...Array(loadCellNum + 1).fill([])]);
-        await positionChart.setData([...Array(loadCellNum + 1).fill([])]);
+        // timeData = [];
+        // positionData = [];
+        // photoData = [];
+        // forceData?.forEach((_) => []);
+
+        await timeChart.setData(Array(loadCellNum + 1 + 1).fill(0).map(() => []));
+        await positionChart.setData(Array(loadCellNum + 1 + 1).fill(0).map(() => []));
 
         await timeChart.setScale("y", {min: 0, max: 1e-10});
         await positionChart.setScale("y", {min: 0, max: 1e-10});
@@ -6615,6 +6717,13 @@
         ];
 
         if (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError") {
+
+            if (isExperimentRunning) {
+                await endMeasuring(0, 'connection lost', "❌ Experiment stopped due to connection loss.", "Connection lost! Stopping experiment...");
+                UI.experimentStageLabel.textContent = `Error`;
+                document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+            }
+
             console.warn("\n⚠️ Connection lost! Attempting to reconnect...");
             isConnected = false;
             await attemptReconnect();
@@ -7007,30 +7116,35 @@
             case 'user':
                 if (isExperimentRunning) {
                     document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
                     endedBy = "user stop";
                 }
                 break;
             case 'machine':
                 if (isExperimentRunning) {
                     document.documentElement.style.setProperty('--progressColor', 'var(--progressWarning-color)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
                     endedBy = "machine stop";
                 }
                 break;
             case 'error':
                 if (isExperimentRunning) {
                     document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
                     endedBy = "error";
                 }
                 break;
             case 'alarm':
                 if (isExperimentRunning) {
                     document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
                     endedBy = "machine alarm";
                 }
                 break;
             default:
                 if (isExperimentRunning) {
                     document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
                     endedBy = "unknown";
                 }
         }
@@ -7050,6 +7164,7 @@
         await sendCommandUser("MC STOP");
 
         if (currentSpeed) await sendCommandGeneral(`MC SET SPEEDMM ${currentSpeed}`);
+        if (currentAcceleration) await sendCommandGeneral(`MC SET ACCEL ${currentAcceleration}`);
 
         activeWatchDog = false;
 
@@ -7203,6 +7318,8 @@
 
 
         try {
+            UI.experimentStageLabel.textContent = `Starting`;
+
             await lockMovement();
             await beganMoving()
 
@@ -7212,7 +7329,7 @@
 
             // === Retrieve Parameters from Inputs ===
             const distance_mm = getInputDefAbsFlt($$$("inputDistance").value, NaN);
-            const experimentType = $$$("experimentDirectionDropdown").value.toLowerCase();
+            const experimentType = $$$("experimentTypeDropdown").value.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = getInputDefAbsFlt($$$("inputSpeedForward").value, NaN);
             // const speedBackward_mmps = parseFloat($$("inputSpeedBackward").value);
@@ -7351,8 +7468,8 @@
             }
 
             if (isEmptyStr(expControl)) throw new Error("Experiment control is not set.");
-            if (!experimentEndLimits[expControl]) throw new Error(`Experiment end limit for ${expControl} is not set.`);
-            if (!parsedData[expControl]) throw new Error(`Parsed data for ${expControl} is not available.`);
+            if (experimentEndLimits[expControl] === undefined) throw new Error(`Experiment end limit for ${expControl} is not set.`);
+            if (parsedData[expControl] === undefined) throw new Error(`Parsed data for ${expControl} is not available.`);
             if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throw new Error("Experiment end limits are not properly set.");
 
 
@@ -7438,6 +7555,7 @@
 
             // === Progress Bar Setup ===
             document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
+            UI.experimentStageLabel.textContent = `Running`;
             UI.progressBar.value = 0;
             UI.progressLabel.textContent = `0%`;
 
@@ -7451,11 +7569,13 @@
             // firstPhoto = 0;
             timeData = [];
             positionData = [];
-            forceData = Array(loadCellNum).fill([]);
-            measureForces = Array(loadCellNum).fill([]);
+            forceData = Array(loadCellNum).fill(0).map(() => []);
+            measureForces = Array(loadCellNum).fill(0).map(() => []);
             meanForces = Array(loadCellNum).fill(0);
-            markersTime = [];
-            markersDist = [];
+            photoData = [];
+
+            await clearCharts();
+
             aggregatedDataBetweenSteps = [];
             dataCount = 0;
             zero_speed_counter = 0;
@@ -7510,7 +7630,7 @@
             const expInfoV = settings.version;
             let experimentKey = null;
             if (expInfoV === 1) {
-                experimentKey = settings.inputs.experimentDirectionDropdown.extra.essence;
+                experimentKey = settings.inputs.experimentTypeDropdown.extra.essence;
             }
             const experimentLabel = expTypesLabels[experimentKey] || "";
 
@@ -7525,7 +7645,7 @@
                 loadDistance: distance_mm,
                 loadSpeed: speedForward_mmps,
                 loadcellCapacity: loadcellCapacities,
-                loadcellType: NaN,
+                loadcellType: 'Unknown',
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
                 endStatus: endedBy,
@@ -7544,10 +7664,12 @@
 
             await addDataToLog(parsedData);
             if (takePhotos) {
-                markersTime.push(0);
-                markersDist.push(0);
+                photoData.push(0);
             }
             await updateChart(parsedData);
+
+            UI.experimentStageLabel.textContent = `Tarring`;
+
             await sleep(5); // Stop for 5 ms
 
 
@@ -7597,7 +7719,7 @@
                 }
             }
 
-            const setChart = (chart) => chart ? forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: r.allInvalid})) : null;
+            const setChart = (chart) => chart ? forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: !r?.allInvalid})) : null;
             setChart(timeChart);
             setChart(positionChart);
 
@@ -7620,7 +7742,7 @@
             console.info("Final error rate:", totalErrRate, "N");
 
             // --- 9) Clear force fields ---
-            measureForces = Array(loadCellNum).fill([]);
+            measureForces = Array(loadCellNum).fill(0).map(() => []);
 
             await sleep(5); // Stop for 5 ms
 
@@ -7638,6 +7760,12 @@
             await sleep(10); // Stop for 10 ms
 
             UIupdate();
+
+
+            await sleep(5); // Stop for 5 ms
+
+            if (experimentDoubleSpeed) UI.experimentStageLabel.textContent = `Initial`;
+            else UI.experimentStageLabel.textContent = `Loading`;
 
             await sleep(10); // Stop for 10 ms
 
@@ -7697,6 +7825,7 @@
             } else {
                 // === Move Back ===
                 if (UI.autoReturnPosition.checked) {
+                    UI.experimentStageLabel.textContent = `Returning`;
                     await moveToOriginalPosition();
                 }
             }
@@ -7705,9 +7834,12 @@
 
             // === Save Data ===
             if ($$$('inputAutoSave').checked) {
+                UI.experimentStageLabel.textContent = `Saving`;
                 await console.info("💾 Saving data...");
                 await saveCSV();
             }
+
+            UI.experimentStageLabel.textContent = `Finalizing`;
 
             await sleep(5);
 
@@ -7716,6 +7848,9 @@
 
         } catch (error) {
             await handleError(error, "Experiment");
+            document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+            UI.experimentStageLabel.textContent = `Error`;
+            endedBy = 'error';
             await alert(`Experiment Finished\n     ❌ Experiment failed. Please check the logs and machine.\n\n     Error:${error.message || error}`);
 
         } finally {
@@ -7730,6 +7865,8 @@
             if (endedBy != null) await updateLogById(0, {endStatus: endedBy, positionProgress: positionProgress});
             if (isConnected) endedMoving();    // unlock UI and watchdog
             document.title = initialTitle;
+
+            UI.experimentStageLabel.textContent = `Idle`;
             await console.info("✅ Experiment completed.");
 
             await console.groupEnd();
@@ -7809,7 +7946,7 @@
      * @returns {boolean} true = spuštěno; false = ignorováno (už běželo a restart=false / chybí element)
      */
     async function blinkBorder(target, options = {}) {
-        if (!(pageLoaded && dataLoaded)) return;
+        if (!allLoaded) return;
         const el = typeof target === 'string' ? document.querySelector(target) : target;
         if (!el) return false;
 
@@ -7933,6 +8070,8 @@
 
     lockMovement();
     UI.USB.classList.add("disabled");
+
+
     document.addEventListener("DOMContentLoaded", function () {
 
         Notification.requestPermission().then(permission => {
@@ -7942,8 +8081,8 @@
         });
 
         // Initialization of uPlot charts
-        timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Time Graph", "Time [s]", "Force [N]");
-        positionChart = createChart("positionChart", markersDist, ["Position (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Position Graph", "Position [mm]", "Force [N]");
+        timeChart = createChart("timeChart", ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Time Graph", "Time [s]", "Force [N]");
+        positionChart = createChart("positionChart", ["Position (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Force-Position Graph", "Position [mm]", "Force [N]");
 
 
         // Function to save ONE input to localStorage
@@ -8249,7 +8388,7 @@
 
         // pouze ty .data-eq, které mají data-eq-type
         const experiment_result_elements = $$("[data-eq-type]");
-        $$$("experimentDirectionDropdown")?.addEventListener("change", async (event) => {
+        $$$("experimentTypeDropdown")?.addEventListener("change", async (event) => {
             // vytáhne typ ze suffixu hodnoty (oddělovače - _ / mezera)
             const typeFrom = s =>
                 (String(s || '').toLowerCase().match(/(?:^|[-_\/\s])(inb|hbr|flx)$/)?.[1]) || '';
@@ -8317,55 +8456,6 @@
             requestAnimationFrame(() => {
                 controlContainerWidth($$$("resultsContainer"));
             });
-
-            const suffixes = ["inb", "hbr"];
-            if (suffixes.some(suf => suf === selectedType)) {
-                // povol vstupy
-                speedInput.disabled = false;
-                forceInput.disabled = false;
-
-                speedLabel.classList.remove("disabled");
-                forceLabel.classList.remove("disabled");
-                speedInput.classList.remove("disabled");
-                forceInput.classList.remove("disabled");
-
-                if (selectedType === "inb") {
-                    UI.autoReturnPosition.disabled = true;
-                    UI.autoReturnPosition.classList.add("disabled");
-                    UI.autoReturnPositionLabel.classList.add("disabled");
-                    $$$('inputStopForceLabel')?.classList.add("disabled");
-                    $$$('inputEndDelayLabel')?.classList.add("disabled");
-                    $$$('inputStopForce')?.classList.add("disabled");
-                    $$$('inputEndDelay')?.classList.add("disabled");
-                    return;
-                }
-
-                UI.autoReturnPosition.disabled = false;
-                UI.autoReturnPosition.classList.remove("disabled");
-                UI.autoReturnPositionLabel.classList.remove("disabled");
-                $$$('inputStopForceLabel')?.classList.remove("disabled");
-                $$$('inputEndDelayLabel')?.classList.remove("disabled");
-                $$$('inputStopForce')?.classList.remove("disabled");
-                $$$('inputEndDelay')?.classList.remove("disabled");
-                return;
-            }
-
-            // jinak vstupy zakáž
-            speedInput.disabled = true;
-            forceInput.disabled = true;
-
-            speedLabel?.classList.add("disabled");
-            forceLabel?.classList.add("disabled");
-            speedInput?.classList.add("disabled");
-            forceInput?.classList.add("disabled");
-
-            UI.autoReturnPosition.disabled = false;
-            UI.autoReturnPosition?.classList.remove("disabled");
-            UI.autoReturnPositionLabel?.classList.remove("disabled");
-            $$$('inputStopForceLabel')?.classList.add("disabled");
-            $$$('inputEndDelayLabel')?.classList.add("disabled");
-            $$$('inputStopForce')?.classList.add("disabled");
-            $$$('inputEndDelay')?.classList.add("disabled");
         });
 
 
@@ -8385,6 +8475,14 @@
             ok();
             setTimeout(() => reject(new Error("XLSX failed to load")), 5000);
         });
+    }
+
+    // TODO: Implement the function to parse CSV data based on preambleMetaData and import it into XLSX and UI
+    async function getDataFromCsv(data, preambleMetaData) {
+        const delimiter = preambleMetaData?.delimiter || ";";
+        const skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
+        const columns = preambleMetaData?.columns;
+
     }
 
 
@@ -8450,21 +8548,24 @@
 
             // ==================== FILES LIST ==================== //
 
-            let fileIndexData = [["File Order", "File name", "Experiment type", "Material",
+            // TODO: lepší název proměnné
+            const HEAD = ["File Order", "File name", "Experiment type", "Material",
                 "b (mm)", "h (mm)", "L (mm)", "E (MPa)",
                 "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
-                "F_T (N)", "h_D (mm)", "H_BW (-)"]]; // Third sheet data
+                "F_T (N)", "h_D (mm)", "H_BW (-)"];
+
+            const resultsData = [HEAD]; // Third sheet data
 
             // ================== LOADING DATA ================== //
 
-            let formattedData = []; // First sheet data  -   Array to store ALL formatted measurement data
+            const formattedData = []; // First sheet data  -   Array to store ALL formatted measurement data
             let columnOffset = 0; // Column shift for each section
 
 
             // ================== SAMPLES TABLE ================== //
 
 
-            let samplesTable = [
+            const samplesTable = [
                 ["Code", "Method", "W", "Number", "Dimensions, weight, before drying", "", "", "", "Dimensions, weight, after drying", "", "", "", "lo (mm)"], // row 0
                 ["", "", "", "", "hw", "lw", "ww", "mw", "h0", "l0", "w0", "m0", ""], // row 1
                 ["", "", "", "", "height (mm)", "length (mm)", "width (mm)", "(g)", "height (mm)", "length (mm)", "width (mm)", "(g)", ""] // row 2
@@ -8478,8 +8579,10 @@
 
             const delimiters = [";", ",", "\t", " "];
             const getMetaValue = (metaData, key, unit = null) => {
-                if (isObj(metaData) && metaData.hasOwnProperty(key) && hasValue(metaData[key])) {
-                    const value = metaData[key].value;
+                if (!isObj(metaData)) return "";
+                if (metaData.hasOwnProperty(key)) {
+                    const value = metaData[key]?.value || "";
+                    if (!hasValue(value)) return "";
                     const valUnit = metaData[key].unit || null;
                     if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) {
                         return convertUnits(value, valUnit, unit) || "";
@@ -8666,9 +8769,8 @@
             let fileCount = 0;
             for (let file of files) {
                 fileCount++;
-                const text = file.text().toLowerCase().trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n"); // Read file content
-
-                let rows = text.split("\n"); // Split text into lines
+                const raw = await file.text();
+                const text = raw.replace(/\r\n?/g, "\n");
 
 
                 let fileType = null;                // Determine the file type
@@ -8711,9 +8813,14 @@
                 }; // Experiment results
 
 
-                if (text.startsWith("##moira")) fileType = "moira";              // MOIRA
-                else if (text.startsWith("date:")) fileType = "moira-legacy";    // MOIRA legacy
-                else if (text.startsWith("timestamp_us")) fileType = "matlab";   // MATLAB
+                let rows = text.split("\n"); // Split text into lines
+
+                rows = rows.map(r => r.trim().toLowerCase());
+
+                const firstLine = rows[0].toLowerCase() || "";
+                if (firstLine.startsWith("##moira")) fileType = "moira";              // MOIRA
+                else if (firstLine.startsWith("date:")) fileType = "moira-legacy";    // MOIRA legacy
+                else if (firstLine.startsWith("timestamp_us")) fileType = "matlab";   // MATLAB
                 else fileType = "unknown";                                       // Unknown file type
 
 
@@ -8753,11 +8860,12 @@
                             });
                         }
 
-                        const expInfoV = preambleMetaData?.expSettings.version;
-                        const calcSettingsInputs = preambleMetaData?.calcSettings.inputs || {};
+                        const expInfoV = await preambleMetaData.expSettings?.version || 0;
+                        const calcSettingsInputs = await preambleMetaData.calcSettings.inputs || {};
+
                         if (expInfoV >= 1) {
-                            expResults.experimentType = preambleMetaData?.experimentLabel || "";
-                            expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName", "mm");
+                            expResults.experimentType = await preambleMetaData?.experimentLabel || "";
+                            expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName");
                             expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
                             expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
                             expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
@@ -8770,7 +8878,7 @@
                             expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
                         }
 
-                        const calcInfoV = preambleMetaData?.expSettings.version;
+                        const calcInfoV = await preambleMetaData.calcSettings?.version || 0;
                         if (calcInfoV >= 1) {
                             samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
                             samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
@@ -8813,6 +8921,7 @@
                         fileOpts.columns = 4;
                         // TODO: skip for now
                         fileCount--;
+                        console.info(`❌ Skipping unknown file: ${file.name}`);
                         continue;
                 }
 
@@ -8820,12 +8929,13 @@
                     logMessage(`❌ Not enough data in file: ${file.name}`);
                     console.warn(`\n❌ Not enough data in file: ${file.name}`);
                     fileCount--;
+                    console.info(`❌ Skipping empty or invalid file: ${file.name}`);
                     continue;
                 }
 
 
                 const head = rows.slice(0, fileOpts.skipRows);
-                rows = rows.slice(fileOpts.skipRows); // Remove header rows
+                rows = rows.slice(fileOpts.skipRows).filter(r => r.length > 0); // Remove header rows and remove empty ones
 
                 const foundDelimiter = getDelimiter(rows, fileOpts.columns);
 
@@ -8835,6 +8945,7 @@
 
                     if (!preferFoundDelimiter) {
                         fileCount--;
+                        console.info(`❌ Skipping file due to delimiter mismatch: ${file.name}`);
                         continue;
                     }
                     fileOpts.delimiter = foundDelimiter;
@@ -8844,6 +8955,7 @@
                     logMessage(`❌ Delimiter not found in file: ${file.name}`);
                     console.warn(`\n❌ Delimiter not found in file: ${file.name}`);
                     fileCount--;
+                    console.info(`❌ Skipping file due to missing delimiter: ${file.name}`);
                     continue;
                 }
 
@@ -8934,7 +9046,7 @@
 
                 // ==================== FILES LIST ==================== //
 
-                fileIndexData.push([
+                resultsData.push([
                     fileCount,
                     file.name.replace(/\.csv$/i, ""),
                     expResults.experimentType,
@@ -8950,66 +9062,6 @@
                     expResults.h_D,
                     expResults.H_BW,
                 ]);
-
-                /* TODO: doplnit níže formátování + přidat šířku a typ dat pro ostatní Listy
-                    //
-                    //
-                    // 3) Do listu + pár „quality-of-life“ věcí (autofilter, šířky sloupců)
-                    const ws = XLSX.utils.aoa_to_sheet(rows);
-                    // rozsah
-                    //
-                    ws['!ref'] = XLSX.utils.encode_range(
-                      { s: { r:0, c:0 }, e: { r: rows.length-1, c: HEAD.length-1 } }
-                    );
-                    //
-                    // autofilter přes hlavičku
-                    ws['!autofilter'] = { ref: XLSX.utils.encode_range(0, 0, rows.length-1, HEAD.length-1) };
-                    //
-                    // šířky sloupců podle délky hlaviček
-                    const PAD = 2;      // rezerva, ať to není nalepené
-                    const MIN = 6;      // minimální šířka
-                    //
-                    ws['!cols'] = HEAD.map(h => ({ wch: Math.max(MIN, h.length + PAD) }));
-                    //
-                    function fitToCols(rows, { pad = 2, min = 6 } = {}) {
-                      const cols = rows[0]?.length ?? 0;
-                      const out = Array.from({ length: cols }, () => ({ wch: min }));
-                      for (let c = 0; c < cols; c++) {
-                        let maxLen = 0;
-                        for (let r = 0; r < rows.length; r++) {
-                          const v = rows[r][c];
-                          const s = v == null ? "" : String(v);
-                          if (s.length > maxLen) maxLen = s.length;
-                        }
-                        out[c].wch = Math.max(min, maxLen + pad);
-                      }
-                      return out;
-                    }
-                    //
-                    ws['!cols'] = fitToCols(rows, { pad: 2, min: 6 });
-                    function setNumFmt(colIndex, fmt) {
-                      for (let r = 1; r < rows.length; r++) {
-                        const addr = XLSX.utils.encode_cell({ r, c: colIndex });
-                        const cell = ws[addr];
-                        if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
-                      }
-                    }
-                    //
-                    // příklady:
-                    setNumFmt(4,  "0.00"); // b (mm)
-                    setNumFmt(5,  "0.00"); // h (mm)
-                    setNumFmt(6,  "0");    // L (mm) – třeba celé mm
-                    setNumFmt(7,  "0");    // E (MPa)
-                    setNumFmt(8,  "0");    // F_max (N)
-                    setNumFmt(9,  "0.00"); // w_Fmax (mm)
-                    setNumFmt(10, "0");    // σ_max (MPa)
-                    setNumFmt(11, "0");    // F_T (N)
-                    setNumFmt(12, "0.00"); // h_D (mm)
-                    setNumFmt(13, "0.000"); // H_BW (-)
-                    //
-                    // 5) Přidej list do workbooku
-                    XLSX.utils.book_append_sheet(wb, ws, "Experiments Summary");
-                */
 
 
                 // ================== SAMPLES TABLE ================== //
@@ -9065,7 +9117,7 @@
 
                 // Add data to the section
                 for (let rowIndex = 0; rowIndex < dataSize; rowIndex++) {
-                    const dataRow = formattedData[row + 3] || [];
+                    const dataRow = formattedData[rowIndex + 3] || [];
 
                     const entry = rows[rowIndex];
                     if (entry.length >= 6) {
@@ -9087,26 +9139,35 @@
                         dataRow[columnOffset + 2] = force;
                         dataRow[columnOffset + 3] = deformation;
                     }
-                    formattedData[row + 3] = dataRow;
+                    formattedData[rowIndex + 3] = dataRow;
                 }
 
                 columnOffset += 5; // Shift by 4 columns + 1 empty column
             }
 
-            // Create the first sheet with data
-            const ws = XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
-            ws["!merges"] = (ws['!merges'] || []);
-            ws["!merges"].push({
-                s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
-            });
-            ws["!merges"].push({
-                s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
-            });
-            XLSX.utils.book_append_sheet(wb, ws, sheetName); // Append a sheet to workbook
 
+            // Create the first sheet with data
+            const wsMattes = await XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
+            wsMattes["!merges"] = (wsMattes['!merges'] || []);
             // Create the second with file order index
-            const wsSamples = XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
+            const wsSamples = await XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
             wsSamples["!merges"] = (wsSamples['!merges'] || []); // Merge cells
+            // Create the third sheet with file order index
+            const wsResults = await XLSX.utils.aoa_to_sheet(resultsData);  // Convert data to Excel sheet
+
+
+            columnOffset = 0; // Column shift for each section
+            for (let f = 0; f < fileCount; f++) {
+                wsMattes["!merges"].push({
+                    s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
+                });
+                wsMattes["!merges"].push({
+                    s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
+                });
+                columnOffset += 5; // Shift by 4 columns + 1 empty column
+            }
+
+
             wsSamples['!merges'].push(
                 {s: {r: 0, c: 0}, e: {r: 2, c: 0}}, // Code
                 {s: {r: 0, c: 1}, e: {r: 2, c: 1}}, // Method
@@ -9117,48 +9178,98 @@
                 {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
             );
 
-            // const range = XLSX.utils.decode_range(wsSamples['!ref']); // Get table size
-            //
-            // for (let R = range.s.r; R <= range.e.r; ++R) {
-            //     for (let C = range.s.c; C <= range.e.c; ++C) {
-            //         const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
-            //         const cell = wsSamples[cellAddress];
-            //         if (!cell) continue; // Empty cells
-            //
-            //         cell.s = cell.s || {};
-            //
-            //         // Set cell style
-            //         cell.s = {
-            //             font: {
-            //                 bold: R <= 2 // First three line in Bold text (0,1,2)
-            //             },
-            //             border: {
-            //                 top: {style: "thin", color: {auto: 1}},
-            //                 bottom: {style: "thin", color: {auto: 1}},
-            //                 left: {style: "thin", color: {auto: 1}},
-            //                 right: {style: "thin", color: {auto: 1}}
-            //             }
-            //         };
-            //
-            //
-            //            cell.s.alignment = {
-            //                horizontal: "center",
-            //                vertical: "center"
-            //            };
-            //
-            //            // Bold text for the first three lines if the cell is not empty
-            //            if (R <= 2) {
-            //                cell.s.font = {bold: true};
-            //            }
-            //     }
-            // }
+
+            const range = XLSX.utils.decode_range(wsSamples['!ref']); // Get table size
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
+                    const cell = wsSamples[cellAddress];
+                    if (!cell) continue; // Empty cells
+
+                    cell.s = cell.s || {};
+
+                    // Set cell style
+                    cell.s = {
+                        font: {
+                            bold: R <= 2 // First three line in Bold text (0,1,2)
+                        },
+                        border: {
+                            top: {style: "thin", color: {auto: 1}},
+                            bottom: {style: "thin", color: {auto: 1}},
+                            left: {style: "thin", color: {auto: 1}},
+                            right: {style: "thin", color: {auto: 1}}
+                        }
+                    };
+
+
+                    cell.s.alignment = {
+                        horizontal: "center",
+                        vertical: "center"
+                    };
+
+                    // Bold text for the first three lines if the cell is not empty
+                    if (R <= 2) {
+                        cell.s.font = {bold: true};
+                    }
+                }
+            }
+
+            wsResults['!ref'] = XLSX.utils.encode_range(
+                {s: {r: 0, c: 0}, e: {r: resultsData.length - 1, c: HEAD.length - 1}}
+            );
+
+            // autofilter přes hlavičku
+            // wsResults['!autofilter'] = {ref: XLSX.utils.encode_range(0, 0, resultsData.length - 1, HEAD.length - 1)};
+
+            // šířky sloupců podle délky hlaviček
+            const PAD = 2;      // rezerva, ať to není nalepené
+            const MIN = 6;      // minimální šířka
+
+            wsResults['!cols'] = HEAD.map(h => ({wch: Math.max(MIN, h.length + PAD)}));
+
+            function fitToCols(rows, {pad = 2, min = 6} = {}) {
+                const cols = rows[0]?.length ?? 0;
+                const out = Array.from({length: cols}, () => ({wch: min}));
+                for (let c = 0; c < cols; c++) {
+                    let maxLen = 0;
+                    for (let r = 0; r < rows.length; r++) {
+                        const v = rows[r][c];
+                        const s = v == null ? "" : String(v);
+                        if (s.length > maxLen) maxLen = s.length;
+                    }
+                    out[c].wch = Math.max(min, maxLen + pad);
+                }
+                return out;
+            }
+
+            wsResults['!cols'] = fitToCols(resultsData, {pad: 2, min: 6});
+
+            function setNumFmt(colIndex, fmt) {
+                for (let r = 1; r < resultsData.length; r++) {
+                    const addr = XLSX.utils.encode_cell({r, c: colIndex});
+                    const cell = wsResults[addr];
+                    if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
+                }
+            }
+
+            setNumFmt(4, "0.00");      // b (mm)
+            setNumFmt(5, "0.00");      // h (mm)
+            setNumFmt(6, "0.00");      // L (mm)
+            setNumFmt(7, "0.000");     // E (MPa)
+            setNumFmt(8, "0.00");      // F_max (N)
+            setNumFmt(9, "0.00");      // w_Fmax (mm)
+            setNumFmt(10, "0.000");     // σ_max (MPa)
+            setNumFmt(11, "0.00");      // F_T (N)
+            setNumFmt(12, "0.00");      // h_D (mm)
+            setNumFmt(13, "0.000");     // H_BW (-)
+
+
+            XLSX.utils.book_append_sheet(wb, wsMattes, sheetName); // Append a sheet to workbook
 
             XLSX.utils.book_append_sheet(wb, wsSamples, (sheetName + "-objects").slice(0, 31)); // Append a sheet to workbook
 
-
-            // Create the third sheet with file order index
-            const wsIndex = XLSX.utils.aoa_to_sheet(fileIndexData);  // Convert data to Excel sheet
-            XLSX.utils.book_append_sheet(wb, wsIndex, "File Order"); // Append a sheet to workbook
+            XLSX.utils.book_append_sheet(wb, wsResults, "File Order"); // Append a sheet to workbook
 
             // Save the file
             XLSX.writeFile(wb, `${measurementName.slice(0, 31)}.xlsx`);
