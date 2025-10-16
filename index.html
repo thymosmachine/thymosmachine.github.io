@@ -2432,7 +2432,7 @@
     const timeConversionDATAC = 1e-6; // převod sekund na mikrosekundy
     const timeConversionDSLR = 1e-3; // převod sekund na mikrosekundy
 
-    const loadCellNum = 3; // number of load cells supported
+    const loadCellNum = 3; // maximal number of load cells supported
 
     // -------------------- Pomocné DOM utilitky --------------------
     const $ = (sel) => document.querySelector(String(sel));
@@ -3400,6 +3400,8 @@
     let parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null}; // Last data log
 
 
+    let measurementParts = 0; // Number of parts in the measurement
+
     // /////// Live Data Update and Chart Configuration /////////
 
     // Live update flag (disabled by default)
@@ -3482,9 +3484,21 @@
 
     // Connection status messages and colors
     const connectionStates = {
-        connected: {text: "🟢 Connected", color: "green"},
-        reconnecting: {text: "🟠 Reconnecting...", color: "orange"},
-        disconnected: {text: "🔴 Disconnected", color: "red"}
+        connected: {statusText: "🟢 Connected", btnText: "❌ Disconnect ESP (USB)", color: "#4CAF50", functional: true},
+        connecting: {statusText: "🔵 Connecting...", btnText: "🔓 Connecting...", color: "#2196F3", functional: false},
+        reconnecting: {
+            statusText: "🟠 Reconnecting...",
+            btnText: "🔄 Reconnecting...",
+            color: "#FFA500",
+            functional: false
+        },
+        disconnected: {statusText: "🔴 Disconnected", btnText: "🔌 Connect via USB", color: "#FF0000", functional: true},
+        disconnecting: {
+            statusText: "🟣 Disconnecting...",
+            btnText: "🔐 Disconnecting...",
+            color: "#886CE4",
+            functional: false
+        },
     };
 
 
@@ -3668,8 +3682,10 @@
 
     function updateConnectionStatus(status, type = null) {
         if (!connectionStates[status]) return;
-        UI.connectionStatus.innerHTML = `${connectionStates[status].text} ${type ? `via ${type}` : ""}`;
+        UI.connectionStatus.innerHTML = `${connectionStates[status].statusText || ""} ${type ? `via ${type}` : ""}`;
         UI.connectionStatus.style.color = connectionStates[status].color;
+        UI.USB.classList.toggle('disabled', !connectionStates[status].functional);
+        UI.USB.innerText = `${connectionStates[status].btnText || ""}`;
     }
 
 
@@ -4604,8 +4620,6 @@
             return;
         }
 
-        UI.USB.classList.add("disabled");
-
         if (isConnected) {
             console.info("Already connected, disconnecting...");
             await disconnectSerial();
@@ -4650,7 +4664,7 @@
     async function sendCommandGeneral(command, timeOut = 1) {
         if (!checkCommand(command)) return;
 
-        await writeCommand(command);
+        writeCommand(command);
 
         if (!isNum(timeOut)) timeOut = 1;
         timeOut = Math.max(0, Math.round(timeOut));
@@ -5272,6 +5286,7 @@
      */
     async function connectSerial(userRequest = true) {
         isSerial = true;
+        await updateConnectionStatus("connecting", "USB");
         try {
             let ports = null;
 
@@ -5294,7 +5309,14 @@
                     // serialPort = checkAllPorts();
 
                     for (let port of ports) {
-                        await port.close();
+                        if (!port?.connected) continue;
+
+                        await port?.writable?.releaseLock();
+                        await port?.writable?.getReader()?.cancel();
+                        await port?.readable?.releaseLock();
+                        await port?.readable?.getReader()?.cancel();
+                        await port?.flush();
+                        await port?.close();
                     }
                     founds = true;
                 }
@@ -5368,10 +5390,33 @@
                 return;
             }
 
+
+            // TODO opravit funkci na odpojování viz níže + opravit reconnect/disconnect v návaznosti na restartování zařízení.
+
+            // Get the writer and reader for the port after opening
+            if (serialWriter && serialWriter?.writable) {
+                await serialWriter.releaseLock();
+                await serialWriter.cancel();
+                serialWriter = null;
+            }
+            if (serialReader && serialReader?.readable) {
+                await serialReader.releaseLock();
+                await serialReader.cancel();
+                serialReader = null;
+            }
             // If the port is already open, close it first
-            if (comPort.opened) {
+            if (comPort?.writable) {
+                await comPort?.writable?.releaseLock();
+                await comPort?.writable?.getReader()?.cancel();
+            }
+            if (comPort?.readable) {
+                await comPort?.readable?.releaseLock();
+                await comPort?.readable?.getReader()?.cancel();
+            }
+            if (comPort?.connected) {
                 console.info("🔌 Closing existing port...");
-                await comPort.close();
+                await comPort?.flush();
+                await comPort?.close();
             }
 
             const {usbVendorId, usbProductId} = comPort.getInfo();
@@ -5388,20 +5433,16 @@
                     baudRate: parseInt($$$("inputNumBaudRate").value)
                 });
             } catch (error) {
+                if (debugging) console.error("Is opened?", comPort.connected, "\nError opening port:", error);
+                // throw error;
                 return;
             }
 
-            // Get the writer and reader for the port after opening
-            if (serialWriter) {
-                serialWriter.releaseLock();
-                serialWriter = null;
-            }
 
             serialWriter = comPort.writable.getWriter(); // 🔥  writer
             serialReader = comPort.readable.getReader(); // 🔥  reader
 
             isConnected = true;
-            reconnectAttempts = 0;
 
             await sendCommandGeneral("DATAC 0"); // Stop data collection
 
@@ -5435,26 +5476,42 @@
             await sleep(50);
 
             if (calibrationStatus) await unlockMovement();
-            if (!calibrationStatus) await lockMovementExcept(UI.calibrateBtn);
+            else await lockMovementExcept(UI.calibrateBtn);
 
-            machineFirmware = await getFirmwareVersion() || "";
+            try {
+                machineFirmware = await getFirmwareVersion() || "";
+            } catch (e) {
+                machineFirmware = null;
+            }
+            let machineName;
+            try {
+                machineName = await getMachineName() || "";
+            } catch (e) {
+                machineName = null;
+            }
+            let machineID;
+            try {
+                machineID = await getMachineID() || "";
+            } catch (e) {
+                machineID = null;
+            }
 
-            const machineName = await getMachineName(2000) || "";
-            const machineID = await getMachineID(2000) || "";
+            await sleep(10);
 
-            if (!isOk(machineFirmware) && !isOk(machineName) && !isOk(machineID)) {
+            if (!isOk(machineFirmware) || !isOk(machineName) || !isOk(machineID)) {
+                if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
                 // start reconnect procedure
                 if (tryCount === 0) {
                     tryCount++;
-                    alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   PLESE WAIT...");
-                    await sendCommandGeneral("MISC REBOOT", 5);
+                    alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
+                    await sendCommandGeneral("MISC REBOOT");
                     await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
                     await logMessage("   Rebooting via Command.\n");
                     throw new Error("Device not responding");
 
                 } else if (tryCount === 1) {
                     tryCount++;
-                    alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   PLESE WAIT...");
+                    alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
                     await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
                     await logMessage("   Rebooting via DTR toggle.\n");
                     await setSerialSignals(comPort, false, false, false); // Set DTR to false
@@ -5464,9 +5521,12 @@
                     throw new Error("Device not responding");
 
                 } else {
+                    console.error("Device not responding after multiple attempts.");
                     await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
-                    throw new Error("Failed to connect after multiple attempts");
-
+                    alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
+                    reconnectAttempts = 1000;
+                    await disconnectSerial(true);
+                    return;
                 }
             }
 
@@ -5478,12 +5538,10 @@
             await sleep(5); // Stop for 5 ms
 
             await updateConnectionStatus("connected", "USB");
-            UI.USB.innerText = "❌ Disconnect ESP (USB)";
             await logMessage("\n✅ Connected to ESP via USB\n");
 
             tryCount = 0;
-
-            UI.USB.classList.remove("disabled");
+            reconnectAttempts = 0;
 
         } catch (error) {
             activeWatchDog = false;
@@ -5534,6 +5592,8 @@
             return;
         }
 
+        updateConnectionStatus("disconnecting");
+
         try {
             try {
                 if (serialPort?.writable) {
@@ -5551,7 +5611,7 @@
             await sleep(5);
 
             // Stop data reading before releasing the reader
-            if (serialReader) {
+            if (serialReader?.readable) {
                 console.info("📌 Stopping data reading...");
                 try {
                     await serialReader.cancel(); // Cancel reading safely
@@ -5563,19 +5623,19 @@
             }
 
             // Release the writer before closing the port
-            if (serialWriter) {
+            if (serialWriter?.writable) {
                 console.info("📌 Releasing writer...");
                 serialWriter.releaseLock();
                 serialWriter = null;
             }
 
             // Now close the port safely
-            if (serialPort) {
+            if (serialPort?.writable && serialPort?.readable) {
                 console.info("📌 Closing serial port...");
                 try {
                     await serialPort.close();
                 } catch (error) {
-                    // console.error("❌ Error setting serial signals:", error);
+                    console.error("❌ Error setting serial signals:", error);
                 }
                 serialPort = null;
             }
@@ -5586,21 +5646,23 @@
         } catch (error) {
             console.error("❌ disconnectSerial error:", error);
         } finally {
+            cancelAllPending();
             isConnected = false;
             isSerial = false;
             activeWatchDog = false;
             await resetValues();
             await endedMoving();
-            UI.USB.classList.remove("disabled");
+            await updateConnectionStatus("disconnected");
+            await lockMovement();
         }
     }
 
 
     function resetValues() {
         parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        measurementParts = 0;
         liveUpdate = false
 
-        UI.USB.innerText = "🔌 Connect via USB";
         updateConnectionStatus("disconnected");
 
         isExperimentRunning = false;
@@ -5610,6 +5672,7 @@
         experimentEndLimits = {position: null, force: null, time: null};
         expControl = '';
         startTime = null;
+        lastAcceptedTime = null;
         pendingDSLR = null;
         dataCount = null;
         maxForces = Array(loadCellNum).fill(null);
@@ -5657,6 +5720,7 @@
         await clearLocalStorage();
 
         parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        measurementParts = 0;
 
         isExperimentRunning = false;
         machineOccupation = false;
@@ -5665,6 +5729,7 @@
         experimentEndLimits = {position: null, force: null, time: null};
         expControl = '';
         startTime = null;
+        lastAcceptedTime = null;
         pendingDSLR = null;
         dataCount = null;
         maxForces = Array(loadCellNum).fill(null);
@@ -5828,7 +5893,6 @@
         activeWatchDog = false;
         isReconnecting = true;
         reconnectAttempts++;
-        UI.USB.innerText = "🔄 Reconnecting...";
         await updateConnectionStatus("reconnecting");
         await logMessage(`\n🔄 Attempting reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
 
@@ -5930,8 +5994,7 @@
         if (!isNum(tolerance)) tolerance = (stepSize * 0.01); // set default tolerance to 2x 1% of step size
 
         // TODO: optimalizovat tolerance dle rychlosti zpracování dat
-        tolerance = clamp(roundDecimalFast(Math.abs(tolerance), 9), 0.001, 0.1);
-
+        tolerance = clamp(roundDecimalFast(Math.abs(tolerance), 9), 0.0011, 0.1);
 
         const actualStep = current - previous;
 
@@ -5940,7 +6003,7 @@
             return previous + stepSize;
         }
 
-        return current
+        return current;
     }
 
     // TODO: - je to špatně
@@ -5963,7 +6026,7 @@
         }
 
         // TODO: zkontrolovat DSLR time relativně ke startu měření
-        const dslrTime = roundDecimalFastNEW(dslrEvent.time - startTime, precisionTime);
+        const dslrTime = roundDecimalFast(dslrEvent.time - startTime, precisionTime);
         const photoIndex = dslrEvent.photoIndex;
 
         if (!(prevData.time < nextData.time)) {
@@ -6113,8 +6176,7 @@
     let dataCount = null;
     let dataChartInterval = 1; // Interval for live chart update
     let startTime = null;
-
-    // let firstPhoto = 0;
+    let lastAcceptedTime = null;
 
 
     function calculateAverageParsedData(parsedDataList) {
@@ -6249,7 +6311,12 @@
         return roundDecimalFast(progress, 6);
     }
 
-    let lastAcceptedTime = null;
+    // TODO: implement this   !!   'measurement_limits'   !!
+    measurement_limits = {
+        zero_speed: {counter: 0, limit: 2},
+        over_limitForce: {counter: 0, limit: 2},
+        invalid_data: {counter: 0, limit: 2},
+    };
 
     async function processMeasurements(dataString) {
         if (!takeMeasurements && !isExperimentRunning) {
@@ -6268,7 +6335,7 @@
             return;
         }
 
-        if (parts.length !== 6) {
+        if (!parts || parts?.length !== measurementParts) {
             logMessage("🌡️ DS" + dataString);
             return;
         } else {
@@ -6276,19 +6343,22 @@
         }
 
         // Common parsing logic
-        let forceVal = parts.slice(3).map(num => num === "0" ? null : parseFloat(num)); // LoadCell values
+        const forceRaw = parts?.slice(3).map(num => num === "0" ? null : parseFloat(num)); // LoadCell values
 
-        if (takeMeasurements) {
-            forceVal?.forEach((value, index) => measureForces[index].push(value * loadSignCorrections[index])); // Handle takeMeasurements
+        // TODO: do only Present loadcellls
+        const forceVal = forceRaw?.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - (meanForces[index] || 0), precisionForce));
+
+        if (takeMeasurements) { // Handle takeMeasurements
+            forceVal?.forEach((value, index) => isNum(value) ? measureForces[index].push(value) : null);  // Collect force data for calibration
             return;
         }
 
-        let timeVal = parseFloat(parts[0]) * timeConversionDATAC; // Convert microseconds to seconds
-        let distVal = roundDecimalFast((parseFloat(parts[1]) - startPosition) * displacementSignCorrection, precisionPosition); // Position value
+        const timeRaw = parseFloat(parts[0]) * timeConversionDATAC; // Convert microseconds to seconds
+        const distVal = roundDecimalFast((parseFloat(parts[1]) - startPosition) * displacementSignCorrection, precisionPosition); // Position value
         const speedVal = roundDecimalFast(parseFloat(parts[2]) * displacementSignCorrection, precisionSpeed); // Speed value
 
-        if (!isNum(timeVal) || !isNum(distVal)) {
-            console.warn("⚠️ Invalid data received:", {timeVal, distVal});
+        if (!isNum(timeRaw) || !isNum(distVal)) {
+            console.warn("⚠️ Invalid data received:", {timeRaw, distVal});
             endMeasuring(0, 'data error', "⏹️ Movement stopped due to data error.", '', "MC STOP");
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
             UI.experimentStageLabel.textContent = `Error`;
@@ -6297,21 +6367,16 @@
 
 
         // Handle regular data (not DSLR)
+        let timeVal;
         if (startTime === null) {
-            startTime = timeVal;
-            timeVal = 0;
-            lastAcceptedTime = 0;
+            startTime = timeRaw;
+            timeVal = 0.000000;
         } else {
             // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
-            const rawCurrent = (timeVal - startTime);
-            const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), rawCurrent, dataInterval_us * timeConversionDATAC);
+            const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), (timeRaw - startTime), (dataInterval_us * timeConversionDATAC));
             timeVal = roundDecimalFast(corrected, precisionTime);
-            lastAcceptedTime = timeVal; // okamžitě posuň "previous"
         }
-
-
-        // TODO: do only Present loadcellls
-        forceVal = forceVal.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - meanForces[index], precisionForce));
+        lastAcceptedTime = timeVal;
 
 
         const newData = {time: timeVal, position: distVal, speed: speedVal, force: forceVal, photoIndex: null};
@@ -6660,15 +6725,15 @@
             aggregateData(dataEntries, dataChartInterval, timeDataTemp, positionDataTemp, forceDataTemp, photoDataTemp, aggregatedDataBetweenStepsTemp);
 
 
-            const minTime = minND(timeDataTemp) || 0;
-            const maxTime = maxND(timeDataTemp) || 1e-10;
+            const minTime = catchVal(minND(timeDataTemp), 0, isNum);
+            const maxTime = catchVal(maxND(timeDataTemp), 1e-10, isNum);
             const timeRange = (maxTime - minTime) * 0.005;
-            const minDist = minND(positionDataTemp) || 0;
-            const maxDist = maxND(positionDataTemp) || 1e-10;
+            const minDist = catchVal(minND(positionDataTemp), 0, isNum);
+            const maxDist = catchVal(maxND(positionDataTemp), 1e-10, isNum);
             const distRange = (maxDist - minDist) * 0.005;
-            const forceMin = minND(forceDataTemp) || 0;
-            const forceMax = maxND(forceDataTemp) || 1e-10;
-            const forceRange = (forceMax - forceMin) * 0.005;
+            const forceMin = catchVal(minND(forceDataTemp), 0, isNum);
+            const forceMax = catchVal(maxND(forceDataTemp), 1e-10, isNum);
+            const forceRange = (forceMax - forceMin) * 0.125;
 
 
             // dataEntries?.forEach(entry => {
@@ -6682,8 +6747,6 @@
             positionData = positionDataTemp;
             forceData = forceDataTemp;
             photoData = photoDataTemp;
-
-            liveUpdate = stateAtEnd;
 
             timeChart.setData([timeDataTemp, ...forceDataTemp, photoDataTemp]);
             positionChart.setData([positionDataTemp, ...forceDataTemp, photoDataTemp]);
@@ -6699,6 +6762,9 @@
 
 
             console.info("\n\t☑️ Graph data loaded successfully.");
+
+            await sleep(1);
+            liveUpdate = stateAtEnd;
         };
     }
 
@@ -6900,6 +6966,11 @@
     // -------------------------
     // Fronta čekajících požadavků
     // -------------------------
+
+    let _reqId = 0;
+    /** Pomocná: odstraní požadavek z fronty podle id */
+    const _pending = /** @type {PendingReq[]} */([]);
+
     /** @typedef {{
      *   id: number,
      *   regex: RegExp,
@@ -6908,11 +6979,6 @@
      *   timeoutId: ReturnType<typeof setTimeout>
      * }} PendingReq
      */
-
-    let _reqId = 0;
-    const _pending = /** @type {PendingReq[]} */([]);
-
-    /** Pomocná: odstraní požadavek z fronty podle id */
     function _removePending(id) {
         const idx = _pending.findIndex(p => p.id === id);
         if (idx !== -1) _pending.splice(idx, 1);
@@ -7372,8 +7438,8 @@
      * @param {number} targetSpeed - cílová rychlost (mm/s), default 0.05
      */
     async function rampSpeed(currentSpeed, targetSpeed = 0.05) {
-        const INTERVAL_MS = 10;
-        const MAX_INTERVALS = 10; // 15 * 20ms = 300ms mezi 1. a posledním sendem
+        const INTERVAL_MS = 8;
+        const MAX_INTERVALS = 9; // 15 * 20ms = 300ms mezi 1. a posledním sendem
         const PREFERRED_STEP = 1;   // mm/s
         const MIN_STEP = 0.5;       // mm/s
 
@@ -7779,14 +7845,16 @@
 
             // === Reset Variables ===
             startTime = null;
+            lastAcceptedTime = null;
             maxForces = Array(loadCellNum).fill(null);
-            // firstPhoto = 0;
             timeData = [];
             positionData = [];
             forceData = Array(loadCellNum).fill(0).map(() => []);
             measureForces = Array(loadCellNum).fill(0).map(() => []);
             meanForces = Array(loadCellNum).fill(0);
             photoData = [];
+
+            measurementParts = 6; // TODO: adjust if needed by type of experiments, loadcells, etc.
 
             aggregatedDataBetweenSteps = [];
             dataCount = 0;
@@ -7803,7 +7871,6 @@
                 force: Array(loadCellNum).fill(0),
                 photoIndex: takePhotos ? 0 : null // Store DSLR photo order
             };
-
 
             currentSpeed = (await getSpeed()) || 15;
             currentAcceleration = (await getAcceleration()) || 150;
@@ -7857,7 +7924,7 @@
                 loadDistance: distance_mm,
                 loadSpeed: speedForward_mmps,
                 loadcellCapacity: loadcellCapacities,
-                loadcellType: 'Unknown',
+                loadcellType: 'Undefined',
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
                 endStatus: endedBy,
@@ -7968,6 +8035,7 @@
 
             positionProgress = 0
             startTime = null;
+            lastAcceptedTime = null;
             isExperimentRunning = true;
             endMeasurement = false;
             clearTimeout(endMeasurementCounter)
@@ -8711,40 +8779,38 @@
         const rng = XLSX.utils.decode_range(ws['!ref']);
         const cols = [];
         for (let c = rng.s.c; c <= rng.e.c; c++) {
-            cols[c] = {wch: c === 0 ? 15 : (c === 2 ? 5 : 8) };
+            cols[c] = {wch: c === 0 ? 15 : (c === 2 ? 5 : 8)};
         }
         ws['!cols'] = cols;
     }
 
-// --- helpers pro Rich Text (subscript) ---
-// parts: [{text:"F"}, {text:"max", sub:true}, {text:"(N)"}]
-function setRich(ws, r, c, parts) {
-  const addr = XLSX.utils.encode_cell({ r, c });
-  const text = parts.map(p => String(p.text ?? "")).join("");
+    // --- helpers pro Rich Text (subscript) ---
+    // parts: [{text:"F"}, {text:"max", sub:true}, {text:"(N)"}]
+    function setRich(ws, r, c, parts) {
+        const addr = XLSX.utils.encode_cell({r, c});
+        const text = parts.map(p => String(p.text ?? "")).join("");
 
-  if (!ws[addr]) ws[addr] = { t: "s" };
+        if (!ws[addr]) ws[addr] = {t: "s"};
 
-  // nastav plain text + rich runs
-  ws[addr].t = "s";
-  ws[addr].v = text;          // <<< DŮLEŽITÉ (fallback + některé buildy to vyžadují)
-  ws[addr].r = parts.map(p => {
-    const run = { t: String(p.text ?? "") };
-    if (p.sub) run.s = { vertAlign: "subscript" };  // spodní index
-    return run;
-  });
+        // nastav plain text + rich runs
+        ws[addr].t = "s";
+        ws[addr].v = text;          // <<< DŮLEŽITÉ (fallback + některé buildy to vyžadují)
+        ws[addr].r = parts.map(p => {
+            const run = {t: String(p.text ?? "")};
+            if (p.sub) run.s = {vertAlign: "subscript"};  // spodní index
+            return run;
+        });
 
-  // volitelně zarovnání a zalomení
-  ws[addr].s = ws[addr].s || {};
-  ws[addr].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
-}
+        // volitelně zarovnání a zalomení
+        ws[addr].s = ws[addr].s || {};
+        ws[addr].s.alignment = {horizontal: "center", vertical: "center", wrapText: true};
+    }
 
-function setRichBaseSub(ws, r, c, base, sub, suffix = "") {
-  const parts = [{ text: base }, { text: sub, sub: true }];
-  if (suffix) parts.push({ text: suffix });
-  setRich(ws, r, c, parts);
-}
-
-
+    function setRichBaseSub(ws, r, c, base, sub, suffix = "") {
+        const parts = [{text: base}, {text: sub, sub: true}];
+        if (suffix) parts.push({text: suffix});
+        setRich(ws, r, c, parts);
+    }
 
 
     function ensureRefFromAoa(ws, aoa) {
@@ -8753,13 +8819,12 @@ function setRichBaseSub(ws, r, c, base, sub, suffix = "") {
             const cols = (aoa[0] || []).length;
             if (rows && cols) {
                 ws['!ref'] = XLSX.utils.encode_range({
-                    s: { r: 0, c: 0 },
-                    e: { r: rows - 1, c: cols - 1 }
+                    s: {r: 0, c: 0},
+                    e: {r: rows - 1, c: cols - 1}
                 });
             }
         }
     }
-
 
 
     async function convertCSVtoXLSX_MATTES() {
@@ -8825,12 +8890,12 @@ function setRichBaseSub(ws, r, c, base, sub, suffix = "") {
             // ==================== FILES LIST ==================== //
 
             // TODO: lepší název proměnné
-            const HEAD = ["File Order", "File name", "Experiment type", "Material",
+            const resultsHead = ["File Order", "File name", "Experiment type", "Material",
                 "b (mm)", "h (mm)", "L (mm)", "E (MPa)",
                 "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
                 "F_T (N)", "h_D (mm)", "H_BW (-)"];
 
-            const resultsData = [HEAD]; // Third sheet data
+            const resultsData = [resultsHead]; // Third sheet data
 
             // ================== LOADING DATA ================== //
 
@@ -9432,7 +9497,7 @@ function setRichBaseSub(ws, r, c, base, sub, suffix = "") {
 
                         // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                        const shift = (getForce(entry) - firstShift) || 0; // Displacement (mm)
+                        const shift = (getPosition(entry) - firstShift) || 0; // Displacement (mm)
 
                         // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
                         const deformation = shift; // Calculate deformation
@@ -9467,32 +9532,28 @@ function setRichBaseSub(ws, r, c, base, sub, suffix = "") {
             ensureRefFromAoa(wsResults, resultsData);
 
 
-
-
 // wsSamples rich-text
-setRichBaseSub(wsSamples, 0, 12, "l", "0", "\n(mm)");
-setRichBaseSub(wsSamples, 1, 4, "h", "w");
-setRichBaseSub(wsSamples, 1, 5, "l", "w");
-setRichBaseSub(wsSamples, 1, 6, "w", "w");
-setRichBaseSub(wsSamples, 1, 7, "m", "w");
-setRichBaseSub(wsSamples, 1, 8, "h", "0");
-setRichBaseSub(wsSamples, 1, 9, "l", "0");
-setRichBaseSub(wsSamples, 1, 10, "w", "0");
-setRichBaseSub(wsSamples, 1, 11, "m", "0");
+            setRichBaseSub(wsSamples, 0, 12, "l", "0", "\n(mm)");
+            setRichBaseSub(wsSamples, 1, 4, "h", "w");
+            setRichBaseSub(wsSamples, 1, 5, "l", "w");
+            setRichBaseSub(wsSamples, 1, 6, "w", "w");
+            setRichBaseSub(wsSamples, 1, 7, "m", "w");
+            setRichBaseSub(wsSamples, 1, 8, "h", "0");
+            setRichBaseSub(wsSamples, 1, 9, "l", "0");
+            setRichBaseSub(wsSamples, 1, 10, "w", "0");
+            setRichBaseSub(wsSamples, 1, 11, "m", "0");
 
 
 // wsResults rich-text (HEAD)
-setRich(wsResults, 0, 8,  [{text:"F"}, {text:"max", sub:true}, {text:" (N)"}]);
-setRich(wsResults, 0, 9,  [{text:"w"}, {text:"Fmax", sub:true}, {text:" (mm)"}]);
-setRich(wsResults, 0, 10, [{text:"σ"}, {text:"max", sub:true}, {text:" (MPa)"}]);
-setRich(wsResults, 0, 11, [{text:"F"}, {text:"T", sub:true},  {text:" (N)"}]);
-setRich(wsResults, 0, 12, [{text:"h"}, {text:"D", sub:true},  {text:" (mm)"}]);
-setRich(wsResults, 0, 13, [{text:"H"}, {text:"BW", sub:true}, {text:" (-)"}]);
+            setRich(wsResults, 0, 8, [{text: "F"}, {text: "max", sub: true}, {text: " (N)"}]);
+            setRich(wsResults, 0, 9, [{text: "w"}, {text: "Fmax", sub: true}, {text: " (mm)"}]);
+            setRich(wsResults, 0, 10, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
+            setRich(wsResults, 0, 11, [{text: "F"}, {text: "T", sub: true}, {text: " (N)"}]);
+            setRich(wsResults, 0, 12, [{text: "h"}, {text: "D", sub: true}, {text: " (mm)"}]);
+            setRich(wsResults, 0, 13, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
 
 
-console.log('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r:0,c:9})]);
-
-
+            console.log('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
 
 
             columnOffset = 0; // Column shift for each section
@@ -9555,7 +9616,7 @@ console.log('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r:0,c:9})]);
             }
 
             wsResults['!ref'] = XLSX.utils.encode_range(
-                {s: {r: 0, c: 0}, e: {r: resultsData.length - 1, c: HEAD.length - 1}}
+                {s: {r: 0, c: 0}, e: {r: resultsData.length - 1, c: resultsHead.length - 1}}
             );
 
             // autofilter přes hlavičku
@@ -9567,9 +9628,9 @@ console.log('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r:0,c:9})]);
             columnOffset = 0; // Column shift for each section
             for (let f = 0; f < fileCount; f++) {
                 setNumFmt(columnOffset, "0.000000", formattedData, wsMattes);       // time (s)
-                setNumFmt(columnOffset+1, "0.0000", formattedData, wsMattes);       // position (mm)
-                setNumFmt(columnOffset+2, "0.00", formattedData, wsMattes);         // force (N)
-                setNumFmt(columnOffset+3, "0.0000", formattedData, wsMattes);       // deformation (mm)
+                setNumFmt(columnOffset + 1, "0.0000", formattedData, wsMattes);       // position (mm)
+                setNumFmt(columnOffset + 2, "0.00", formattedData, wsMattes);         // force (N)
+                setNumFmt(columnOffset + 3, "0.0000", formattedData, wsMattes);       // deformation (mm)
 
                 columnOffset += 5; // Shift by 4 columns + 1 empty column
             }
