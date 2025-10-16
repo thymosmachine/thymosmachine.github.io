@@ -25,6 +25,6 @@
 node_modules/
 .idea/
 *.xml
-*.bat
 *.pem
+*.bat
 debug.txt
