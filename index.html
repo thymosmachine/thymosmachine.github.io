@@ -694,17 +694,11 @@
             gap: var(--gap);
         }
 
-        #inputNumBaudRateWrapper {
-            display: none;
-        }
-
         #inputNumBaudRate {
-            width: 148px;
-            height: 33px;
-            border-radius: 10px;
             padding: 5px;
+            height: 45px;
+            width: 160px;
             border: 1px solid var(--border-color);
-            background: #f0f0f0;
             text-align: center;
         }
 
@@ -1511,9 +1505,9 @@
         <div id="usbContainer">
             <button id="connectBtnUSB" title="Connect to the Thymos machine by selecting USB port.">🔌 Connect via USB
             </button>
-            <div id="inputNumBaudRateWrapper"><label for="inputNumBaudRate" class="prohibited">Baud-Rate:
+            <div data-level="4"><label for="inputNumBaudRate">Baud-Rate:
                 <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                       value="921600" min="1" class="prohibited">
+                       value="921600" min="1">
             </label>
             </div>
         </div>
