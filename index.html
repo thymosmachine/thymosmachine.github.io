@@ -2034,6 +2034,13 @@
                                data-nonremember="true" data-unit="MPa" data-essence="result, modulus">
                     </div>
 
+                    <div class="input-group data-eq" data-eq-type="Flx">
+                        <label for="outputFlexStrength">Flexural strength \( f_{m} \)<span class="units-text"></span>:
+                        </label>
+                        <input type="text" id="outputFlexStrength" class="copyableInput calcInput" readonly
+                               data-nonremember="true" data-unit="MPa" data-essence="result, modulus">
+                    </div>
+
                     <div class="input-group data-eq" data-eq-type="InB">
                         <label for="outputArea">Cross-section Area \( A \)<span
                                 class="units-text"></span>:
@@ -3146,7 +3153,8 @@
     const calc_val_tare = (x, x_tare = 0) => x - x_tare;
     const calc_area = (b, h) => b * h;
     const calc_moment_of_inertia = (b, h) => 1 / 12 * b * (h * h * h);
-    const calc_bend_modulus = (L, I, F, w) => (F * (L * L * L)) / (48 * I * w);
+    const calc_flex_modulus = (L, I, F, w) => (F * (L * L * L)) / (48 * I * w);
+    const calc_flex_strength = (F, L, b, h) => (3 * F * L) / (2 * b * (h * h));
     const calc_stress = (F, A) => F / A;
     const calc_speed = (d, t) => d / t;
     const calc_indentation_diameter = (h, D) => 2 * Math.sqrt(h * (D - h));
@@ -3168,7 +3176,7 @@
     const writeOut = (id, value, dec = 3) => {
         const el = $$$(id);
         if (!el) return;
-        el.value = getCustomStrValue(value, dec, '.', false, false, "ⁿ/ₐ");
+        el.value = getCustomStrValue(value, String(dec), '.', false, false, "ⁿ/ₐ"); // TODO: dec jako číslo nebo string??
     };
 
     // -------------------- Hlavní přepočet --------------------
@@ -3208,7 +3216,7 @@
 
             // σ_max = F / A
             const sigma = calc_stress(F, A); // N/mm^2 = MPa
-            if (exists("outputMaxStress")) writeOut("outputMaxStress", sigma, 4);
+            if (exists("outputMaxStress")) writeOut("outputMaxStress", sigma, 3);
 
         }
 
@@ -3217,10 +3225,16 @@
             const I = calc_moment_of_inertia(b, h); // mm^4
             if (exists("outputIy")) writeOut("outputIy", I, 3);
 
-            // E = (F * L^3) / (48 * I * w)   (3-bodový ohyb uprostřed)
+            // Modulus: E = (F * L^3) / (48 * I * w)   (3-bodový ohyb uprostřed)
             const L = readNum("inputSpan", true); // mm
-            const E = calc_bend_modulus(L, I, F, w); // vychází v N/mm^2 = MPa
-            if (exists("outputModulus")) writeOut("outputModulus", E, 4);
+            const E = calc_flex_modulus(L, I, F, w); // vychází v N/mm^2 = MPa
+            if (exists("outputModulus")) writeOut("outputModulus", E, 3);
+
+
+            // (Max strength) f_m = (3*F*L) / (2*b*h^2)
+            const Fmax = readNum("outputForceMax", false); // N
+            const f_m = calc_flex_strength(Fmax, L, b, h) // N/mm^2 = MPa
+            if (exists("outputMaxStrength")) writeOut("outputMaxStrength", f_m, 3);
 
             const b_dry = readNum("inputWidth_BeforeDrying", true);     // mm
             applyAdjust('inputWidth', b_dry);
@@ -7953,6 +7967,7 @@
             const experimentLabel = catchVal(expTypesLabels[experimentKey], "", isOk);
 
             await addDataToLog({
+                status: "collecting",
                 expSettings: settings,
                 experimentName: $$$("experimentName").value.trim(),
                 experimentLabel: experimentLabel.trim(),
@@ -8175,7 +8190,7 @@
             await alert(`Experiment Finished\n     ❌ Experiment failed. Please check the logs and machine.\n\n     Error:${error.message || error}`);
 
         } finally {
-            await endMeasuring(0, null, '', '', '', '');
+            await endMeasuring(0, null, '', '', '');
 
             await sleep(10);
 
@@ -8183,11 +8198,13 @@
             dbFlushTimer = null;
             await flushDB();
             await recomputeAll();
-            if (endedBy != null) await updateLogById(0, {endStatus: endedBy, positionProgress: positionProgress});
-            if (isConnected) endedMoving();    // unlock UI and watchdog
+            if (endedBy != null) await updateLogById(0, {endStatus: endedBy});
+            await updateLogById(0, {positionProgress: positionProgress, status: "collected"});
             document.title = initialTitle;
 
             UI.experimentStageLabel.textContent = `Idle`;
+
+            if (isConnected) endedMoving();    // unlock UI and watchdog
             await console.info("✅ Experiment completed.");
 
             await console.groupEnd();
