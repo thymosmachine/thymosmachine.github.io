@@ -1020,7 +1020,7 @@
 
         #experimentInputsContainer {
             display: grid;
-            grid-template-columns: max-content minmax(0, 1fr) min-content;
+            grid-template-columns: max-content minmax(min-content, 1fr) min-content;
             max-width: 1200px;
             width: 100%;
             min-width: 300px;
@@ -2025,7 +2025,7 @@
                                data-nonremember="true" data-unit="mm" data-essence="position">
                     </div>
 
-                    <div class="input-group data-eq" data-eq-type="Flx">
+                    <div class="input-group data-eq" data-eq-type="Flx" data-level="1">
                         <label for="outputIy">Moment of Inertia \( I_{y} \)<span
                                 class="units-text"></span>: </label>
                         <input type="text" id="outputIy" class="copyableInput calcInput" readonly
@@ -2211,7 +2211,7 @@
                         <label for="inputLoadcellOutput">Loadcell Rated Output<span class="units-text"></span>:
                         </label>
                         <input data-input-type="floatInput2" type="number" id="inputLoadcellOutput"
-                               value="2.0" step="any" min="0" max="100000000" data-unit="mV/V"
+                               value="2.0" step="any" min="0" max="100000000" data-unit="mV/V"  data-level="2"
                                data-essence="voltage, ratio, scale, conversion">
                     </div>
 
@@ -2227,8 +2227,7 @@
                     <!--                        <label for="inputLoadcellOutput1"><b>Loadcell 1</b> Rated Output <span-->
                     <!--                                class="units-text">(mV/V)</span>: </label>-->
                     <!--                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput1"-->
-                    <!--                               value="0.0"-->
-                    <!--                               step="any" min="0" max="100000000">-->
+                    <!--                               value="2.0" step="any" min="0" max="100000000"  data-level="2">-->
                     <!--                    </div>-->
 
                     <!--                    <div class="input-group">-->
@@ -2242,21 +2241,21 @@
                     <!--                        <label for="inputLoadcellOutput2"><b>Loadcell 2</b> Rated Output <span-->
                     <!--                                class="units-text">(mV/V)</span>: </label>-->
                     <!--                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput2"-->
-                    <!--                               value="0.0" step="any" min="0" max="100000000">-->
+                    <!--                               value="2.0" step="any" min="0" max="100000000"  data-level="2">-->
                     <!--                    </div>-->
 
                     <!--                    <div class="input-group">-->
                     <!--                        <label for="inputLoadcellCapacity3"><b>Loadcell 3</b> Capacity <span-->
                     <!--                                class="units-text">(kg)</span>: </label>-->
                     <!--                        <input data-input-type="intInput" type="number" id="inputLoadcellCapacity3"-->
-                    <!--                               value="0" step="any" min="0" max="100000000">-->
+                    <!--                               value="0" step="any" min="0" max="100000000" >-->
                     <!--                    </div>-->
 
                     <!--                    <div class="input-group">-->
                     <!--                        <label for="inputLoadcellOutput3"><b>Loadcell 3</b> Rated Output <span-->
                     <!--                                class="units-text">(mV/V)</span>: </label>-->
                     <!--                        <input data-input-type="floatInput" type="number" id="inputLoadcellOutput3"-->
-                    <!--                               value="0.0" step="any" min="0" max="100000000">-->
+                    <!--                               value="2.0" step="any" min="0" max="100000000"  data-level="2">-->
                     <!--                    </div>-->
                 </div>
 
@@ -2287,8 +2286,7 @@
                         <input type="checkbox" id="inputClearCalculations" checked>
                     </div>
 
-
-                    <div class="input-group">
+                    <div class="input-group"   data-level="1">
                         <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                         <select id="decimalSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
@@ -2297,7 +2295,7 @@
                         </select>
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group"   data-level="1">
                         <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                         <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
@@ -2312,13 +2310,48 @@
                         </select>
                     </div>
 
-                    <button id="clearCalculationsButton" class="controlBtn">🧼 Clear
-                        calculations
+                    <div class="input-group">
+                        <label for="systemLevelSelect">System Level: </label>
+                        <select id="systemLevelSelect"
+                                style="font-family: monospace; font-weight: bold;
+                                font-size: 16px; width: max-content; height: 50px;">
+                            <option value="no_level" style="display: none">&nbsp;⬜&nbsp;No selection</option>
+                            <option value="standard">&nbsp;🟦&nbsp;Standard</option>
+                            <option value="basic" selected>&nbsp;🟩&nbsp;Basic</option>
+                            <option value="advanced">&nbsp;🟨&nbsp;Advanced</option>
+                            <option value="expert">&nbsp;🟧&nbsp;Expert</option>
+                            <option value="developer" disabled>&nbsp;🟥&nbsp;Developer</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="languageSelect">App Language: </label>
+                        <select id="languageSelect"
+                                style="font-family: monospace; font-weight: bold;
+                                font-size: 16px; width: max-content; height: 50px;">
+                            <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇧🇬</option>
+                            <option value="cs" disabled>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
+                            <option value="de" disabled>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
+                            <option value="es" disabled>&nbsp;Español&nbsp;&nbsp;&nbsp;&nbsp;🇪🇸</option>
+                            <option value="pt" disabled>&nbsp;Português&nbsp;&nbsp;🇵🇹</option>
+                            <option value="fr" disabled>&nbsp;Français&nbsp;&nbsp;&nbsp;🇫🇷</option>
+                            <option value="it" disabled>&nbsp;Italiano&nbsp;&nbsp;&nbsp;🇮🇹</option>
+                            <option value="ru" disabled>&nbsp;Русский&nbsp;&nbsp;&nbsp;&nbsp;🇷🇺</option>
+                            <option value="ja" disabled>&nbsp;日本語&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇯🇵</option>
+                            <option value="ko" disabled>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
+                            <option value="zh" disabled>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳</option>
+                        </select>
+                    </div>
+
+                    <button id="clearCalculationsButton" class="controlBtn"  data-level="1">
+                        🧼 Clear calculations
                     </button>
 
-                    <button id="darkModeButton" class="controlBtn">🌙 Dark mode</button>
+                    <button id="darkModeButton" class="controlBtn">
+                        🌙 Dark mode
+                    </button>
 
-                    <button id="rebootButton" class="controlBtn prohibited"
+                    <button id="rebootButton" class="controlBtn"   data-level="1"
                             style="color: var(--text-info-2-color); font-weight: bold;">
                         🔂 Reboot device
                     </button>
@@ -2328,11 +2361,14 @@
                         🐞 Report bug
                     </button>
 
-                    <button id="aboutButton" class="controlBtn">ℹ️ About
-                        app
+                    <button id="aboutButton" class="controlBtn"
+                            style="color: var(--text-info-2-color); font-weight: bold;">
+                        ℹ️ About app
                     </button>
 
-                    <button id="clearStorageButton" class="controlBtn">🔁 Reset app
+                    <button id="clearStorageButton" class="controlBtn"
+                            style="color: var(--text-info-2-color); font-weight: bold;">
+                        🔁 Reset app
                     </button>
                 </div>
             </div>
@@ -2375,6 +2411,8 @@
 <script>
     const expTypesLabels = {
         "": "No selection",
+        "no_selection": "No selection",
+        "none": "No selection",
         "move_up": "Move up",
         "move_down": "Move down",
         "load": "Load test",
@@ -3190,24 +3228,23 @@
             const E = calc_bend_modulus(L, I, F, w); // vychází v N/mm^2 = MPa
             if (exists("outputModulus")) writeOut("outputModulus", E, 4);
 
-            const b_dry = readNum("inputWidth_AfterDrying", true);     // mm
+            const b_dry = readNum("inputWidth_BeforeDrying", true);     // mm
             applyAdjust('inputWidth', b_dry);
-            applyAdjust('inputWidth_AfterDrying', b);
+            applyAdjust('inputWidth_BeforeDrying', b);
 
-            const h_dry = readNum("inputHeight_AfterDrying", true);   // mm
+            const h_dry = readNum("inputHeight_BeforeDrying", true);   // mm
             applyAdjust('inputHeight', h_dry);
-            applyAdjust('inputHeight_AfterDrying', h);
+            applyAdjust('inputHeight_BeforeDrying', h);
 
-            const L_dry = readNum("inputLength_AfterDrying", true);       // mm
-            applyAdjust('inputSpan', L_dry);
-            applyAdjust('inputLength_AfterDrying', L);
+            // const L_dry = readNum("inputLength_BeforeDrying", true);       // mm
+            // applyAdjust('inputSpan', L_dry);
+            // applyAdjust('inputLength_BeforeDrying', L);
         } else {
             adjustDel('inputWidth');
             adjustDel('inputHeight');
-            adjustDel('inputWidth_AfterDrying');
-            adjustDel('inputHeight_AfterDrying');
+            adjustDel('inputWidth_BeforeDrying');
+            adjustDel('inputHeight_BeforeDrying');
             adjustDel('inputSpan');
-            adjustDel('inputLength_AfterDrying');
         }
 
         // -------------------- HB: Brinell --------------------
@@ -3223,14 +3260,6 @@
             // HB = (2*F) / (π*D*(D - sqrt(D^2 - d^2)))
             const HB = calc_hardness_brinell(F, D, d);
             if (exists("outputHardness")) writeOut("outputHardness", (hD > D / 2) ? NaN : HB, 4);
-
-
-            // Rychlost zatěžování: v = w_T / t
-            const wT = readNum("inputTargetDisp", true);  // mm
-            const t = readNum("inputLoadingTime", true); // s
-            const v = calc_speed(wT, t);
-            if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
-
         }
     }
 
@@ -3262,8 +3291,12 @@
         const Fmax_raw = forces[maximalForceID];            // N
         const w_Fmax_raw = displacements[maximalForceID];   // mm
 
-        const Fmax = calc_val_tare(Fmax_raw, F_tare)
-        const w_Fmax = calc_val_tare(w_Fmax_raw, w_tare)
+        const Finitial_raw = readNum("inputInitialForce"); // N
+        const [w_Finitial_raw, FinitialInd] = findTargetForce(forces, displacements, Finitial_raw);
+        const w_Finitial = calc_val_tare(w_Finitial_raw, w_tare);
+
+        const Fmax = calc_val_tare(Fmax_raw, F_tare);
+        const w_Fmax = calc_val_tare(w_Fmax_raw, w_tare);
 
         // Zapiš základní "max" (rozuměj aktuální zadané) hodnoty, pokud výstupy existují
         if (exists("outputForceMax")) writeOut("outputForceMax", Fmax, precisionForceSystem);
@@ -3293,9 +3326,14 @@
             const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd], precisionForceSystem) : NaN; // N
             applyAdjust('inputForce', F_inputDisp);
         }
-        const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FtargetInd], precisionPositionSystem);
+        const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
         applyAdjust('inputIndDepth', depthIndentation);
 
+
+        // Rychlost zatěžování: v = w_T / t
+        const t = readNum("inputLoadingTime", true); // s
+        const v = calc_speed(w_Ftarget, t);  // nebo:  v_set * (timeData[FtargetInd] / t)
+        if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
     }
 
     function clearCalculations() {
@@ -3574,7 +3612,7 @@
     // /////// Log Control Functions /////////
 
     // Toggles whether the log view is locked at a specific position
-    function lineLock() {
+    function lineConsoleLock() {
         isLineLocker = !isLineLocker;
         if (isLineLocker) {
             UI.lineLockBtn.textContent = "🔒 Fix Scroll: ON";
@@ -3584,7 +3622,7 @@
     }
 
     // Clears the log completely
-    function clearLog() {
+    function clearConsoleLog() {
         logContentLines = [];
         logCount = 0;
         UI.regularLogContainer.textContent = "";
@@ -4481,7 +4519,6 @@
             ];
 
 
-            console.log(settings);
             content += (await settingsToCsvPreamble(settings)).replace(/ /g, "").replace(/^\uFEFF/, "");
             content += '\n';
             content += `\n${basicInfo.join(delimiterPlaceHolder)}`;
@@ -4690,6 +4727,11 @@
                 await logMessage(`\n🔀 Toggled port auto-connect: ${usePortAutoConnect ? "ON" : "OFF"}`);
                 return;
 
+            case "toggle debugging":
+                debugging = !debugging;
+                await logMessage(`\n🔀 Toggled debugging: ${debugging ? "ON" : "OFF"}`);
+                return;
+
             default:
                 await writeCommand(command);
         }
@@ -4743,7 +4785,7 @@
     }
 
     function checkCommand(command) {
-        if (debugging) console.log("Preparing to send command:", command);
+        if (debugging) console.info("Preparing to send command:", command);
         if (!isConnected || !serialPort?.writable) {
             logMessage("\n⚠️ No device is connected or port is unavailable!");
             return false;
@@ -4784,9 +4826,9 @@
     }
 
 
-    async function moveToOriginalPosition() {
+    async function moveToOriginalPosition(override = false) {
         if (!isConnected) return;
-        if (isExperimentRunning || machineOccupation) return;
+        if (!override && (isExperimentRunning || machineOccupation)) return;
 
         const endPosition = await measurePosition();
         if (!(isNum(startPosition) && isNum(endPosition))) {
@@ -5139,7 +5181,8 @@
 
 
     function logMessage(msg) {
-        if (!(msg && debugging)) return;
+        msg = (msg)?.toString() || "";
+        if (isEmptyStr(msg)) return;
 
         isScrolledToBottom = checkScrolledToBottom();
 
@@ -6553,7 +6596,7 @@
             console.info("\n📄 - ⏸️ Page is hidden.");
 
 
-            // 🕒 Set timeout for hiding the page
+            // Set timeout for hiding the page
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null; // Reset the timeout
@@ -7580,11 +7623,13 @@
             UI.experimentStageLabel.textContent = `Starting`;
 
             await lockMovement();
-            await beganMoving()
+            await beganMoving();
 
-            await console.clear();
-            await console.log("\n\n\n──────────── NEW EXPERIMENT ────────────\n\n\n");
+            if (!debugging) await console.clear();
+            if (!debugging) await clearConsoleLog();
+            await console.info("%c\n\n\n──────────── NEW EXPERIMENT ────────────\n\n\n", "color: black; font-size: 14px; font-weight: bold;");
             await console.groupCollapsed("New Experiment Section");
+            await console.info(`%c🕒 Experiment started at: ${new Date().toLocaleString()}`, "color: gray; font-size: 12px; font-style: italic;");
 
             // === Retrieve Parameters from Inputs ===
             const distance_mm = getInputDefAbsFlt($$$("inputDistance").value, NaN);
@@ -8110,11 +8155,9 @@
                 // === Move Back ===
                 if (UI.autoReturnPosition.checked) {
                     UI.experimentStageLabel.textContent = `Returning`;
-                    await moveToOriginalPosition();
+                    await moveToOriginalPosition(true);
                 }
             }
-
-            machineOccupation = false;
 
             // === Save Data ===
             if ($$$('inputAutoSave').checked) {
@@ -8509,9 +8552,9 @@
             }
         });
 
-        $$$("toggleLineLockBtn")?.addEventListener("click", async () => lineLock());
+        $$$("toggleLineLockBtn")?.addEventListener("click", async () => lineConsoleLock());
 
-        $$$("clearRegularLog")?.addEventListener("click", async () => clearLog());
+        $$$("clearRegularLog")?.addEventListener("click", async () => clearConsoleLog());
 
         // TODO: $$$("saveRegularLog")?.addEventListener("click", async () => saveLogAsText());
 
@@ -9553,7 +9596,7 @@
             setRich(wsResults, 0, 13, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
 
 
-            console.log('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
+            // console.info('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
 
 
             columnOffset = 0; // Column shift for each section
