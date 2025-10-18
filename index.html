@@ -115,7 +115,7 @@
 
                 // true/TRUE/True atd.
                 return text === 'true' || text === 'y' || text === 'yes';
-            } catch {
+            } catch (err) {
                 // síťová chyba, timeout, CORS atp. -> false
                 clearTimeout(t);
                 return false;
@@ -169,7 +169,7 @@
                     signal: ctrl.signal
                 });
                 return res.ok;
-            } catch {
+            } catch (err) {
                 return false;
             } finally {
                 clearTimeout(t);
@@ -686,18 +686,22 @@
             margin-top: 0;
         }
 
-        #usbContainer {
-            display: flex;
+        .inlineDiv {
+            display: inline-flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: var(--gap);
+            gap: calc(var(--gap) * 2.5);
+        }
+
+        .inlineDiv .inlineDiv {
+            gap: calc(var(--gap));
         }
 
         #inputNumBaudRate {
             padding: 5px;
-            height: 45px;
-            width: 160px;
+            height: 50px;
+            width: 140px;
             border: 1px solid var(--border-color);
             text-align: center;
         }
@@ -712,9 +716,9 @@
             gap: var(--gap);
         }
 
-        #connectBtnUSB {
-            padding: 5px;
-            height: 45px;
+        .connectBtn {
+            padding: 5px 20px;
+            height: 50px;
             width: 160px;
         }
 
@@ -1502,13 +1506,28 @@
 
     <section class="statusContainer outsetShadow">
         <!-- USB Connection Section -->
-        <div id="usbContainer">
-            <button id="connectBtnUSB" title="Connect to the Thymos machine by selecting USB port.">🔌 Connect via USB
-            </button>
-            <div data-level="4"><label for="inputNumBaudRate">Baud-Rate:
-                <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                       value="921600" min="1">
-            </label>
+        <div class="inlineDiv">
+            <div class="inlineDiv">
+                <button id="connectBtnUSB" class="connectBtn"
+                        title="Connect to the Thymos machine by selecting USB port.">
+                    🔌 Connect via USB
+                </button>
+                <div data-level="4"><label for="inputNumBaudRate">Baud-Rate:
+                    <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
+                           value="921600" min="1">
+                </label>
+                </div>
+            </div>
+            <div class="inlineDiv">
+                <button id="connectBtnBluetooth" class="connectBtn"
+                        title="Connect to the Thymos machine via Bluetooth.">
+                    📶 Connect via Bluetooth
+                </button>
+            </div>
+            <div class="inlineDiv">
+                <button id="connectWiFiBtn" class="connectBtn" title="Connect to the Thymos machine via Wi-Fi.">
+                    🌐 Connect via Wi-Fi
+                </button>
             </div>
         </div>
         <div id="connectionStatus"> 🔴 Disconnected</div>
@@ -2035,10 +2054,11 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
-                        <label for="outputFlexStrength">Flexural strength \( f_{m} \)<span class="units-text"></span>:
+                        <label for="outputFlexStrength">Maximal Flexural strength \( f_{m} \)<span
+                                class="units-text"></span>:
                         </label>
                         <input type="text" id="outputFlexStrength" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="MPa" data-essence="result, modulus">
+                               data-nonremember="true" data-unit="MPa" data-essence="result, strength">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="InB">
@@ -2212,7 +2232,7 @@
                         <label for="inputLoadcellOutput">Loadcell Rated Output<span class="units-text"></span>:
                         </label>
                         <input data-input-type="floatInput2" type="number" id="inputLoadcellOutput"
-                               value="2.0" step="any" min="0" max="100000000" data-unit="mV/V"  data-level="2"
+                               value="2.0" step="any" min="0" max="100000000" data-unit="mV/V" data-level="2"
                                data-essence="voltage, ratio, scale, conversion">
                     </div>
 
@@ -2287,7 +2307,7 @@
                         <input type="checkbox" id="inputClearCalculations" checked>
                     </div>
 
-                    <div class="input-group"   data-level="1">
+                    <div class="input-group" data-level="1">
                         <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                         <select id="decimalSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
@@ -2296,7 +2316,7 @@
                         </select>
                     </div>
 
-                    <div class="input-group"   data-level="1">
+                    <div class="input-group" data-level="1">
                         <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                         <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
@@ -2340,11 +2360,12 @@
                             <option value="ru" disabled>&nbsp;Русский&nbsp;&nbsp;&nbsp;&nbsp;🇷🇺</option>
                             <option value="ja" disabled>&nbsp;日本語&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇯🇵</option>
                             <option value="ko" disabled>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
-                            <option value="zh" disabled>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳</option>
+                            <option value="zh" disabled>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳
+                            </option>
                         </select>
                     </div>
 
-                    <button id="clearCalculationsButton" class="controlBtn"  data-level="1">
+                    <button id="clearCalculationsButton" class="controlBtn" data-level="1">
                         🧼 Clear calculations
                     </button>
 
@@ -2352,7 +2373,7 @@
                         🌙 Dark mode
                     </button>
 
-                    <button id="rebootButton" class="controlBtn"   data-level="1"
+                    <button id="rebootButton" class="controlBtn" data-level="1"
                             style="color: var(--text-info-2-color); font-weight: bold;">
                         🔂 Reboot device
                     </button>
@@ -2408,6 +2429,59 @@
     </section>
 
 </main>
+
+
+<script>
+
+    // serviceWorkerRegistration();
+    //
+    // async function serviceWorkerRegistration() {
+    //
+    //     if ('serviceWorker' in navigator) {
+    //         console.info('☑️ Service Worker is supported.');
+    //
+    //         navigator.serviceWorker.getRegistration()
+    //             .then(reg => {
+    //                 const match = reg && reg.active && reg.active.scriptURL.includes('service-worker.js');
+    //
+    //                 if (match) {
+    //                     // serviceWorkerRegistrationStatus = true;
+    //                     console.info('✅ Service worker is registered:', reg);
+    //                 } else {
+    //                     navigator.serviceWorker.register('service-worker.js').then(function (registration) {
+    //                         console.info('🆕 Service Worker was registered', registration);
+    //                     }).catch(function (error) {
+    //                         console.info('❌ Registration failed.', error);
+    //                     });
+    //                 }
+    //             })
+    //             .catch(err => {
+    //                 console.error('⚠️ Error checking service worker registration:', err);
+    //             });
+    //     } else {
+    //         console.info('🚫 Service Worker is not supported.');
+    //     }
+    //
+    //     await sleep(10);  // Stop
+    //
+    //     // console.info(serviceWorkerRegistrationStatus);
+    //     // if (!serviceWorkerRegistrationStatus) window.location.reload();
+    // }
+
+    // Unregister all service workers
+    async function unregisterServiceWorkers() {
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+                console.log('Service worker unregistered:', registration);
+            }
+        }
+    }
+
+    unregisterServiceWorkers();
+
+</script>
 
 <script>
     const expTypesLabels = {
@@ -2786,9 +2860,7 @@
     };
 
     function roundDecimalFast(num, decimalPlace) {
-        num ||= 0;
-        decimalPlace ||= 0;
-        const p = Math.pow(10, decimalPlace)
+        const p = Math.pow(10, clamp(decimalPlace || 0, 0, maxPrecision));
         return Math.round(num * p) / p;
     }
 
@@ -3234,7 +3306,7 @@
             // (Max strength) f_m = (3*F*L) / (2*b*h^2)
             const Fmax = readNum("outputForceMax", false); // N
             const f_m = calc_flex_strength(Fmax, L, b, h) // N/mm^2 = MPa
-            if (exists("outputMaxStrength")) writeOut("outputMaxStrength", f_m, 3);
+            if (exists("outputFlexStrength")) writeOut("outputFlexStrength", f_m, 3);
 
             const b_dry = readNum("inputWidth_BeforeDrying", true);     // mm
             applyAdjust('inputWidth', b_dry);
@@ -3326,6 +3398,15 @@
         if ($$$("experimentTypeDropdown")?.value.toLowerCase().endsWith("-hbr")) {
             const finalForce = roundDecimalFast(mean1D(forces.slice(FtargetInd)), precisionForceSystem);
             applyAdjust('inputForce', finalForce);
+
+
+            const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
+            applyAdjust('inputIndDepth', depthIndentation);
+
+            // Rychlost zatěžování: v = w_T / t
+            const t = readNum("inputLoadingTime", true); // s
+            const v = calc_speed(w_Ftarget, t);  // nebo:  v_set * (timeData[FtargetInd] / t)
+            if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
         } else {
             const inputDisp = readNum("inputDisp");
             const foundDisp = nearest(displacements, inputDisp);
@@ -3334,14 +3415,6 @@
             const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd], precisionForceSystem) : NaN; // N
             applyAdjust('inputForce', F_inputDisp);
         }
-        const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
-        applyAdjust('inputIndDepth', depthIndentation);
-
-
-        // Rychlost zatěžování: v = w_T / t
-        const t = readNum("inputLoadingTime", true); // s
-        const v = calc_speed(w_Ftarget, t);  // nebo:  v_set * (timeData[FtargetInd] / t)
-        if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
     }
 
     function clearCalculations() {
@@ -3394,40 +3467,22 @@
     if (exists('darkModeButton')) $$$('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
     document.body.dataset.theme = savedTheme;
 
-    // serviceWorkerRegistration();
-    //
-    // async function serviceWorkerRegistration() {
-    //
-    //     if ('serviceWorker' in navigator) {
-    //         console.info('☑️ Service Worker is supported.');
-    //
-    //         navigator.serviceWorker.getRegistration()
-    //             .then(reg => {
-    //                 const match = reg && reg.active && reg.active.scriptURL.includes('service-worker.js');
-    //
-    //                 if (match) {
-    //                     // serviceWorkerRegistrationStatus = true;
-    //                     console.info('✅ Service worker is registered:', reg);
-    //                 } else {
-    //                     navigator.serviceWorker.register('service-worker.js').then(function (registration) {
-    //                         console.info('🆕 Service Worker was registered', registration);
-    //                     }).catch(function (error) {
-    //                         console.info('❌ Registration failed.', error);
-    //                     });
-    //                 }
-    //             })
-    //             .catch(err => {
-    //                 console.error('⚠️ Error checking service worker registration:', err);
-    //             });
-    //     } else {
-    //         console.info('🚫 Service Worker is not supported.');
-    //     }
-    //
-    //     await sleep(10);  // Stop
-    //
-    //     // console.info(serviceWorkerRegistrationStatus);
-    //     // if (!serviceWorkerRegistrationStatus) window.location.reload();
-    // }
+
+    // ///////////
+
+    const getMeasurementPartsLength = (obj) =>
+        Object.entries(obj).reduce((sum, [key, val]) => {
+            if (key === 'length' || key === 'lengths') return sum; // přeskoč speciální klíče
+
+            const arr = isArr(val) ? val : (isNumber(val) ? [val] : []);
+
+            obj[key] = arr;                 // normalizace zpět do objektu
+            (obj.lengths ||= {})[key] = arr.length; // ulož délku části
+            return sum + arr.length;                     // akumuluj součet délek
+        }, 0);
+
+
+    // ///////////
 
     const storageKey = "formData"; // Key in localStorage
 
@@ -3443,10 +3498,20 @@
     let logContentLines = []; // Array storing the log content
 
 
-    let parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null}; // Last data log
+    let parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null}; // Last data log
 
 
-    let measurementParts = 0; // Number of parts in the measurement
+    const measurementPartDefault = {
+        length: null,
+        time: [0],
+        position: [1],
+        speed: [2],
+        force: [3, 4, 5],
+    };
+    measurementPartDefault.length = getMeasurementPartsLength(measurementPartDefault);
+
+    let measurementParts = measurementPartDefault; // Array to store measurement parts
+
 
     // /////// Live Data Update and Chart Configuration /////////
 
@@ -3455,7 +3520,9 @@
     let liveUpdatePaused = false;
 
     // Maximum number of data points displayed in the charts
-    let maxDataPoints = 1e5;
+    const maxDataPointsExp = 1e5;
+    const maxDataPointsIdle = 100 * 10; // 10 seconds at 100 Hz (100 ms)
+    let maxDataPoints = maxDataPointsIdle;
 
     let isReadingSerial = false;
 
@@ -3468,9 +3535,6 @@
     // /////// Experiment Configuration /////////
     let forceLimitDropPercent = 0;
     let forceLimitDropValue = 0;
-    let zero_speed_counter = 0;
-    let over_limitForce_counter = 0;
-    let startPosition = 0;
     let experimentEndLimits = {position: null, force: null, time: null};
     let expControl = '';
 
@@ -3480,9 +3544,10 @@
 
     let maxForces = Array(loadCellNum).fill(null);
 
-    let measureForces = Array(loadCellNum).fill(0).map(() => []);
+    let measureForces = Array(loadCellNum).fill(null).map(() => []);
     let takeMeasurements = false;
-    let meanForces = Array(loadCellNum).fill(0);
+
+    let tareValues = {time: null, position: null, force: Array(loadCellNum).fill(0)};
 
 
     // MOVING
@@ -4039,547 +4104,6 @@
         });
     }
 
-
-    // /////// Saving Log to File /////////
-
-    /**
-     * Saves the stored log entries from IndexedDB to a downloadable CSV file.
-     */
-    // Event listener for the save button
-    $$$("saveData")?.addEventListener("click", saveCSV);
-
-
-    let handFolderSelect = false;
-
-    function toggleDirectorySelector() {
-        handFolderSelect = !handFolderSelect;
-    }
-
-    function collectExpSettings(selector, schema = null) {
-        if (isEmptyStr(selector)) return [];
-        const nodes = Array.from($$(selector));
-        const inputs = {};
-
-        for (const el of nodes) {
-            const key = el.dataset.key || el.name || el.id; // preferuj data-key
-            if (!key) continue;
-
-            let val;
-            if (el.type === "checkbox") val = !!el.checked;
-            else if (el.type === "number") val = el.value === "" ? null : +el.value;
-            else if (el.tagName === "SELECT") val = el.value;
-            else val = el.value;
-
-            const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
-
-
-            inputs[key] = {
-                value: isInvalidValue(val) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('±', '') : val), // null pro prázdné/invalidní hodnoty
-                type: el.type || el.tagName.toLowerCase(),         // např. "number", "checkbox", "text", "select"
-                label: el.dataset.label || el.placeholder || key,  // volitelně pro hezčí zobrazení
-                classes: el.className || null,                     // volitelně pro další filtrování
-
-                extra: {
-                    unit: el.dataset.unit || null,  // jednotka
-                    essence: essence || null, // např. "force", "disp", "stress", "modulus", "area", "iy", "hardness"
-                    description: el.dataset.description || null, // volitelný popis
-                }
-            };
-        }
-
-        return {
-            selector: selector,
-            schema: schema,
-            version: 1,
-            timestamp: new Date().toISOString(),
-            inputs,
-        };
-    }
-
-    async function restoreExpSettingsToUI(settings, {
-        customSelector = undefined,
-        customKey = undefined,
-        fireEvents = false,
-    } = {}) {
-
-        const keys = [];
-        if (customKey) {
-            keys.push(String(customKey));
-        } else {
-            if (settings?.generalSettings) keys.push('generalSettings');
-            if (settings?.machineSettings) keys.push('machineSettings');
-            if (settings?.deviceSettings) keys.push('deviceSettings');
-            if (settings?.chartSettings) keys.push('chartSettings');
-            if (settings?.expSettings) keys.push('expSettings');
-            if (settings?.calcSettings) keys.push('calcSettings');
-        }
-
-        const results = [];
-        for (const key of keys) {
-            if (!settings[key]) continue;
-            const r = await restoreSettingsToUI(settings[key], {customSelector, fireEvents});
-            results.push({key, ...r});
-        }
-
-        const ok = results.some(r => r.ok);
-        const summary = results.reduce((acc, r) => {
-            acc.tried += 1;
-            acc.ok |= r.ok;
-            acc.totalNodes += r.foundNodes || 0;
-            acc.applied += r.appliedCount || 0;
-            acc.missingKeys += (r.missingKeys?.length || 0);
-            return acc;
-        }, {tried: 0, ok: false, totalNodes: 0, applied: 0, missingKeys: 0});
-
-        return {ok, results, summary};
-    }
-
-    const setElValue = (el, val, fire) => {
-        const tag = el.tagName.toLowerCase();
-        const type = (el.type || "").toLowerCase();
-
-        if (fire == null) fire = (el) => {
-            if (!fireEvents) return;
-            el.dispatchEvent(new Event("input", {bubbles: true}));
-            el.dispatchEvent(new Event("change", {bubbles: true}));
-            el.dispatchEvent(new Event("blur", {bubbles: true}));
-        };
-
-        if (type === "checkbox") {
-            el.checked = !!val;
-            fire(el);
-            return true;
-        }
-        if (type === "radio" && el.name) {
-            $$(`input[type="radio"][name="${CSS.escape(el.name)}"]`)
-                ?.forEach(r => {
-                    r.checked = (String(r.value) === String(val));
-                    fire(r);
-                });
-            return true;
-        }
-        if (tag === "select") {
-            if (el.multiple && isArr(val)) {
-                const set = new Set(val.map(String));
-                Array.from(el.options)?.forEach(opt => {
-                    opt.selected = set.has(String(opt.value));
-                });
-            } else {
-                el.value = val || "";
-            }
-            fire(el);
-            return true;
-        }
-        if (type === "number" || type === "range") {
-            let v = val;
-            if (typeof v === "string" && v.includes(",")) v = v.replace(",", ".");
-            if (v == null || v === "") el.value = "";
-            else if (Number.isFinite(+v)) ("valueAsNumber" in el) ? el.valueAsNumber = +v : el.value = String(+v);
-            else el.value = "";
-            fire(el);
-            return true;
-        }
-        el.value = (val || "");
-        fire(el);
-        return true;
-    };
-
-    async function restoreSettingsToUI(settings, {
-        customSelector = undefined,
-        fireEvents = false,
-    } = {}) {
-
-        const report = {
-            ok: false,
-            selector: null,
-            foundNodes: 0,
-            appliedCount: 0,
-            missingKeys: [],
-            unusedEls: [],
-            details: [] // {key, found, applied, reason}
-        };
-
-        let selector = customSelector;
-        if (!settings?.inputs) {
-            report.details.push({key: null, found: 0, applied: false, reason: 'no-inputs'});
-            return report;
-        }
-        if (!customSelector || isEmptyStr(customSelector)) selector = settings.selector;
-        report.selector = selector;
-        if (!selector || isEmptyStr(selector)) {
-            report.details.push({key: null, found: 0, applied: false, reason: 'no-selector'});
-            return report;
-        }
-
-        const nodes = Array.from($$(selector));
-        report.foundNodes = nodes.length;
-        if (!nodes.length) {
-            report.details.push({key: null, found: 0, applied: false, reason: 'no-nodes'});
-            return report;
-        }
-
-        // index dle data-key | name | id
-        const index = new Map();
-        for (const el of nodes) {
-            const key = el.dataset.key || el.name || el.id;
-            if (!key) {
-                report.unusedEls.push(el);
-                continue;
-            }
-            (index.get(key) || index.set(key, []).get(key)).push(el);
-        }
-
-        const fire = (el) => {
-            if (!fireEvents) return;
-            el.dispatchEvent(new Event("input", {bubbles: true}));
-            el.dispatchEvent(new Event("change", {bubbles: true}));
-            el.dispatchEvent(new Event("blur", {bubbles: true}));
-        };
-
-
-        // aplikuj hodnoty
-        for (const [key, meta] of Object.entries(settings.inputs)) {
-            const els = index.get(key);
-            if (!els?.length) {
-                report.missingKeys.push(key);
-                report.details.push({key, found: 0, applied: false, reason: 'no-match'});
-                continue;
-            }
-
-            try {
-                if (els[0].type === "radio") {
-                    setElValue(els[0], meta.value, fire);
-                } else if (els[0].tagName.toLowerCase() === "select" && els[0].multiple) {
-                    setElValue(els[0], isArr(meta.value) ? meta.value : [meta.value], fire);
-                } else {
-                    setElValue(els[0], meta.value, fire);
-                }
-                report.appliedCount += 1;
-                report.details.push({key, found: els.length, applied: true});
-            } catch (e) {
-                report.details.push({key, found: els.length, applied: false, reason: String(e?.message || e)});
-            }
-        }
-
-        report.ok = report.appliedCount > 0;
-        return report;
-    }
-
-    async function applyCsvToUI(csvText, opts) {
-        const settings = await parseSettingsFromCsv(csvText);
-        if (!settings) return {ok: false, reason: 'parse-failed', settings: null, results: []};
-        const res = await restoreExpSettingsToUI(settings, opts); // { ok, results, summary }
-        return {ok: !!res.ok, settings, ...res};
-    }
-
-    async function processFile(file) {
-        const text = await file.text();
-        const res = await applyCsvToUI(text, {fireEvents: true});
-
-        const nameEl = $$$("loadedFileName");
-
-        if (res.ok) {
-            nameEl.textContent = `✅ Loaded: ${file.name} — applied ${res.summary.applied} fields`;
-            console.groupCollapsed(`✔️ Settings applied (${file.name})`);
-            console.table(res.results.map(r => ({
-                key: r.key,
-                selector: r.selector,
-                nodes: r.foundNodes,
-                applied: r.appliedCount,
-                missingKeys: r.missingKeys.length
-            })));
-            res.results?.forEach(r => {
-                if (r.missingKeys.length) {
-                    console.groupCollapsed(`⚠️ Missing keys in ${r.key}`);
-                    console.info(r.missingKeys);
-                    console.groupEnd();
-                }
-            });
-            console.groupEnd();
-        } else {
-            nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
-            console.warn('\nDetails:', res);
-            alert("⚠️ In file are missing or are invalid meta data: (##MOIRA_EMETA=...).");
-        }
-    }
-
-    // ===== Ovládací logika tlačítka =====
-    const btnLoadCSV = $$$("btnLoadSettings");
-    const inputLoadCSV = $$$("appFileInput");
-
-    btnLoadCSV.addEventListener("click", async () => {
-        if ("showOpenFilePicker" in window) {
-            try {
-                const [handle] = await window.showOpenFilePicker({
-                    types: [{description: "CSV", accept: {"text/csv": [".csv"]}}],
-                    excludeAcceptAllOption: false,
-                    multiple: false
-                });
-                const file = await handle.getFile();
-                await processFile(file);
-                return;
-            } catch (e) {
-                if (e?.name === "AbortError") return; // uživatel zrušil
-                console.warn("showOpenFilePicker failed, falling back to <input type=file>:", e);
-            }
-        }
-        // fallback
-        inputLoadCSV.click();
-    });
-
-    inputLoadCSV.addEventListener("change", async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        await processFile(file);
-        inputLoadCSV.value = ""; // reset pro další výběr stejného souboru
-    });
-
-
-    // --- gzip / gunzip (preferuj nativní streamy; fallback pako) ---
-    async function gzipBytes(u8) {
-        if (typeof CompressionStream !== "undefined") {
-            const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream("gzip"));
-            const buf = await new Response(stream).arrayBuffer();
-            return new Uint8Array(buf);
-        } else if (self.pako?.gzip) {
-            // level 6 je rychlá a rozumně kompaktní volba
-            return self.pako.gzip(u8, {level: 6});
-        }
-        throw new Error("No gzip available (CompressionStream/pako).");
-    }
-
-    function looksLikeGzip(u8) {
-        return u8 && u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b;
-    }
-
-    async function gunzipBytes(u8) {
-        if (!looksLikeGzip(u8)) throw new Error("Data do not look like gzip format.");
-        if (typeof DecompressionStream !== "undefined") {
-            const stream = new Blob([u8]).stream()
-                .pipeThrough(new DecompressionStream("gzip"));
-            const buf = await new Response(stream).arrayBuffer();
-            return new Uint8Array(buf);
-        } else if (self.pako?.ungzip) {
-            return self.pako.ungzip(u8); // pako fallback
-        }
-        throw new Error("No gunzip available (DecompressionStream/pako).");
-    }
-
-    // --- tvorba preambule (vybere kratší z gzip/plain) ---
-    async function settingsToCsvPreamble(settings) {
-        const json = JSON.stringify(settings);
-        const plainB64 = u8ToB64(te.encode(json));
-
-        let gzipB64 = null;
-        try {
-            const gz = await gzipBytes(te.encode(json));
-            gzipB64 = u8ToB64(gz);
-        } catch {
-            // nemáme gzip => zůstaneme u plain
-        }
-
-        if (gzipB64 && gzipB64.length < plainB64.length) {
-            return `##MOIRA_METAZ=${gzipB64}`;
-        } else {
-            return `##MOIRA_METAP=${plainB64}`;
-        }
-    }
-
-    // --- čtení preambule z 1. řádku ---
-    async function readSettingsFromPreamble(line) {
-        // odstraň BOM na začátku, kdyby se vyskytl
-        line = line.replace(/^\uFEFF/, "");
-
-        if (line.startsWith("##MOIRA_METAZ=")) {
-            const b64 = line.slice("##MOIRA_METAZ=".length).trim();
-            const u8 = b64ToU8(b64);
-            const unz = await gunzipBytes(u8);
-            return JSON.parse(td.decode(unz));
-        }
-        if (line.startsWith("##MOIRA_METAP=")) {
-            const b64 = line.slice("##MOIRA_METAP=".length).trim();
-            const json = td.decode(b64ToU8(b64));
-            return JSON.parse(json);
-        }
-        throw new Error("Unknown MOIRA_META prefix.");
-    }
-
-    // --- parsing z celého CSV textu (vrátí objekt nebo null) ---
-    async function parseSettingsFromCsv(csvText) {
-        if (!csvText) return null;
-        // vezmi jen první řádku; split(limit=1) vrací pole => [0]
-        const firstLine = (csvText.split(/\r?\n/, 1)[0] || "").replace(/^\uFEFF/, "");
-        // rozpoznej prefix a zbytek jako Base64
-        const m = firstLine.match(/^##MOIRA_META([ZP])=([A-Za-z0-9+/=]+)\s*$/);
-        if (!m) return null;
-
-        try {
-            return await readSettingsFromPreamble(firstLine);
-        } catch (e) {
-            console.error("❌ Invalid settings JSON in MOIRA_META:", e);
-            return null;
-        }
-    }
-
-
-    async function saveCSV() {
-        let dirHandle = null;
-        // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
-        const delimiterSymbolVal = await $$$("delimiterSymbol").value || "Option-Semicolon";
-        let delimiter = await (delimiterSymbolVal === "Option-Comma" ? "," : delimiterSymbolVal === "Option-Semicolon" ? ";" : delimiterSymbolVal === "Option-Tab" ? "\t" : delimiterSymbolVal === "Option-Space" ? " " : ";") || ";";
-        // Decimal symbol for CSV file "." = dot, "," = comma
-        const decimalSymbol = await ($$$("decimalSymbol").value === "Option-Comma" ? "," : ".") || ".";
-
-        // 6 of random symbols that are unlikely to be in the data
-        const delimiterPlaceHolder = "§" + Math.random().toString(36).substring(2, 4) + Math.random().toString(36).substring(2, 4) + Math.random().toString(36).substring(2, 4) + "§";
-
-        if (decimalSymbol === "," && delimiter === ",") delimiter = ";"; // If comma is selected as decimal symbol, use semicolon as delimiter to avoid conflicts
-
-
-        const expNum = parseInt($$$("experimentCount").value.trim()) || 0;
-        const experimentName = $$$("experimentName").value.trim();
-        const experimentDesc = $$$("experimentDesc").value.replaceAll(/(\r\n|\n|\r)/gm, " ").trim();
-
-        handFolderSelect = $$$("storagePath").checked || false;
-
-        if (!experimentName) {
-            alert("Unable to save the data.\n    Please enter the experiment type.");
-            return;
-        }
-
-        let experimentCount
-        if (expNum) {
-            experimentCount = `_${expNum.toString().padStart(3, "0")}`;
-        } else {
-            experimentCount = "";
-        }
-        const fileName = `${experimentName}${experimentCount}.csv`;
-
-        let fileHandle;
-        if (handFolderSelect) {
-            try {
-                dirHandle = await window.showDirectoryPicker(); // User selects a folder
-            } catch (error) {
-                console.error("❌ Folder selection canceled or error occurred:", error);
-                return;
-            }
-            fileHandle = await dirHandle.getFileHandle(fileName, {create: true});
-
-        } else {
-            fileHandle = {name: `${fileName}`}; // Simulated save outside File System Access API
-        }
-
-        let transaction = db.transaction(STORE_NAME, "readonly");
-        let store = transaction.objectStore(STORE_NAME);
-        let request = store.getAll();
-
-        // Helper rounding functions
-        const getRoundVal = (x, dec, decSym) => getCustomStrValue(x, dec, decSym, false, true, "");
-
-        const rTime = (num) => getRoundVal(num, precisionTime, decimalSymbol);
-        const rDist = (num) => getRoundVal(num, precisionPosition, decimalSymbol);
-        const rForce = (num) => getRoundVal(num, precisionForce, decimalSymbol);
-        const rSpeed = (num) => getRoundVal(num, precisionSpeed, decimalSymbol);
-        const rPhoto = (num) => getRoundVal(num, 0, decimalSymbol);
-
-        request.onsuccess = async function () {
-            let dataEntries = request.result;
-
-            if (!dataEntries || dataEntries.length === 0) {
-                console.warn("\n⚠️ No data to save.");
-                alert("⚠️ No data to save. Ensure experiment has been run.");
-                return;
-            }
-            const experimentInfo = dataEntries[0];
-
-            dataEntries.shift(); // Skip the first entry (initial values)
-
-            const settings = experimentInfo || {};
-            settings.id = undefined; // Remove id from metadata
-
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            settings.headerVersion = 1;
-            settings.columns = 6;
-            settings.skipRows = 6;
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            settings.calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
-            settings.decimalSymbol = decimalSymbol;
-            settings.delimiter = delimiter;
-
-            let content = '';
-
-            const dateFormat = getLocaleOrder();
-
-            const basicInfo = [
-                `Date [${dateFormat.date} ${dateFormat.time}]:`, experimentInfo.experimentDate,
-                'Experiment type:', experimentInfo.experimentLabel,
-                'Experiment end:', experimentInfo.endStatus,
-                'Loading speed (mm/s):', experimentInfo.loadSpeed,
-                'Load distance (mm):', experimentInfo.loadDistance,
-                'Loadcell capacity (kg):', experimentInfo.loadcellCapacity.join('/'),
-                'Software version:', `v${experimentInfo.appSoftWare}`,
-                'Firmware version:', `v${experimentInfo.machineFirmware}`,
-            ];
-
-            const head = [
-                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', 'Loadcell 1 [N]', 'Loadcell 2 [N]', 'Loadcell 3 [N]', 'Photo Index'
-            ];
-
-
-            content += (await settingsToCsvPreamble(settings)).replace(/ /g, "").replace(/^\uFEFF/, "");
-            content += '\n';
-            content += `\n${basicInfo.join(delimiterPlaceHolder)}`;
-            content += `\nDescription:${delimiterPlaceHolder}${experimentDesc}`;
-            content += '\n';
-            content += `\n${head.join(delimiterPlaceHolder)}`;
-
-
-            if (delimiter === ",") experimentDesc.replaceAll(",", ".");
-            // Remove delimiter from description to avoid confusion in space-delimited files (CSV)
-            if (delimiter === " ") {
-                content = content.replaceAll(/ /g, "_");
-            } else {
-                content = content.replaceAll(delimiter, "|");
-
-            }
-
-            content = content.replaceAll(delimiterPlaceHolder, delimiter); // Replace placeholder with actual delimiter
-
-            dataEntries?.forEach(entry => {
-                const dataRow = [rTime(entry.time), rDist(entry.position), rSpeed(entry.speed), ...entry.force.map(rForce), rPhoto(entry.photoIndex)];
-                if (dataRow.some(d => d !== "")) content += `\n${dataRow.join(delimiter)}`; // Only add rows with at least one non-empty value
-            });
-
-            if (handFolderSelect) {
-                // Save the file to the selected folder using File System Access API
-                const writable = await fileHandle.createWritable();
-                await writable.write(`\uFEFF${content}`); // Add BOM for correct UTF-8 encoding
-                await writable.close();
-            } else {
-                // Simulated file download (browsers don't allow direct writes)
-                const blob = new Blob([`\uFEFF${content}`], {type: "text/csv;charset=utf-8"});
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = fileHandle.name.split("/").pop();
-                link.click();
-            }
-
-            if (expNum) {
-                $$$("experimentCount").value = expNum + 1;
-                $$$("experimentCount")?.dispatchEvent(new Event("change", {bubbles: true}));
-            }
-
-            console.info(`✅ Data saved to file: ${fileName}`);
-
-            // Clear IndexedDB after saving
-            let deleteTransaction = db.transaction(STORE_NAME, "readwrite");
-            let deleteStore = deleteTransaction.objectStore(STORE_NAME);
-            deleteStore.clear().onsuccess = () => console.info("🗑️ Data from IndexedDB cleared after saving.");
-        };
-    }
-
-
     function getLocaleOrder(locales, {
         timeZone = undefined,           // nech prázdné pro aktuální zónu
         force24h = false                // true => vynutí 24h (H), i když je locale 12h
@@ -4839,12 +4363,12 @@
         if (!override && (isExperimentRunning || machineOccupation)) return;
 
         const endPosition = await measurePosition();
-        if (!(isNum(startPosition) && isNum(endPosition))) {
+        if (!(isNum(tareValues.position) && isNum(endPosition))) {
             endedMoving();
             return;
         }
 
-        const distance = startPosition - endPosition;
+        const distance = tareValues.position - endPosition;
         if (Math.abs(distance) < 1e-2) {
             endedMoving();
             console.info("🚩 Already at the original position.");
@@ -5003,6 +4527,8 @@
             clearTimeout(movingTimeout);
             movingTimeout = null;
         }
+
+        if (isConnected) sendCommandGeneral("MC STOP");
 
         machineOccupation = false;
         stopWatchdog();
@@ -5360,14 +4886,7 @@
                     // serialPort = checkAllPorts();
 
                     for (let port of ports) {
-                        if (!port?.connected) continue;
-
-                        await port?.writable?.releaseLock();
-                        await port?.writable?.getReader()?.cancel();
-                        await port?.readable?.releaseLock();
-                        await port?.readable?.getReader()?.cancel();
-                        await port?.flush();
-                        await port?.close();
+                        closePort(port);
                     }
                     founds = true;
                 }
@@ -5509,7 +5028,7 @@
             await sendCommandGeneral("MC STOP"); // Stop movement
             await sendCommandGeneral("MC ENDSTOPS ENABLE");
             await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            await sendCommandGeneral(`DATA SET INTERVAL ${50000}`, 5); // Stop data collection
+            await sendCommandGeneral(`DATA SET INTERVAL ${maxDataPointsIdle * 1000}`, 5); // Stop data collection
 
 
             await logMessage("\n");
@@ -5647,49 +5166,19 @@
 
         try {
             try {
-                if (serialPort?.writable) {
-                    await sendCommandGeneral("MC STOP"); // Stop movement
-                    await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-                    await sendCommandGeneral("DATAC 0"); // Stop data collection
-                }
+                if (isExperimentRunning) endMeasuring(0, 'disconnected');
             } catch (error) {
                 console.warn("\n⚠️ Error stopping data collection:", error);
-            } finally {
-                machineOccupation = false;
-                isExperimentRunning = false;
             }
 
             await sleep(5);
 
+            await endedMoving();
+
+            await sleep(5);
+
             // Stop data reading before releasing the reader
-            if (serialReader?.readable) {
-                console.info("📌 Stopping data reading...");
-                try {
-                    await serialReader.cancel(); // Cancel reading safely
-                } catch (err) {
-                    console.warn("\n⚠️ Error canceling reader:", err);
-                }
-                serialReader.releaseLock(); // Release reader lock
-                serialReader = null;
-            }
-
-            // Release the writer before closing the port
-            if (serialWriter?.writable) {
-                console.info("📌 Releasing writer...");
-                serialWriter.releaseLock();
-                serialWriter = null;
-            }
-
-            // Now close the port safely
-            if (serialPort?.writable && serialPort?.readable) {
-                console.info("📌 Closing serial port...");
-                try {
-                    await serialPort.close();
-                } catch (error) {
-                    console.error("❌ Error setting serial signals:", error);
-                }
-                serialPort = null;
-            }
+            await closeComPort({flush: true, override: override, verbose: true});
 
             await logMessage("✖️ Disconnected from ESP\n\n");
 
@@ -5698,20 +5187,112 @@
             console.error("❌ disconnectSerial error:", error);
         } finally {
             cancelAllPending();
-            isConnected = false;
-            isSerial = false;
             activeWatchDog = false;
+            machineOccupation = false;
+            isExperimentRunning = false;
             await resetValues();
-            await endedMoving();
             await updateConnectionStatus("disconnected");
             await lockMovement();
         }
     }
 
+    async function closePort(port, {flush = true, verbose = false} = {}) {
+        if (port == null) return;
+
+        const portInfo = port.getInfo();
+        if (verbose) console.info("\n\t⚓ Closing port...", portInfo);
+        try {
+            if (port?.readable) {
+                await port?.readable?.releaseLock();
+                await port?.readable?.getReader()?.cancel();
+                if (verbose) console.info("\n\t\t 📍 Released Reader.");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Error releasing reader of port", portInfo, ":", error);
+        }
+
+        try {
+            if (port?.writable) {
+                await port?.writable?.releaseLock();
+                await port?.writable?.getReader()?.cancel();
+                if (verbose) console.info("\n\t\t 📍 Released Writer.");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Error releasing writer of port", portInfo, ":", error);
+        }
+
+        try {
+            if (port?.connected) {
+                if (flush) await port?.flush();
+                if (verbose && flush) console.info("\n\t\t 📍 Closed Flush.");
+                await port?.close();
+                if (verbose) console.info("\n\t\t 📍 Closed Port.");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Error closing port", portInfo, ":", error);
+        }
+    }
+
+    async function closeComPort({flush = true, override = false, verbose = true} = {}) {
+        const errors = {};
+
+        try {
+            if (serialReader != null && serialReader?.readable) {
+                await serialReader?.releaseLock();
+                await serialReader?.cancel();
+                serialReader = null;
+                if (verbose) console.info("\n\t⛏️ Released Reader...");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Error releasing reader:", error);
+            errors.reader = error;
+        }
+
+        try {
+            if (serialWriter != null && serialWriter?.writable) {
+                await serialWriter?.releaseLock();
+                await serialWriter?.cancel();
+                serialWriter = null;
+                if (verbose) console.info("\n\t⛏️ Released Writer...");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Error releasing writer:", error);
+            errors.writer = error;
+        }
+
+        try {
+            if (serialPort != null && serialPort?.writable) {
+                await serialPort?.writable?.releaseLock();
+                await serialPort?.writable?.getReader()?.cancel();
+                if (verbose) console.info("\n\t⛏️ Closed Writable...");
+            }
+            if (serialPort != null && serialPort?.readable) {
+                await serialPort?.readable?.releaseLock();
+                await serialPort?.readable?.getReader()?.cancel();
+                if (verbose) console.info("\n\t⛏️ Closed Readable...");
+            }
+            if (serialPort != null && (override || serialPort?.connected)) {
+                if (flush) await serialPort?.flush();
+                if (verbose && flush) console.info("\n\t⛏️ Flushed Serial Port...");
+                await serialPort?.close();
+                serialPort = null;
+                if (verbose) console.info("\n\t⛏️ Closed Serial Port...");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Error closing serial port:", error);
+            errors.port = error;
+        }
+
+        isSerial = false;
+        isConnected = false;
+
+        return errors;
+    }
+
 
     function resetValues() {
-        parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null};
-        measurementParts = 0;
+        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        measurementParts = measurementPartDefault;
         liveUpdate = false
 
         updateConnectionStatus("disconnected");
@@ -5722,23 +5303,22 @@
 
         experimentEndLimits = {position: null, force: null, time: null};
         expControl = '';
-        startTime = null;
-        lastAcceptedTime = null;
         pendingDSLR = null;
         dataCount = null;
         maxForces = Array(loadCellNum).fill(null);
         // timeData = [];
         // positionData = [];
-        measureForces = Array(loadCellNum).fill(0).map(() => []);
-        // forceData = Array(loadCellNum).fill(0).map(() => []);
-        meanForces = Array(loadCellNum).fill(0);
-        // markersTime = [];
-        // markersDist = [];
+        measureForces = Array(loadCellNum).fill(null).map(() => []);
+        // forceData = Array(loadCellNum).fill(null).map(() => []);
+        tareValues.force = Array(loadCellNum).fill(0);
+        tareValues.position = null;
+        tareValues.time = null;
+        lastAcceptedTime = null;
         aggregatedDataBetweenSteps = [];
-        zero_speed_counter = 0;
-        over_limitForce_counter = 0;
-        startPosition = 0;
-        minimumConditionCount = 2;
+        Object.values(measurement_limits).forEach(v => {
+            v.counter = 0;
+            v.limit = null;
+        });
         endMeasurement = false;
         clearTimeout(endMeasurementCounter)
         endMeasurementCounter = null;
@@ -5770,8 +5350,8 @@
         await clearDatabase();
         await clearLocalStorage();
 
-        parsedData = {time: null, position: null, value: null, force: Array(loadCellNum).fill(null), photoIndex: null};
-        measurementParts = 0;
+        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        measurementParts = measurementPartDefault;
 
         isExperimentRunning = false;
         machineOccupation = false;
@@ -5779,23 +5359,23 @@
 
         experimentEndLimits = {position: null, force: null, time: null};
         expControl = '';
-        startTime = null;
-        lastAcceptedTime = null;
         pendingDSLR = null;
         dataCount = null;
         maxForces = Array(loadCellNum).fill(null);
         timeData = [];
         positionData = [];
-        measureForces = Array(loadCellNum).fill(0).map(() => []);
-        forceData = Array(loadCellNum).fill(0).map(() => []);
-        meanForces = Array(loadCellNum).fill(0);
+        measureForces = Array(loadCellNum).fill(null).map(() => []);
+        forceData = Array(loadCellNum).fill(null).map(() => []);
+        tareValues.force = Array(loadCellNum).fill(0);
+        tareValues.position = null;
+        tareValues.time = null;
+        lastAcceptedTime = null;
         photoData = [];
-        // markersDist = [];
         aggregatedDataBetweenSteps = [];
-        zero_speed_counter = 0;
-        over_limitForce_counter = 0;
-        startPosition = 0;
-        minimumConditionCount = 2;
+        Object.values(measurement_limits).forEach(v => {
+            v.counter = 0;
+            v.limit = null;
+        });
         endMeasurement = false;
         clearTimeout(endMeasurementCounter)
         endMeasurementCounter = null;
@@ -6017,7 +5597,7 @@
             // First, try to match and resolve waiting messages in the queue
             const consumed = _tryMatchAndResolve(msg);
             if (consumed) {
-                if (debugging) logMessage(" 📯\t" + msg);
+                if (debugging) logMessage("   📯\t" + msg);
                 continue;             // If a message is consumed, skip further processing
             }
 
@@ -6077,7 +5657,7 @@
         }
 
         // TODO: zkontrolovat DSLR time relativně ke startu měření
-        const dslrTime = roundDecimalFast(dslrEvent.time - startTime, precisionTime);
+        const dslrTime = roundDecimalFast(dslrEvent.time - tareValues.time, precisionTime);
         const photoIndex = dslrEvent.photoIndex;
 
         if (!(prevData.time < nextData.time)) {
@@ -6142,7 +5722,7 @@
             return;
         }
 
-        const dslrTime = roundDecimalFast(dslrEvent.time - startTime, precisionTime);
+        const dslrTime = roundDecimalFast(dslrEvent.time - tareValues.time, precisionTime);
 
         const photoIndex = dslrEvent.photoIndex;
 
@@ -6195,17 +5775,10 @@
 
 
         // Log interpolated data
-        // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedPosition + startPosition).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedForce[0].toFixed(2)},${interpolatedForce[1].toFixed(2)},${interpolatedForce[2].toFixed(2)},    ${photoIndex}`);
+        // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedPosition + tareValues.position).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedForce[0].toFixed(2)},${interpolatedForce[1].toFixed(2)},${interpolatedForce[2].toFixed(2)},    ${photoIndex}`);
         addDataToLog(interpolatedData);
 
-        // addMarker(timeChart, markersTime, interpolatedData.time);
-        // addMarker(positionChart, markersDist, interpolatedData.position);
-        photoData.push(0);
-        timeData.push(interpolatedData.time);
-        positionData.push(interpolatedData.position);
-        for (let i = 0; i < loadCellNum; i++) {
-            forceData[i].push(interpolatedData.force[i]);
-        }
+        updateChart(interpolatedData);
 
         //TODO: zvážit zda dělat přidávání dat do průměrů:
         dataCount++;
@@ -6226,7 +5799,6 @@
     let pendingDSLR = null; // Store DSLR event until the next data arrives
     let dataCount = null;
     let dataChartInterval = 1; // Interval for live chart update
-    let startTime = null;
     let lastAcceptedTime = null;
 
 
@@ -6262,7 +5834,6 @@
 
 
     let aggregatedDataBetweenSteps = [];
-    let minimumConditionCount = 2;
     let displacementSignCorrection = 1;
     let loadSignCorrections = [-1, -1, -1];
 
@@ -6369,13 +5940,51 @@
         invalid_data: {counter: 0, limit: 2},
     };
 
-    async function processMeasurements(dataString) {
-        if (!takeMeasurements && !isExperimentRunning) {
+
+    function parseData(dataString) {
+
+        const parts = dataString.split(",");
+
+        if (!parts || parts?.length !== measurementParts.length) {
+            logMessage("🌡️ DS" + dataString);
+            return {};
+        } else {
             logMeasurements(dataString);
+        }
+
+        // Common parsing logic
+        const timeRaw = sum1D(measurementParts.time?.map(idx => parseFloat(parts[idx]))) * timeConversionDATAC; // Convert microseconds to seconds
+        const distRaw = sum1D(measurementParts.position?.map(idx => parseFloat(parts[idx]))); // Position value
+        const speedRaw = sum1D(measurementParts.speed?.map(idx => parseFloat(parts[idx]))); // Speed value
+        const forceRaw = measurementParts.force?.map((idx) => {
+            const val = parts[idx];
+            if (val === "0") return null;
+            const num = parseFloat(val);
+            return catchVal(num, null, isNum);
+        }); // LoadCell values
+        // const photoIndexRaw = measurementParts?.photoIndex != null ? parseInt(parts[measurementParts?.photoIndex]) : null; // DSLR photo index
+
+        return {
+            time: catchVal(timeRaw, null, isNum),
+            position: catchVal(distRaw, null, isNum),
+            speed: catchVal(speedRaw, null, isNum),
+            force: catchVal(forceRaw, null, isNonEmptyArr),
+            // photoIndex: catchVal(photoIndexRaw, null, Number.isInteger)
+        };
+    }
+
+    async function processMeasurements(dataString) {
+        const newData = parseData(dataString);
+
+        if (!takeMeasurements && !isExperimentRunning) {
+            await updateChart(newData);
             return;
         }
 
-        const parts = dataString.split(",");
+        if (takeMeasurements) { // Handle takeMeasurements
+            newData?.force?.forEach((value, index) => isNum(value) ? measureForces[index].push(value) : null);  // Collect force data for calibration
+            return;
+        }
 
         // Detect DSLR shoot event
         const DSLRPrefix = "LR shoot:";
@@ -6386,51 +5995,21 @@
             return;
         }
 
-        if (!parts || parts?.length !== measurementParts) {
-            logMessage("🌡️ DS" + dataString);
-            return;
-        } else {
-            logMeasurements(dataString);
-        }
-
-        // Common parsing logic
-        const forceRaw = parts?.slice(3).map(num => num === "0" ? null : parseFloat(num)); // LoadCell values
-
-        // TODO: do only Present loadcellls
-        const forceVal = forceRaw?.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - (meanForces[index] || 0), precisionForce));
-
-        if (takeMeasurements) { // Handle takeMeasurements
-            forceVal?.forEach((value, index) => isNum(value) ? measureForces[index].push(value) : null);  // Collect force data for calibration
-            return;
-        }
-
-        const timeRaw = parseFloat(parts[0]) * timeConversionDATAC; // Convert microseconds to seconds
-        const distVal = roundDecimalFast((parseFloat(parts[1]) - startPosition) * displacementSignCorrection, precisionPosition); // Position value
-        const speedVal = roundDecimalFast(parseFloat(parts[2]) * displacementSignCorrection, precisionSpeed); // Speed value
-
-        if (!isNum(timeRaw) || !isNum(distVal)) {
-            console.warn("⚠️ Invalid data received:", {timeRaw, distVal});
-            endMeasuring(0, 'data error', "⏹️ Movement stopped due to data error.", '', "MC STOP");
-            document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-            UI.experimentStageLabel.textContent = `Error`;
-            return;
-        }
-
-
         // Handle regular data (not DSLR)
-        let timeVal;
-        if (startTime === null) {
-            startTime = timeRaw;
-            timeVal = 0.000000;
+        if (!isNum(tareValues.time)) {
+            tareValues.time = newData?.time;
+            newData.time = 0.000000;
         } else {
             // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
-            const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), (timeRaw - startTime), (dataInterval_us * timeConversionDATAC));
-            timeVal = roundDecimalFast(corrected, precisionTime);
+            const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), (newData?.time - tareValues.time), (dataInterval_us * timeConversionDATAC));
+            newData.time = roundDecimalFast(corrected, precisionTime);
         }
-        lastAcceptedTime = timeVal;
+        lastAcceptedTime = newData?.time;
 
-
-        const newData = {time: timeVal, position: distVal, speed: speedVal, force: forceVal, photoIndex: null};
+        newData.position = roundDecimalFast((newData.position - tareValues.position) * displacementSignCorrection, precisionPosition);
+        newData.speed = roundDecimalFast(newData.speed * displacementSignCorrection, precisionSpeed);
+        // TODO: do only Present loadcellls
+        newData.force = newData?.force?.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - (tareValues.force[index] || 0), precisionForce));
 
         // If a pending DSLR timestamp exists, interpolate values
         if (takePhotos && pendingDSLR) {
@@ -6438,51 +6017,66 @@
             interpolateDSLRData(pendingDSLR, newData, clone);
         }
 
+        if (!isNum(newData?.time) || !isNum(newData?.position)) {
+            measurement_limits.invalid_data.counter++;
+
+            if (measurement_limits.invalid_data.counter > measurement_limits.invalid_data.limit) {
+                console.warn("⚠️ Invalid data received:", {time: newData?.time, position: newData?.position});
+                endMeasuring(0, 'data error', "⏹️ Movement stopped due to data error.", '', "MC STOP");
+                document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+                UI.experimentStageLabel.textContent = `Error`;
+            }
+            return;
+        } else {
+            measurement_limits.invalid_data.counter = 0;
+        }
+
         parsedData = newData;
 
-        if (experimentDoubleSpeed && forceVal.some(value => isNum(value) && value >= initialForceLim_N)) {
+        if (experimentDoubleSpeed === true && newData?.force?.some(value => isNum(value) && value >= initialForceLim_N)) {
             setSpeed(speedForward_mmps, false);
             experimentDoubleSpeed = false;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressSecondary-color)');
             UI.experimentStageLabel.textContent = `Loading`;
         }
 
-        const sumForce = forceVal.reduce((acc, val) => acc + (isNum(val) ? val : 0), 0);
+        // const sumForce = newData?.force?.reduce((acc, val) => acc + (isNum(val) ? val : 0), 0);
+        const sumForce = sumND(newData?.force); // TODO: check and optimize the speed of sum calculation
 
         if (sumForce >= stoppingForceLimit) {
-            over_limitForce_counter++;
+            measurement_limits.over_limitForce.counter++;
 
-            if (over_limitForce_counter > minimumConditionCount) {
+            if (measurement_limits.over_limitForce.counter > measurement_limits.over_limitForce.limit) {
                 checkSpeed = false; // disable speed check
                 endMeasuring(holdForceTimeMs, 'force limit', `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`, '', "MC STOP");
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressOnHold-color)');
                 UI.experimentStageLabel.textContent = `Holding`;
             }
         } else {
-            over_limitForce_counter = 0;
+            measurement_limits.over_limitForce.counter = 0;
         }
 
 
         // Handle speed checks and experiment stopping
-        if (checkSpeed && (speedVal < (1 / 1e2) && timeVal > 1)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - startTime) > 1 second => handled in 'timeStepCheck'
-            zero_speed_counter++;
+        if (checkSpeed && (newData?.speed < (1 / 1e2) && newData?.time > 1)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - tareValues.time) > 1 second => handled in 'timeStepCheck'
+            measurement_limits.zero_speed.counter++;
 
-            if (zero_speed_counter > minimumConditionCount) {
+            if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
                 endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), 'zero speed', "🛑 Experiment stopped due to zero speed.", '', takePhotos ? "DSLR STOP CYCLIC" : '');
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
                 UI.experimentStageLabel.textContent = `Stopped`;
             }
         } else {
-            zero_speed_counter = 0;
+            measurement_limits.zero_speed.counter = 0;
         }
 
 
         // Handle LoadCell limit checks
-        for (let i = 0; i < 3; i++) {
-            if (isNum(forceVal[i])) {
-                const currForce = forceVal[i];
-                if (currForce > maxForces[i]) maxForces[i] = currForce;
-                if (maxForces[i] || maxForces[i] === 0) {
+        for (let i = 0; i < loadCellNum; i++) {
+            const currForce = newData?.force[i];
+            if (isNum(currForce)) {
+                if (!isNum(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
+                if (isNum(maxForces[i])) {
                     if ((maxForces[i] - currForce) > (Math.abs(maxForces[i]) * forceLimitDropPercent) && (maxForces[i] - currForce) > forceLimitDropValue) {
                         endMeasuring(50, `loadCell[${i + 1}] drop`, `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxForces[i] - currForce)} > ${(Math.abs(maxForces[i]) * forceLimitDropPercent)} and Absolute: ${maxForces[i] - currForce} > ${forceLimitDropValue}.`, '', "MC STOP");
                         if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
@@ -6514,10 +6108,8 @@
         if (liveUpdate) {
             if (dataChartInterval === 1) {
                 await updateChart(newData);
-                photoData.push(null);
             } else if (dataCount % dataChartInterval === 0) {
                 await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
-                photoData.push(null);
             }
         }
         if (dataCount % dataChartInterval === 0) {
@@ -6567,12 +6159,10 @@
     // Store dataset
     let timeData = [];
     let positionData = [];
-    let forceData = Array(loadCellNum).fill(0).map(() => []);
+    let forceData = Array(loadCellNum).fill(null).map(() => []);
 
 
     let photoData = []; // List of time markers
-    // let markersDist = []; // List of position markers
-
 
     let timeChart;
     let positionChart;
@@ -6769,7 +6359,7 @@
 
             const timeDataTemp = [];
             const positionDataTemp = [];
-            const forceDataTemp = Array(loadCellNum).fill(0).map(() => []);
+            const forceDataTemp = Array(loadCellNum).fill(null).map(() => []);
             const aggregatedDataBetweenStepsTemp = [];
             const photoDataTemp = [];
 
@@ -6787,18 +6377,12 @@
             const forceRange = (forceMax - forceMin) * 0.125;
 
 
-            // dataEntries?.forEach(entry => {
-            //     if (isNum(entry.photoIndex)) {
-            //         // markersTimeTemp.push(entry.time); // Add `time` value to markersTime list
-            //         // markersDistTemp.push(entry.position); // Add `position` value to markersTime list
-            // });
-
-
             timeData = timeDataTemp;
             positionData = positionDataTemp;
             forceData = forceDataTemp;
             photoData = photoDataTemp;
 
+            // TODO: replace with 'updateChart' function
             timeChart.setData([timeDataTemp, ...forceDataTemp, photoDataTemp]);
             positionChart.setData([positionDataTemp, ...forceDataTemp, photoDataTemp]);
 
@@ -6825,12 +6409,6 @@
 
 
     // /////// uPlot Chart Initialization /////////
-
-    function addMarker(uplotInstance, list, xValue) {
-        list.push(xValue); // Add a marker to the list
-        // uplotInstance.redraw(); // Redraw graph
-    }
-
     function createChart(containerID, seriesLabels, title = "Graph", labelX = "", labelY = "") {
         // Get the container element
         let container = $$$(containerID);
@@ -6925,24 +6503,37 @@
      * Updates the charts with new data.
      */
 
-    function updateChart(data) {
+    function updateChart(inputData) {
 
-        // Check if the data is valid
-        if (!isNum(data.time) || !isNum(data.position) || data.force.every(x => !isNum(x))) { //  || data.force.some(!isNum)
-            return;
-        }
+        const chartData = checkArray(inputData);
 
-        // Add new data points
-        timeData.push(data.time);
-        positionData.push(data.position);
-        data.force?.forEach((value, index) => forceData[index].push(value));
+        if (isNonEmptyArr(chartData)) return;
+
+        for (let i = 0; i < chartData.length; i++) {
+            const data = chartData[i];
+
+            if (!isObj(data)) continue;
+
+            // Check if the data is valid
+            if (!isNum(data.time) || !isNum(data.position)) {
+                //   || data.force.every(x => !isNum(x))   ///    || data.force.some(!isNum)
+                return;
+            }
+
+            // Add new data points
+            timeData?.push(data.time);
+            positionData?.push(data.position);
+            data.force?.forEach((value, index) => forceData[index].push(value));
+            photoData?.push(isNum(data.photoIndex) ? 0 : null); // Mark photo event
 
 
-        // Maintain max data points
-        if (timeData.length > maxDataPoints) {
-            timeData.shift();
-            positionData.shift();
-            forceData?.forEach(dataset => dataset.shift());
+            // Maintain max data points
+            if (timeData?.length > maxDataPoints) {
+                timeData?.shift();
+                positionData?.shift();
+                forceData?.forEach(dataset => dataset?.shift());
+                photoData?.shift();
+            }
         }
 
         // Update charts
@@ -6969,8 +6560,8 @@
         // photoData = [];
         // forceData?.forEach((_) => []);
 
-        await timeChart.setData(Array(loadCellNum + 1 + 1).fill(0).map(() => []));
-        await positionChart.setData(Array(loadCellNum + 1 + 1).fill(0).map(() => []));
+        await timeChart.setData(Array(loadCellNum + 1 + 1).fill(null).map(() => []));
+        await positionChart.setData(Array(loadCellNum + 1 + 1).fill(null).map(() => []));
 
         await timeChart.setScale("y", {min: 0, max: 1e-10});
         await positionChart.setScale("y", {min: 0, max: 1e-10});
@@ -7246,7 +6837,7 @@
             if (debugging) logMessage(" 📢\tCheck Loadcells presence...");
 
             const isPresent = [];
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < loadCellNum; i++) {
                 const force = await getPromisedValue(`LC READ LOADCELL[${i}]`, /.../, 1, timeOut);
 
                 if (!(!isVal(force) || force === '0' || force === '-0')) {
@@ -7744,7 +7335,7 @@
                 }
             }
 
-            if (experimentDoubleSpeed) {
+            if (experimentDoubleSpeed === true) {
                 if (!isNum(initialSpeed_mmps) || initialSpeed_mmps < minFSpeed) {
                     console.warn(`\n⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
@@ -7794,9 +7385,6 @@
                 isReadingSerial = true;
                 readSerial();
             }
-
-            dataChartInterval = calculateStep(dataInterval_us, 150, 1);
-            minimumConditionCount = calculateStep(dataInterval_us, 50, 3);
 
             await sleep(5); // Stop for 5 ms
 
@@ -7895,25 +7483,39 @@
             // === Experiment Parameters ===
             if (await $$$('inputClearCalculations').checked) await clearCalculations();
 
+            maxDataPoints = maxDataPointsExp;
 
             // === Reset Variables ===
-            startTime = null;
+            tareValues.time = null;
             lastAcceptedTime = null;
             maxForces = Array(loadCellNum).fill(null);
             timeData = [];
             positionData = [];
-            forceData = Array(loadCellNum).fill(0).map(() => []);
-            measureForces = Array(loadCellNum).fill(0).map(() => []);
-            meanForces = Array(loadCellNum).fill(0);
+            forceData = Array(loadCellNum).fill(null).map(() => []);
+            measureForces = Array(loadCellNum).fill(null).map(() => []);
+            tareValues.force = Array(loadCellNum).fill(0);
             photoData = [];
 
-            measurementParts = 6; // TODO: adjust if needed by type of experiments, loadcells, etc.
+            measurementParts = {
+                length: null,
+                time: [0],
+                position: [1],
+                speed: [2],
+                force: [3, 4, 5],
+            }; // TODO: adjust if needed by type of experiments, loadcells, etc.
+
+            measurementParts.length = getMeasurementPartsLength(measurementParts);
+
+            dataChartInterval = calculateStep(dataInterval_us, 150, 1);
+            const minimumConditionCount = calculateStep(dataInterval_us, 50, 3);
 
             aggregatedDataBetweenSteps = [];
             dataCount = 0;
-            zero_speed_counter = 0;
-            over_limitForce_counter = 0;
-            startPosition = 0;
+            Object.values(measurement_limits).forEach(v => {
+                v.counter = 0;
+                v.limit = minimumConditionCount;
+            });
+            tareValues.position = null;
             checkSpeed = true;
             endedBy = null;
             pendingDSLR = null;
@@ -7942,11 +7544,11 @@
 
 
             // === Prepare Data Collection ===
-            startPosition = await measurePosition();
+            tareValues.position = await measurePosition();
             $$$("returnPositionExperimentBtn")?.classList.remove("disabled");
             $$$("returnPositionExperimentBtn").readOnly = false;
             $$$("returnPositionExperimentBtn").tabIndex = 1;
-            $$$("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${startPosition} mm`;
+            $$$("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${tareValues.position} mm`;
             await sleep(5); // Stop for 5 ms
 
 
@@ -7996,9 +7598,6 @@
 
 
             await addDataToLog(parsedData);
-            if (takePhotos) {
-                photoData.push(0);
-            }
             await updateChart(parsedData);
 
             UI.experimentStageLabel.textContent = `Tarring`;
@@ -8019,7 +7618,7 @@
             await sendCommandGeneral("DATAC 0");
 
             // --- 2) Mean forces ---
-            meanForces = measureForces.map(force => roundDecimalFast(force.reduce((a, b) => a + b, 0) / force.length, 2));
+            tareValues.force = meanND(measureForces, 1).map(force => roundDecimalFast(force, precisionForce));
 
             // --- 3) Analysis ---
             const forceAnalysis = await analyzeForces(measureForces);
@@ -8079,7 +7678,7 @@
             console.info("Final error rate:", totalErrRate, "N");
 
             // --- 9) Clear force fields ---
-            measureForces = Array(loadCellNum).fill(0).map(() => []);
+            measureForces = Array(loadCellNum).fill(null).map(() => []);
 
             await sleep(5); // Stop for 5 ms
 
@@ -8088,7 +7687,7 @@
             // === Reset Experiment Variables ===
 
             positionProgress = 0
-            startTime = null;
+            tareValues.time = null;
             lastAcceptedTime = null;
             isExperimentRunning = true;
             endMeasurement = false;
@@ -8102,7 +7701,7 @@
 
             await sleep(5); // Stop for 5 ms
 
-            if (experimentDoubleSpeed) UI.experimentStageLabel.textContent = `Initial`;
+            if (experimentDoubleSpeed === true) UI.experimentStageLabel.textContent = `Initial`;
             else UI.experimentStageLabel.textContent = `Loading`;
 
             await sleep(10); // Stop for 10 ms
@@ -8203,6 +7802,7 @@
             document.title = initialTitle;
 
             UI.experimentStageLabel.textContent = `Idle`;
+            maxDataPoints = maxDataPointsIdle;
 
             if (isConnected) endedMoving();    // unlock UI and watchdog
             await console.info("✅ Experiment completed.");
@@ -8806,7 +8406,554 @@
 
 </script>
 
+
 <script>
+    function collectExpSettings(selector, schema = null) {
+        if (isEmptyStr(selector)) return [];
+        const nodes = Array.from($$(selector));
+        const inputs = {};
+
+        for (const el of nodes) {
+            const key = el.dataset.key || el.name || el.id; // preferuj data-key
+            if (!key) continue;
+
+            let val;
+            if (el.type === "checkbox") val = !!el.checked;
+            else if (el.type === "number") val = el.value === "" ? null : +el.value;
+            else if (el.tagName === "SELECT") val = el.value;
+            else val = el.value;
+
+            const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
+
+
+            inputs[key] = {
+                value: isInvalidValue(val) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('±', '') : val), // null pro prázdné/invalidní hodnoty
+                type: el.type || el.tagName.toLowerCase(),         // např. "number", "checkbox", "text", "select"
+                label: el.dataset.label || el.placeholder || key,  // volitelně pro hezčí zobrazení
+                classes: el.className || null,                     // volitelně pro další filtrování
+
+                extra: {
+                    unit: el.dataset.unit || null,  // jednotka
+                    essence: essence || null, // např. "force", "disp", "stress", "modulus", "area", "iy", "hardness"
+                    description: el.dataset.description || null, // volitelný popis
+                }
+            };
+        }
+
+        return {
+            selector: selector,
+            schema: schema,
+            version: 1,
+            timestamp: new Date().toISOString(),
+            inputs,
+        };
+    }
+
+    async function restoreExpSettingsToUI(settings, {
+        customSelector = undefined,
+        customKey = undefined,
+        fireEvents = false,
+    } = {}) {
+
+        const keys = [];
+        if (customKey) {
+            keys.push(String(customKey));
+        } else {
+            if (settings?.generalSettings) keys.push('generalSettings');
+            if (settings?.machineSettings) keys.push('machineSettings');
+            if (settings?.deviceSettings) keys.push('deviceSettings');
+            if (settings?.chartSettings) keys.push('chartSettings');
+            if (settings?.expSettings) keys.push('expSettings');
+            if (settings?.calcSettings) keys.push('calcSettings');
+        }
+
+        const results = [];
+        for (const key of keys) {
+            if (!settings[key]) continue;
+            const r = await restoreSettingsToUI(settings[key], {customSelector, fireEvents});
+            results.push({key, ...r});
+        }
+
+        const ok = results.some(r => r.ok);
+        const summary = results.reduce((acc, r) => {
+            acc.tried += 1;
+            acc.ok |= r.ok;
+            acc.totalNodes += r.foundNodes || 0;
+            acc.applied += r.appliedCount || 0;
+            acc.missingKeys += (r.missingKeys?.length || 0);
+            return acc;
+        }, {tried: 0, ok: false, totalNodes: 0, applied: 0, missingKeys: 0});
+
+        return {ok, results, summary};
+    }
+
+    const setElValue = (el, val, fire) => {
+        const tag = el.tagName.toLowerCase();
+        const type = (el.type || "").toLowerCase();
+
+        if (fire == null) fire = (el) => {
+            if (!fireEvents) return;
+            el.dispatchEvent(new Event("input", {bubbles: true}));
+            el.dispatchEvent(new Event("change", {bubbles: true}));
+            el.dispatchEvent(new Event("blur", {bubbles: true}));
+        };
+
+        if (type === "checkbox") {
+            el.checked = !!val;
+            fire(el);
+            return true;
+        }
+        if (type === "radio" && el.name) {
+            $$(`input[type="radio"][name="${CSS.escape(el.name)}"]`)
+                ?.forEach(r => {
+                    r.checked = (String(r.value) === String(val));
+                    fire(r);
+                });
+            return true;
+        }
+        if (tag === "select") {
+            if (el.multiple && isArr(val)) {
+                const set = new Set(val.map(String));
+                Array.from(el.options)?.forEach(opt => {
+                    opt.selected = set.has(String(opt.value));
+                });
+            } else {
+                el.value = val || "";
+            }
+            fire(el);
+            return true;
+        }
+        if (type === "number" || type === "range") {
+            let v = val;
+            if (typeof v === "string" && v.includes(",")) v = v.replace(",", ".");
+            if (v == null || v === "") el.value = "";
+            else if (Number.isFinite(+v)) ("valueAsNumber" in el) ? el.valueAsNumber = +v : el.value = String(+v);
+            else el.value = "";
+            fire(el);
+            return true;
+        }
+        el.value = (val || "");
+        fire(el);
+        return true;
+    };
+
+    async function restoreSettingsToUI(settings, {
+        customSelector = undefined,
+        fireEvents = false,
+    } = {}) {
+
+        const report = {
+            ok: false,
+            selector: null,
+            foundNodes: 0,
+            appliedCount: 0,
+            missingKeys: [],
+            unusedEls: [],
+            details: [] // {key, found, applied, reason}
+        };
+
+        let selector = customSelector;
+        if (!settings?.inputs) {
+            report.details.push({key: null, found: 0, applied: false, reason: 'no-inputs'});
+            return report;
+        }
+        if (!customSelector || isEmptyStr(customSelector)) selector = settings.selector;
+        report.selector = selector;
+        if (!selector || isEmptyStr(selector)) {
+            report.details.push({key: null, found: 0, applied: false, reason: 'no-selector'});
+            return report;
+        }
+
+        const nodes = Array.from($$(selector));
+        report.foundNodes = nodes.length;
+        if (!nodes.length) {
+            report.details.push({key: null, found: 0, applied: false, reason: 'no-nodes'});
+            return report;
+        }
+
+        // index dle data-key | name | id
+        const index = new Map();
+        for (const el of nodes) {
+            const key = el.dataset.key || el.name || el.id;
+            if (!key) {
+                report.unusedEls.push(el);
+                continue;
+            }
+            (index.get(key) || index.set(key, []).get(key)).push(el);
+        }
+
+        const fire = (el) => {
+            if (!fireEvents) return;
+            el.dispatchEvent(new Event("input", {bubbles: true}));
+            el.dispatchEvent(new Event("change", {bubbles: true}));
+            el.dispatchEvent(new Event("blur", {bubbles: true}));
+        };
+
+
+        // aplikuj hodnoty
+        for (const [key, meta] of Object.entries(settings.inputs)) {
+            const els = index.get(key);
+            if (!els?.length) {
+                report.missingKeys.push(key);
+                report.details.push({key, found: 0, applied: false, reason: 'no-match'});
+                continue;
+            }
+
+            try {
+                if (els[0].type === "radio") {
+                    setElValue(els[0], meta.value, fire);
+                } else if (els[0].tagName.toLowerCase() === "select" && els[0].multiple) {
+                    setElValue(els[0], isArr(meta.value) ? meta.value : [meta.value], fire);
+                } else {
+                    setElValue(els[0], meta.value, fire);
+                }
+                report.appliedCount += 1;
+                report.details.push({key, found: els.length, applied: true});
+            } catch (e) {
+                report.details.push({key, found: els.length, applied: false, reason: String(e?.message || e)});
+            }
+        }
+
+        report.ok = report.appliedCount > 0;
+        return report;
+    }
+
+    async function applyCsvToUI(csvText, opts) {
+        const settings = await parseSettingsFromCsv(csvText);
+        if (!settings) return {ok: false, reason: 'parse-failed', settings: null, results: []};
+        const res = await restoreExpSettingsToUI(settings, opts); // { ok, results, summary }
+        return {ok: !!res.ok, settings, ...res};
+    }
+
+    async function processFile(file) {
+        const text = await file.text();
+        const res = await applyCsvToUI(text, {fireEvents: true});
+
+        const nameEl = $$$("loadedFileName");
+
+        if (res.ok) {
+            nameEl.textContent = `✅ Loaded: ${file.name} — applied ${res.summary.applied} fields`;
+            console.groupCollapsed(`✔️ Settings applied (${file.name})`);
+            console.table(res.results.map(r => ({
+                key: r.key,
+                selector: r.selector,
+                nodes: r.foundNodes,
+                applied: r.appliedCount,
+                missingKeys: r.missingKeys.length
+            })));
+            res.results?.forEach(r => {
+                if (r.missingKeys.length) {
+                    console.groupCollapsed(`⚠️ Missing keys in ${r.key}`);
+                    console.info(r.missingKeys);
+                    console.groupEnd();
+                }
+            });
+            console.groupEnd();
+        } else {
+            nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
+            console.warn('\nDetails:', res);
+            alert("⚠️ In file are missing or are invalid meta data: (##MOIRA_EMETA=...).");
+        }
+    }
+
+    // ===== Ovládací logika tlačítka =====
+    const btnLoadCSV = $$$("btnLoadSettings");
+    const inputLoadCSV = $$$("appFileInput");
+
+    btnLoadCSV.addEventListener("click", async () => {
+        if ("showOpenFilePicker" in window) {
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{description: "CSV", accept: {"text/csv": [".csv"]}}],
+                    excludeAcceptAllOption: false,
+                    multiple: false
+                });
+                const file = await handle.getFile();
+                await processFile(file);
+                return;
+            } catch (e) {
+                if (e?.name === "AbortError") return; // uživatel zrušil
+                console.warn("showOpenFilePicker failed, falling back to <input type=file>:", e);
+            }
+        }
+        // fallback
+        inputLoadCSV.click();
+    });
+
+    inputLoadCSV.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        await processFile(file);
+        inputLoadCSV.value = ""; // reset pro další výběr stejného souboru
+    });
+
+
+    // --- gzip / gunzip (preferuj nativní streamy; fallback pako) ---
+    async function gzipBytes(u8) {
+        if (typeof CompressionStream !== "undefined") {
+            const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream("gzip"));
+            const buf = await new Response(stream).arrayBuffer();
+            return new Uint8Array(buf);
+        } else if (self.pako?.gzip) {
+            // level 6 je rychlá a rozumně kompaktní volba
+            return self.pako.gzip(u8, {level: 6});
+        }
+        throw new Error("No gzip available (CompressionStream/pako).");
+    }
+
+    function looksLikeGzip(u8) {
+        return u8 && u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b;
+    }
+
+    async function gunzipBytes(u8) {
+        if (!looksLikeGzip(u8)) throw new Error("Data do not look like gzip format.");
+        if (typeof DecompressionStream !== "undefined") {
+            const stream = new Blob([u8]).stream()
+                .pipeThrough(new DecompressionStream("gzip"));
+            const buf = await new Response(stream).arrayBuffer();
+            return new Uint8Array(buf);
+        } else if (self.pako?.ungzip) {
+            return self.pako.ungzip(u8); // pako fallback
+        }
+        throw new Error("No gunzip available (DecompressionStream/pako).");
+    }
+
+    // --- tvorba preambule (vybere kratší z gzip/plain) ---
+    async function settingsToCsvPreamble(settings) {
+        const json = JSON.stringify(settings);
+        const plainB64 = u8ToB64(te.encode(json));
+
+        let gzipB64 = null;
+        try {
+            const gz = await gzipBytes(te.encode(json));
+            gzipB64 = u8ToB64(gz);
+        } catch (err) {
+            // nemáme gzip => zůstaneme u plain
+        }
+
+        if (gzipB64 && gzipB64.length < plainB64.length) {
+            return `##MOIRA_METAZ=${gzipB64}`;
+        } else {
+            return `##MOIRA_METAP=${plainB64}`;
+        }
+    }
+
+    // --- čtení preambule z 1. řádku ---
+    async function readSettingsFromPreamble(line) {
+        // odstraň BOM na začátku, kdyby se vyskytl
+        line = line.replace(/^\uFEFF/, "");
+
+        if (line.startsWith("##MOIRA_METAZ=")) {
+            const b64 = line.slice("##MOIRA_METAZ=".length).trim();
+            const u8 = b64ToU8(b64);
+            const unz = await gunzipBytes(u8);
+            return JSON.parse(td.decode(unz));
+        }
+        if (line.startsWith("##MOIRA_METAP=")) {
+            const b64 = line.slice("##MOIRA_METAP=".length).trim();
+            const json = td.decode(b64ToU8(b64));
+            return JSON.parse(json);
+        }
+        throw new Error("Unknown MOIRA_META prefix.");
+    }
+
+    // --- parsing z celého CSV textu (vrátí objekt nebo null) ---
+    async function parseSettingsFromCsv(csvText) {
+        if (!csvText) return null;
+        // vezmi jen první řádku; split(limit=1) vrací pole => [0]
+        const firstLine = (csvText.split(/\r?\n/, 1)[0] || "").replace(/^\uFEFF/, "");
+        // rozpoznej prefix a zbytek jako Base64
+        const m = firstLine.match(/^##MOIRA_META([ZP])=([A-Za-z0-9+/=]+)\s*$/);
+        if (!m) return null;
+
+        try {
+            return await readSettingsFromPreamble(firstLine);
+        } catch (e) {
+            console.error("❌ Invalid settings JSON in MOIRA_META:", e);
+            return null;
+        }
+    }
+
+</script>
+
+
+<script>
+    // /////// Saving Log to File /////////
+
+    /**
+     * Saves the stored log entries from IndexedDB to a downloadable CSV file.
+     */
+    // Event listener for the save button
+    $$$("saveData")?.addEventListener("click", saveCSV);
+
+
+    let handFolderSelect = false;
+
+    function toggleDirectorySelector() {
+        handFolderSelect = !handFolderSelect;
+    }
+
+    async function saveCSV() {
+        let dirHandle = null;
+        // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
+        const delimiterSymbolVal = await $$$("delimiterSymbol").value || "Option-Semicolon";
+        let delimiter = await (delimiterSymbolVal === "Option-Comma" ? "," : delimiterSymbolVal === "Option-Semicolon" ? ";" : delimiterSymbolVal === "Option-Tab" ? "\t" : delimiterSymbolVal === "Option-Space" ? " " : ";") || ";";
+        // Decimal symbol for CSV file "." = dot, "," = comma
+        const decimalSymbol = await ($$$("decimalSymbol").value === "Option-Comma" ? "," : ".") || ".";
+
+        // 6 of random symbols that are unlikely to be in the data
+        const delimiterPlaceHolder = "§" + Math.random().toString(36).substring(2, 4) + Math.random().toString(36).substring(2, 4) + Math.random().toString(36).substring(2, 4) + "§";
+
+        if (decimalSymbol === "," && delimiter === ",") delimiter = ";"; // If comma is selected as decimal symbol, use semicolon as delimiter to avoid conflicts
+
+
+        const expNum = parseInt($$$("experimentCount").value.trim()) || 0;
+        const experimentName = $$$("experimentName").value.trim();
+        const experimentDesc = $$$("experimentDesc").value.replaceAll(/(\r\n|\n|\r)/gm, " ").trim();
+
+        handFolderSelect = $$$("storagePath").checked || false;
+
+        if (!experimentName) {
+            alert("Unable to save the data.\n    Please enter the experiment type.");
+            return;
+        }
+
+        let experimentCount
+        if (expNum) {
+            experimentCount = `_${expNum.toString().padStart(3, "0")}`;
+        } else {
+            experimentCount = "";
+        }
+        const fileName = `${experimentName}${experimentCount}.csv`;
+
+        let fileHandle;
+        if (handFolderSelect) {
+            try {
+                dirHandle = await window.showDirectoryPicker(); // User selects a folder
+            } catch (error) {
+                console.error("❌ Folder selection canceled or error occurred:", error);
+                return;
+            }
+            fileHandle = await dirHandle.getFileHandle(fileName, {create: true});
+
+        } else {
+            fileHandle = {name: `${fileName}`}; // Simulated save outside File System Access API
+        }
+
+        let transaction = db.transaction(STORE_NAME, "readonly");
+        let store = transaction.objectStore(STORE_NAME);
+        let request = store.getAll();
+
+        // Helper rounding functions
+        const getRoundVal = (x, dec, decSym) => getCustomStrValue(x, dec, decSym, false, true, "");
+
+        const rTime = (num) => getRoundVal(num, precisionTime, decimalSymbol);
+        const rDist = (num) => getRoundVal(num, precisionPosition, decimalSymbol);
+        const rForce = (num) => getRoundVal(num, precisionForce, decimalSymbol);
+        const rSpeed = (num) => getRoundVal(num, precisionSpeed, decimalSymbol);
+        const rPhoto = (num) => getRoundVal(num, 0, decimalSymbol);
+
+        request.onsuccess = async function () {
+            let dataEntries = request.result;
+
+            if (!dataEntries || dataEntries.length === 0) {
+                console.warn("\n⚠️ No data to save.");
+                alert("⚠️ No data to save. Ensure experiment has been run.");
+                return;
+            }
+            const experimentInfo = dataEntries[0];
+
+            dataEntries.shift(); // Skip the first entry (initial values)
+
+            const settings = experimentInfo || {};
+            settings.id = undefined; // Remove id from metadata
+
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            settings.headerVersion = 1;
+            settings.columns = 6;
+            settings.skipRows = 6;
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            settings.calcSettings = collectExpSettings(".calcInput", "Moira-calc-settings") || {};
+            settings.decimalSymbol = decimalSymbol;
+            settings.delimiter = delimiter;
+
+            let content = '';
+
+            const dateFormat = getLocaleOrder();
+
+            const basicInfo = [
+                `Date [${dateFormat.date} ${dateFormat.time}]:`, experimentInfo.experimentDate,
+                'Experiment type:', experimentInfo.experimentLabel,
+                'Experiment end:', experimentInfo.endStatus,
+                'Loading speed (mm/s):', experimentInfo.loadSpeed,
+                'Load distance (mm):', experimentInfo.loadDistance,
+                'Loadcell capacity (kg):', experimentInfo.loadcellCapacity.join('/'),
+                'Software version:', `v${experimentInfo.appSoftWare}`,
+                'Firmware version:', `v${experimentInfo.machineFirmware}`,
+            ];
+
+            const head = [
+                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', 'Loadcell 1 [N]', 'Loadcell 2 [N]', 'Loadcell 3 [N]', 'Photo Index'
+            ];
+
+
+            content += (await settingsToCsvPreamble(settings)).replace(/ /g, "").replace(/^\uFEFF/, "");
+            content += '\n';
+            content += `\n${basicInfo.join(delimiterPlaceHolder)}`;
+            content += `\nDescription:${delimiterPlaceHolder}${experimentDesc}`;
+            content += '\n';
+            content += `\n${head.join(delimiterPlaceHolder)}`;
+
+
+            if (delimiter === ",") experimentDesc.replaceAll(",", ".");
+            // Remove delimiter from description to avoid confusion in space-delimited files (CSV)
+            if (delimiter === " ") {
+                content = content.replaceAll(/ /g, "_");
+            } else {
+                content = content.replaceAll(delimiter, "|");
+
+            }
+
+            content = content.replaceAll(delimiterPlaceHolder, delimiter); // Replace placeholder with actual delimiter
+
+            dataEntries?.forEach(entry => {
+                const dataRow = [rTime(entry.time), rDist(entry.position), rSpeed(entry.speed), ...entry.force.map(rForce), rPhoto(entry.photoIndex)];
+                if (dataRow.some(d => d !== "")) content += `\n${dataRow.join(delimiter)}`; // Only add rows with at least one non-empty value
+            });
+
+            if (handFolderSelect) {
+                // Save the file to the selected folder using File System Access API
+                const writable = await fileHandle.createWritable();
+                await writable.write(`\uFEFF${content}`); // Add BOM for correct UTF-8 encoding
+                await writable.close();
+            } else {
+                // Simulated file download (browsers don't allow direct writes)
+                const blob = new Blob([`\uFEFF${content}`], {type: "text/csv;charset=utf-8"});
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = fileHandle.name.split("/").pop();
+                link.click();
+            }
+
+            if (expNum) {
+                $$$("experimentCount").value = expNum + 1;
+                $$$("experimentCount")?.dispatchEvent(new Event("change", {bubbles: true}));
+            }
+
+            console.info(`✅ Data saved to file: ${fileName}`);
+
+            // Clear IndexedDB after saving
+            let deleteTransaction = db.transaction(STORE_NAME, "readwrite");
+            let deleteStore = deleteTransaction.objectStore(STORE_NAME);
+            deleteStore.clear().onsuccess = () => console.info("🗑️ Data from IndexedDB cleared after saving.");
+        };
+    }
+
+</script>
+
+<script>
+
     function waitForXLSX() {
         return new Promise((resolve, reject) => {
             const ok = () => window.XLSX ? resolve() : setTimeout(ok, 50);
@@ -8973,16 +9120,18 @@
             };
 
             const delimiters = [";", ",", "\t", " "];
+
             const getMetaValue = (metaData, key, unit = null) => {
                 if (!isObj(metaData)) return "";
+
                 if (metaData.hasOwnProperty(key)) {
-                    const value = metaData[key]?.value || "";
+                    let value = metaData[key]?.value || "";
                     if (!hasValue(value)) return "";
+
                     const valUnit = metaData[key].unit || null;
-                    if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) {
-                        return convertUnits(value, valUnit, unit) || "";
-                    }
-                    return value || "";
+                    if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) value = convertUnits(value, valUnit, unit);
+
+                    return catchVal(value, "", isInvalidValue);
                 }
                 return "";
             };
@@ -9586,7 +9735,7 @@
             ensureRefFromAoa(wsResults, resultsData);
 
 
-// wsSamples rich-text
+            // wsSamples rich-text
             setRichBaseSub(wsSamples, 0, 12, "l", "0", "\n(mm)");
             setRichBaseSub(wsSamples, 1, 4, "h", "w");
             setRichBaseSub(wsSamples, 1, 5, "l", "w");
@@ -9598,7 +9747,7 @@
             setRichBaseSub(wsSamples, 1, 11, "m", "0");
 
 
-// wsResults rich-text (HEAD)
+            // wsResults rich-text (HEAD)
             setRich(wsResults, 0, 8, [{text: "F"}, {text: "max", sub: true}, {text: " (N)"}]);
             setRich(wsResults, 0, 9, [{text: "w"}, {text: "Fmax", sub: true}, {text: " (mm)"}]);
             setRich(wsResults, 0, 10, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
@@ -9974,7 +10123,7 @@
                         await navigator.clipboard.writeText(val);
                         ok = true;
                     }
-                } catch {
+                } catch (err) {
                     try {
                         if (el.select) {
                             const s = el.selectionStart, e = el.selectionEnd;
@@ -9989,7 +10138,7 @@
                             }
                             el.blur();
                         }
-                    } catch {
+                    } catch (err) {
                         ok = false;
                     }
                 } finally {
@@ -10060,7 +10209,7 @@
                     }
                     btn.dataset.state = 'set';
                     return true;
-                } catch {
+                } catch (err) {
                     return false;
                 }
             };
