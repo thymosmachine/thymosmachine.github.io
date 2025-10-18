@@ -1512,19 +1512,19 @@
                         title="Connect to the Thymos machine by selecting USB port.">
                     🔌 Connect via USB
                 </button>
-                <div data-level="4"><label for="inputNumBaudRate">Baud-Rate:
+                <div data-level="3"><label for="inputNumBaudRate">Baud-Rate:
                     <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
                            value="921600" min="1">
                 </label>
                 </div>
             </div>
-            <div class="inlineDiv">
+            <div class="inlineDiv" data-level="4">
                 <button id="connectBtnBluetooth" class="connectBtn"
                         title="Connect to the Thymos machine via Bluetooth.">
                     📶 Connect via Bluetooth
                 </button>
             </div>
-            <div class="inlineDiv">
+            <div class="inlineDiv" data-level="4">
                 <button id="connectWiFiBtn" class="connectBtn" title="Connect to the Thymos machine via Wi-Fi.">
                     🌐 Connect via Wi-Fi
                 </button>
@@ -2558,23 +2558,31 @@
     const isNumber = (x) => typeof x === 'number';
     const isBigInt = (x) => typeof x === 'bigint';
     const isArr = (x) => Array.isArray(x);
+    const isEmptyArr = (x) => isArr(x) && x.length === 0;
     const isNonEmptyArr = (x) => isArr(x) && x.length > 0;
     const isStr = (x) => typeof x === 'string';
+    const isEmptyStr = (x) => isStr(x) && x.trim() === '';
+    const isNonEmptyStr = (x) => isStr(x) && x.trim() !== '';
     const isBool = (x) => typeof x === 'boolean';
     const isFunc = (x) => typeof x === 'function';
     const isObj = (x) => x !== null && typeof x === 'object' && !isArr(x);
+    const isEmptyObj = (x) => isObj(x) && Object.keys(x).length === 0;
+    const isNonEmptyObj = (x) => isObj(x) && Object.keys(x).length > 0;
     const isSymbol = (x) => typeof x === 'symbol';
     const isUndefined = (x) => typeof x === 'undefined';
     const isNull = (x) => x === null;
     const isDef = (x) => !isUndefined(x) && !isNull(x);
-    const isEmptyStr = (x) => isStr(x) && x.trim() === '';
-    const isNonEmptyStr = (x) => isStr(x) && x.trim() !== '';
-
 
     const isNum = (x) => isFiniteNumber(x, false); // only Finite numbers
     const isVal = (x) => isNum(x) || !isEmptyStr(x); // only Finite numbers or non-empty strings
     const isAny = (x) => isNotEmpty(x) && x !== false; // all except undefined, null and NaN
     const isOk = (x) => isAny(x) && !isInvalidValue(x); // all except undefined, null, NaN and false
+
+    const not = (fn) => {
+        return function (...args) {
+            return !fn.apply(this, args);
+        }
+    };
 
     const isValidInput = (x) => isFiniteNumber(x, false) && x > 0;
 
@@ -8758,10 +8766,21 @@
     }
 
     // --- parsing z celého CSV textu (vrátí objekt nebo null) ---
-    async function parseSettingsFromCsv(csvText) {
-        if (!csvText) return null;
-        // vezmi jen první řádku; split(limit=1) vrací pole => [0]
-        const firstLine = (csvText.split(/\r?\n/, 1)[0] || "").replace(/^\uFEFF/, "");
+    async function parseSettingsFromCsv(csvData) {
+        if (!isNotEmpty(csvData)) return null;
+
+        let firstLine;
+        if (isStr(csvData)) {
+            // vezmi jen první řádku; split(limit=1) vrací pole => [0]
+            firstLine = (csvData.split(/\r?\n/, 1)[0] || "");
+        } else if (isArr(csvData)) {
+            firstLine = (csvData[0] || "");
+        } else {
+            return null;
+        }
+
+        firstLine = firstLine.replace(/^\uFEFF/, "").trim();
+
         // rozpoznej prefix a zbytek jako Base64
         const m = firstLine.match(/^##MOIRA_META([ZP])=([A-Za-z0-9+/=]+)\s*$/);
         if (!m) return null;
@@ -8954,6 +8973,385 @@
 
 <script>
 
+
+    async function getCSVData(csvData, fileOptions = {}, fileName = '') {
+        if (!isNonEmptyStr(csvData)) return null; //  || isNonEmptyArr(csvData)
+        if (!isNonEmptyObj(fileOptions)) return null;
+
+        function setupParsers(head, fileSet, outputs) {
+            // --- sanity checks ---
+            if (!isStr(head)) {
+                console.warn("\n⚠️ Cannot setup parsers, head is not an array.");
+                return {};
+            }
+            if (!fileSet || !fileSet.delimiter) {
+                console.warn("\n⚠️ Cannot setup parsers, missing delimiter or fileSet.");
+                return {};
+            }
+            if (!fileSet.dataTypes) fileSet.dataTypes = {};
+
+            // --- helpers ---
+            const getUnitFromHeader = (header) => {
+                if (isEmptyStr(header)) return null;
+                // nechávám tvůj vzor; případně rozšířit o číslice, lomítka apod.
+                const match = String(header).match(/[\(\[]\s*([a-zA-Z%μμmNnkgkPaasS]+)\s*[\)\]]/);
+                return match ? match[1] : null;
+            };
+
+            // --- 1) hlavička ---
+            const headerParts = head.split(fileSet.delimiter).map(s => String(s).trim());
+            const headerUnits = headerParts.map(part => getUnitFromHeader(part) || '');
+
+            // mapa synonym z outputs[*].key (čárkami oddělené)
+            const types = Object.keys(outputs || {});
+            const keysByType = Object.fromEntries(
+                types.map(t => [
+                    t,
+                    String(outputs[t]?.key || t)
+                        .toLowerCase()
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean),
+                ])
+            );
+
+            // pro každý sloupec rozhodni typ dle substringů
+            const headerTypes = headerParts.map(part => {
+                const p = String(part).toLowerCase();
+                for (const t of types) {
+                    if (keysByType[t].some(k => k && p.includes(k))) return t;
+                }
+                return null;
+            });
+
+            // --- 2) doplň/nenásilně nastav fileSet.dataTypes[*] ---
+            function ensureType(t) {
+                const prev = fileSet.dataTypes[t] || {};
+                const outCfgUnit = outputs[t]?.unit || '';
+
+                // 2.1 Indexy
+                let indexes = isArr(prev.indexes) && prev.indexes.length > 0
+                    ? prev.indexes.slice() // respektuj předem zadané indexy
+                    : headerTypes
+                        .map((tt, i) => (tt === t ? i : -1))
+                        .filter(i => i >= 0);
+
+                // 2.2 Cílová jednotka (preferuj už dřív nastavenou)
+                const targetUnit = isNonEmptyStr(prev.unit) ? prev.unit : outCfgUnit;
+
+                // 2.3 Udrž jednotný "fromUnit" pro 1 společný conversion
+                let fromUnit = '';
+                if (!isNonEmptyArr(prev.indexes) && isNonEmptyArr(indexes)) {
+                    if (targetUnit) {
+                        // najdi první jednotku mezi kandidáty
+                        for (const i of indexes) {
+                            if (headerUnits[i]) {
+                                fromUnit = headerUnits[i];
+                                break;
+                            }
+                        }
+                        if (fromUnit) {
+                            // filtruj jen na sloupce se shodným fromUnit
+                            indexes = indexes.filter(i => (headerUnits[i] || '') === fromUnit);
+                        }
+                    } else {
+                        // bez targetUnit – drž jednotnost dle první nalezené (nebo prázdné)
+                        fromUnit = headerUnits[indexes[0]] || '';
+                        indexes = indexes.filter(i => (headerUnits[i] || '') === fromUnit);
+                    }
+                } else if (isNonEmptyArr(prev.indexes)) {
+                    // indexy dány uživatelem → odvoď fromUnit (pokud jde)
+                    const i0 = prev.indexes[0];
+                    if (Number.isInteger(i0) && i0 >= 0 && i0 < headerUnits.length) {
+                        fromUnit = headerUnits[i0] || '';
+                    }
+                }
+
+                // 2.4 Konverze (preferuj předvyplněnou)
+                let conversion = isDef(prev.conversion) ? toNumber(prev.conversion) : undefined;
+                if (!isDef(conversion) || !isNum(conversion)) {
+                    if (targetUnit && fromUnit) {
+                        try {
+                            conversion = convertUnits(1, fromUnit, targetUnit) || 1;
+                        } catch (_) {
+                            conversion = 1;
+                        }
+                    } else {
+                        conversion = 1;
+                    }
+                }
+
+                // 2.5 Zápis (zachovej případné další klíče v prev)
+                fileSet.dataTypes[t] = {
+                    ...prev,
+                    indexes: isNonEmptyArr(prev.indexes) ? prev.indexes : indexes,
+                    unit: isNonEmptyStr(prev.unit) ? prev.unit : targetUnit,
+                    conversion,
+                };
+            }
+
+            for (const t of types) ensureType(t);
+
+            // --- 3) gettery (přesnost z outputs[*].precision) ---
+            const getters = {};
+            for (const t of types) {
+                const precision = outputs[t]?.precision ?? 12;
+
+                getters[t] = (entry) => {
+                    const spec = fileSet.dataTypes[t];
+                    if (!spec || !isNonEmptyArr(spec.indexes)) return 0;
+
+                    const convRaw = toNumber(spec.conversion, true);
+                    const conv = Number.isFinite(convRaw) ? convRaw : 1;
+
+                    // vezmi první nenulovou / číselnou hodnotu
+                    for (let i = 0; i < spec.indexes.length; i++) {
+                        const idx = spec.indexes[i];
+                        const vRaw = toNumber(entry[idx], true);
+                        const v = Number.isFinite(vRaw) ? vRaw : 0;
+                        if (v !== 0) {
+                            return roundDecimalFast(v * conv, precision);
+                        }
+                    }
+                    return 0;
+                };
+
+                // metadata/utility metody (ne-sériovatelné a bezpečné)
+                Object.defineProperties(getters[t], {
+                    indexes: {
+                        value: () => (fileSet.dataTypes?.[t]?.indexes ? [...fileSet.dataTypes[t].indexes] : []),
+                        enumerable: false
+                    },
+                    count: {
+                        value: () => (fileSet.dataTypes?.[t]?.indexes?.length ?? 0),
+                        enumerable: false
+                    },
+                    unit: {
+                        value: () => (fileSet.dataTypes?.[t]?.unit ?? ''),
+                        enumerable: false
+                    },
+                    conv: {
+                        value: () => {
+                            const c = toNumber?.(fileSet.dataTypes?.[t]?.conversion, false);
+                            return Number.isFinite(c) ? c : (fileSet.dataTypes?.[t]?.conversion ?? 1);
+                        },
+                        enumerable: false
+                    }
+                });
+            }
+
+
+            return getters;
+        }
+
+        const getDelimiter = (rows, minParts = 3) => {
+            const testLine = rows[Math.ceil(2 * rows.length / 3)]; // data line of CSV file
+            let delimiter = null; // Delimiter of data in a a CSV file
+
+            for (const separator of delimiters) {
+                const parts = testLine.split(separator);
+                if (parts.length >= minParts) {
+                    delimiter = separator;
+                    break; // Found the delimiter
+                }
+            }
+
+            return delimiter;
+        };
+
+        // ===== Main parsing logic =====
+
+        fileName = String(fileName).trim() || 'Unknown File';
+
+        const delimiters = [";", ",", "\t", " "];
+        const preferFoundDelimiter = false;
+
+        let fileType = null;
+        let fileVersion = null;
+        let preambleMetaData = null;
+        const fileOpts = {
+            delimiter: null,
+            skipRows: 0,
+            columns: null,
+            dataTypes: {},
+            dataLength: null,
+        }; // Options for parsing the file
+
+
+        const csvText = csvData.replace(/\r\n?/g, "\n");
+
+        const rows = csvText.split("\n").map(r => r.trim()); // Split text into lines
+
+        const dataRows = rows.map(r => r.toLowerCase()); // Split text into lines
+
+        if (dataRows.length === 0) {
+            console.warn(`CSV file '${fileName}' is empty.`);
+            return null;
+        }
+
+
+        if (dataRows[0].startsWith("##moira")) {
+            // MOIRA file
+            fileType = "moira";
+            console.info(`📁 Processing MOIRA file: ${fileName}`);
+
+            preambleMetaData = await parseSettingsFromCsv(rows[0]) || {};
+
+            if (!isNonEmptyObj(preambleMetaData)) {
+                console.warn(`❌ Invalid or missing MOIRA meta data in file: ${fileName}`);
+                return null;
+            }
+
+            fileVersion = preambleMetaData?.version || 0;
+
+            fileOpts.delimiter = preambleMetaData?.delimiter || ";";
+            if (preambleMetaData?.headerVersion === 1) fileOpts.skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
+            fileOpts.columns = preambleMetaData?.columns;
+
+
+            const precisions = preambleMetaData?.precisions || {};
+            Object.keys(fileOptions)?.forEach(key => {
+                const n = toRounds(precisions[key]);
+                if (isDef(n) && isNum(n)) fileOptions[key].precision = clamp(Math.abs(n), 0, 12);
+            });
+        } else if (dataRows[0].startsWith("date:")) {
+
+            // MOIRA LEGACY file
+            fileType = "moira_legacy";
+            console.info(`📁 Processing MOIRA legacy file: ${fileName}`);
+
+            fileOpts.delimiter = ";";
+            fileOpts.skipRows = 3; // (Info) // (Description) // (Header)
+            fileOpts.columns = 6;
+        } else if (dataRows[0].startsWith("timestamp_us")) {
+
+            // MATLAB file
+            fileType = "matlab";
+            console.info(`📁 Processing MATLAB file: ${fileName}`);
+
+            fileOpts.delimiter = ";";
+            fileOpts.skipRows = 1;  // (Header)
+            fileOpts.columns = 5;
+            fileOpts['dataTypes']['time']['conversion'] = 1e-6; // Convert time from microseconds to seconds
+        } else {
+            // Unknown file type
+            fileType = "unknown";
+            console.info(`📁 Processing unknown format file: ${fileName}`);
+
+            // find first row that starts with text 'time'
+            // const headerRowIndex = rows.findIndex(row => row.trim().startsWith("time"));
+            // fileOpts.skipRows = headerRowIndex !== -1 ? headerRowIndex : 0;
+            // fileOpts.columns = 4;
+
+            // let maxTries = 50;
+            // let validRowFound = false;
+            //
+            // while (maxTries-- > 0 && rows.length > 0) {
+            //     const firstRow = rows[0];
+            //     const values = firstRow.slice(0, 6).map(val => parseFloat(val));
+            //
+            //     if (!firstRow || values.length < 6) {
+            //         rows.shift();
+            //         continue;
+            //     }
+            //
+            //     const allValid = values.every(val => isNum(val));
+            //
+            //     if (allValid) {
+            //         validRowFound = true;
+            //         break; // Found a valid row
+            //     } else {
+            //         rows.shift(); // Remove the first row
+            //     }
+            // }
+            //
+            // if (!validRowFound) {
+            //     logMessage(`❌ No valid data found in file: ${file.name}`);
+            //     console.warn("\n❌ No valid data found in file:", file.name);
+            //     return null;
+            // }
+
+            console.info(`❌ Skipping unknown file: ${fileName}`);
+            return null;
+        }
+
+
+        if (dataRows.length <= fileOpts.skipRows) {  // Skip if the file has no data
+            logMessage(`❌ Not enough data in file: ${fileName}`);
+            console.warn(`\n❌ Not enough data in file: ${fileName}`);
+            console.info(`❌ Skipping empty or invalid file: ${fileName}`);
+            return null;
+        }
+
+        const foundDelimiter = getDelimiter(rows, fileOpts.columns);
+
+        if (foundDelimiter !== fileOpts.delimiter) {
+            logMessage(`❌ Unexpected delimiter in file: ${fileName}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
+            console.warn(`\n❌ Unexpected delimiter in file: ${fileName}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
+
+            if (!preferFoundDelimiter) {
+                console.info(`❌ Skipping file due to delimiter mismatch: ${fileName}`);
+                return null;
+            }
+            fileOpts.delimiter = foundDelimiter;
+        }
+
+        if (!fileOpts.delimiter) {
+            logMessage(`❌ Delimiter not found in file: ${fileName}`);
+            console.warn(`\n❌ Delimiter not found in file: ${fileName}`);
+            console.info(`❌ Skipping file due to missing delimiter: ${fileName}`);
+            return null;
+        }
+
+
+        const header = dataRows[fileOpts.skipRows - 1] || ''; // Header row based on skipRows
+
+        const getters = setupParsers(header, fileOpts, fileOptions);
+
+        if (Object.keys(fileOptions).some(k => !getters[k] || getters[k].count() === 0)) {
+            logMessage(`❌ Cannot parse required data columns in file: ${fileName}. Check the delimiter and file format.`);
+            console.warn(`\n❌ Cannot parse required data columns in file: ${fileName}. Check the delimiter and file format.`);
+            return null;
+        }
+
+        let err = false;
+        for (const key of Object.keys(fileOptions)) {
+            if (fileOptions[key].columnLimit != null && getters[key].count() > fileOptions[key].columnLimit) {
+                logMessage(`✖️ Invalid number of columns for '${key}' in file: ${fileName}. Expected ${fileOptions[key].columnLimit}, but found ${getters[key].count()}.`);
+                console.warn(`\n✖️ Invalid number of columns for '${key}' in file: ${fileName}. Expected ${fileOptions[key].columnLimit}, but found ${getters[key].count()}.`);
+                err = true;
+            }
+        }
+        if (err) {
+            logMessage(`❌ Skipping file due to invalid column counts: ${fileName}`);
+            console.info(`❌ Skipping file due to invalid column counts: ${fileName}`);
+            return null;
+        }
+
+
+        const dataFiltered = dataRows.slice(fileOpts.skipRows).filter(r => r.length > 0); // Remove header rows and remove empty ones
+
+        fileOpts.dataLength = dataFiltered.length;
+
+        const data = dataFiltered.map(row => row.split(fileOpts.delimiter)); // Parse CSV lines into an array
+
+        const OutputData = {preamble: preambleMetaData || {}, fileType, fileVersion, fileOptions: fileOpts, data: {}};
+
+
+        for (const key of Object.keys(fileOptions)) {
+            OutputData.data[key] = data.map(cells => getters[key](cells));
+            if (!OutputData.data[key].some(val => isNum(val))) OutputData.data[key] = null; // If no numeric data found, set to empty array
+        }
+
+
+        return OutputData;
+    }
+
+
+</script>
+
+<script>
+
     function waitForXLSX() {
         return new Promise((resolve, reject) => {
             const ok = () => window.XLSX ? resolve() : setTimeout(ok, 50);
@@ -9039,8 +9437,6 @@
         const input = document.createElement('input');
 
         const mattesMaxLines = 20_000; // Maximum number of lines in one file
-        const preferFoundDelimiter = false;
-
 
         input.type = 'file';
         input.accept = '.csv';
@@ -9092,7 +9488,7 @@
 
             // TODO: lepší název proměnné
             const resultsHead = ["File Order", "File name", "Experiment type", "Material",
-                "b (mm)", "h (mm)", "L (mm)", "E (MPa)",
+                "b (mm)", "h (mm)", "L (mm)", "E (MPa)", "f_m (MPa)",
                 "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
                 "F_T (N)", "h_D (mm)", "H_BW (-)"];
 
@@ -9114,12 +9510,11 @@
             ];// Second sheet data
 
             const outputsOpts = {
-                time: {key: 'time', unit: 's', precision: 12},
-                position: {key: 'dist, disp, position', unit: 'mm', precision: 12},
-                force: {key: 'force, load', unit: 'N', precision: 12},
+                time: {key: 'time', unit: 's', precision: 12, columnLimit: 1},
+                position: {key: 'dist, disp, position', unit: 'mm', precision: 12, columnLimit: 1},
+                force: {key: 'force, load', unit: 'N', precision: 12, columnLimit: null},
             };
 
-            const delimiters = [";", ",", "\t", " "];
 
             const getMetaValue = (metaData, key, unit = null) => {
                 if (!isObj(metaData)) return "";
@@ -9131,182 +9526,10 @@
                     const valUnit = metaData[key].unit || null;
                     if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) value = convertUnits(value, valUnit, unit);
 
-                    return catchVal(value, "", isInvalidValue);
+                    return catchVal(value, "", not(isInvalidValue));
                 }
                 return "";
             };
-
-            function setupParsers(head, fileSet, outputs) {
-                // --- sanity checks ---
-                if (!isArr(head)) {
-                    console.warn("\n⚠️ Cannot setup parsers, head is not an array.");
-                    return {};
-                }
-                if (!fileSet || !fileSet.delimiter) {
-                    console.warn("\n⚠️ Cannot setup parsers, missing delimiter or fileSet.");
-                    return {};
-                }
-                if (!fileSet.dataTypes) fileSet.dataTypes = {};
-
-                // --- helpers ---
-                const getUnitFromHeader = (header) => {
-                    if (isEmptyStr(header)) return null;
-                    // nechávám tvůj vzor; případně rozšířit o číslice, lomítka apod.
-                    const match = String(header).match(/[\(\[]\s*([a-zA-Z%μμmNnkgkPaasS]+)\s*[\)\]]/);
-                    return match ? match[1] : null;
-                };
-
-                // --- 1) hlavička ---
-                const headerRowIdx = Math.max(0, ((fileSet.skipRows | 0) - 1));
-                if (headerRowIdx >= head.length) {
-                    console.warn("\n⚠️ Cannot setup parsers, header row index out of bounds.");
-                    return {};
-                }
-
-                const headerParts = String(head[headerRowIdx]).split(fileSet.delimiter).map(s => String(s).trim());
-                const headerUnits = headerParts.map(part => getUnitFromHeader(part) || '');
-
-                // mapa synonym z outputs[*].key (čárkami oddělené)
-                const types = Object.keys(outputs || {});
-                const keysByType = Object.fromEntries(
-                    types.map(t => [
-                        t,
-                        String(outputs[t]?.key || t)
-                            .toLowerCase()
-                            .split(',')
-                            .map(s => s.trim())
-                            .filter(Boolean),
-                    ])
-                );
-
-                // pro každý sloupec rozhodni typ dle substringů
-                const headerTypes = headerParts.map(part => {
-                    const p = String(part).toLowerCase();
-                    for (const t of types) {
-                        if (keysByType[t].some(k => k && p.includes(k))) return t;
-                    }
-                    return null;
-                });
-
-                // --- 2) doplň/nenásilně nastav fileSet.dataTypes[*] ---
-                function ensureType(t) {
-                    const prev = fileSet.dataTypes[t] || {};
-                    const outCfgUnit = outputs[t]?.unit || '';
-
-                    // 2.1 Indexy
-                    let indexes = isArr(prev.indexes) && prev.indexes.length > 0
-                        ? prev.indexes.slice() // respektuj předem zadané indexy
-                        : headerTypes
-                            .map((tt, i) => (tt === t ? i : -1))
-                            .filter(i => i >= 0);
-
-                    // 2.2 Cílová jednotka (preferuj už dřív nastavenou)
-                    const targetUnit = isNonEmptyStr(prev.unit) ? prev.unit : outCfgUnit;
-
-                    // 2.3 Udrž jednotný "fromUnit" pro 1 společný conversion
-                    let fromUnit = '';
-                    if (!isNonEmptyArr(prev.indexes) && isNonEmptyArr(indexes)) {
-                        if (targetUnit) {
-                            // najdi první jednotku mezi kandidáty
-                            for (const i of indexes) {
-                                if (headerUnits[i]) {
-                                    fromUnit = headerUnits[i];
-                                    break;
-                                }
-                            }
-                            if (fromUnit) {
-                                // filtruj jen na sloupce se shodným fromUnit
-                                indexes = indexes.filter(i => (headerUnits[i] || '') === fromUnit);
-                            }
-                        } else {
-                            // bez targetUnit – drž jednotnost dle první nalezené (nebo prázdné)
-                            fromUnit = headerUnits[indexes[0]] || '';
-                            indexes = indexes.filter(i => (headerUnits[i] || '') === fromUnit);
-                        }
-                    } else if (isNonEmptyArr(prev.indexes)) {
-                        // indexy dány uživatelem → odvoď fromUnit (pokud jde)
-                        const i0 = prev.indexes[0];
-                        if (Number.isInteger(i0) && i0 >= 0 && i0 < headerUnits.length) {
-                            fromUnit = headerUnits[i0] || '';
-                        }
-                    }
-
-                    // 2.4 Konverze (preferuj předvyplněnou)
-                    let conversion = isDef(prev.conversion) ? toNumber(prev.conversion) : undefined;
-                    if (!isDef(conversion) || !isNum(conversion)) {
-                        if (targetUnit && fromUnit) {
-                            try {
-                                conversion = convertUnits(1, fromUnit, targetUnit) || 1;
-                            } catch (_) {
-                                conversion = 1;
-                            }
-                        } else {
-                            conversion = 1;
-                        }
-                    }
-
-                    // 2.5 Zápis (zachovej případné další klíče v prev)
-                    fileSet.dataTypes[t] = {
-                        ...prev,
-                        indexes: isNonEmptyArr(prev.indexes) ? prev.indexes : indexes,
-                        unit: isNonEmptyStr(prev.unit) ? prev.unit : targetUnit,
-                        conversion,
-                    };
-                }
-
-                for (const t of types) ensureType(t);
-
-                // --- 3) gettery (přesnost z outputs[*].precision) ---
-                const getters = {};
-                for (const t of types) {
-                    const precision = outputs[t]?.precision ?? 12;
-
-                    getters[t] = (entry) => {
-                        const spec = fileSet.dataTypes[t];
-                        if (!spec || !isNonEmptyArr(spec.indexes)) return 0;
-
-                        const convRaw = toNumber(spec.conversion, true);
-                        const conv = Number.isFinite(convRaw) ? convRaw : 1;
-
-                        // vezmi první nenulovou / číselnou hodnotu
-                        for (let i = 0; i < spec.indexes.length; i++) {
-                            const idx = spec.indexes[i];
-                            const vRaw = toNumber(entry[idx], true);
-                            const v = Number.isFinite(vRaw) ? vRaw : 0;
-                            if (v !== 0) {
-                                return roundDecimalFast(v * conv, precision);
-                            }
-                        }
-                        return 0;
-                    };
-
-                    // metadata/utility metody (ne-sériovatelné a bezpečné)
-                    Object.defineProperties(getters[t], {
-                        indexes: {
-                            value: () => (fileSet.dataTypes?.[t]?.indexes ? [...fileSet.dataTypes[t].indexes] : []),
-                            enumerable: false
-                        },
-                        count: {
-                            value: () => (fileSet.dataTypes?.[t]?.indexes?.length ?? 0),
-                            enumerable: false
-                        },
-                        unit: {
-                            value: () => (fileSet.dataTypes?.[t]?.unit ?? ''),
-                            enumerable: false
-                        },
-                        conv: {
-                            value: () => {
-                                const c = toNumber?.(fileSet.dataTypes?.[t]?.conversion, false);
-                                return Number.isFinite(c) ? c : (fileSet.dataTypes?.[t]?.conversion ?? 1);
-                            },
-                            enumerable: false
-                        }
-                    });
-                }
-
-
-                return getters;
-            }
 
             // šířky sloupců podle délky hlaviček
             const PAD = 2;      // rezerva, ať to není nalepené
@@ -9341,18 +9564,25 @@
             for (let file of files) {
                 fileCount++;
                 const raw = await file.text();
-                const text = raw.replace(/\r\n?/g, "\n");
+
+                const csvData = await getCSVData(raw, outputsOpts, file.name) || {};
+
+                console.log("CSV Data:", csvData);
+
+                const {
+                    preamble: preambleMetaData = {},
+                    fileType,
+                    fileOptions: fileOptionsUsed = {},
+                    data: parsedData = {}
+                } = csvData;
 
 
-                let fileType = null;                // Determine the file type
-                let fileVersion = null;
-
-                const fileOpts = {
-                    delimiter: null,
-                    skipRows: 0,
-                    columns: null,
-                    dataTypes: {},
-                }; // Options for parsing the file
+                if (!csvData) {
+                    logMessage(`❌ Failed to parse file: ${file.name}`);
+                    console.warn("\n❌ Failed to parse file:", file.name);
+                    fileCount--;
+                    continue;
+                }
 
                 const samplesInfo = {
                     method: 3,  // Method (place 3)
@@ -9375,65 +9605,21 @@
                     h: "",              // h (mm)
                     L: "",              // L (mm)
                     E: "",              // E (MPa)
+                    f_m: "",            // f_m (MPa)
                     F_max: "",          // F_max (N)
-                    w_Fmax: "",        // w_Fmax (mm)
-                    sigma_max: "",     // σ_max (MPa)
-                    F_T: "",           // F_T (N)
-                    h_D: "",           // h_D (mm)
-                    H_BW: ""           // H_BW (-)
+                    w_Fmax: "",         // w_Fmax (mm)
+                    sigma_max: "",      // σ_max (MPa)
+                    F_T: "",            // F_T (N)
+                    h_D: "",            // h_D (mm)
+                    H_BW: ""            // H_BW (-)
                 }; // Experiment results
 
 
-                let rows = text.split("\n"); // Split text into lines
-
-                rows = rows.map(r => r.trim().toLowerCase());
-
-                const firstLine = rows[0].toLowerCase() || "";
-                if (firstLine.startsWith("##moira")) fileType = "moira";              // MOIRA
-                else if (firstLine.startsWith("date:")) fileType = "moira-legacy";    // MOIRA legacy
-                else if (firstLine.startsWith("timestamp_us")) fileType = "matlab";   // MATLAB
-                else fileType = "unknown";                                       // Unknown file type
-
-
-                const getDelimiter = (rows, minParts = 3) => {
-                    const testLine = rows[Math.ceil(2 * rows.length / 3)]; // data line of CSV file
-                    let delimiter = null; // Delimiter of data in a a CSV file
-
-                    for (const separator of delimiters) {
-                        const parts = testLine.split(separator);
-                        if (parts.length >= minParts) {
-                            delimiter = separator;
-                            break; // Found the delimiter
-                        }
-                    }
-
-                    return delimiter;
-                };
-
                 switch (fileType) {
                     case "moira":
-                        console.info(`📁 Processing MOIRA file: ${file.name}`);
-
-                        const preambleMetaData = await parseSettingsFromCsv(text) || {};
-
-                        fileVersion = preambleMetaData?.version || 0;
-
-                        fileOpts.delimiter = preambleMetaData?.delimiter || ";";
-                        if (preambleMetaData?.headerVersion === 1) fileOpts.skipRows = preambleMetaData?.skipRows; // (Experiment settings) // (Empty) // (Info) // (Description) // (Empty) // (Header)
-                        fileOpts.columns = preambleMetaData?.columns;
-
-
-                        const precisions = preambleMetaData?.precisions || {};
-                        if (isObj(outputsOpts) && isNotEmpty(precisions)) {
-                            Object.keys(outputsOpts)?.forEach(key => {
-                                const n = toRounds(precisions[key]);
-                                if (isDef(n) && isNum(n)) outputsOpts[key].precision = clamp(Math.abs(n), 0, 12);
-                            });
-                        }
-
-                        const expInfoV = await preambleMetaData.expSettings?.version || 0;
                         const calcSettingsInputs = await preambleMetaData.calcSettings.inputs || {};
 
+                        const expInfoV = await preambleMetaData.expSettings?.version || 0;
                         if (expInfoV >= 1) {
                             expResults.experimentType = await preambleMetaData?.experimentLabel || "";
                             expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName");
@@ -9441,6 +9627,7 @@
                             expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
                             expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
                             expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
+                            expResults.f_m = getMetaValue(calcSettingsInputs, "outputFlexStrength", "MPa");
                             expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
                             expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
                             expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
@@ -9464,155 +9651,51 @@
                         break;
 
                     case "moira-legacy":
-                        console.info(`📁 Processing MOIRA legacy file: ${file.name}`);
-
-                        fileOpts.delimiter = ";";
-                        fileOpts.skipRows = 3; // (Info) // (Description) // (Header)
-                        fileOpts.columns = 6;
-
                         break;
 
                     case "matlab":
-                        console.info(`📁 Processing MATLAB file: ${file.name}`);
-
-                        fileOpts.delimiter = ";";
-                        fileOpts.skipRows = 1;  // (Header)
-                        fileOpts.columns = 5;
-                        fileOpts['dataTypes']['time']['conversion'] = 1e-6; // Convert time from microseconds to seconds
-
                         break;
 
                     case "unknown":
                     default:
-                        console.info(`📁 Processing unknown format file: ${file.name}`);
-
-                        // find first row that starts with text 'time'
-                        const headerRowIndex = rows.findIndex(row => row.trim().startsWith("time"));
-                        fileOpts.skipRows = headerRowIndex !== -1 ? headerRowIndex : 0;
-                        fileOpts.columns = 4;
-                        // TODO: skip for now
                         fileCount--;
-                        console.info(`❌ Skipping unknown file: ${file.name}`);
                         continue;
                 }
 
-                if (rows.length <= fileOpts.skipRows) {  // Skip if the file has no data
-                    logMessage(`❌ Not enough data in file: ${file.name}`);
-                    console.warn(`\n❌ Not enough data in file: ${file.name}`);
-                    fileCount--;
-                    console.info(`❌ Skipping empty or invalid file: ${file.name}`);
-                    continue;
-                }
+                const dataLength = fileOptionsUsed.dataLength; // Number of rows in one file
 
 
-                const head = rows.slice(0, fileOpts.skipRows);
-                rows = rows.slice(fileOpts.skipRows).filter(r => r.length > 0); // Remove header rows and remove empty ones
-
-                const foundDelimiter = getDelimiter(rows, fileOpts.columns);
-
-                if (foundDelimiter !== fileOpts.delimiter) {
-                    logMessage(`❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
-                    console.warn(`\n❌ Unexpected delimiter in file: ${file.name}. Expected '${fileOpts.delimiter}', but found '${foundDelimiter || "none"}'.`);
-
-                    if (!preferFoundDelimiter) {
-                        fileCount--;
-                        console.info(`❌ Skipping file due to delimiter mismatch: ${file.name}`);
-                        continue;
-                    }
-                    fileOpts.delimiter = foundDelimiter;
-                }
-
-                if (!fileOpts.delimiter) {
-                    logMessage(`❌ Delimiter not found in file: ${file.name}`);
-                    console.warn(`\n❌ Delimiter not found in file: ${file.name}`);
-                    fileCount--;
-                    console.info(`❌ Skipping file due to missing delimiter: ${file.name}`);
-                    continue;
-                }
-
-
-                const getters = setupParsers(head, fileOpts, outputsOpts);
-
-
-                if (Object.keys(outputsOpts).some(k => !getters[k] || getters[k].count() === 0)) {
-                    logMessage(`❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
-                    console.warn(`\n❌ Cannot parse required data columns in file: ${file.name}. Check the delimiter and file format.`);
-                    fileCount--;
-                    continue;
-                }
-
-                if (getters['time'].count() !== 1) {
-                    logMessage(`❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
-                    console.warn(`\n❌ Ambiguous time column in file: ${file.name}. Expected exactly one time column, but found ${getters['time'].count()}.`);
-                    fileCount--;
-                    continue;
-                }
-                if (getters['position'].count() !== 1) {
-                    logMessage(`❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
-                    console.warn(`\n❌ Ambiguous position column in file: ${file.name}. Expected exactly one position column, but found ${getters['position'].count()}.`);
-                    fileCount--;
-                    continue;
-                }
-
-                const getTime = (cells) => getters['time'](cells);
-                const getPosition = (cells) => getters['position'](cells);
-                const getForce = (cells) => getters['force'](cells);
-
-
-                rows = rows.map(row => row.split(fileOpts.delimiter)); // Parse CSV lines into an array
-
-                let maxTries = 10;
-                let validRowFound = false;
-
-                while (maxTries-- > 0 && rows.length > 0) {
-                    const firstRow = rows[0];
-                    const values = firstRow.slice(0, 6).map(val => parseFloat(val));
-
-                    if (!firstRow || values.length < 6) {
-                        rows.shift();
-                        continue;
-                    }
-
-                    const allValid = values.every(val => isNum(val));
-
-                    if (allValid) {
-                        validRowFound = true;
-                        break; // Found a valid row
-                    } else {
-                        rows.shift(); // Remove the first row
-                    }
-                }
-
-                if (!validRowFound) {
-                    logMessage(`❌ No valid data found in file: ${file.name}`);
-                    console.warn("\n❌ No valid data found in file:", file.name);
-                    fileCount--;
-                    continue;
-                }
-
-                const originalLength = rows.length; // Original number of rows
-
-                const dataSize = rows.length; // Number of rows in one file
-
-
-                if (dataSize === 0) {
+                if (dataLength === 0) {
                     logMessage(`❌ No data found in file: ${file.name}`);
                     console.warn("\n❌ No data found in file:", file.name);
                     fileCount--;
                     continue;
                 }
 
-                console.info(file.name, ": 📊 Rows in file:", originalLength, "📦 Rows to process:", dataSize);
 
+                if (dataLength > mattesMaxLines) {
+                    let step;
+                    if (dataLength - (mattesMaxLines * 0.01) > mattesMaxLines) {
+                        Object.entries(parsedData).forEach(([key, arr]) => {
+                            parsedData[key] = arr.slice(0, mattesMaxLines);
+                        });
+                    } else {
+                        // Data (rows) reduction
+                        step = Math.ceil(dataLength / mattesMaxLines);
+                        Object.entries(parsedData).forEach(([key, arr]) => {
+                            parsedData[key] = arr.filter((_, index) => index % step === 0);
+                        });
+                    }
+                    const newDataSize = parsedData[Object.keys(parsedData)[0]]?.length || 0;
 
-                if (dataSize > mattesMaxLines) {
-                    // Data (rows) reduction
-                    const step = Math.ceil(dataSize / mattesMaxLines);
-                    rows = rows.filter((_, i) => i % step === 0);
-
-                    logMessage(`❗ Too many lines in file: ${file.name} (${dataSize} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataSize} -> ${rows.length} lines\n\tData step: ${step}`);
-                    console.info(`❗ Too many lines in file: ${file.name} (${dataSize} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataSize} -> ${rows.length} lines\n\tData step: ${step}`);
+                    logMessage(`❗ Too many lines in file: ${file.name} (${dataLength} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataLength} -> ${newDataSize} lines\n${step ? '\tData step:' + String(step) : ''}`);
+                    console.info(`❗ Too many lines in file: ${file.name} (${dataLength} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataLength} -> ${newDataSize} lines\n${step ? '\tData step:' + String(step) : ''}`);
                 }
+
+                const dataSize = parsedData[Object.keys(parsedData)[0]]?.length || 0;
+
+
+                console.info(file.name, ": 📊 Rows in file:", dataLength, "📦 Rows to process:", dataSize);
 
 
                 // ==================== FILES LIST ==================== //
@@ -9626,6 +9709,7 @@
                     expResults.h,
                     expResults.L,
                     expResults.E,
+                    expResults.f_m,
                     expResults.F_max,
                     expResults.w_Fmax,
                     expResults.sigma_max,
@@ -9650,11 +9734,15 @@
                 ]);
 
 
+                const getTime = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.time[idx]) : (isNum(i) ? parsedData.time[i] : null);
+                const getPosition = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.position[idx]) : (isNum(i) ? parsedData.position[i] : null);
+                const getForce = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.force[idx]) : (isNum(i) ? parsedData.force[i] : null);
+
                 // ================== LOADING DATA ================== //
                 // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
-                const firstTime = getTime(rows[0]); // First time value
-                const firstShift = getPosition(rows[0]); // First shift value
-                const firstForce = getForce(rows[0]); // First force value
+                const firstTime = getTime(0); // First time value
+                const firstShift = getPosition(0); // First shift value
+                const firstForce = getForce(0); // First force value
 
                 // Define headers for this section
                 let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
@@ -9690,26 +9778,22 @@
                 for (let rowIndex = 0; rowIndex < dataSize; rowIndex++) {
                     const dataRow = formattedData[rowIndex + 3] || [];
 
-                    const entry = rows[rowIndex];
-                    if (entry.length >= 6) {
-                        if (!entry[0]) continue; // Skip empty rows
+                    const time = (getTime(rowIndex) - firstTime) || 0; // Time (s)
 
-                        const time = (getTime(entry) - firstTime) || 0; // Time (s)
+                    const force = (getForce(rowIndex) - firstForce) || 0; // Force sum
 
-                        const force = (getForce(entry) - firstForce) || 0; // Force sum
+                    // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-                        // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
+                    const shift = (getPosition(rowIndex) - firstShift) || 0; // Displacement (mm)
 
-                        const shift = (getPosition(entry) - firstShift) || 0; // Displacement (mm)
+                    // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                    const deformation = shift; // Calculate deformation
 
-                        // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
-                        const deformation = shift; // Calculate deformation
+                    dataRow[columnOffset] = time;
+                    dataRow[columnOffset + 1] = shift;
+                    dataRow[columnOffset + 2] = force;
+                    dataRow[columnOffset + 3] = deformation;
 
-                        dataRow[columnOffset] = time;
-                        dataRow[columnOffset + 1] = shift;
-                        dataRow[columnOffset + 2] = force;
-                        dataRow[columnOffset + 3] = deformation;
-                    }
                     formattedData[rowIndex + 3] = dataRow;
                 }
 
@@ -9736,7 +9820,6 @@
 
 
             // wsSamples rich-text
-            setRichBaseSub(wsSamples, 0, 12, "l", "0", "\n(mm)");
             setRichBaseSub(wsSamples, 1, 4, "h", "w");
             setRichBaseSub(wsSamples, 1, 5, "l", "w");
             setRichBaseSub(wsSamples, 1, 6, "w", "w");
@@ -9745,15 +9828,17 @@
             setRichBaseSub(wsSamples, 1, 9, "l", "0");
             setRichBaseSub(wsSamples, 1, 10, "w", "0");
             setRichBaseSub(wsSamples, 1, 11, "m", "0");
+            setRichBaseSub(wsSamples, 0, 12, "l", "o", "\n(mm)");
 
 
             // wsResults rich-text (HEAD)
-            setRich(wsResults, 0, 8, [{text: "F"}, {text: "max", sub: true}, {text: " (N)"}]);
-            setRich(wsResults, 0, 9, [{text: "w"}, {text: "Fmax", sub: true}, {text: " (mm)"}]);
-            setRich(wsResults, 0, 10, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
-            setRich(wsResults, 0, 11, [{text: "F"}, {text: "T", sub: true}, {text: " (N)"}]);
-            setRich(wsResults, 0, 12, [{text: "h"}, {text: "D", sub: true}, {text: " (mm)"}]);
-            setRich(wsResults, 0, 13, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
+            setRich(wsResults, 0, 8, [{text: "f"}, {text: "m", sub: true}, {text: " (MPa)"}]);
+            setRich(wsResults, 0, 9, [{text: "F"}, {text: "max", sub: true}, {text: " (N)"}]);
+            setRich(wsResults, 0, 10, [{text: "w"}, {text: "Fmax", sub: true}, {text: " (mm)"}]);
+            setRich(wsResults, 0, 11, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
+            setRich(wsResults, 0, 12, [{text: "F"}, {text: "T", sub: true}, {text: " (N)"}]);
+            setRich(wsResults, 0, 13, [{text: "h"}, {text: "D", sub: true}, {text: " (mm)"}]);
+            setRich(wsResults, 0, 14, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
 
 
             // console.info('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
@@ -9858,12 +9943,13 @@
             setNumFmt(5, "0.00", resultsData, wsResults);      // h (mm)
             setNumFmt(6, "0.00", resultsData, wsResults);      // L (mm)
             setNumFmt(7, "0.000", resultsData, wsResults);     // E (MPa)
-            setNumFmt(8, "0.00", resultsData, wsResults);      // F_max (N)
-            setNumFmt(9, "0.00", resultsData, wsResults);      // w_Fmax (mm)
-            setNumFmt(10, "0.000", resultsData, wsResults);    // σ_max (MPa)
-            setNumFmt(11, "0.00", resultsData, wsResults);     // F_T (N)
-            setNumFmt(12, "0.00", resultsData, wsResults);     // h_D (mm)
-            setNumFmt(13, "0.000", resultsData, wsResults);    // H_BW (-)
+            setNumFmt(8, "0.000", resultsData, wsResults);     // f_m (MPa)
+            setNumFmt(9, "0.00", resultsData, wsResults);      // F_max (N)
+            setNumFmt(10, "0.00", resultsData, wsResults);      // w_Fmax (mm)
+            setNumFmt(11, "0.000", resultsData, wsResults);    // σ_max (MPa)
+            setNumFmt(12, "0.00", resultsData, wsResults);     // F_T (N)
+            setNumFmt(13, "0.00", resultsData, wsResults);     // h_D (mm)
+            setNumFmt(14, "0.000", resultsData, wsResults);    // H_BW (-)
 
 
             XLSX.utils.book_append_sheet(wb, wsMattes, sheetName); // Append a sheet to workbook
