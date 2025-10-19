@@ -138,6 +138,7 @@
                 const script = document.createElement('script');
                 script.src = './scripts/testingScript.js';
                 script.type = 'text/javascript';
+                script.type = 'text/javascript';
                 document.head.appendChild(script);
 
 
@@ -5055,7 +5056,7 @@
      * Establishes a connection with the ESP device via USB.
      */
     async function connectSerial(userRequest = true) {
-        isSerial = true;
+        let serialComPort = null;
         await updateConnectionStatus("connecting", "USB");
         try {
             let ports = null;
@@ -5067,7 +5068,7 @@
 
 
             if (isArr(ports) && ports.length === 1) {
-                serialPort = ports[0];
+                serialComPort = ports[0];
                 console.info("\t... Only one port found.");
 
             } else {
@@ -5076,7 +5077,7 @@
                 if (isArr(ports) && ports.length > 1) {
                     console.info("Multiple ports found. Select one.");
 
-                    // serialPort = checkAllPorts();
+                    // serialComPort = checkAllPorts();
 
                     for (let port of ports) {
                         await closePort(port);
@@ -5085,10 +5086,10 @@
                 }
 
                 if (userRequest) {
-                    if (!serialPort) serialPort = await serialFunctionRequestPort();
+                    if (!serialPort) serialComPort = await serialFunctionRequestPort();
                 }
 
-                if (serialPort == null) {
+                if (serialComPort == null) {
                     isSerial = false;
                     if (userRequest) {
                         console.info("⚠️ No port selected, connection canceled.");
@@ -5109,10 +5110,11 @@
                 }
             }
 
-            if (!serialPort) throw new Error("No serial port available.");
+            if (!serialComPort) throw new Error("No serial port available.");
 
 
-            await openPort(serialPort);
+            isSerial = true;
+            await openPort(serialComPort);
 
         } catch (error) {
 
@@ -5157,50 +5159,25 @@
             // TODO opravit funkci na odpojování viz níže + opravit reconnect/disconnect v návaznosti na restartování zařízení.
 
             // Get the writer and reader for the port after opening
-            if (serialWriter && serialWriter?.writable) {
-                await serialWriter.releaseLock();
-                await serialWriter.cancel();
-                serialWriter = null;
+            const err = await closeComPort();
+            if (isNonEmptyObj(err)) {
+                console.error("⚠️ Error closing existing port before opening a new one:", err);
             }
-            if (serialReader && serialReader?.readable) {
-                await serialReader.releaseLock();
-                await serialReader.cancel();
-                serialReader = null;
-            }
-            // If the port is already open, close it first
-            if (comPort?.writable) {
-                await comPort?.writable?.releaseLock();
-                await comPort?.writable?.getReader()?.cancel();
-            }
-            if (comPort?.readable) {
-                await comPort?.readable?.releaseLock();
-                await comPort?.readable?.getReader()?.cancel();
-            }
-            if (comPort?.connected) {
-                console.info("🔌 Closing existing port...");
-                await comPort?.flush();
-                await comPort?.close();
-            }
+            await closePort(comPort, {verbose: false});
 
-            const {usbVendorId, usbProductId} = comPort.getInfo();
+            serialPort = comPort;
+
+            const {usbVendorId, usbProductId} = comPort.getInfo?.() ?? {};
             fingerprint = `${usbVendorId}:${usbProductId}`;
             console.info(`👣 Port Fingerprint:\n\t\tusbVendorId:${usbVendorId}\n\t\tusbProductId:${usbProductId}`);
 
             localStorage.setItem("lastFingerprint", fingerprint);
 
-            await sleep(5);
 
             console.info("🔌 Opening new port...");
-            try {
-                await comPort.open({
-                    baudRate: parseInt($ID("inputNumBaudRate").value)
-                });
-            } catch (error) {
-                if (debugging) console.error("Is opened?", comPort.connected, "\nError opening port:", error);
-                // throw error;
-                return;
-            }
-
+            await comPort.open({
+                baudRate: parseInt($ID("inputNumBaudRate").value)
+            });
 
             serialWriter = comPort.writable.getWriter(); // 🔥  writer
             serialReader = comPort.readable.getReader(); // 🔥  reader
@@ -5221,22 +5198,21 @@
             await sendCommandGeneral("MC STOP"); // Stop movement
             await sendCommandGeneral("MC ENDSTOPS ENABLE");
             await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 1000), (5 * 1000 * 1000))}`, 5); // Stop data collection
+            await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 1000), (5 * 1000 * 1000))}`); // Stop data collection
 
 
             await logMessage("\n");
 
             await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
-            await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`, 5);
+            await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
 
             await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
-            await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1000))}`, 5);
+            await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1000))}`);
 
             await logMessage("\n");
 
             // ověření kalibrace
             calibrationStatus = await getCalibrationStatus(2000);
-            await sleep(50);
 
             if (calibrationStatus) await unlockMovement();
             else await lockMovementExcept(UI.calibrateBtn);
@@ -5297,8 +5273,6 @@
             const acceleration = (await getAcceleration(2000)) || 150;
 
             setSpeedAndAcceleration(speed, acceleration, true);
-
-            await sleep(5); // Stop for 5 ms
 
             await updateConnectionStatus("connected", "USB");
             await logMessage("\n✅ Connected to ESP via USB\n");
@@ -5371,7 +5345,7 @@
             await sleep(5);
 
             // Stop data reading before releasing the reader
-            await closeComPort({flush: true, override: override, verbose: true});
+            await closeComPort({override: override, verbose: true});
 
             await logMessage("✖️ Disconnected from ESP\n\n");
 
@@ -5389,91 +5363,172 @@
         }
     }
 
-    async function closePort(port, {flush = true, verbose = false} = {}) {
-        if (port == null) return;
+    async function closePort(port, {reader = null, writer = null, verbose = false} = {}) {
+        if (!port) return;
 
-        const portInfo = port.getInfo();
-        if (verbose) console.info("\n\t⚓ Closing port...", portInfo);
-        try {
-            if (port?.readable) {
-                await port?.readable?.releaseLock();
-                await port?.readable?.getReader()?.cancel();
-                if (verbose) console.info("\n\t\t 📍 Released Reader.");
+        const info = (() => {
+            try {
+                return port.getInfo();
+            } catch {
+                return {};
             }
-        } catch (error) {
-            console.warn("\n⚠️ Error releasing reader of port", portInfo, ":", error);
+        })();
+        if (verbose) console.info("⚓ Closing port...", info);
+
+        // 1) Ukončit čtení
+        try {
+            // Preferuj předaného readera; jinak pokud je stream locked, pokus se ho uvolnit
+            if (reader) {
+                try {
+                    await reader.cancel();
+                } catch {
+                }
+                try {
+                    reader.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("📍 Reader canceled & released.");
+            } else if (port.readable?.locked) {
+                // Někdo jiný drží lock – poslední možností je vytvořit dočasného readera a hned ho zrušit
+                const tmp = port.readable.getReader();
+                try {
+                    await tmp.cancel();
+                } catch {
+                }
+                try {
+                    tmp.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("📍 Forced-canceled locked readable.");
+            }
+        } catch (err) {
+            console.warn("⚠️ Error handling reader", info, ":", err);
         }
 
+        // 2) Ukončit zápis
         try {
-            if (port?.writable) {
-                await port?.writable?.releaseLock();
-                await port?.writable?.getReader()?.cancel();
-                if (verbose) console.info("\n\t\t 📍 Released Writer.");
+            if (writer) {
+                try {
+                    await writer.close();
+                } catch {/* může být už zavřený */
+                }
+                try {
+                    writer.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("📍 Writer closed & released.");
+            } else if (port.writable?.locked) {
+                const tmpW = port.writable.getWriter();
+                try {
+                    await tmpW.close();
+                } catch {
+                }
+                try {
+                    tmpW.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("📍 Forced-closed locked writable.");
             }
-        } catch (error) {
-            console.warn("\n⚠️ Error releasing writer of port", portInfo, ":", error);
+        } catch (err) {
+            console.warn("⚠️ Error handling writer", info, ":", err);
         }
 
+        // 3) Zavřít port
         try {
-            if (port?.connected) {
-                if (flush) await port?.flush();
-                if (verbose && flush) console.info("\n\t\t 📍 Closed Flush.");
-                await port?.close();
-                if (verbose) console.info("\n\t\t 📍 Closed Port.");
+            try {
+                await port.close();
+            } catch (e) {
             }
-        } catch (error) {
-            console.warn("\n⚠️ Error closing port", portInfo, ":", error);
+            if (verbose) console.info("📍 Port closed.");
+        } catch (err) {
+            console.warn("⚠️ Error closing port", info, ":", err);
         }
     }
 
-    async function closeComPort({flush = true, override = false, verbose = true} = {}) {
+
+    async function closeComPort({override = false, verbose = true} = {}) {
         const errors = {};
 
+        // 1) Reader
         try {
-            if (serialReader != null && serialReader?.readable) {
-                await serialReader?.releaseLock();
-                await serialReader?.cancel();
-                serialReader = null;
-                if (verbose) console.info("\n\t⛏️ Released Reader...");
+            if (serialReader) {
+                try {
+                    await serialReader.cancel();
+                } catch {
+                }
+                try {
+                    serialReader.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("⛏️ Released Reader...");
             }
         } catch (error) {
-            console.warn("\n⚠️ Error releasing reader:", error);
+            console.warn("⚠️ Error releasing reader:", error);
             errors.reader = error;
+        } finally {
+            serialReader = null;
         }
 
+        // 2) Writer
         try {
-            if (serialWriter != null && serialWriter?.writable) {
-                await serialWriter?.releaseLock();
-                await serialWriter?.cancel();
-                serialWriter = null;
-                if (verbose) console.info("\n\t⛏️ Released Writer...");
+            if (serialWriter) {
+                try {
+                    await serialWriter.close();
+                } catch {
+                }
+                try {
+                    serialWriter.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("⛏️ Released Writer...");
             }
         } catch (error) {
-            console.warn("\n⚠️ Error releasing writer:", error);
+            console.warn("⚠️ Error releasing writer:", error);
             errors.writer = error;
+        } finally {
+            serialWriter = null;
         }
 
+        // 3) Port
         try {
-            if (serialPort != null && serialPort?.writable) {
-                await serialPort?.writable?.releaseLock();
-                await serialPort?.writable?.getReader()?.cancel();
-                if (verbose) console.info("\n\t⛏️ Closed Writable...");
-            }
-            if (serialPort != null && serialPort?.readable) {
-                await serialPort?.readable?.releaseLock();
-                await serialPort?.readable?.getReader()?.cancel();
-                if (verbose) console.info("\n\t⛏️ Closed Readable...");
-            }
-            if (serialPort != null && (override || serialPort?.connected)) {
-                if (flush) await serialPort?.flush();
-                if (verbose && flush) console.info("\n\t⛏️ Flushed Serial Port...");
-                await serialPort?.close();
-                serialPort = null;
-                if (verbose) console.info("\n\t⛏️ Closed Serial Port...");
+            if (serialPort) {
+                // Pokud někde zůstal lock, pokus se ho vynutit
+                if (serialPort.readable?.locked) {
+                    const r = serialPort.readable.getReader();
+                    try {
+                        await r.cancel();
+                    } catch {
+                    }
+                    try {
+                        r.releaseLock();
+                    } catch {
+                    }
+                }
+                if (serialPort.writable?.locked) {
+                    const w = serialPort.writable.getWriter();
+                    try {
+                        await w.close();
+                    } catch {
+                    }
+                    try {
+                        w.releaseLock();
+                    } catch {
+                    }
+                }
+
+                if (override || serialPort) {
+                    try {
+                        await serialPort.close();
+                    } catch {
+                    }
+                    if (verbose) console.info("⛏️ Closed Serial Port...");
+                }
             }
         } catch (error) {
-            console.warn("\n⚠️ Error closing serial port:", error);
+            console.warn("⚠️ Error closing serial port:", error);
             errors.port = error;
+        } finally {
+            serialPort = null;
         }
 
         isSerial = false;
