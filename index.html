@@ -5105,7 +5105,7 @@
                     }
 
                     console.info("🔌 Connecting canceled.");
-                    await disconnectSerial(true);
+                    await disconnectSerial({override: true});
                     return;
                 }
             }
@@ -5122,7 +5122,7 @@
             isSerial = false;
             isConnected = false;
             activeWatchDog = false;
-            await disconnectSerial(true);
+            await disconnectSerial({override: true});
         }
     }
 
@@ -5264,7 +5264,7 @@
                     await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
                     alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
                     reconnectAttempts = 1000;
-                    await disconnectSerial(true);
+                    await disconnectSerial({override: true});
                     return;
                 }
             }
@@ -5284,7 +5284,7 @@
             activeWatchDog = false;
             if (!(error.name === "InvalidStateError" && retry)) {
                 await handleError(error, "openPort");
-                await disconnectSerial(true);
+                await disconnectSerial({override: true});
             }
         }
     }
@@ -5323,7 +5323,7 @@
     /**
      * Disconnects from the ESP device via USB.
      */
-    async function disconnectSerial(override = false) {
+    async function disconnectSerial({override = false, verbose = true} = {}) {
         if (!override && !isConnected) {
             console.warn("\n⚠️ Port is not connected.");
             return;
@@ -5345,7 +5345,7 @@
             await sleep(5);
 
             // Stop data reading before releasing the reader
-            await closeComPort({override: override, verbose: true});
+            await closeComPort({override: override, verbose: verbose});
 
             await logMessage("✖️ Disconnected from ESP\n\n");
 
@@ -5766,7 +5766,7 @@
         // serialPort = null;
 
         isConnected = false;
-        await disconnectSerial(true);
+        await disconnectSerial({override: true, verbose: false});
 
 
         activeWatchDog = false;
@@ -5805,8 +5805,8 @@
                     attemptReconnect();
                 }, 3000);
             } else {
-                console.warn("\n⚠️ Max reconnect attempts reached. Stopping.");
-                await logMessage("\n❌ Max reconnect attempts reached. Stopping.\n");
+                console.warn("\n⚠️ Max reconnect attempts reached. Reconnecting stoped.");
+                await logMessage("\n❌ Max reconnect attempts reached. Reconnecting stopped.\n");
                 await resetValues();
                 isReconnecting = false;
             }
