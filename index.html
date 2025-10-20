@@ -5299,7 +5299,6 @@
 
             await logMessage("\n");
 
-
             await sendCommandGeneral("MC STOP"); // Stop movement
             await sendCommandGeneral("MC ENDSTOPS ENABLE");
             await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
@@ -5315,12 +5314,6 @@
             await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1_000))}`);
 
             await logMessage("\n");
-
-            // ověření kalibrace
-            calibrationStatus = await getCalibrationStatus(2_000);
-
-            if (calibrationStatus) await unlockMovement();
-            else await lockMovementExcept(UI.calibrateBtn);
 
             try {
                 machineFirmware = await getFirmwareVersion() || "";
@@ -5373,6 +5366,12 @@
                     return;
                 }
             }
+
+            // ověření kalibrace
+            calibrationStatus = await getCalibrationStatus(2_000);
+
+            if (calibrationStatus) await unlockMovement();
+            else await lockMovementExcept(UI.calibrateBtn);
 
             const speed = (await getSpeed(2_000)) || 15;
             const acceleration = (await getAcceleration(2_000)) || 150;
@@ -5429,6 +5428,7 @@
      * Disconnects from the ESP device via USB.
      */
     async function disconnectSerial({override = false, verbose = true} = {}) {
+        const wasConnected = isConnected;
         if (!override && !isConnected) {
             console.warn("\n⚠️ Port is not connected.");
             return;
@@ -5438,21 +5438,22 @@
 
         try {
             try {
-                if (isExperimentRunning) endMeasuring(0, 'disconnected');
+                if (isExperimentRunning) endMeasuring(0, {
+                    overRide: true,
+                    ednStatus: 'disconnected',
+                    endText: "🚧 Experiment stopped due to disconnect"
+                });
+
             } catch (error) {
-                console.warn("\n⚠️ Error stopping data collection:", error);
+                if (debugging) console.warn("\n⚠️ Error stopping data collection:", error);
             }
 
-            await sleep(5);
-
             await endedMoving();
-
-            await sleep(5);
 
             // Stop data reading before releasing the reader
             await closeComPort({override: override, verbose: verbose});
 
-            await logMessage("✖️ Disconnected from ESP\n\n");
+            if (wasConnected && verbose) await logMessage("✖️ Disconnected from ESP\n\n");
 
             console.info("✅ Disconnected successfully.");
         } catch (error) {
@@ -5812,7 +5813,11 @@
         if (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError") {
 
             if (isExperimentRunning) {
-                await endMeasuring(0, 'connection lost', "❌ Experiment stopped due to connection loss.", "Connection lost! Stopping experiment...");
+                await endMeasuring(0, {
+                    ednStatus: 'connection lost',
+                    endText: "❌ Experiment stopped due to connection loss.",
+                    immediateText: "Connection lost! Stopping experiment..."
+                });
                 UI.experimentStageLabel.textContent = `Error`;
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
             }
@@ -6040,7 +6045,6 @@
         try {
             // ověření kalibrace
             calibrationStatus = await getCalibrationStatus(2_000);
-            await sleep(50);
 
             if (!calibrationStatus) {
                 const msg = "\n⚠️ Motors are not calibrated.";
@@ -6053,8 +6057,6 @@
 
             currentSpeed = (await getSpeed()) || 15;
             currentAcceleration = (await getAcceleration()) || 150;
-            await sleep(5);
-
 
             const acceleration = requiredAcceleration || 100; // mm/s²
             const speed = requiredSpeed || await speedFromDistance(dist, acceleration, 0.5, 25); // mm/s
@@ -6122,45 +6124,40 @@
             sendCommandGeneral("DATAC 0"); // Stop data collection
         }
 
-        switch (type) {
-            case 'user':
-                if (isExperimentRunning) {
-                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                    UI.experimentStageLabel.textContent = `Stopped`;
-                    endedBy = "user stop";
-                }
-                break;
-            case 'machine':
-                if (isExperimentRunning) {
-                    document.documentElement.style.setProperty('--progressColor', 'var(--progressWarning-color)');
-                    UI.experimentStageLabel.textContent = `Stopped`;
-                    endedBy = "machine stop";
-                }
-                break;
-            case 'error':
-                if (isExperimentRunning) {
-                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                    UI.experimentStageLabel.textContent = `Stopped`;
-                    endedBy = "error";
-                }
-                break;
-            case 'alarm':
-                if (isExperimentRunning) {
-                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                    UI.experimentStageLabel.textContent = `Stopped`;
-                    endedBy = "machine alarm";
-                }
-                break;
-            default:
-                if (isExperimentRunning) {
-                    document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-                    UI.experimentStageLabel.textContent = `Stopped`;
-                    endedBy = "unknown";
-                }
-        }
+        if (isExperimentRunning) {
+            let reason;
+            let endColor;
+            switch (type) {
+                case 'user':
+                    endColor = 'var(--progressError-color)';
+                    reason = "user stop";
+                    break;
+                case 'machine':
+                    endColor = 'var(--progressWarning-color)';
+                    reason = "machine stop";
+                    break;
+                case 'error':
+                    endColor = 'var(--progressError-color)'
+                    reason = "error";
+                    break;
+                case 'alarm':
+                    endColor = 'var(--progressError-color)'
+                    reason = "machine alarm";
+                    break;
+                default:
+                    endColor = 'var(--progressError-color)'
+                    reason = "unknown stop";
+            }
 
-        isExperimentRunning = false;
-        activeWatchDog = false;
+            endMeasuring(0, {
+                overRide: true,
+                ednStatus: String(reason),
+                endText: '🛑 Experiment stopped',
+            });
+            UI.experimentStageLabel.textContent = `Stopped`;
+            document.documentElement.style.setProperty('--progressColor', endcolor);
+
+        }
 
         if (isConnected) endedMoving();
     }
@@ -6173,12 +6170,15 @@
 
         await sendCommandUser("MC STOP");
 
-        await sleep(5);
-
-        if (currentSpeed) await sendCommandGeneral(`MC SET SPEEDMM ${currentSpeed}`);
-        if (currentAcceleration) await sendCommandGeneral(`MC SET ACCELMM ${currentAcceleration}`);
-
-        activeWatchDog = false;
+        if (isExperimentRunning) {
+            await endMeasuring(0, {
+                overRide: true,
+                ednStatus: 'user soft stop',
+                endText: '🛑 Experiment stopped',
+            });
+            UI.experimentStageLabel.textContent = `Stopped`;
+            document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+        }
 
         if (isConnected) endedMoving();
     }
@@ -6588,9 +6588,6 @@
             } else {
                 throw new Error("Unknown Experiment type error");
             }
-
-
-            await sleep(5); // Stop for 5 ms
 
             if (expControl === 'position') {
                 if (!isValidInputNum(distance_mm) || distance_mm < minDistance) {
@@ -7063,7 +7060,7 @@
             await alert(`Experiment Finished\n     ❌ Experiment failed. Please check the logs and machine.\n\n     Error:${error.message || error}`);
 
         } finally {
-            await endMeasuring(0, null, '', '', '');
+            await endMeasuring(0, {endText: ''});
 
             await sleep(20);
 
@@ -7087,8 +7084,18 @@
     }
 
 
-    async function endMeasuring(timeoutMs = 0, ednStatus = null, endText = '⛔ Experiment stopped.', immediateText = '', command = '') {
-        if (endMeasurement) return;
+    async function endMeasuring(timeoutMs = 0, {
+
+        overRide = false,
+        ednStatus = '',
+        endText = '⛔ Experiment stopped.',
+        immediateText = '',
+        command = ''
+
+    } = {}) {
+
+
+        if (endMeasurement && !overRide) return;
         endMeasurement = true;
 
         const delayFixMs = 5; // fix for setTimeout delays
@@ -7120,9 +7127,11 @@
                 logMessage(endText);
             }
 
-            await sendCommandGeneral("MC STOP");
-            await sendCommandGeneral("DSLR STOP CYCLIC");
-            await sendCommandGeneral("DATAC 0");
+            if (isConnected) {
+                await sendCommandGeneral("MC STOP");
+                await sendCommandGeneral("DSLR STOP CYCLIC");
+                await sendCommandGeneral("DATAC 0");
+            }
 
             isExperimentRunning = false;
             dataCount = null;
@@ -7180,6 +7189,7 @@
                 document.title = newTitle;
                 lastTitle = newTitle;
             }
+            // wait for 50 ms => 20FPS
             await sleep(50);
         }
     }
@@ -7803,7 +7813,11 @@
 
             if (measurement_limits.invalid_data.counter > measurement_limits.invalid_data.limit) {
                 console.warn("⚠️ Invalid data received:", {time: newData?.time, position: newData?.position});
-                endMeasuring(0, 'data error', "⏹️ Movement stopped due to data error.", '', "MC STOP");
+                endMeasuring(0, {
+                    ednStatus: 'data error',
+                    endText: "⏹️ Movement stopped due to data error.",
+                    command: "MC STOP"
+                });
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
                 UI.experimentStageLabel.textContent = `Error`;
             }
@@ -7829,7 +7843,11 @@
 
             if (measurement_limits.over_limitForce.counter > measurement_limits.over_limitForce.limit) {
                 checkSpeed = false; // disable speed check
-                endMeasuring(holdForceTimeMs, 'force limit', `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`, '', "MC STOP");
+                endMeasuring(holdForceTimeMs, {
+                    ednStatus: 'force limit',
+                    endText: `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`,
+                    command: "MC STOP"
+                });
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressOnHold-color)');
                 UI.experimentStageLabel.textContent = `Holding`;
             }
@@ -7843,7 +7861,11 @@
             measurement_limits.zero_speed.counter++;
 
             if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
-                endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), 'zero speed', "🛑 Experiment stopped due to zero speed.", '', takePhotos ? "DSLR STOP CYCLIC" : '');
+                endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), {
+                    ednStatus: 'zero speed',
+                    endText: "🛑 Experiment stopped due to zero speed.",
+                    command: takePhotos ? "DSLR STOP CYCLIC" : '',
+                });
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
                 UI.experimentStageLabel.textContent = `Stopped`;
             }
@@ -7859,7 +7881,11 @@
                 if (!isNum(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
                 if (isNum(maxForces[i])) {
                     if ((maxForces[i] - currForce) > (Math.abs(maxForces[i]) * forceLimitDropPercent) && (maxForces[i] - currForce) > forceLimitDropValue) {
-                        endMeasuring(50, `loadCell[${i + 1}] drop`, `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxForces[i] - currForce)} > ${(Math.abs(maxForces[i]) * forceLimitDropPercent)} and Absolute: ${maxForces[i] - currForce} > ${forceLimitDropValue}.`, '', "MC STOP");
+                        endMeasuring(50, {
+                            ednStatus: `loadCell[${i + 1}] drop`,
+                            endText: `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxForces[i] - currForce)} > ${(Math.abs(maxForces[i]) * forceLimitDropPercent)} and Absolute: ${maxForces[i] - currForce} > ${forceLimitDropValue}.`,
+                            command: "MC STOP",
+                        });
                         if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
                         break; // Stop checking other LoadCells if one fails
                     }
@@ -7876,8 +7902,11 @@
         if (progressValue >= 100) {
             if (positionProgress < 100) {
                 const delayMs = endMeasurement ? 0 : delayMsAfterEndMeasurement;
-                endMeasurement = false; // Overwrite to allow ending
-                endMeasuring(delayMs, 'end position', "🏁 Experiment finished.");
+                endMeasuring(delayMs, {
+                    overRide: true,
+                    ednStatus: 'end position',
+                    endText: "🏁 Experiment finished.",
+                });
                 if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
             }
         }
@@ -10988,9 +11017,10 @@
         if ($ID("inputAutoConnect").checked) await startSerial(false);
         else updateConnectionStatus("disconnected");
 
+        const waitTime = 300;
         while (!(pageLoaded && dataLoaded)) {
-            await sleep(300);
-            pageLoadTimeout += 300;
+            await sleep(waitTime);
+            pageLoadTimeout += waitTime;
             if (pageLoadTimeout > 10_000) break;
         }
 
@@ -10998,10 +11028,11 @@
         if (pageLoaded && dataLoaded) {
             recomputeAll();
 
-            await sleep(100);
+            await sleep(5);
 
             if (timeData.length > 1) {
                 console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
+                await logMessage("\nℹ️ Found previous unsaved logged data.\n");
                 alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
             } else {
                 console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
