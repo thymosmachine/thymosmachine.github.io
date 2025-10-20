@@ -439,6 +439,8 @@
             border-radius: 1em;
             background: var(--page-bg);
             color: var(--text-color);
+            overflow-x: hidden;
+            overflow-y: hidden;
         }
 
         *:disabled {
@@ -810,6 +812,7 @@
         #controlContainer {
             display: grid;
             grid-template-columns:  1fr auto;
+            grid-auto-rows: auto;
             gap: 30px;
             width: 100%;
             justify-content: center;
@@ -1040,6 +1043,7 @@
         #experimentInputsContainer {
             display: grid;
             grid-template-columns: max-content minmax(min-content, 1fr) min-content;
+            grid-auto-rows: auto;
             max-width: 1200px;
             width: 100%;
             min-width: 300px;
@@ -1101,6 +1105,7 @@
         .inputsContainer, #machSettings {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(calc(var(--inputLabelWidth) + var(--gap) + var(--inputMinWidth)), 1fr)); /* Dynamic grid */
+            grid-auto-rows: auto;
             overflow: hidden;
             width: -webkit-fill-available;
             gap: var(--gap);
@@ -1129,6 +1134,7 @@
 
         .autoGrid {
             grid-template-columns: repeat(auto-fit, minmax(max-content, 1fr));
+            grid-auto-rows: auto;
             justify-items: center;
         }
 
@@ -1163,6 +1169,7 @@
         #consoleContainer {
             display: grid;
             grid-template-columns: 100fr 1fr; /* One column */
+            grid-auto-rows: auto;
             gap: var(--gap);
             padding-top: 20px;
         }
@@ -1479,11 +1486,37 @@
 </head>
 
 <body>
-<noscript>
-    <div style="color: red; font-weight: bold; text-align: center; margin-top: 20px;">
-        JavaScript is disabled in your browser. Please enable it to use this application.
-    </div>
-</noscript>
+
+
+<div id="preloadScreen"
+     style="position: fixed;       /* dřív bylo absolute */
+            inset: 0;              /* top:0; right:0; bottom:0; left:0 */
+            width: 100vw;          /* místo 100dvw, ať je to konzistentní napříč prohlížeči */
+            height: 100vh;         /* místo 100dvh */
+            display: flex; flex-flow: column; gap: 5%;
+            background: #181818; justify-content: center; align-items: center;  z-index: 999; pointer-events: none;
+            color: lightgray; font-weight: bold; text-align: center; font-size: 2em;
+            opacity: 1;
+            transition: opacity 0.5s;">
+    <noscript>
+        <div style="color: red;">
+            JavaScript is disabled in your browser. Please enable it to use this application.
+        </div>
+    </noscript>
+
+    <svg style="width:10%; height: auto; aspect-ratio: 1/1" viewBox="0 0 177.81437 177.9034"
+         xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(225.12939,129.3157)">
+            <path fill="lightgray" stroke="lightgray" stroke-width="4.63292"
+                  d="m -183.53862,7.9393313 0.37992,-28.6806303c -3.46806,-0.838763 -6.47358,-2.670752 -8.82206,-5.154387 -3.35392,-3.546427 -5.32276,-8.431072 -5.32276,-13.618672v -30.30165c 0,-9.89763 4.27076,-21.98757 12.85714,-30.761632 6.93867,-7.09086 16.65032,-12.05614 29.13465,-12.05614h 67.983775l 11.83638,83.692256 -18.4011,0.0017v 60.189316l -3.79175,0.439257c -0.15191,0.02838 -53.466715,6.885861 -53.466715,-57.521684h 8.55402c 0,44.888568 29.48901,49.136615 40.15129,49.207313v -60.833856h 17.131595l -9.42174,-66.617732h -60.575755c -9.92062,0 -17.59527,3.90532 -23.05376,9.483912 -6.93498,7.08604 -10.38374,16.82239 -10.38374,24.78041v 30.30165c 0,2.99757 1.10511,5.78559 2.98196,7.77034 1.70875,1.80842 4.10749,2.95469 6.91965,2.95469h 4.31732l -0.4861,36.8294603 -8.52222,-0.102216 z"
+            />
+            <path fill="lightgray" stroke="lightgray" stroke-width="4.63292"
+                  d="m -115.91317,-44.595488c 5.72369,0 10.36216,-4.63847 10.36216,-10.36102 0,-5.72256 -4.63847,-10.3613 -10.36216,-10.3613 -5.72255,0 -10.36102,4.63874 -10.36102,10.3613 0,5.72255 4.63847,10.36102 10.36102,10.36102"
+            />
+        </g>
+    </svg>
+    <span>Loading...</span>
+</div>
 
 <main id="app" data-bugreporter-root>
     <section class="headerContainer">
@@ -1506,12 +1539,12 @@
                 <g transform="translate(225.12939,129.3157)">
                     <rect class="rect-bg" width="130.01212" height="130.01208" x="-201.22827" y="-105.37005"
                           ry="9.1106987" rx="9.4112854" stroke-width="47.8913"/>
-                    <path class="main-shape"
+                    <path class="main-shape" stroke-width="4.63292"
                           d="m -183.53862,7.9393313 0.37992,-28.6806303c -3.46806,-0.838763 -6.47358,-2.670752 -8.82206,-5.154387 -3.35392,-3.546427 -5.32276,-8.431072 -5.32276,-13.618672v -30.30165c 0,-9.89763 4.27076,-21.98757 12.85714,-30.761632 6.93867,-7.09086 16.65032,-12.05614 29.13465,-12.05614h 67.983775l 11.83638,83.692256 -18.4011,0.0017v 60.189316l -3.79175,0.439257c -0.15191,0.02838 -53.466715,6.885861 -53.466715,-57.521684h 8.55402c 0,44.888568 29.48901,49.136615 40.15129,49.207313v -60.833856h 17.131595l -9.42174,-66.617732h -60.575755c -9.92062,0 -17.59527,3.90532 -23.05376,9.483912 -6.93498,7.08604 -10.38374,16.82239 -10.38374,24.78041v 30.30165c 0,2.99757 1.10511,5.78559 2.98196,7.77034 1.70875,1.80842 4.10749,2.95469 6.91965,2.95469h 4.31732l -0.4861,36.8294603 -8.52222,-0.102216 z"
-                          stroke-width="4.63292"/>
-                    <path class="dot-shape"
+                    />
+                    <path class="dot-shape" stroke-width="4.63292"
                           d="m -115.91317,-44.595488c 5.72369,0 10.36216,-4.63847 10.36216,-10.36102 0,-5.72256 -4.63847,-10.3613 -10.36216,-10.3613 -5.72255,0 -10.36102,4.63874 -10.36102,10.3613 0,5.72255 4.63847,10.36102 10.36102,10.36102"
-                          stroke-width="4.63292"/>
+                    />
                 </g>
             </svg>
 
@@ -2632,7 +2665,7 @@
         isFiniteNumber(x, false) && x > 0;
 
     const catchVal = (val, def, cond = isOk) =>
-        cond(val) ? val : def;
+        (isFunc(cond) ? cond(val) : isOk(cond)) ? val : def;
 
     const isNumberOrBigInt = (x) =>
         isNumber(x) || isBigInt(x);
@@ -3335,6 +3368,827 @@
 
 </script>
 
+<script>
+
+    // ==========================
+    // Jednotky, prefixy, parser
+    // ==========================
+
+    // --- Rozměry a operace ---
+    const ZERO = [0, 0, 0, 0, 0, 0, 0]; // L, M, T, I, Θ, N, J
+    const DIMS = {L: 0, M: 1, T: 2, I: 3, Th: 4, N: 5, J: 6};
+
+    const dim = (...d) => d;
+    const addDim = (a, b) => a.map((v, i) => v + b[i]);
+    const mulDim = (a, k) => a.map(v => v * k);
+    const sameDim = (a, b) => a.every((v, i) => v === b[i]);
+
+    // --- SI předpony (vč. 'µ' a fallback 'u') ---
+    const PREFIX = new Map(Object.entries({
+        Y: 1e24, Z: 1e21, E: 1e18, P: 1e15, T: 1e12, G: 1e9, M: 1e6,
+        k: 1e3, h: 1e2, da: 1e1,
+        d: 1e-1, c: 1e-2, m: 1e-3, u: 1e-6, 'µ': 1e-6,
+        n: 1e-9, p: 1e-12, f: 1e-15, a: 1e-18, z: 1e-21, y: 1e-24
+    }));
+
+    // --- Textové předpony (slova) → symbol předpony ---
+    const TEXT_PREFIX_ALIASES = new Map(Object.entries({
+        yotta: 'Y', zetta: 'Z', exa: 'E', peta: 'P', tera: 'T',
+        giga: 'G', mega: 'M', kilo: 'k', hecto: 'h', deka: 'da', deca: 'da',
+        deci: 'd', centi: 'c', milli: 'm', micro: 'u', nano: 'n',
+        pico: 'p', femto: 'f', atto: 'a', zepto: 'z', yocto: 'y'
+    }));
+
+    // --- Databáze jednotek ---
+    const UNITS = new Map(); // sym -> { dim, factor }
+    const def = (sym, dimv, factor = 1) => UNITS.set(sym, {dim: dimv, factor});
+
+    /* Základní SI + pár běžných */
+    def('m', dim(1, 0, 0, 0, 0, 0, 0));
+    def('s', dim(0, 0, 1, 0, 0, 0, 0));
+    def('A', dim(0, 0, 0, 1, 0, 0, 0));
+    def('K', dim(0, 0, 0, 0, 1, 0, 0));
+    def('mol', dim(0, 0, 0, 0, 0, 1, 0));
+    def('cd', dim(0, 0, 0, 0, 0, 0, 1));
+
+    def('kg', dim(0, 1, 0, 0, 0, 0, 0), 1);
+    def('g', dim(0, 1, 0, 0, 0, 0, 0), 1e-3); // 1 g = 1e-3 kg
+
+    // Časové zkratky
+    def('min', dim(0, 0, 1, 0, 0, 0, 0), 60);
+    def('h', dim(0, 0, 1, 0, 0, 0, 0), 3600);
+
+    // Odvozené (faktor 1, jen dimenze)
+    const mD = UNITS.get('m').dim;
+    const sD = UNITS.get('s').dim;
+    const AD = UNITS.get('A').dim;
+    const kgD = UNITS.get('kg').dim;
+    const cdD = UNITS.get('cd').dim;
+
+    const HzD = mulDim(sD, -1);
+    def('Hz', HzD, 1);
+
+    const ND = addDim(kgD, addDim(mD, mulDim(sD, -2)));
+    def('N', ND, 1);
+
+    const PaD = addDim(ND, mulDim(mD, -2));
+    def('Pa', PaD, 1);
+
+    const JD = addDim(ND, mD);
+    def('J', JD, 1);
+
+    const WD = addDim(JD, mulDim(sD, -1));
+    def('W', WD, 1);
+
+    const VD = addDim(WD, mulDim(AD, -1));
+    def('V', VD, 1);
+
+    // C, F, Ω/ohm, T, lx
+    const CD = addDim(AD, sD);
+    def('C', CD, 1);
+
+    const FD = addDim(CD, mulDim(VD, -1));
+    def('F', FD, 1);
+
+    const OhmD = addDim(VD, mulDim(AD, -1));
+    def('Ω', OhmD, 1);
+    def('ohm', OhmD, 1);
+    def('Ohm', OhmD, 1);
+
+    const TD = addDim(ND, addDim(mulDim(AD, -1), mulDim(mD, -1)));
+    def('T', TD, 1);
+
+    // Lux = cd / m^2
+    const lxD = addDim(cdD, mulDim(mD, -2));
+    def('lx', lxD, 1);
+
+    // Bezrozměrné pomocné
+    def('1', ZERO.slice(), 1);
+    def('%', ZERO.slice(), 0.01);
+    def('‰', ZERO.slice(), 0.001);
+    def('ppm', ZERO.slice(), 1e-6);
+    def('ppb', ZERO.slice(), 1e-9);
+
+    // Den, týden, měsíc(30d), rok(365d)
+    const SECONDS_PER_DAY = 24 * 60 * 60;
+    def('d', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
+    def('day', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
+    def('wk', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
+    def('week', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
+    def('mo', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
+    def('month', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
+    def('yr', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
+    def('year', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
+
+    // Teploty – symbolické; afinní převod řeší convertUnits
+    def('degC', UNITS.get('K').dim, 1); // °C
+    def('degF', UNITS.get('K').dim, 1); // °F
+
+    // Seznam symbolů (nejdelší napřed)
+    let UNIT_SYMBOLS = Array.from(UNITS.keys()).sort((a, b) => b.length - a.length);
+
+    // --- Textové aliasy jednotek (plurály, názvy, překlepy) → kanonické symboly ---
+    const TEXT_UNIT_ALIASES = new Map(Object.entries({
+        // čas
+        sec: 's', secs: 's', second: 's', seconds: 's',
+        mins: 'min', minute: 'min', minutes: 'min',
+        hr: 'h', hrs: 'h', hour: 'h', hours: 'h',
+        day: 'd', days: 'd',
+        wks: 'wk', week: 'wk', weeks: 'wk',
+        mos: 'mo', month: 'mo', months: 'mo',
+        yrs: 'yr', year: 'yr', years: 'yr',
+
+        // délka / hmota
+        meter: 'm', meters: 'm', metre: 'm', metres: 'm',
+        gram: 'g', grams: 'g',
+
+        // základní SI
+        ampere: 'A', amperes: 'A',
+        kelvin: 'K',
+        mole: 'mol', moles: 'mol',
+        candela: 'cd',
+
+        // odvozené
+        newton: 'N', newtons: 'N',
+        pascal: 'Pa', pascals: 'Pa',
+        joule: 'J', joules: 'J',
+        watt: 'W', watts: 'W',
+        volt: 'V', volts: 'V',
+        coulomb: 'C', coulombs: 'C',
+        farad: 'F', farads: 'F',
+        ohm: 'ohm', ohms: 'ohm', Ohm: 'ohm',
+        tesla: 'T', teslas: 'T',
+        lux: 'lx',
+
+        // teploty (text)
+        celsius: 'degC', 'degree celsius': 'degC', degreecelsius: 'degC', 'degrees celsius': 'degC',
+        fahrenheit: 'degF', 'degree fahrenheit': 'degF', degreefahrenheit: 'degF', 'degrees fahrenheit': 'degF'
+    }));
+
+    const TEXT_UNIT_TYPO_ALIASES = new Map(Object.entries({
+        secnd: 's', minut: 'min', houer: 'h',
+        gramm: 'g',
+        nevtonn: 'N', newtonn: 'N', newtons: 'N',
+        pascalss: 'Pa', jouless: 'J', wattss: 'W', voltss: 'V',
+        coulombss: 'C', faradss: 'F', teslass: 'T',
+        luxx: 'lx', luxes: 'lx',
+        metre: 'm', metres: 'm' // (duplicitně pro jistotu)
+    }));
+
+    // --- Normalizace vstupu před parsováním ---
+    // 1) nahradí °C/°F → degC/degF
+    // 2) nahradí textové předpony & jednotky & překlepy
+    // 3) slepí "<prefix><mezera><unit>" → "<prefix><unit>" (např. "k m" → "km")
+    function normalizeUnitsString(input) {
+        if (input == null) return input;
+        let s = String(input);
+
+        // °C / °F → degC / degF
+        s = s.replace(/°\s*[cC]/g, 'degC')
+            .replace(/°\s*[fF]/g, 'degF');
+
+        const replaceWordMap = (map) => {
+            const keys = Array.from(map.keys()).sort((a, b) => b.length - a.length);
+            for (const k of keys) {
+                const re = new RegExp(`\\b${k}\\b`, 'gi');
+                s = s.replace(re, map.get(k));
+            }
+        };
+
+        // nejdřív slova-předpony, pak jednotky a překlepy
+        replaceWordMap(TEXT_PREFIX_ALIASES);
+        replaceWordMap(TEXT_UNIT_ALIASES);
+        replaceWordMap(TEXT_UNIT_TYPO_ALIASES);
+
+        // slep "prefix symbol"+"mezera"+"unit" → "prefix+unit"
+        const prefixSymbols = ['Y', 'Z', 'E', 'P', 'T', 'G', 'M', 'k', 'h', 'da', 'd', 'c', 'm', 'u', 'µ', 'n', 'p', 'f', 'a', 'z', 'y'];
+        for (const pre of prefixSymbols) {
+            for (const u of UNIT_SYMBOLS) {
+                if (u === 'kg') continue; // kg je speciál
+                const re = new RegExp(`\\b${pre}\\s+${u}\\b`, 'g');
+                s = s.replace(re, `${pre}${u}`);
+            }
+        }
+
+        return s;
+    }
+
+    // --- Parser jednotkového výrazu ---
+    function parseUnitExpr(input) {
+        if (!input || String(input).trim() === '' || input === '1') {
+            return {dim: ZERO.slice(), factor: 1};
+        }
+
+        // normalizace
+        let s = normalizeUnitsString(input);
+
+        s = String(s)
+            .replace(/[·⋅•×]/g, '*')
+            .replace(/[–—−]/g, '-')   // různé minusy
+            .replace(/\s+/g, '*')     // mezery jako násobení
+            .replace(/[()]/g, '');    // bez závorek
+
+        const parts = s.split('/');
+        let acc = {dim: ZERO.slice(), factor: 1};
+
+        parts.forEach((segment, idx) => {
+            const sign = (idx === 0) ? +1 : -1; // čitatel / jmenovatel
+            const tokens = segment.split('*').filter(Boolean);
+            tokens.forEach(tok => {
+                const {dim, factor} = parseUnitToken(tok);
+                acc.dim = addDim(acc.dim, mulDim(dim, sign));
+                acc.factor *= Math.pow(factor, sign);
+            });
+        });
+
+        return acc;
+    }
+
+    function parseUnitToken(tok) {
+        let t = String(tok).trim();
+        if (!t) throw new Error(`Invalid unit token: "${tok}"`);
+        let exp = 1;
+
+        // exponent ^{...} nebo ^...
+        const mPow = t.match(/\^(?:\{([^}]+)}|(.+))$/);
+        if (mPow) {
+            const raw = (mPow[1] || mPow[2]).trim();
+            exp = parseInt(raw, 10);
+            t = t.slice(0, mPow.index);
+            if (!Number.isInteger(exp)) throw new Error(`Invalid exponent: "${raw}"`);
+        }
+
+        // unicode mocniny
+        t = t.replace(/²/g, '^2').replace(/³/g, '^3');
+        if (exp === 0) return {dim: ZERO.slice(), factor: 1};
+        if (t === '1') return {dim: ZERO.slice(), factor: 1};
+
+        // speciál: "kg" – nesmí se rozpadnout na k + g
+        if (t === 'kg') {
+            return {dim: mulDim(UNITS.get('kg').dim, exp), factor: 1};
+        }
+
+        // nejdelší známý symbol jednotky jako sufix
+        const unit = UNIT_SYMBOLS.find(u => t.endsWith(u));
+        if (!unit) throw new Error(`Unknown unit: "${t}"`);
+
+        const base = UNITS.get(unit);
+        if (!base) throw new Error(`Unit "${unit}" is not supported`);
+
+        const prefixStr = t.slice(0, t.length - unit.length);
+        let pf = 1;
+        if (prefixStr) {
+            pf = PREFIX.get(prefixStr);
+            if (pf == null && prefixStr === 'da') pf = 10; // fallback
+            if (pf == null) throw new Error(`Unknown prefix: "${prefixStr}" in "${tok}"`);
+        }
+
+        return {
+            dim: mulDim(base.dim, exp),
+            factor: Math.pow(base.factor * pf, exp)
+        };
+    }
+
+    // --- Teplotní helpery (čisté teploty jen) ---
+    const isPureTempUnit = (u) => {
+        const s = String(u).trim();
+        return s === 'K' || s === 'degC' || s === 'degF';
+    };
+    const toKelvin = (value, sym) => {
+        switch (sym) {
+            case 'K':
+                return value;
+            case 'degC':
+                return value + 273.15;
+            case 'degF':
+                return (value - 32) * (5 / 9) + 273.15;
+            default:
+                throw new Error(`Unsupported temperature unit: ${sym}`);
+        }
+    };
+    const fromKelvin = (valueK, sym) => {
+        switch (sym) {
+            case 'K':
+                return valueK;
+            case 'degC':
+                return valueK - 273.15;
+            case 'degF':
+                return (valueK - 273.15) * (9 / 5) + 32;
+            default:
+                throw new Error(`Unsupported temperature unit: ${sym}`);
+        }
+    };
+
+    // --- Veřejné API: konverze hodnoty mezi jednotkami ---
+    function convertUnits(value, fromUnit, toUnit) {
+        const fNorm = normalizeUnitsString(fromUnit);
+        const tNorm = normalizeUnitsString(toUnit);
+
+        const fIsTemp = isPureTempUnit(fNorm);
+        const tIsTemp = isPureTempUnit(tNorm);
+
+        if (fIsTemp || tIsTemp) {
+            // afinní převod smí být jen mezi čistými teplotami
+            if (!(fIsTemp && tIsTemp)) {
+                throw new Error(`Temperature units cannot be combined with other units: "${fromUnit}" → "${toUnit}"`);
+            }
+            const k = toKelvin(value, fNorm);
+            return fromKelvin(k, tNorm);
+        }
+
+        const a = parseUnitExpr(fNorm);
+        const b = parseUnitExpr(tNorm);
+        if (!sameDim(a.dim, b.dim)) {
+            throw new Error(`Noncompatible units: "${fromUnit}" vs "${toUnit}"`);
+        }
+        return roundDecimalFast(value * (a.factor / b.factor), maxPrecision);
+    }
+
+    // ==========================
+    // TESTY & VÝPIS DO KONZOLE
+    // ==========================
+    // function runTests() {
+    //     console.log('--- TEST: °C / °F / K ---');
+    //     console.log('normalize "°C" ->', normalizeUnitsString('°C')); // očekáváme "degC"
+    //     console.log('normalize "°F" ->', normalizeUnitsString('°F')); // očekáváme "degF');
+    //
+    //     const tC = 25;
+    //     console.log(`25 °C -> K: `, convertUnits(tC, '°C', 'K'));     // 298.15
+    //     console.log(`25 °C -> °F:`, convertUnits(tC, '°C', '°F'));    // 77
+    //     console.log(`300 K -> °C:`, convertUnits(300, 'K', 'degC'));  // 26.85
+    //     console.log(`77 °F -> °C:`, convertUnits(77, 'degF', 'degC')); // 25
+    //
+    //     console.log('\n--- TEST: textové názvy & překlepy ---');
+    //     console.log('normalize "seconds" ->', normalizeUnitsString('seconds')); // s
+    //     console.log('normalize "metres"  ->', normalizeUnitsString('metres'));  // m
+    //     console.log('normalize "gramm"   ->', normalizeUnitsString('gramm'));   // g
+    //     console.log('normalize "nevtonn" ->', normalizeUnitsString('nevtonn')); // N
+    //
+    //     console.log('\n--- TEST: textové předpony ---');
+    //     console.log('normalize "kilo meter" ->', normalizeUnitsString('kilo meter')); // km
+    //     console.log('parse "kilo meter / second" == "km/s":',
+    //         JSON.stringify(parseUnitExpr('kilo meter / second')) === JSON.stringify(parseUnitExpr('km/s'))
+    //     );
+    //
+    //     console.log('\n--- TEST: běžné SI konverze ---');
+    //     console.log('1 km -> m:', convertUnits(1, 'km', 'm'));           // 1000
+    //     console.log('500 g -> kg:', convertUnits(500, 'g', 'kg'));       // 0.5
+    //     console.log('1 N·m -> J:', convertUnits(1, 'N*m', 'J'));         // 1
+    //     console.log('1 Pa -> N/m^2:', convertUnits(1, 'Pa', 'N/m^2'));   // 1
+    //
+    //     console.log('\n--- TEST: chybové stavy ---');
+    //     try {
+    //         console.log('degC/s → K/s (nemělo by projít):', convertUnits(1, 'degC/s', 'K/s'));
+    //     } catch (e) {
+    //         console.log('Očekávaná chyba (afinní teplota v poměru):', e.message);
+    //     }
+    //     try {
+    //         console.log('neznámá jednotka:', convertUnits(1, 'smurf', 'm'));
+    //     } catch (e) {
+    //         console.log('Očekávaná chyba (unknown unit):', e.message);
+    //     }
+    //
+    //
+    //     convertUnits(2, 'min', 's');             // 120
+    //     convertUnits(1, 'h', 'min');             // 60
+    //
+    //     convertUnits(1, 'mV/V', '1');            // 0.001  (bezrozměrné)
+    //     convertUnits(1, 'mV/V', '%');            // 0.1    (%)
+    //     convertUnits(2.5, 'mV/V', '‰');          // 2.5    (promile)
+    //     convertUnits(500, 'ppm', '%');           // 0.05
+    //
+    //     convertUnits(1, 'kΩ', 'ohm');            // 1000
+    //     convertUnits(1, 'mA', 'A');              // 0.001
+    //     convertUnits(1, 'C', 'A*s');             // 1
+    //     convertUnits(1, 'F', 'C/V');             // 1
+    //     convertUnits(1, 'T', 'N/(A*m)');         // 1
+    //     convertUnits(1, 'lx', 'cd/m^2');         // 1
+    //
+    //     convertUnits(2, 'mm/min', 'mm/s');
+    //     convertUnits(2.5, 'mV/GV', 'GV/mV');
+    //     convertUnits(4, 'mV/V', 'MV/GV');
+    //     convertUnits(4, 'mV/V', 'GV/GV');
+    //     convertUnits(4, 'mm^2', 'cm^2');
+    //     convertUnits(4, 'µm^4', 'm^4');
+    //     convertUnits(4, 'µm^4', 'm^4');
+    //
+    //     convertUnits(1, 'd', 's');           // 86400
+    //     convertUnits(2, 'wk', 'd');          // 14 (2x 7)
+    //     convertUnits(60, 'mo', 'd');         // 1800 (2 měsíce po 30 dnech)
+    //     convertUnits(1, 'yr', 'h');          // 365 * 24 = 8760
+    //     convertUnits(1, 'km/yr', 'm/d');      // ≈ 0.27778 (beze změny)
+    //     convertUnits(1, 'mm/wk', 'mm/day');   // 60
+    //
+    //     convertUnits(1, 'N', 'kg*m/s^2');     // 1
+    //     convertUnits(10, 'N', 'kN');          // 0.01
+    //
+    //     convertUnits(1, 'J', 'N*m');          // 1
+    //     convertUnits(1, 'J', 'kg*m^2/s^2');   // 1
+    //     convertUnits(500, 'kJ', 'MJ');        // 0.5
+    //
+    //     convertUnits(1, 'W', 'J/s');          // 1
+    //     convertUnits(2.5, 'kW', 'W');         // 2500
+    //     convertUnits(1, 'W', 'kg*m^2/s^3');   // 1
+    // }
+
+</script>
+
+<script>
+    (() => {
+        /* ======= KONFIG ======= */
+        const COPY_SELECTOR = '.copyableInput';
+        const ADJUST_SELECTOR = '.adjustableInput';
+        const LINGER_MS = 1000; // jak dlouho zůstane pilulka viditelná po akci/opuštění
+
+        /* ======= POMOCNÉ FUNKCE (bezpečné fallbacky) ======= */
+        const normalize = (v) => String(v || '').toLowerCase()
+            .replaceAll('\\', '/').replaceAll('.', '').replaceAll(',', '').trim();
+
+        /* ======= GLOBÁLNÍ EXKLUZIVITA POSLEDNÍ AKCE ======= */
+        let currentActive = null; // { el, btn }
+
+        const cancelFadeListener = (btn) => {
+            if (btn._onFadeEnd) {
+                btn.removeEventListener('transitionend', btn._onFadeEnd);
+                btn._onFadeEnd = null;
+            }
+        };
+        const cancelHideTimer = (btn) => {
+            if (btn._hideTimer) {
+                clearTimeout(btn._hideTimer);
+                btn._hideTimer = null;
+            }
+        };
+        const deactivateCurrent = () => {
+            if (!currentActive) return;
+            const {el, btn} = currentActive;
+            cancelHideTimer(btn);
+            cancelFadeListener(btn);
+            el.classList.remove('action-ok', 'action-err');
+            btn.classList.remove('visible');
+            btn.dataset.state = 'idle';
+            currentActive = null;
+        };
+
+        const setStateExclusive = (el, btn, state) => {
+            if (!currentActive || currentActive.btn !== btn) {
+                deactivateCurrent();
+                currentActive = {el, btn};
+            }
+            cancelFadeListener(btn);
+            btn.dataset.state = state;
+            btn.classList.add('visible');
+        };
+
+        const checkAdjustBtn = (btn, wrap) => {
+            if (!btn) return;
+            if (!wrap || !wrap.classList.contains('has-auto')) return;
+            if (btn.dataset.state === 'idle' || btn.dataset.state === 'set' || btn.dataset.state === 'diff') {
+                const input = wrap.querySelector(ADJUST_SELECTOR);
+                if (!input) return;
+                const id = input.id || normalize(input.name) || normalize(input.dataset.adjustId);
+                if (!id) return;
+                const inputValue = input.value;
+                const autoValue = adjustRegistryAPI.get(id);
+                if (hasValue(autoValue) && hasValue(inputValue)) {
+                    if (toNumber(autoValue) === toNumber(inputValue)) {
+                        btn.dataset.state = 'set'; // already set
+                    } else {
+                        btn.dataset.state = 'diff'; // can be set
+                    }
+                } else {
+                    btn.dataset.state = 'idle'; // no auto-value
+                }
+            }
+        };
+
+        const showBtn = (btn, wrap) => {
+            cancelHideTimer(btn);
+            cancelFadeListener(btn);
+            btn.classList.add('visible');
+            checkAdjustBtn(btn, wrap);
+        };
+
+        const hideBtnLater = (btn) => {
+            cancelHideTimer(btn);
+            btn._hideTimer = setTimeout(() => {
+                btn.classList.remove('visible');
+                cancelFadeListener(btn);
+                btn._onFadeEnd = (ev) => {
+                    if (ev.propertyName === 'opacity') {
+                        const op = getComputedStyle(btn).opacity;
+                        if (op === '0') {
+                            btn.dataset.state = 'idle';
+                            cancelFadeListener(btn);
+                        }
+                    }
+                };
+                btn.addEventListener('transitionend', btn._onFadeEnd);
+            }, LINGER_MS - 100);
+        };
+
+        // wand (idle)
+        const iconWand = '<svg class="icon-wand" viewBox="0 0 24 24" fill="none" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path stroke="none" d="M0 0h24v24H0z" fill="none"/> <path d="M4 8v-2a2 2 0 0 1 2 -2h2"/> <path d="M4 16v2a2 2 0 0 0 2 2h2"/> <path d="M16 4h2a2 2 0 0 1 2 2v2"/> <path d="M16 20h2a2 2 0 0 0 2 -2v-2"/> <path d="M9 16v-5.5a2 2 0 1 1 6 0v5.5"/> <path d="M9.5 13h5"/></svg>';
+        // Copy (idle)
+        const iconCopy = '<svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <rect width="13" height="16" x="8" y="7" rx="1.5" ry="1.5"/> <path d="M 3,15.5 V 3.5 C 3,2.7 3.7,2 4.5,2 H 15"/></svg>';
+        // check
+        const iconOK = '<svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M 4.8,13.4 9,17.6 19.6,7"/> </svg>';
+        // X
+        const iconX = '<svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M6 6 L18 18 M18 6 L6 18"/> </svg>';
+
+
+        /* ======= VYTVOŘENÍ WRAPPERU ======= */
+        const ensureWrap = (el) => {
+            const parent = el.parentElement;
+            if (parent && (parent.classList.contains('action-wrap') || parent.classList.contains('copy-wrap'))) {
+                // kompatibilita: pokud už existuje copy-wrap, povýšíme ho na action-wrap
+                parent.classList.add('action-wrap');
+                return parent;
+            }
+            const wrap = $MAKE('span');
+            wrap.className = 'action-wrap';
+            el.insertAdjacentElement('beforebegin', wrap);
+            wrap.appendChild(el);
+            return wrap;
+        };
+
+        /* ======= PILULKY ======= */
+        const makeCopyButton = () => {
+            const btn = $MAKE('button');
+            btn.type = 'button';
+            btn.className = 'action-pill copy-pill';
+            btn.dataset.state = 'idle';
+            btn.setAttribute('aria-label', 'Zkopírovat hodnotu');
+            btn.title = 'Copy value';
+            btn.innerHTML = `${iconCopy} ${iconOK} ${iconX}`;
+            return btn;
+        };
+
+        const makeAdjustButton = () => {
+            const btn = $MAKE('button');
+            btn.type = 'button';
+            btn.className = 'action-pill adjust-pill';
+            btn.dataset.state = 'idle';
+            btn.setAttribute('aria-label', 'Automaticky nastavit hodnotu');
+            btn.title = 'Set automatic value';
+            btn.innerHTML = `${iconWand} ${iconOK} ${iconX}`;
+            return btn;
+        };
+
+        /* ======= REGISTR AUTO-HODNOT ======= */
+        const _registry = {};
+        const ensureId = (el, prefix = 'adj') => {
+            if (el.id && el.id.trim().length) return el.id;
+            const auto = `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+            el.id = auto;
+            return auto;
+        };
+
+        // veřejné API
+        const adjustRegistryAPI = {
+            get(id) {
+                return _registry[id];
+            },
+            set(id, value) {
+                _registry[id] = value;
+                refreshAdjustButtonsFor(id); // UI refresh jen pro daný input
+            },
+            all() {
+                return Object.assign({}, _registry);
+            }
+        };
+        window.adjustRegistry = adjustRegistryAPI;        // čti/zapisuj přes metody
+
+        window.adjustSet = (id, v) => {
+            const el = $ID(id);
+            const val = toNumber(v);
+
+            if (!hasValue(el.value) && isNum(val)) blinkBorder(el, {
+                restart: true,
+                color: '#2196F3',
+                backgroundOn: '#a7e7ff',
+                blinks: 3,
+            });
+
+            else if (isNum(val) && val === toNumber(el.value)) blinkBorder(el, {
+                restart: true,
+                color: '#4CAF50',
+                backgroundOn: '#a9ffa9',
+                blinks: 3,
+            });
+
+            else if (isNum(val) && val !== adjustGet(id)) blinkBorder(el, {restart: true});
+
+            else if (!isNum(val) && isNum(adjustGet(id))) blinkBorder(el, {
+                restart: true,
+                color: '#DC143C',
+                backgroundOn: '#ffaeb9',
+                blinks: 3,
+            });
+
+            adjustRegistryAPI.set(id, val);
+        };
+        window.adjustGet = (id) => adjustRegistryAPI.get(id);
+        window.adjustDel = (id) => {
+            if (adjustRegistryAPI.get(id) !== undefined) {
+                adjustRegistryAPI.set(id, NaN);
+            }
+        };
+
+        /* ======= VAZBA ID -> tlačítko pro rychlý refresh ======= */
+        const idToAdjustBtn = new Map();
+
+        const refreshAdjustButtonsFor = (id) => {
+            const btn = idToAdjustBtn.get(id);
+            if (!btn) return;
+            const val = adjustRegistryAPI.get(id);
+            const valid = !isInvalidValue(val);
+
+            const input = $ID(id);
+            const wrap = input?.closest('.action-wrap');
+
+            if (valid) {
+                btn.classList.remove('hidden');
+                wrap?.classList.add('has-auto');
+                checkAdjustBtn(btn, wrap);
+            } else {
+                btn.classList.add('hidden');
+                btn.dataset.state = 'idle';
+                wrap?.classList.remove('has-auto');
+            }
+        };
+
+        // window.adjustRefresh = () => idToAdjustBtn.forEach((_, id) => refreshAdjustButtonsFor(id));
+
+        /* ======= KOPÍROVACÍ LOGIKA ======= */
+        const bindCopy = (wrap, el) => {
+            const btn = makeCopyButton();
+            wrap.appendChild(btn);
+
+            const copyValue = async () => {
+                let ok = false;
+                const val = (el.value || el.textContent || '').toString().trim();
+                try {
+                    if (!hasValue(val)) throw new Error('Empty');
+                    const testVal = normalize(val);
+                    if (!isInvalidValue(testVal)) {
+                        await navigator.clipboard.writeText(val);
+                        ok = true;
+                    }
+                } catch (err) {
+                    try {
+                        if (el.select) {
+                            const s = el.selectionStart, e = el.selectionEnd;
+                            el.focus();
+                            el.select();
+                            ok = document.execCommand('copy');
+                            if ((s != null && e != null) && (s <= e) && e !== 0) {
+                                el.setSelectionRange(s, e);
+                                ok = true;
+                            } else {
+                                ok = false;
+                            }
+                            el.blur();
+                        }
+                    } catch (err) {
+                        ok = false;
+                    }
+                } finally {
+                    el.classList.remove('action-err', 'action-ok');
+                    if (ok) {
+                        el.classList.add('action-ok');
+                        setStateExclusive(el, btn, 'ok');
+                    } else {
+                        el.classList.add('action-err');
+                        setStateExclusive(el, btn, 'err');
+                    }
+                    setTimeout(() => {
+                        el.classList.remove('action-ok', 'action-err');
+                        btn.dataset.state = 'idle';
+                    }, LINGER_MS);
+                    hideBtnLater(btn);
+                }
+            };
+
+            wrap.addEventListener('mouseenter', () => showBtn(btn, wrap));
+            wrap.addEventListener('mouseleave', () => hideBtnLater(btn));
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                copyValue();
+            });
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || (e.ctrlKey && e.key.toLowerCase() === 'c')) {
+                    e.preventDefault();
+                    showBtn(btn, wrap);
+                    copyValue();
+                }
+            });
+        };
+
+        /* ======= NASTAVOVACÍ LOGIKA (.adjustableInput) ======= */
+        const bindAdjust = (wrap, el) => {
+            const id = ensureId(el);
+            if (!(_registry).hasOwnProperty(id)) _registry[id] = NaN; // init registru
+
+            const btn = makeAdjustButton();
+            idToAdjustBtn.set(id, btn);
+            wrap.appendChild(btn);
+
+            el.addEventListener('input', () => checkAdjustBtn(btn, wrap));
+
+            const applyValue = () => {
+                const raw = adjustRegistryAPI.get(id);
+                const valid = !isInvalidValue(raw);
+                if (!valid) {
+                    // ikona se nemá zobrazit ani nic vkládat
+                    btn.classList.add('hidden');
+                    btn.dataset.state = 'idle';
+                    return false;
+                }
+                const str = String(raw);
+                // vložit
+                try {
+                    const prev = {s: el.selectionStart, e: el.selectionEnd};
+                    el.value = str;
+                    // vyvolat standardní eventy
+                    el.dispatchEvent(new Event('input', {bubbles: true}));
+                    el.dispatchEvent(new Event('change', {bubbles: true}));
+                    // navrátit caret pokud dává smysl
+                    if (prev.s != null && prev.e != null && el.setSelectionRange) {
+                        const end = str.length;
+                        el.setSelectionRange(end, end);
+                    }
+                    btn.dataset.state = 'set';
+                    return true;
+                } catch (err) {
+                    return false;
+                }
+            };
+
+            const doAdjust = () => {
+                const ok = applyValue();
+                el.classList.remove('action-ok', 'action-err');
+                blinkBorder.stop(el);
+                if (ok) {
+                    el.classList.add('action-ok');
+                    setStateExclusive(el, btn, 'ok');
+                } else {
+                    el.classList.add('action-err');
+                    setStateExclusive(el, btn, 'err');
+                }
+                setTimeout(() => {
+                    el.classList.remove('action-ok', 'action-err');
+                    btn.dataset.state = 'idle';
+                    refreshAdjustButtonsFor(id); // po animaci znovu zhodnotit viditelnost
+                }, LINGER_MS);
+                hideBtnLater(btn);
+            };
+
+            // počáteční viditelnost dle registru
+            refreshAdjustButtonsFor(id);
+
+            // interakce
+            wrap.addEventListener('mouseenter', () => showBtn(btn, wrap));
+            wrap.addEventListener('mouseleave', () => hideBtnLater(btn));
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                doAdjust();
+            });
+            el.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    showBtn(btn, wrap);
+                    doAdjust();
+                }
+            });
+        };
+
+        /* ======= SCAN & INIT ======= */
+        const setupOne = (el) => {
+            const wrap = ensureWrap(el);
+            // Pokud je to copyable, přidej copy pilulku
+            if (el.matches(COPY_SELECTOR) && !wrap.querySelector('.copy-pill')) bindCopy(wrap, el);
+            // Pokud je to adjustable, přidej adjust pilulku
+            if (el.matches(ADJUST_SELECTOR) && !wrap.querySelector('.adjust-pill')) bindAdjust(wrap, el);
+        };
+
+        const scan = () => {
+            $$(`${COPY_SELECTOR}, ${ADJUST_SELECTOR}`)?.forEach(setupOne);
+        };
+
+        // Veřejné API pro dynamické DOM změny
+        window.adjustScan = scan;
+
+        // INIT
+        scan();
+
+    })
+    ();
+</script>
+
+
 
 <script>
     // ===================================
@@ -3510,8 +4364,8 @@
         const inputForce = readNum("inputForce");
         const foundForce = nearest(forces, inputForce);
         const foundForceInd = foundForce.indexes;
-        const isCloseForce = (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForce / 2)))));
-        const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd], precisionPositionSystem) : NaN; // mm
+        const isCloseForce = foundForceInd.length > 0  && (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForce / 2)))));
+        const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd[0]], precisionPositionSystem) : NaN; // mm
         applyAdjust('inputDisp', w_inputForce);
 
 
@@ -3531,8 +4385,8 @@
             const inputDisp = readNum("inputDisp");
             const foundDisp = nearest(displacements, inputDisp);
             const foundDispInd = foundDisp.indexes;
-            const isCloseDisp = (foundDisp.distance < Math.max((inputDisp * 0.02), (1 / Math.pow(10, Math.round(precisionPosition / 2)))));
-            const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd], precisionForceSystem) : NaN; // N
+            const isCloseDisp = foundDispInd.length > 0 && (foundDisp.distance < Math.max((inputDisp * 0.02), (1 / Math.pow(10, Math.round(precisionPosition / 2)))));
+            const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd[0]], precisionForceSystem) : NaN; // N
             applyAdjust('inputForce', F_inputDisp);
         }
     }
@@ -3607,57 +4461,6 @@
                 }
             });
         }
-    }
-
-</script>
-
-<script>
-    const getMeasurementPartsLength = (obj) =>
-        Object.entries(obj).reduce((sum, [key, val]) => {
-            if (key === 'length' || key === 'lengths') return sum; // přeskoč speciální klíče
-
-            const arr = isArr(val) ? val : (isNumber(val) ? [val] : []);
-
-            obj[key] = arr;                 // normalizace zpět do objektu
-            (obj.lengths ||= {})[key] = arr.length; // ulož délku části
-            return sum + arr.length;                     // akumuluj součet délek
-        }, 0);
-
-    function analyzeForces(fields) {
-        return fields.map(arr => {
-            let found = false;
-            let min = Infinity, max = -Infinity;
-
-            for (const v of arr) {
-                if (isNum(v)) {
-                    found = true;
-                    if (v < min) min = v;
-                    if (v > max) max = v;
-                }
-            }
-
-            if (!found) return {min: NaN, max: NaN, allInvalid: true};
-            if (Math.abs(min) === 0 && Math.abs(max) === 0) return {min: NaN, max: NaN, allInvalid: true};
-            if (min === max) {
-                logMessage(`⚠️ Warning: min and max forces are equal: ${min}, ${max}`);
-                console.warn("⚠️ Warning: min and max forces are equal:", min, max);
-                return {min: NaN, max: NaN, allInvalid: true};
-            }
-            return {min, max, allInvalid: false};
-        });
-    }
-
-    function hasRequiredParsedKeys(experimentEndLimits, parsedData) {
-        if (!isObj(experimentEndLimits) || !isObj(parsedData)) return false;
-
-        // klíče, které opravdu vyžadujeme (hodnota není null ani NaN)
-        const required = Object.entries(experimentEndLimits).filter(([, v]) => !isNum(v));
-
-        // musí existovat aspoň jeden požadovaný klíč
-        if (required.length === 0) return false;
-
-        // všechny požadované klíče musí být v parsedData
-        return required.every(([k]) => Object.prototype.hasOwnProperty.call(parsedData, k));
     }
 
 </script>
@@ -5079,785 +5882,6 @@
 
 
 <script>
-
-    /**
-     * Opens a serial port for communication.
-     *  SerialPort => comPort - The selected serial port.
-     */
-    let machineFirmware = "NaN";
-    let fingerprint = null;
-
-    const thymosFingerprints = [
-        // "6790:29987",   // Thymos ESP32-S3
-        // "6790:29986",   // Thymos ESP32-C3
-        // "6790:29985",   // Thymos ESP32-C6
-        "12346:4097",      // Thymos ESP32-C6 old
-        "0x303a:0x1001"    // Thymos ESP32-S2
-    ];
-    let useFilteredPort = true;
-    let usePortAutoConnect = true;
-
-    let tryCount = 0;
-
-    // /////// Serial Connection Handling /////////
-
-    UI.USB.addEventListener("click", async () => startSerial());
-
-    /**
-     * Starts the Serial (USB) connection by opening the database and initiating the connection.
-     */
-    async function startSerial(userRequest = true) {
-        if (!('serial' in navigator)) {
-            alert('This broswer do not support serialPorts, try using Chrome/Edge.');
-            return;
-        }
-
-        if (isConnected) {
-            console.info("Already connected, disconnecting...");
-            await disconnectSerial();
-        } else {
-            console.info("🚀 Starting application...");
-            await connectSerial(userRequest);
-
-        }
-
-    }
-
-    /////////////////////////////////////////////////////////////////
-
-    const serialFunctionGetPorts = async () => {
-        try {
-            const ports = await navigator.serial.getPorts();
-            return ports.length ? ports : null;
-        } catch (error) {
-            console.error("Error getting serial ports:", error);
-            return null;
-        }
-    };
-
-    const serialFunctionRequestPort = async () => {
-        try {
-            return await navigator.serial.requestPort(
-                {
-                    // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
-                    filters: useFilteredPort ? [
-                        ...thymosFingerprints.map(fp => {
-                            const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
-                            return {usbVendorId: vendorId, usbProductId: productId};
-                        })
-                    ] : []
-                }
-            );
-        } catch (error) {
-            if (error.name === "NotFoundError") {
-                console.warn("\n⚠️ No port selected.");
-                await logMessage("\n⚠️ No port selected.");
-                return null;
-            } else {
-                throw new Error(`Error requesting serial port: ${error.message}`);
-            }
-        }
-    };
-
-
-    function checkAllPorts() {
-        let thymosPorts = [];
-        navigator.serial.getPorts().then(ports => {
-            ports?.forEach(port => {
-                if (port.manufacturer === "Thymos") {
-                    thymosPorts.push(port);
-                }
-            });
-
-
-            return port
-        }).catch(_ => {
-            return null
-        });
-    }
-
-
-    // /////// Serial (USB) Connection to ESP /////////
-
-    /**
-     * Establishes a connection with the ESP device via USB.
-     */
-    async function connectSerial(userRequest = true) {
-        let serialComPort = null;
-        await updateConnectionStatus("connecting", "USB");
-        try {
-            let ports = null;
-
-            if (usePortAutoConnect) {
-                ports = await serialFunctionGetPorts();
-                console.info("🔍 Searching for available ports...");
-            }
-
-
-            if (isArr(ports) && ports.length === 1) {
-                serialComPort = ports[0];
-                console.info("\t... Only one port found.");
-
-            } else {
-                let founds = false;
-
-                if (isArr(ports) && ports.length > 1) {
-                    console.info("Multiple ports found. Select one.");
-
-                    // serialComPort = checkAllPorts();
-
-                    for (let port of ports) {
-                        await closePort(port);
-                    }
-                    founds = true;
-                }
-
-                if (userRequest) {
-                    if (!serialPort) serialComPort = await serialFunctionRequestPort();
-                }
-
-                if (serialComPort == null) {
-                    if (userRequest) {
-                        // console.info("\t\t⚠️ No port selected. Connecting canceled.");
-                        // await logMessage("\n\t\t⚠️ No port selected. Connecting canceled.");
-                    } else {
-                        if (founds) {
-                            console.info("⚠️ Multiple ports found, please select one.");
-                            await logMessage("\n⚠️ Multiple ports found, please select one.");
-                        } else {
-                            console.info("\n\t❎ No previously connected devices found.");
-                            await logMessage("\n❎ No previously connected devices found.");
-                        }
-                    }
-
-                    console.info("🔌 Connecting canceled.");
-                    await disconnectSerial({override: true});
-                    return;
-                }
-            }
-
-            if (!serialComPort) throw new Error("No serial port available.");
-
-
-            await openPort(serialComPort);
-
-        } catch (error) {
-
-            await handleError(error, "connectSerial");
-            isConnected = false;
-            activeWatchDog = false;
-            await disconnectSerial({override: true});
-        }
-    }
-
-    async function openPort(comPort, retry = false) {
-        try {
-            activeWatchDog = false;
-
-            if (!comPort) {
-                console.error("⚠️ No available port.");
-                await logMessage("\n⚠️ No available port.");
-                return;
-            }
-
-
-            // TODO opravit funkci na odpojování viz níže + opravit reconnect/disconnect v návaznosti na restartování zařízení.
-
-            // Get the writer and reader for the port after opening
-            const err = await closeComPort();
-            if (isNonEmptyObj(err)) {
-                console.error("⚠️ Error closing existing port before opening a new one:", err);
-            }
-            await closePort(comPort, {verbose: false});
-
-            const {usbVendorId, usbProductId} = comPort.getInfo?.() ?? {};
-            fingerprint = `${usbVendorId}:${usbProductId}`;
-
-            console.info(`👣 Port Fingerprint:\n\t\tusbVendorId:${usbVendorId}\n\t\tusbProductId:${usbProductId}`);
-
-            localStorage.setItem("lastFingerprint", fingerprint);
-
-            serialPort = comPort;
-
-
-            console.info("🔌 Opening new port...");
-            await comPort.open({
-                baudRate: parseInt($ID("inputNumBaudRate").value)
-            });
-
-            serialWriter = comPort.writable.getWriter(); // 🔥  writer
-            serialReader = comPort.readable.getReader(); // 🔥  reader
-
-            isConnected = true;
-
-            await sendCommandGeneral("DATAC 0"); // Stop data collection
-
-            readSerial();
-
-            await checkSerialSignals(comPort);
-
-            await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
-
-            await logMessage("\n");
-
-            await sendCommandGeneral("MC STOP"); // Stop movement
-            await sendCommandGeneral("MC ENDSTOPS ENABLE");
-            await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 1_000), (5 * 1_000 * 1_000))}`); // Stop data collection
-
-
-            await logMessage("\n");
-
-            await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
-            await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
-
-            await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
-            await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1_000))}`);
-
-            await logMessage("\n");
-
-            try {
-                machineFirmware = await getFirmwareVersion() || "";
-            } catch (e) {
-                machineFirmware = null;
-            }
-            let machineName;
-            try {
-                machineName = await getMachineName() || "";
-            } catch (e) {
-                machineName = null;
-            }
-            let machineID;
-            try {
-                machineID = await getMachineID() || "";
-            } catch (e) {
-                machineID = null;
-            }
-
-            await sleep(10);
-
-            if (!isOk(machineFirmware) || !isOk(machineName) || !isOk(machineID)) {
-                if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
-                // start reconnect procedure
-                if (tryCount === 0) {
-                    tryCount++;
-                    alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
-                    await sendCommandGeneral("MISC REBOOT");
-                    await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
-                    await logMessage("   Rebooting via Command.\n");
-                    throw new Error("Device not responding");
-
-                } else if (tryCount === 1) {
-                    tryCount++;
-                    alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
-                    await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
-                    await logMessage("   Rebooting via DTR toggle.\n");
-                    await setSerialSignals(comPort, false, false, false); // Set DTR to false
-                    await sleep(250);
-                    await setSerialSignals(comPort, true, false, false); // Set DTR to true
-                    await sleep(2_500);
-                    throw new Error("Device not responding");
-
-                } else {
-                    console.error("Device not responding after multiple attempts.");
-                    await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
-                    alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
-                    reconnectAttempts = 1_000;
-                    await disconnectSerial({override: true});
-                    return;
-                }
-            }
-
-            // ověření kalibrace
-            calibrationStatus = await getCalibrationStatus(2_000);
-
-            if (calibrationStatus) await unlockMovement();
-            else await lockMovementExcept(UI.calibrateBtn);
-
-            const speed = (await getSpeed(2_000)) || 15;
-            const acceleration = (await getAcceleration(2_000)) || 150;
-
-            setSpeedAndAcceleration(speed, acceleration, true);
-
-            await updateConnectionStatus("connected", "USB");
-            await logMessage("\n✅ Connected to ESP via USB\n");
-
-            tryCount = 0;
-            reconnectAttempts = 0;
-
-        } catch (error) {
-            activeWatchDog = false;
-            if (!(error.name === "InvalidStateError" && retry)) {
-                await disconnectSerial({override: true});
-                await handleError(error, "openPort");
-            }
-        }
-    }
-
-
-    async function checkSerialSignals(port) {
-        if (!port) return;
-
-        try {
-            const signals = await port.getSignals();
-            console.info("📡 Serial port signals...");
-            console.info("\t🚦 Signals:", signals);
-        } catch (error) {
-            console.error("❌ Error reading serial signals:", error);
-        }
-    }
-
-
-    async function setSerialSignals(port, dtrState, rtsState, brkState) {
-        if (!port) return;
-
-        try {
-            await port.setSignals({
-                dataTerminalReady: dtrState,
-                requestToSend: rtsState,
-                break: brkState
-            });
-
-            console.info(`✅ DTR: ${dtrState}, RTS: ${rtsState}, BRK: ${brkState}`);
-        } catch (error) {
-            console.error("❌ Error setting serial signals:", error);
-        }
-    }
-
-
-    /**
-     * Disconnects from the ESP device via USB.
-     */
-    async function disconnectSerial({override = false, verbose = true} = {}) {
-        const wasConnected = isConnected;
-        if (!override && !isConnected) {
-            console.warn("\n⚠️ Port is not connected.");
-            return;
-        }
-
-        updateConnectionStatus("disconnecting");
-
-        try {
-            try {
-                if (isExperimentRunning) endMeasuring(0, {
-                    overRide: true,
-                    ednStatus: 'disconnected',
-                    endText: "🚧 Experiment stopped due to disconnect"
-                });
-
-            } catch (error) {
-                if (debugging) console.warn("\n⚠️ Error stopping data collection:", error);
-            }
-
-            await endedMoving();
-
-            // Stop data reading before releasing the reader
-            await closeComPort({override: override, verbose: verbose});
-
-            if (wasConnected && verbose) await logMessage("✖️ Disconnected from ESP\n\n");
-
-            console.info("✅ Disconnected successfully.");
-        } catch (error) {
-            console.error("❌ disconnectSerial error:", error);
-        } finally {
-            cancelAllPending();
-            activeWatchDog = false;
-            machineOccupation = false;
-            isExperimentRunning = false;
-            await flushDB();
-            await resetValues();
-            await updateConnectionStatus("disconnected");
-            await lockMovement();
-        }
-    }
-
-    async function closePort(port, {reader = null, writer = null, verbose = false} = {}) {
-        if (!port) return;
-
-        const info = (() => {
-            try {
-                return port.getInfo();
-            } catch {
-                return {};
-            }
-        })();
-        if (verbose) console.info("\t⚓ Closing port...", info);
-
-        // 1) Ukončit čtení
-        try {
-            // Preferuj předaného readera; jinak pokud je stream locked, pokus se ho uvolnit
-            if (reader) {
-                try {
-                    await reader.cancel();
-                } catch {
-                }
-                try {
-                    reader.releaseLock();
-                } catch {
-                }
-                if (verbose) console.info("\t\t📍 Reader canceled & released.");
-            } else if (port.readable?.locked) {
-                // Někdo jiný drží lock – poslední možností je vytvořit dočasného readera a hned ho zrušit
-                const tmp = port.readable.getReader();
-                try {
-                    await tmp.cancel();
-                } catch {
-                }
-                try {
-                    tmp.releaseLock();
-                } catch {
-                }
-                if (verbose) console.info("\t📍 Forced-canceled locked readable.");
-            }
-        } catch (err) {
-            console.warn("⚠️ Error handling reader", info, ":", err);
-        }
-
-        // 2) Ukončit zápis
-        try {
-            if (writer) {
-                try {
-                    await writer.close();
-                } catch {/* může být už zavřený */
-                }
-                try {
-                    writer.releaseLock();
-                } catch {
-                }
-                if (verbose) console.info("\t\t📍 Writer closed & released.");
-            } else if (port.writable?.locked) {
-                const tmpW = port.writable.getWriter();
-                try {
-                    await tmpW.close();
-                } catch {
-                }
-                try {
-                    tmpW.releaseLock();
-                } catch {
-                }
-                if (verbose) console.info("\t📍 Forced-closed locked writable.");
-            }
-        } catch (err) {
-            console.warn("⚠️ Error handling writer", info, ":", err);
-        }
-
-        // 3) Zavřít port
-        try {
-            try {
-                await port.close();
-            } catch (e) {
-            }
-            if (verbose) console.info("\t📍 Port closed.");
-        } catch (err) {
-            console.warn("⚠️ Error closing port", info, ":", err);
-        }
-    }
-
-
-    async function closeComPort({override = false, verbose = true} = {}) {
-        const errors = {};
-
-        // 1) Reader
-        try {
-            if (serialReader) {
-                try {
-                    await serialReader.cancel();
-                } catch {
-                }
-                try {
-                    serialReader.releaseLock();
-                } catch {
-                }
-                if (verbose) console.info("\t⛏️ Released Reader...");
-            }
-        } catch (error) {
-            console.warn("⚠️ Error releasing reader:", error);
-            errors.reader = error;
-        } finally {
-            serialReader = null;
-        }
-
-        // 2) Writer
-        try {
-            if (serialWriter) {
-                try {
-                    await serialWriter.close();
-                } catch {
-                }
-                try {
-                    serialWriter.releaseLock();
-                } catch {
-                }
-                if (verbose) console.info("\t⛏️ Released Writer...");
-            }
-        } catch (error) {
-            console.warn("⚠️ Error releasing writer:", error);
-            errors.writer = error;
-        } finally {
-            serialWriter = null;
-        }
-
-        // 3) Port
-        try {
-            if (serialPort) {
-                // Pokud někde zůstal lock, pokus se ho vynutit
-                if (serialPort.readable?.locked) {
-                    const r = serialPort.readable.getReader();
-                    try {
-                        await r.cancel();
-                    } catch {
-                    }
-                    try {
-                        r.releaseLock();
-                    } catch {
-                    }
-                }
-                if (serialPort.writable?.locked) {
-                    const w = serialPort.writable.getWriter();
-                    try {
-                        await w.close();
-                    } catch {
-                    }
-                    try {
-                        w.releaseLock();
-                    } catch {
-                    }
-                }
-
-                if (override || serialPort) {
-                    try {
-                        await serialPort.close();
-                    } catch {
-                    }
-                    if (verbose) console.info("\t⛏️ Closed Serial Port...");
-                }
-            }
-        } catch (error) {
-            console.warn("⚠️ Error closing serial port:", error);
-            errors.port = error;
-        } finally {
-            serialPort = null;
-        }
-
-        isConnected = false;
-
-        return errors;
-    }
-
-
-    // /////// Reading Data from ESP /////////
-
-    /**
-     * Reads incoming data from the ESP device over a serial connection.
-     */
-
-    async function readSerialOLD() {
-        let buffer = "";
-
-        if (!serialPort.readable) {
-            await logMessage("\n❌ Port is unavailable.\n");
-            return;
-        }
-
-        if (serialReader) {
-            try {
-                serialReader.releaseLock(); // Ensure only one active reader
-            } catch (err) {
-                console.error("Reader lock error:", err);
-            }
-        }
-
-        serialReader = serialPort.readable.getReader(); // Get a reader only once
-
-        try {
-            while (isConnected) {
-                const {value, done} = await serialReader.read();
-                if (done) break; // Stop the loop if the stream is closed
-
-                buffer += td.decode(value, {stream: true});
-
-                let lastNewline = buffer.lastIndexOf("\n");
-                if (lastNewline !== -1) {
-                    let dataChunk = buffer.slice(0, lastNewline).split("\n");
-                    buffer = buffer.slice(lastNewline + 1);
-
-                    await handleIncomingChunkQueued(dataChunk);
-                }
-            }
-        } catch (error) {
-            activeWatchDog = false;
-            await handleError(error, "readSerial"); // Handle any errors
-        } finally {
-            if (serialReader) {
-                await stopMachine();
-                await serialReader.cancel(); //  Immediately stop reading !!!!
-                serialReader.releaseLock();
-            }
-            await logMessage("\n✅ Reading stopped.\n");
-        }
-    }
-
-
-    async function readSerial() {
-        let buffer = "";
-        const decoder = txtD ?? new TextDecoder(); // pokud používáš globální txtD, klidně ho nech
-
-        if (!serialPort?.readable) {
-            await logMessage("\n❌ Port is unavailable.\n");
-            return;
-        }
-
-        // Tady už PŘEDPOKLÁDÁME, že serialReader existuje z openPort()
-        if (!serialReader) {
-            // fallback, kdyby přece jen nebyl
-            serialReader = serialPort.readable.getReader();
-        }
-
-        try {
-            while (isConnected) {
-                const {value, done} = await serialReader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, {stream: true});
-
-                const lastNewline = buffer.lastIndexOf("\n");
-                if (lastNewline !== -1) {
-                    const dataChunk = buffer.slice(0, lastNewline).split("\n");
-                    buffer = buffer.slice(lastNewline + 1);
-                    await handleIncomingChunkQueued(dataChunk);
-                }
-            }
-        } catch (error) {
-            activeWatchDog = false;
-            await handleError(error, "readSerial");
-        } finally {
-            // doflushnout případný zbytek (pokud to dává smysl pro tvůj protokol)
-            const tail = decoder.decode();
-            if (tail) {
-                buffer += tail;
-                const lines = buffer.split("\n");
-                if (lines.length) await handleIncomingChunkQueued(lines);
-            }
-
-            // Bezpečné ukončení readeru
-            if (serialReader) {
-                try {
-                    await serialReader.cancel();
-                } catch {
-                }
-                try {
-                    serialReader.releaseLock();
-                } catch {
-                }
-            }
-
-            await logMessage("\n✅ Reading stopped.\n");
-        }
-    }
-
-
-    async function findPreferredPortIndex(showMessage = false) {
-        if (!fingerprint) {
-            console.warn("\n⚠️ No fingerprint available.");
-            return null;
-        }
-        const ports = await navigator.serial.getPorts();
-
-        for (let i = 0; i < ports.length; i++) {
-            const info = ports[i].getInfo();
-            const currentFingerprint = `${info.usbVendorId}:${info.usbProductId}`;
-            if (currentFingerprint === fingerprint) {
-                console.info("✅ Matched port at index:", i);
-                return ports[i];
-            }
-        }
-
-        if (showMessage) {
-            console.warn("\n⚠️ No matching port found.");
-            await logMessage("\n⚠️ No matching port found.");
-        }
-        return null;
-    }
-
-    async function attemptReconnect() {
-        console.info("%c\n🔄 Attempting to reconnect...", "color: blue; font-weight: bold;");
-
-        if (isConnected || isReconnecting) {
-            console.warn("\n🚧 Reconnect aborted - Already connected or disconnect was expected.");
-            return;
-        }
-
-        if (reconnectAttempts >= maxReconnectAttempts) {
-            console.warn("\n⚠️ Stopping auto-reconnect. Maximum attempts reached.");
-            await logMessage("\n⚠️ Stopping auto-reconnect.\n");
-            isReconnecting = false;
-            await disconnectSerial();
-            await resetValues();
-            return;
-        }
-
-        // Reset the connection status
-        // await serialReader.cancel();
-        // await serialReader.releaseLock();
-        // await serialPort.close();
-        // serialReader = null;
-        // serialPort = null;
-
-        isConnected = false;
-        await disconnectSerial({override: true, verbose: false});
-
-
-        activeWatchDog = false;
-        isReconnecting = true;
-        reconnectAttempts++;
-        await updateConnectionStatus("reconnecting");
-        await logMessage(`\n🔄 Attempting reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
-
-        try {
-
-            // TODO: implement also using machine name
-            const port = await findPreferredPortIndex();
-
-            if (port) {
-                serialPort = port; // Update the serialPort reference
-                await openPort(port, true);
-            }
-
-
-            if (isConnected) {
-                console.info("✅ Reconnected successfully!");
-                isReconnecting = false;
-                await updateConnectionStatus("connected");
-                await logMessage("✅ Reconnected successfully!\n");
-                await unlockMovement();
-            } else {
-                throw new Error("Reconnect failed: not connected after openPort");
-            }
-        } catch (error) {
-            console.warn("\n⚠️ Reconnection failed:", error);
-            await logMessage("\n❌ Reconnection failed: " + error.message);
-
-            if (reconnectAttempts < maxReconnectAttempts) {
-                setTimeout(() => {
-                    isReconnecting = false; // Allow another reconnection attempt
-                    attemptReconnect();
-                }, 3_000);
-            } else {
-                console.warn("\n⚠️ Max reconnect attempts reached. Reconnecting stoped.");
-                await logMessage("\n❌ Max reconnect attempts reached. Reconnecting stopped.\n");
-                await resetValues();
-                isReconnecting = false;
-            }
-        }
-    }
-
-
-    /////////////////////////////////////////////////////////////////
-
-</script>
-
-
-<script>
     async function handleError(error, context = "Unknown") {
         // 📌 Connection Errors Handling Identifiers
         const connectionErrors = [
@@ -6151,10 +6175,6 @@
         }
     }
 
-    function calculateStep(frequencyMicroseconds, updateIntervalMs = 200, minimum = 1) {
-        return Math.max(1, minimum, Math.ceil((updateIntervalMs * 1_000) / frequencyMicroseconds));
-    }
-
     function computeMotionTime(distance, speed, acceleration) {
         const t_accel = speed / acceleration;               // time acceleration
         const s_accel = 0.5 * acceleration * t_accel ** 2;  // distance during acceleration
@@ -6308,131 +6328,6 @@
 
 
 <script>
-
-    function resetValues() {
-        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
-        measurementParts = measurementPartDefault;
-        liveUpdate = false
-
-        updateConnectionStatus("disconnected");
-
-        isExperimentRunning = false;
-        machineOccupation = false;
-        UI.loadingLogContainer.style.background = "#323232";
-
-        experimentEndLimits = {position: null, force: null, time: null};
-        expControl = '';
-        pendingDSLR = null;
-        dataCount = null;
-        maxForces = Array(loadCellNum).fill(null);
-        // timeData = [];
-        // positionData = [];
-        measureForces = Array(loadCellNum).fill(null).map(() => []);
-        // forceData = Array(loadCellNum).fill(null).map(() => []);
-        tareValues.force = Array(loadCellNum).fill(0);
-        tareValues.position = null;
-        tareValues.time = null;
-        lastAcceptedTime = null;
-        aggregatedDataBetweenSteps = [];
-        Object.values(measurement_limits).forEach(v => {
-            v.counter = 0;
-            v.limit = null;
-        });
-        endMeasurement = false;
-        clearTimeout(endMeasurementCounter)
-        endMeasurementCounter = null;
-        checkSpeed = true;
-
-
-        displacementSignCorrection = 0;
-        loadSignCorrections = Array(loadCellNum).fill(0);
-
-        loadcellErrRate = null;
-        measurementErrRate = null;
-        totalErrRate = null;
-
-
-        activeWatchDog = false;
-
-        isConnected = false;
-        serialPort = null;
-        serialReader = null;
-        serialWriter = null;
-        // reconnectAttempts = 0;
-    }
-
-    async function clearAndResetAll() {
-        await disconnectSerial();
-        // clear DB
-        if (liveUpdate) await chartUpdate();
-        await clearDatabase();
-        await clearLocalStorage();
-
-        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
-        measurementParts = measurementPartDefault;
-
-        isExperimentRunning = false;
-        machineOccupation = false;
-        UI.loadingLogContainer.style.background = "#323232";
-
-        experimentEndLimits = {position: null, force: null, time: null};
-        expControl = '';
-        pendingDSLR = null;
-        dataCount = null;
-        maxForces = Array(loadCellNum).fill(null);
-        timeData = [];
-        positionData = [];
-        measureForces = Array(loadCellNum).fill(null).map(() => []);
-        forceData = Array(loadCellNum).fill(null).map(() => []);
-        tareValues.force = Array(loadCellNum).fill(0);
-        tareValues.position = null;
-        tareValues.time = null;
-        lastAcceptedTime = null;
-        photoData = [];
-        aggregatedDataBetweenSteps = [];
-        Object.values(measurement_limits).forEach(v => {
-            v.counter = 0;
-            v.limit = null;
-        });
-        endMeasurement = false;
-        clearTimeout(endMeasurementCounter)
-        endMeasurementCounter = null;
-        checkSpeed = true;
-
-
-        displacementSignCorrection = 0;
-        loadSignCorrections = Array(loadCellNum).fill(0);
-
-        loadcellErrRate = null;
-        measurementErrRate = null;
-        totalErrRate = null;
-
-
-        activeWatchDog = false;
-
-        isConnected = false;
-        serialPort = null;
-        serialReader = null;
-        serialWriter = null;
-        reconnectAttempts = 0;
-
-        // --------------------------------
-        // Experiment parameters
-        speedForward_mmps = 0;
-        currentSpeed = null;
-        currentAcceleration = null;
-        takePhotos = false;
-        dataInterval_us = null;
-        initialForceLim_N = null;
-        experimentDoubleSpeed = false;
-        stoppingForceLimit = null;
-        holdForceTimeMs = null;
-        // --------------------------------
-    }
-</script>
-
-
-<script>
     // /////// Optimized Measurement Processing /////////
     let _msgQueue = Promise.resolve();
 
@@ -6487,6 +6382,79 @@
 
 </script>
 
+
+<script>
+    const getMeasurementPartsLength = (obj) =>
+        Object.entries(obj).reduce((sum, [key, val]) => {
+            if (key === 'length' || key === 'lengths') return sum; // přeskoč speciální klíče
+
+            const arr = isArr(val) ? val : (isNumber(val) ? [val] : []);
+
+            obj[key] = arr;                 // normalizace zpět do objektu
+            (obj.lengths ||= {})[key] = arr.length; // ulož délku části
+            return sum + arr.length;                     // akumuluj součet délek
+        }, 0);
+
+    function analyzeForces(fields) {
+        return fields.map(arr => {
+            let found = false;
+            let min = Infinity, max = -Infinity;
+
+            for (const v of arr) {
+                if (isNum(v)) {
+                    found = true;
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+
+            if (!found) return {min: NaN, max: NaN, allInvalid: true};
+            if (Math.abs(min) === 0 && Math.abs(max) === 0) return {min: NaN, max: NaN, allInvalid: true};
+            if (min === max) {
+                logMessage(`⚠️ Warning: min and max forces are equal: ${min}, ${max}`);
+                console.warn("⚠️ Warning: min and max forces are equal:", min, max);
+                return {min: NaN, max: NaN, allInvalid: true};
+            }
+            return {min, max, allInvalid: false};
+        });
+    }
+
+    function hasRequiredParsedKeys(experimentEndLimits, parsedData) {
+        if (!isObj(experimentEndLimits) || !isObj(parsedData)) return false;
+
+        // klíče, které opravdu vyžadujeme (hodnota není null ani NaN)
+        const required = Object.entries(experimentEndLimits).filter(([, v]) => !isNum(v));
+
+        // musí existovat aspoň jeden požadovaný klíč
+        if (required.length === 0) return false;
+
+        // všechny požadované klíče musí být v parsedData
+        return required.every(([k]) => Object.prototype.hasOwnProperty.call(parsedData, k));
+    }
+
+    const check = (n) => !(!Number.isFinite(n) || n <= 0);
+    const checkN = (n, d) => check(n) ? n : d
+
+    function calculateStep(frequencyMicroseconds, updateFrequencyMilliseconds = 200, minimum = 1) {
+        if (!check(frequencyMicroseconds)) return minimum;
+        minimum = checkN(minimum, 1);
+        updateFrequencyMilliseconds = checkN(updateFrequencyMilliseconds, 200);
+        return Math.max(1, minimum, Math.ceil((updateFrequencyMilliseconds * 1_000) / frequencyMicroseconds));
+    }
+
+    function computeFrenchingMs(frequencyMicroseconds, inSeconds = 1, minimum = 50) {
+        if (!check(frequencyMicroseconds)) return minimum;
+        minimum = checkN(minimum, 50);
+        inSeconds = checkN(inSeconds, 1);
+
+        const samplesPerSecond = Math.floor((inSeconds * 1_000_000) / frequencyMicroseconds); // (Hz)
+
+        return Math.max(minimum, samplesPerSecond);
+    }
+
+</script>
+
+
 <script>
     // /////// Experiment Configuration /////////
     let forceLimitDropPercent = 0;
@@ -6540,6 +6508,100 @@
         over_limitForce: {counter: 0, limit: 2},
         invalid_data: {counter: 0, limit: 2},
     };
+
+</script>
+
+<script>
+    function createPIController(userOpts = {}) {
+        const cfg = {
+            // --- nastavení převzaté z tvé simulace (lze přepsat v userOpts) ---
+            setForceN: null,    // cílová síla [N]
+            deadbandN: 0.5,     // mrtvá zóna ± [N]
+            vMin: +0.00,        // min rychlost [mm/s]
+            vMax: 25.00,        // max rychlost [mm/s]
+            Kp: 0.20,           // [mm/s · N⁻¹]
+            Ki: 0.03,           // [mm/s · N⁻¹ · s⁻¹]
+            accel: null,        // omezení změny rychlosti [mm/s²]; null = bez omezení
+            integLimit: 500,    // anti-windup clamp
+            roundDigits: 3,     // zaokrouhlení výstupu (0.001 mm/s)
+            unilateral: true,   // jen kladná rychlost (dolů)
+            ...userOpts,
+        };
+
+        let integ = 0;
+        let lastT = null;
+        let lastV = 0;
+
+        function step(t, x, F) {
+            // t [s], x [mm], F [N]  →  v [mm/s]
+            if (lastT === null) lastT = t;
+            const dt = Math.max(1e-6, t - lastT);
+            lastT = t;
+
+            const err = cfg.setForceN - F;
+
+            // integrace jen když jsme mimo mrtvou zónu (stejně jako v původním kódu)
+            if (err > cfg.deadbandN) {
+                integ = clamp(integ + err * dt, -cfg.integLimit, cfg.integLimit);
+            }
+
+            // PI výstup jen při pozitivní chybě mimo mrtvou zónu (jen dolů)
+            let vCmd = 0;
+            if (err > cfg.deadbandN) {
+                vCmd = cfg.Kp * err + cfg.Ki * integ;
+                // vMin..vMax (pokud je aktivní)
+                vCmd = clamp(vCmd, cfg.vMin, cfg.vMax);
+            }
+
+            // jednostranné omezení (bezpečnostně, i když už je vCmd≥vMin)
+            if (cfg.unilateral && vCmd < 0) vCmd = 0;
+
+            // volitelný slew-rate limit přes 'accel' (mm/s²)
+            if (Number.isFinite(cfg.accel) && cfg.accel > 0) {
+                const dvMax = cfg.accel * dt;
+                if (vCmd > lastV + dvMax) vCmd = lastV + dvMax;
+                else if (vCmd < lastV - dvMax) vCmd = lastV - dvMax;
+            }
+
+            // zaokrouhlení jako v simulaci
+            const k = 10 ** cfg.roundDigits;
+            vCmd = Math.round(vCmd * k) / k;
+
+            lastV = vCmd;
+            return vCmd;
+        }
+
+        function reset(newOpts) {
+            if (newOpts) Object.assign(cfg, newOpts);
+            integ = 0;
+            lastT = null;
+            lastV = 0;
+        }
+
+        return {
+            step,   // (t, x, F) => v
+            reset,  // reset stavu integrátoru/časovače (+ volitelně nové nastavení)
+            get state() {
+                return {integ, lastT, lastV, cfg: {...cfg}};
+            },
+        };
+    }
+
+    let pi;
+
+    // // jednou při startu:
+    // pi = createPIController({
+    //     setForceN: 100,
+    //     Kp: 0.20,
+    //     Ki: 0.03,
+    //     deadbandN: 0.5,
+    //     vMin: 0.025,
+    //     vMax: 25,
+    // });
+    //
+    // // v běžícím cyklu řízení/simulace:
+    // const v = pi.step(tSeconds, xMm, forceN);
+    // // → pošli v do pohonu jako požadovanou rychlost (mm/s)
 
 </script>
 
@@ -7018,6 +7080,19 @@
 
             // --- 9) Clear force fields ---
             measureForces = Array(loadCellNum).fill(null).map(() => []);
+
+
+            if (experimentType.endsWith("-hbr")) {
+                pi = createPIController({
+                    setForceN: stoppingForceLimit,
+                    Kp: 0.20,
+                    Ki: 0.03,
+                    deadbandN: (totalErrRate * 1.15), // deadband set to 115% of total error rate
+                    vMin: 0.025,
+                    vMax: 25,
+                    integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 100), // anti-windup clamp: readings in the last 25% of hold time
+                });
+            }
 
 
             // ==================================
@@ -9763,828 +9838,738 @@
     }
 </script>
 
+
 <script>
-    (() => {
-        /* ======= KONFIG ======= */
-        const COPY_SELECTOR = '.copyableInput';
-        const ADJUST_SELECTOR = '.adjustableInput';
-        const LINGER_MS = 1000; // jak dlouho zůstane pilulka viditelná po akci/opuštění
 
-        /* ======= POMOCNÉ FUNKCE (bezpečné fallbacky) ======= */
-        const normalize = (v) => String(v || '').toLowerCase()
-            .replaceAll('\\', '/').replaceAll('.', '').replaceAll(',', '').trim();
+    /**
+     * Opens a serial port for communication.
+     *  SerialPort => comPort - The selected serial port.
+     */
+    let machineFirmware = "NaN";
+    let fingerprint = null;
 
-        /* ======= GLOBÁLNÍ EXKLUZIVITA POSLEDNÍ AKCE ======= */
-        let currentActive = null; // { el, btn }
+    const thymosFingerprints = [
+        // "6790:29987",   // Thymos ESP32-S3
+        // "6790:29986",   // Thymos ESP32-C3
+        // "6790:29985",   // Thymos ESP32-C6
+        "12346:4097",      // Thymos ESP32-C6 old
+        "0x303a:0x1001"    // Thymos ESP32-S2
+    ];
+    let useFilteredPort = true;
+    let usePortAutoConnect = true;
 
-        const cancelFadeListener = (btn) => {
-            if (btn._onFadeEnd) {
-                btn.removeEventListener('transitionend', btn._onFadeEnd);
-                btn._onFadeEnd = null;
-            }
-        };
-        const cancelHideTimer = (btn) => {
-            if (btn._hideTimer) {
-                clearTimeout(btn._hideTimer);
-                btn._hideTimer = null;
-            }
-        };
-        const deactivateCurrent = () => {
-            if (!currentActive) return;
-            const {el, btn} = currentActive;
-            cancelHideTimer(btn);
-            cancelFadeListener(btn);
-            el.classList.remove('action-ok', 'action-err');
-            btn.classList.remove('visible');
-            btn.dataset.state = 'idle';
-            currentActive = null;
-        };
+    let tryCount = 0;
 
-        const setStateExclusive = (el, btn, state) => {
-            if (!currentActive || currentActive.btn !== btn) {
-                deactivateCurrent();
-                currentActive = {el, btn};
-            }
-            cancelFadeListener(btn);
-            btn.dataset.state = state;
-            btn.classList.add('visible');
-        };
+    // /////// Serial Connection Handling /////////
 
-        const checkAdjustBtn = (btn, wrap) => {
-            if (!btn) return;
-            if (!wrap || !wrap.classList.contains('has-auto')) return;
-            if (btn.dataset.state === 'idle' || btn.dataset.state === 'set' || btn.dataset.state === 'diff') {
-                const input = wrap.querySelector(ADJUST_SELECTOR);
-                if (!input) return;
-                const id = input.id || normalize(input.name) || normalize(input.dataset.adjustId);
-                if (!id) return;
-                const inputValue = input.value;
-                const autoValue = adjustRegistryAPI.get(id);
-                if (hasValue(autoValue) && hasValue(inputValue)) {
-                    if (toNumber(autoValue) === toNumber(inputValue)) {
-                        btn.dataset.state = 'set'; // already set
-                    } else {
-                        btn.dataset.state = 'diff'; // can be set
-                    }
-                } else {
-                    btn.dataset.state = 'idle'; // no auto-value
+    UI.USB.addEventListener("click", async () => startSerial());
+
+    /**
+     * Starts the Serial (USB) connection by opening the database and initiating the connection.
+     */
+    async function startSerial(userRequest = true) {
+        if (!('serial' in navigator)) {
+            alert('This broswer do not support serialPorts, try using Chrome/Edge.');
+            return;
+        }
+
+        if (isConnected) {
+            console.info("Already connected, disconnecting...");
+            await disconnectSerial();
+        } else {
+            console.info("🚀 Starting application...");
+            await connectSerial(userRequest);
+
+        }
+
+    }
+
+    /////////////////////////////////////////////////////////////////
+
+    const serialFunctionGetPorts = async () => {
+        try {
+            const ports = await navigator.serial.getPorts();
+            return ports.length ? ports : null;
+        } catch (error) {
+            console.error("Error getting serial ports:", error);
+            return null;
+        }
+    };
+
+    const serialFunctionRequestPort = async () => {
+        try {
+            return await navigator.serial.requestPort(
+                {
+                    // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
+                    filters: useFilteredPort ? [
+                        ...thymosFingerprints.map(fp => {
+                            const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                            return {usbVendorId: vendorId, usbProductId: productId};
+                        })
+                    ] : []
                 }
-            }
-        };
-
-        const showBtn = (btn, wrap) => {
-            cancelHideTimer(btn);
-            cancelFadeListener(btn);
-            btn.classList.add('visible');
-            checkAdjustBtn(btn, wrap);
-        };
-
-        const hideBtnLater = (btn) => {
-            cancelHideTimer(btn);
-            btn._hideTimer = setTimeout(() => {
-                btn.classList.remove('visible');
-                cancelFadeListener(btn);
-                btn._onFadeEnd = (ev) => {
-                    if (ev.propertyName === 'opacity') {
-                        const op = getComputedStyle(btn).opacity;
-                        if (op === '0') {
-                            btn.dataset.state = 'idle';
-                            cancelFadeListener(btn);
-                        }
-                    }
-                };
-                btn.addEventListener('transitionend', btn._onFadeEnd);
-            }, LINGER_MS - 100);
-        };
-
-        // wand (idle)
-        const iconWand = '<svg class="icon-wand" viewBox="0 0 24 24" fill="none" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path stroke="none" d="M0 0h24v24H0z" fill="none"/> <path d="M4 8v-2a2 2 0 0 1 2 -2h2"/> <path d="M4 16v2a2 2 0 0 0 2 2h2"/> <path d="M16 4h2a2 2 0 0 1 2 2v2"/> <path d="M16 20h2a2 2 0 0 0 2 -2v-2"/> <path d="M9 16v-5.5a2 2 0 1 1 6 0v5.5"/> <path d="M9.5 13h5"/></svg>';
-        // Copy (idle)
-        const iconCopy = '<svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <rect width="13" height="16" x="8" y="7" rx="1.5" ry="1.5"/> <path d="M 3,15.5 V 3.5 C 3,2.7 3.7,2 4.5,2 H 15"/></svg>';
-        // check
-        const iconOK = '<svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M 4.8,13.4 9,17.6 19.6,7"/> </svg>';
-        // X
-        const iconX = '<svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M6 6 L18 18 M18 6 L6 18"/> </svg>';
-
-
-        /* ======= VYTVOŘENÍ WRAPPERU ======= */
-        const ensureWrap = (el) => {
-            const parent = el.parentElement;
-            if (parent && (parent.classList.contains('action-wrap') || parent.classList.contains('copy-wrap'))) {
-                // kompatibilita: pokud už existuje copy-wrap, povýšíme ho na action-wrap
-                parent.classList.add('action-wrap');
-                return parent;
-            }
-            const wrap = $MAKE('span');
-            wrap.className = 'action-wrap';
-            el.insertAdjacentElement('beforebegin', wrap);
-            wrap.appendChild(el);
-            return wrap;
-        };
-
-        /* ======= PILULKY ======= */
-        const makeCopyButton = () => {
-            const btn = $MAKE('button');
-            btn.type = 'button';
-            btn.className = 'action-pill copy-pill';
-            btn.dataset.state = 'idle';
-            btn.setAttribute('aria-label', 'Zkopírovat hodnotu');
-            btn.title = 'Copy value';
-            btn.innerHTML = `${iconCopy} ${iconOK} ${iconX}`;
-            return btn;
-        };
-
-        const makeAdjustButton = () => {
-            const btn = $MAKE('button');
-            btn.type = 'button';
-            btn.className = 'action-pill adjust-pill';
-            btn.dataset.state = 'idle';
-            btn.setAttribute('aria-label', 'Automaticky nastavit hodnotu');
-            btn.title = 'Set automatic value';
-            btn.innerHTML = `${iconWand} ${iconOK} ${iconX}`;
-            return btn;
-        };
-
-        /* ======= REGISTR AUTO-HODNOT ======= */
-        const _registry = {};
-        const ensureId = (el, prefix = 'adj') => {
-            if (el.id && el.id.trim().length) return el.id;
-            const auto = `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
-            el.id = auto;
-            return auto;
-        };
-
-        // veřejné API
-        const adjustRegistryAPI = {
-            get(id) {
-                return _registry[id];
-            },
-            set(id, value) {
-                _registry[id] = value;
-                refreshAdjustButtonsFor(id); // UI refresh jen pro daný input
-            },
-            all() {
-                return Object.assign({}, _registry);
-            }
-        };
-        window.adjustRegistry = adjustRegistryAPI;        // čti/zapisuj přes metody
-
-        window.adjustSet = (id, v) => {
-            const el = $ID(id);
-            const val = toNumber(v);
-
-            if (!hasValue(el.value) && isNum(val)) blinkBorder(el, {
-                restart: true,
-                color: '#2196F3',
-                backgroundOn: '#a7e7ff',
-                blinks: 3,
-            });
-
-            else if (isNum(val) && val === toNumber(el.value)) blinkBorder(el, {
-                restart: true,
-                color: '#4CAF50',
-                backgroundOn: '#a9ffa9',
-                blinks: 3,
-            });
-
-            else if (isNum(val) && val !== adjustGet(id)) blinkBorder(el, {restart: true});
-
-            else if (!isNum(val) && isNum(adjustGet(id))) blinkBorder(el, {
-                restart: true,
-                color: '#DC143C',
-                backgroundOn: '#ffaeb9',
-                blinks: 3,
-            });
-
-            adjustRegistryAPI.set(id, val);
-        };
-        window.adjustGet = (id) => adjustRegistryAPI.get(id);
-        window.adjustDel = (id) => {
-            if (adjustRegistryAPI.get(id) !== undefined) {
-                adjustRegistryAPI.set(id, NaN);
-            }
-        };
-
-        /* ======= VAZBA ID -> tlačítko pro rychlý refresh ======= */
-        const idToAdjustBtn = new Map();
-
-        const refreshAdjustButtonsFor = (id) => {
-            const btn = idToAdjustBtn.get(id);
-            if (!btn) return;
-            const val = adjustRegistryAPI.get(id);
-            const valid = !isInvalidValue(val);
-
-            const input = $ID(id);
-            const wrap = input?.closest('.action-wrap');
-
-            if (valid) {
-                btn.classList.remove('hidden');
-                wrap?.classList.add('has-auto');
-                checkAdjustBtn(btn, wrap);
+            );
+        } catch (error) {
+            if (error.name === "NotFoundError") {
+                console.warn("\n⚠️ No port selected.");
+                await logMessage("\n⚠️ No port selected.");
+                return null;
             } else {
-                btn.classList.add('hidden');
-                btn.dataset.state = 'idle';
-                wrap?.classList.remove('has-auto');
-            }
-        };
-
-        // window.adjustRefresh = () => idToAdjustBtn.forEach((_, id) => refreshAdjustButtonsFor(id));
-
-        /* ======= KOPÍROVACÍ LOGIKA ======= */
-        const bindCopy = (wrap, el) => {
-            const btn = makeCopyButton();
-            wrap.appendChild(btn);
-
-            const copyValue = async () => {
-                let ok = false;
-                const val = (el.value || el.textContent || '').toString().trim();
-                try {
-                    if (!hasValue(val)) throw new Error('Empty');
-                    const testVal = normalize(val);
-                    if (!isInvalidValue(testVal)) {
-                        await navigator.clipboard.writeText(val);
-                        ok = true;
-                    }
-                } catch (err) {
-                    try {
-                        if (el.select) {
-                            const s = el.selectionStart, e = el.selectionEnd;
-                            el.focus();
-                            el.select();
-                            ok = document.execCommand('copy');
-                            if ((s != null && e != null) && (s <= e) && e !== 0) {
-                                el.setSelectionRange(s, e);
-                                ok = true;
-                            } else {
-                                ok = false;
-                            }
-                            el.blur();
-                        }
-                    } catch (err) {
-                        ok = false;
-                    }
-                } finally {
-                    el.classList.remove('action-err', 'action-ok');
-                    if (ok) {
-                        el.classList.add('action-ok');
-                        setStateExclusive(el, btn, 'ok');
-                    } else {
-                        el.classList.add('action-err');
-                        setStateExclusive(el, btn, 'err');
-                    }
-                    setTimeout(() => {
-                        el.classList.remove('action-ok', 'action-err');
-                        btn.dataset.state = 'idle';
-                    }, LINGER_MS);
-                    hideBtnLater(btn);
-                }
-            };
-
-            wrap.addEventListener('mouseenter', () => showBtn(btn, wrap));
-            wrap.addEventListener('mouseleave', () => hideBtnLater(btn));
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                copyValue();
-            });
-            el.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || (e.ctrlKey && e.key.toLowerCase() === 'c')) {
-                    e.preventDefault();
-                    showBtn(btn, wrap);
-                    copyValue();
-                }
-            });
-        };
-
-        /* ======= NASTAVOVACÍ LOGIKA (.adjustableInput) ======= */
-        const bindAdjust = (wrap, el) => {
-            const id = ensureId(el);
-            if (!(_registry).hasOwnProperty(id)) _registry[id] = NaN; // init registru
-
-            const btn = makeAdjustButton();
-            idToAdjustBtn.set(id, btn);
-            wrap.appendChild(btn);
-
-            el.addEventListener('input', () => checkAdjustBtn(btn, wrap));
-
-            const applyValue = () => {
-                const raw = adjustRegistryAPI.get(id);
-                const valid = !isInvalidValue(raw);
-                if (!valid) {
-                    // ikona se nemá zobrazit ani nic vkládat
-                    btn.classList.add('hidden');
-                    btn.dataset.state = 'idle';
-                    return false;
-                }
-                const str = String(raw);
-                // vložit
-                try {
-                    const prev = {s: el.selectionStart, e: el.selectionEnd};
-                    el.value = str;
-                    // vyvolat standardní eventy
-                    el.dispatchEvent(new Event('input', {bubbles: true}));
-                    el.dispatchEvent(new Event('change', {bubbles: true}));
-                    // navrátit caret pokud dává smysl
-                    if (prev.s != null && prev.e != null && el.setSelectionRange) {
-                        const end = str.length;
-                        el.setSelectionRange(end, end);
-                    }
-                    btn.dataset.state = 'set';
-                    return true;
-                } catch (err) {
-                    return false;
-                }
-            };
-
-            const doAdjust = () => {
-                const ok = applyValue();
-                el.classList.remove('action-ok', 'action-err');
-                blinkBorder.stop(el);
-                if (ok) {
-                    el.classList.add('action-ok');
-                    setStateExclusive(el, btn, 'ok');
-                } else {
-                    el.classList.add('action-err');
-                    setStateExclusive(el, btn, 'err');
-                }
-                setTimeout(() => {
-                    el.classList.remove('action-ok', 'action-err');
-                    btn.dataset.state = 'idle';
-                    refreshAdjustButtonsFor(id); // po animaci znovu zhodnotit viditelnost
-                }, LINGER_MS);
-                hideBtnLater(btn);
-            };
-
-            // počáteční viditelnost dle registru
-            refreshAdjustButtonsFor(id);
-
-            // interakce
-            wrap.addEventListener('mouseenter', () => showBtn(btn, wrap));
-            wrap.addEventListener('mouseleave', () => hideBtnLater(btn));
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                doAdjust();
-            });
-            el.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    showBtn(btn, wrap);
-                    doAdjust();
-                }
-            });
-        };
-
-        /* ======= SCAN & INIT ======= */
-        const setupOne = (el) => {
-            const wrap = ensureWrap(el);
-            // Pokud je to copyable, přidej copy pilulku
-            if (el.matches(COPY_SELECTOR) && !wrap.querySelector('.copy-pill')) bindCopy(wrap, el);
-            // Pokud je to adjustable, přidej adjust pilulku
-            if (el.matches(ADJUST_SELECTOR) && !wrap.querySelector('.adjust-pill')) bindAdjust(wrap, el);
-        };
-
-        const scan = () => {
-            $$(`${COPY_SELECTOR}, ${ADJUST_SELECTOR}`)?.forEach(setupOne);
-        };
-
-        // Veřejné API pro dynamické DOM změny
-        window.adjustScan = scan;
-
-        // INIT
-        scan();
-
-    })
-    ();
-</script>
-
-
-<script>
-
-    // ==========================
-    // Jednotky, prefixy, parser
-    // ==========================
-
-    // --- Rozměry a operace ---
-    const ZERO = [0, 0, 0, 0, 0, 0, 0]; // L, M, T, I, Θ, N, J
-    const DIMS = {L: 0, M: 1, T: 2, I: 3, Th: 4, N: 5, J: 6};
-
-    const dim = (...d) => d;
-    const addDim = (a, b) => a.map((v, i) => v + b[i]);
-    const mulDim = (a, k) => a.map(v => v * k);
-    const sameDim = (a, b) => a.every((v, i) => v === b[i]);
-
-    // --- SI předpony (vč. 'µ' a fallback 'u') ---
-    const PREFIX = new Map(Object.entries({
-        Y: 1e24, Z: 1e21, E: 1e18, P: 1e15, T: 1e12, G: 1e9, M: 1e6,
-        k: 1e3, h: 1e2, da: 1e1,
-        d: 1e-1, c: 1e-2, m: 1e-3, u: 1e-6, 'µ': 1e-6,
-        n: 1e-9, p: 1e-12, f: 1e-15, a: 1e-18, z: 1e-21, y: 1e-24
-    }));
-
-    // --- Textové předpony (slova) → symbol předpony ---
-    const TEXT_PREFIX_ALIASES = new Map(Object.entries({
-        yotta: 'Y', zetta: 'Z', exa: 'E', peta: 'P', tera: 'T',
-        giga: 'G', mega: 'M', kilo: 'k', hecto: 'h', deka: 'da', deca: 'da',
-        deci: 'd', centi: 'c', milli: 'm', micro: 'u', nano: 'n',
-        pico: 'p', femto: 'f', atto: 'a', zepto: 'z', yocto: 'y'
-    }));
-
-    // --- Databáze jednotek ---
-    const UNITS = new Map(); // sym -> { dim, factor }
-    const def = (sym, dimv, factor = 1) => UNITS.set(sym, {dim: dimv, factor});
-
-    /* Základní SI + pár běžných */
-    def('m', dim(1, 0, 0, 0, 0, 0, 0));
-    def('s', dim(0, 0, 1, 0, 0, 0, 0));
-    def('A', dim(0, 0, 0, 1, 0, 0, 0));
-    def('K', dim(0, 0, 0, 0, 1, 0, 0));
-    def('mol', dim(0, 0, 0, 0, 0, 1, 0));
-    def('cd', dim(0, 0, 0, 0, 0, 0, 1));
-
-    def('kg', dim(0, 1, 0, 0, 0, 0, 0), 1);
-    def('g', dim(0, 1, 0, 0, 0, 0, 0), 1e-3); // 1 g = 1e-3 kg
-
-    // Časové zkratky
-    def('min', dim(0, 0, 1, 0, 0, 0, 0), 60);
-    def('h', dim(0, 0, 1, 0, 0, 0, 0), 3600);
-
-    // Odvozené (faktor 1, jen dimenze)
-    const mD = UNITS.get('m').dim;
-    const sD = UNITS.get('s').dim;
-    const AD = UNITS.get('A').dim;
-    const kgD = UNITS.get('kg').dim;
-    const cdD = UNITS.get('cd').dim;
-
-    const HzD = mulDim(sD, -1);
-    def('Hz', HzD, 1);
-
-    const ND = addDim(kgD, addDim(mD, mulDim(sD, -2)));
-    def('N', ND, 1);
-
-    const PaD = addDim(ND, mulDim(mD, -2));
-    def('Pa', PaD, 1);
-
-    const JD = addDim(ND, mD);
-    def('J', JD, 1);
-
-    const WD = addDim(JD, mulDim(sD, -1));
-    def('W', WD, 1);
-
-    const VD = addDim(WD, mulDim(AD, -1));
-    def('V', VD, 1);
-
-    // C, F, Ω/ohm, T, lx
-    const CD = addDim(AD, sD);
-    def('C', CD, 1);
-
-    const FD = addDim(CD, mulDim(VD, -1));
-    def('F', FD, 1);
-
-    const OhmD = addDim(VD, mulDim(AD, -1));
-    def('Ω', OhmD, 1);
-    def('ohm', OhmD, 1);
-    def('Ohm', OhmD, 1);
-
-    const TD = addDim(ND, addDim(mulDim(AD, -1), mulDim(mD, -1)));
-    def('T', TD, 1);
-
-    // Lux = cd / m^2
-    const lxD = addDim(cdD, mulDim(mD, -2));
-    def('lx', lxD, 1);
-
-    // Bezrozměrné pomocné
-    def('1', ZERO.slice(), 1);
-    def('%', ZERO.slice(), 0.01);
-    def('‰', ZERO.slice(), 0.001);
-    def('ppm', ZERO.slice(), 1e-6);
-    def('ppb', ZERO.slice(), 1e-9);
-
-    // Den, týden, měsíc(30d), rok(365d)
-    const SECONDS_PER_DAY = 24 * 60 * 60;
-    def('d', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
-    def('day', dim(0, 0, 1, 0, 0, 0, 0), SECONDS_PER_DAY);
-    def('wk', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
-    def('week', dim(0, 0, 1, 0, 0, 0, 0), 7 * SECONDS_PER_DAY);
-    def('mo', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
-    def('month', dim(0, 0, 1, 0, 0, 0, 0), 30 * SECONDS_PER_DAY);
-    def('yr', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
-    def('year', dim(0, 0, 1, 0, 0, 0, 0), 365 * SECONDS_PER_DAY);
-
-    // Teploty – symbolické; afinní převod řeší convertUnits
-    def('degC', UNITS.get('K').dim, 1); // °C
-    def('degF', UNITS.get('K').dim, 1); // °F
-
-    // Seznam symbolů (nejdelší napřed)
-    let UNIT_SYMBOLS = Array.from(UNITS.keys()).sort((a, b) => b.length - a.length);
-
-    // --- Textové aliasy jednotek (plurály, názvy, překlepy) → kanonické symboly ---
-    const TEXT_UNIT_ALIASES = new Map(Object.entries({
-        // čas
-        sec: 's', secs: 's', second: 's', seconds: 's',
-        mins: 'min', minute: 'min', minutes: 'min',
-        hr: 'h', hrs: 'h', hour: 'h', hours: 'h',
-        day: 'd', days: 'd',
-        wks: 'wk', week: 'wk', weeks: 'wk',
-        mos: 'mo', month: 'mo', months: 'mo',
-        yrs: 'yr', year: 'yr', years: 'yr',
-
-        // délka / hmota
-        meter: 'm', meters: 'm', metre: 'm', metres: 'm',
-        gram: 'g', grams: 'g',
-
-        // základní SI
-        ampere: 'A', amperes: 'A',
-        kelvin: 'K',
-        mole: 'mol', moles: 'mol',
-        candela: 'cd',
-
-        // odvozené
-        newton: 'N', newtons: 'N',
-        pascal: 'Pa', pascals: 'Pa',
-        joule: 'J', joules: 'J',
-        watt: 'W', watts: 'W',
-        volt: 'V', volts: 'V',
-        coulomb: 'C', coulombs: 'C',
-        farad: 'F', farads: 'F',
-        ohm: 'ohm', ohms: 'ohm', Ohm: 'ohm',
-        tesla: 'T', teslas: 'T',
-        lux: 'lx',
-
-        // teploty (text)
-        celsius: 'degC', 'degree celsius': 'degC', degreecelsius: 'degC', 'degrees celsius': 'degC',
-        fahrenheit: 'degF', 'degree fahrenheit': 'degF', degreefahrenheit: 'degF', 'degrees fahrenheit': 'degF'
-    }));
-
-    const TEXT_UNIT_TYPO_ALIASES = new Map(Object.entries({
-        secnd: 's', minut: 'min', houer: 'h',
-        gramm: 'g',
-        nevtonn: 'N', newtonn: 'N', newtons: 'N',
-        pascalss: 'Pa', jouless: 'J', wattss: 'W', voltss: 'V',
-        coulombss: 'C', faradss: 'F', teslass: 'T',
-        luxx: 'lx', luxes: 'lx',
-        metre: 'm', metres: 'm' // (duplicitně pro jistotu)
-    }));
-
-    // --- Normalizace vstupu před parsováním ---
-    // 1) nahradí °C/°F → degC/degF
-    // 2) nahradí textové předpony & jednotky & překlepy
-    // 3) slepí "<prefix><mezera><unit>" → "<prefix><unit>" (např. "k m" → "km")
-    function normalizeUnitsString(input) {
-        if (input == null) return input;
-        let s = String(input);
-
-        // °C / °F → degC / degF
-        s = s.replace(/°\s*[cC]/g, 'degC')
-            .replace(/°\s*[fF]/g, 'degF');
-
-        const replaceWordMap = (map) => {
-            const keys = Array.from(map.keys()).sort((a, b) => b.length - a.length);
-            for (const k of keys) {
-                const re = new RegExp(`\\b${k}\\b`, 'gi');
-                s = s.replace(re, map.get(k));
-            }
-        };
-
-        // nejdřív slova-předpony, pak jednotky a překlepy
-        replaceWordMap(TEXT_PREFIX_ALIASES);
-        replaceWordMap(TEXT_UNIT_ALIASES);
-        replaceWordMap(TEXT_UNIT_TYPO_ALIASES);
-
-        // slep "prefix symbol"+"mezera"+"unit" → "prefix+unit"
-        const prefixSymbols = ['Y', 'Z', 'E', 'P', 'T', 'G', 'M', 'k', 'h', 'da', 'd', 'c', 'm', 'u', 'µ', 'n', 'p', 'f', 'a', 'z', 'y'];
-        for (const pre of prefixSymbols) {
-            for (const u of UNIT_SYMBOLS) {
-                if (u === 'kg') continue; // kg je speciál
-                const re = new RegExp(`\\b${pre}\\s+${u}\\b`, 'g');
-                s = s.replace(re, `${pre}${u}`);
+                throw new Error(`Error requesting serial port: ${error.message}`);
             }
         }
+    };
 
-        return s;
-    }
 
-    // --- Parser jednotkového výrazu ---
-    function parseUnitExpr(input) {
-        if (!input || String(input).trim() === '' || input === '1') {
-            return {dim: ZERO.slice(), factor: 1};
-        }
-
-        // normalizace
-        let s = normalizeUnitsString(input);
-
-        s = String(s)
-            .replace(/[·⋅•×]/g, '*')
-            .replace(/[–—−]/g, '-')   // různé minusy
-            .replace(/\s+/g, '*')     // mezery jako násobení
-            .replace(/[()]/g, '');    // bez závorek
-
-        const parts = s.split('/');
-        let acc = {dim: ZERO.slice(), factor: 1};
-
-        parts.forEach((segment, idx) => {
-            const sign = (idx === 0) ? +1 : -1; // čitatel / jmenovatel
-            const tokens = segment.split('*').filter(Boolean);
-            tokens.forEach(tok => {
-                const {dim, factor} = parseUnitToken(tok);
-                acc.dim = addDim(acc.dim, mulDim(dim, sign));
-                acc.factor *= Math.pow(factor, sign);
+    function checkAllPorts() {
+        let thymosPorts = [];
+        navigator.serial.getPorts().then(ports => {
+            ports?.forEach(port => {
+                if (port.manufacturer === "Thymos") {
+                    thymosPorts.push(port);
+                }
             });
+
+
+            return port
+        }).catch(_ => {
+            return null
         });
-
-        return acc;
     }
 
-    function parseUnitToken(tok) {
-        let t = String(tok).trim();
-        if (!t) throw new Error(`Invalid unit token: "${tok}"`);
-        let exp = 1;
 
-        // exponent ^{...} nebo ^...
-        const mPow = t.match(/\^(?:\{([^}]+)}|(.+))$/);
-        if (mPow) {
-            const raw = (mPow[1] || mPow[2]).trim();
-            exp = parseInt(raw, 10);
-            t = t.slice(0, mPow.index);
-            if (!Number.isInteger(exp)) throw new Error(`Invalid exponent: "${raw}"`);
-        }
+    // /////// Serial (USB) Connection to ESP /////////
 
-        // unicode mocniny
-        t = t.replace(/²/g, '^2').replace(/³/g, '^3');
-        if (exp === 0) return {dim: ZERO.slice(), factor: 1};
-        if (t === '1') return {dim: ZERO.slice(), factor: 1};
+    /**
+     * Establishes a connection with the ESP device via USB.
+     */
+    async function connectSerial(userRequest = true) {
+        let serialComPort = null;
+        await updateConnectionStatus("connecting", "USB");
+        try {
+            let ports = null;
 
-        // speciál: "kg" – nesmí se rozpadnout na k + g
-        if (t === 'kg') {
-            return {dim: mulDim(UNITS.get('kg').dim, exp), factor: 1};
-        }
-
-        // nejdelší známý symbol jednotky jako sufix
-        const unit = UNIT_SYMBOLS.find(u => t.endsWith(u));
-        if (!unit) throw new Error(`Unknown unit: "${t}"`);
-
-        const base = UNITS.get(unit);
-        if (!base) throw new Error(`Unit "${unit}" is not supported`);
-
-        const prefixStr = t.slice(0, t.length - unit.length);
-        let pf = 1;
-        if (prefixStr) {
-            pf = PREFIX.get(prefixStr);
-            if (pf == null && prefixStr === 'da') pf = 10; // fallback
-            if (pf == null) throw new Error(`Unknown prefix: "${prefixStr}" in "${tok}"`);
-        }
-
-        return {
-            dim: mulDim(base.dim, exp),
-            factor: Math.pow(base.factor * pf, exp)
-        };
-    }
-
-    // --- Teplotní helpery (čisté teploty jen) ---
-    const isPureTempUnit = (u) => {
-        const s = String(u).trim();
-        return s === 'K' || s === 'degC' || s === 'degF';
-    };
-    const toKelvin = (value, sym) => {
-        switch (sym) {
-            case 'K':
-                return value;
-            case 'degC':
-                return value + 273.15;
-            case 'degF':
-                return (value - 32) * (5 / 9) + 273.15;
-            default:
-                throw new Error(`Unsupported temperature unit: ${sym}`);
-        }
-    };
-    const fromKelvin = (valueK, sym) => {
-        switch (sym) {
-            case 'K':
-                return valueK;
-            case 'degC':
-                return valueK - 273.15;
-            case 'degF':
-                return (valueK - 273.15) * (9 / 5) + 32;
-            default:
-                throw new Error(`Unsupported temperature unit: ${sym}`);
-        }
-    };
-
-    // --- Veřejné API: konverze hodnoty mezi jednotkami ---
-    function convertUnits(value, fromUnit, toUnit) {
-        const fNorm = normalizeUnitsString(fromUnit);
-        const tNorm = normalizeUnitsString(toUnit);
-
-        const fIsTemp = isPureTempUnit(fNorm);
-        const tIsTemp = isPureTempUnit(tNorm);
-
-        if (fIsTemp || tIsTemp) {
-            // afinní převod smí být jen mezi čistými teplotami
-            if (!(fIsTemp && tIsTemp)) {
-                throw new Error(`Temperature units cannot be combined with other units: "${fromUnit}" → "${toUnit}"`);
+            if (usePortAutoConnect) {
+                ports = await serialFunctionGetPorts();
+                console.info("🔍 Searching for available ports...");
             }
-            const k = toKelvin(value, fNorm);
-            return fromKelvin(k, tNorm);
-        }
 
-        const a = parseUnitExpr(fNorm);
-        const b = parseUnitExpr(tNorm);
-        if (!sameDim(a.dim, b.dim)) {
-            throw new Error(`Noncompatible units: "${fromUnit}" vs "${toUnit}"`);
+
+            if (isArr(ports) && ports.length === 1) {
+                serialComPort = ports[0];
+                console.info("\t... Only one port found.");
+
+            } else {
+                let founds = false;
+
+                if (isArr(ports) && ports.length > 1) {
+                    console.info("Multiple ports found. Select one.");
+
+                    // serialComPort = checkAllPorts();
+
+                    for (let port of ports) {
+                        await closePort(port);
+                    }
+                    founds = true;
+                }
+
+                if (userRequest) {
+                    if (!serialPort) serialComPort = await serialFunctionRequestPort();
+                }
+
+                if (serialComPort == null) {
+                    if (userRequest) {
+                        // console.info("\t\t⚠️ No port selected. Connecting canceled.");
+                        // await logMessage("\n\t\t⚠️ No port selected. Connecting canceled.");
+                    } else {
+                        if (founds) {
+                            console.info("⚠️ Multiple ports found, please select one.");
+                            await logMessage("\n⚠️ Multiple ports found, please select one.");
+                        } else {
+                            console.info("\n\t❎ No previously connected devices found.");
+                            await logMessage("\n❎ No previously connected devices found.");
+                        }
+                    }
+
+                    console.info("🔌 Connecting canceled.");
+                    await disconnectSerial({override: true});
+                    return;
+                }
+            }
+
+            if (!serialComPort) throw new Error("No serial port available.");
+
+
+            await openPort(serialComPort);
+
+        } catch (error) {
+
+            await handleError(error, "connectSerial");
+            isConnected = false;
+            activeWatchDog = false;
+            await disconnectSerial({override: true});
         }
-        return roundDecimalFast(value * (a.factor / b.factor), maxPrecision);
     }
 
-    // ==========================
-    // TESTY & VÝPIS DO KONZOLE
-    // ==========================
-    // function runTests() {
-    //     console.log('--- TEST: °C / °F / K ---');
-    //     console.log('normalize "°C" ->', normalizeUnitsString('°C')); // očekáváme "degC"
-    //     console.log('normalize "°F" ->', normalizeUnitsString('°F')); // očekáváme "degF');
-    //
-    //     const tC = 25;
-    //     console.log(`25 °C -> K: `, convertUnits(tC, '°C', 'K'));     // 298.15
-    //     console.log(`25 °C -> °F:`, convertUnits(tC, '°C', '°F'));    // 77
-    //     console.log(`300 K -> °C:`, convertUnits(300, 'K', 'degC'));  // 26.85
-    //     console.log(`77 °F -> °C:`, convertUnits(77, 'degF', 'degC')); // 25
-    //
-    //     console.log('\n--- TEST: textové názvy & překlepy ---');
-    //     console.log('normalize "seconds" ->', normalizeUnitsString('seconds')); // s
-    //     console.log('normalize "metres"  ->', normalizeUnitsString('metres'));  // m
-    //     console.log('normalize "gramm"   ->', normalizeUnitsString('gramm'));   // g
-    //     console.log('normalize "nevtonn" ->', normalizeUnitsString('nevtonn')); // N
-    //
-    //     console.log('\n--- TEST: textové předpony ---');
-    //     console.log('normalize "kilo meter" ->', normalizeUnitsString('kilo meter')); // km
-    //     console.log('parse "kilo meter / second" == "km/s":',
-    //         JSON.stringify(parseUnitExpr('kilo meter / second')) === JSON.stringify(parseUnitExpr('km/s'))
-    //     );
-    //
-    //     console.log('\n--- TEST: běžné SI konverze ---');
-    //     console.log('1 km -> m:', convertUnits(1, 'km', 'm'));           // 1000
-    //     console.log('500 g -> kg:', convertUnits(500, 'g', 'kg'));       // 0.5
-    //     console.log('1 N·m -> J:', convertUnits(1, 'N*m', 'J'));         // 1
-    //     console.log('1 Pa -> N/m^2:', convertUnits(1, 'Pa', 'N/m^2'));   // 1
-    //
-    //     console.log('\n--- TEST: chybové stavy ---');
-    //     try {
-    //         console.log('degC/s → K/s (nemělo by projít):', convertUnits(1, 'degC/s', 'K/s'));
-    //     } catch (e) {
-    //         console.log('Očekávaná chyba (afinní teplota v poměru):', e.message);
-    //     }
-    //     try {
-    //         console.log('neznámá jednotka:', convertUnits(1, 'smurf', 'm'));
-    //     } catch (e) {
-    //         console.log('Očekávaná chyba (unknown unit):', e.message);
-    //     }
-    //
-    //
-    //     convertUnits(2, 'min', 's');             // 120
-    //     convertUnits(1, 'h', 'min');             // 60
-    //
-    //     convertUnits(1, 'mV/V', '1');            // 0.001  (bezrozměrné)
-    //     convertUnits(1, 'mV/V', '%');            // 0.1    (%)
-    //     convertUnits(2.5, 'mV/V', '‰');          // 2.5    (promile)
-    //     convertUnits(500, 'ppm', '%');           // 0.05
-    //
-    //     convertUnits(1, 'kΩ', 'ohm');            // 1000
-    //     convertUnits(1, 'mA', 'A');              // 0.001
-    //     convertUnits(1, 'C', 'A*s');             // 1
-    //     convertUnits(1, 'F', 'C/V');             // 1
-    //     convertUnits(1, 'T', 'N/(A*m)');         // 1
-    //     convertUnits(1, 'lx', 'cd/m^2');         // 1
-    //
-    //     convertUnits(2, 'mm/min', 'mm/s');
-    //     convertUnits(2.5, 'mV/GV', 'GV/mV');
-    //     convertUnits(4, 'mV/V', 'MV/GV');
-    //     convertUnits(4, 'mV/V', 'GV/GV');
-    //     convertUnits(4, 'mm^2', 'cm^2');
-    //     convertUnits(4, 'µm^4', 'm^4');
-    //     convertUnits(4, 'µm^4', 'm^4');
-    //
-    //     convertUnits(1, 'd', 's');           // 86400
-    //     convertUnits(2, 'wk', 'd');          // 14 (2x 7)
-    //     convertUnits(60, 'mo', 'd');         // 1800 (2 měsíce po 30 dnech)
-    //     convertUnits(1, 'yr', 'h');          // 365 * 24 = 8760
-    //     convertUnits(1, 'km/yr', 'm/d');      // ≈ 0.27778 (beze změny)
-    //     convertUnits(1, 'mm/wk', 'mm/day');   // 60
-    //
-    //     convertUnits(1, 'N', 'kg*m/s^2');     // 1
-    //     convertUnits(10, 'N', 'kN');          // 0.01
-    //
-    //     convertUnits(1, 'J', 'N*m');          // 1
-    //     convertUnits(1, 'J', 'kg*m^2/s^2');   // 1
-    //     convertUnits(500, 'kJ', 'MJ');        // 0.5
-    //
-    //     convertUnits(1, 'W', 'J/s');          // 1
-    //     convertUnits(2.5, 'kW', 'W');         // 2500
-    //     convertUnits(1, 'W', 'kg*m^2/s^3');   // 1
-    // }
+    async function openPort(comPort, retry = false) {
+        try {
+            activeWatchDog = false;
+
+            if (!comPort) {
+                console.error("⚠️ No available port.");
+                await logMessage("\n⚠️ No available port.");
+                return;
+            }
+
+
+            // TODO opravit funkci na odpojování viz níže + opravit reconnect/disconnect v návaznosti na restartování zařízení.
+
+            // Get the writer and reader for the port after opening
+            const err = await closeComPort();
+            if (isNonEmptyObj(err)) {
+                console.error("⚠️ Error closing existing port before opening a new one:", err);
+            }
+            await closePort(comPort, {verbose: false});
+
+            const {usbVendorId, usbProductId} = comPort.getInfo?.() ?? {};
+            fingerprint = `${usbVendorId}:${usbProductId}`;
+
+            console.info(`👣 Port Fingerprint:\n\t\tusbVendorId:${usbVendorId}\n\t\tusbProductId:${usbProductId}`);
+
+            localStorage.setItem("lastFingerprint", fingerprint);
+
+            serialPort = comPort;
+
+
+            console.info("🔌 Opening new port...");
+            await comPort.open({
+                baudRate: parseInt($ID("inputNumBaudRate").value)
+            });
+
+            serialWriter = comPort.writable.getWriter(); // 🔥  writer
+            serialReader = comPort.readable.getReader(); // 🔥  reader
+
+            isConnected = true;
+
+            await sendCommandGeneral("DATAC 0"); // Stop data collection
+
+            readSerial();
+
+            await checkSerialSignals(comPort);
+
+            await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
+
+            await logMessage("\n");
+
+            await sendCommandGeneral("MC STOP"); // Stop movement
+            await sendCommandGeneral("MC ENDSTOPS ENABLE");
+            await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+            await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 1_000), (5 * 1_000 * 1_000))}`); // Stop data collection
+
+
+            await logMessage("\n");
+
+            await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
+            await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
+
+            await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
+            await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1_000))}`);
+
+            await logMessage("\n");
+
+            try {
+                machineFirmware = await getFirmwareVersion() || "";
+            } catch (e) {
+                machineFirmware = null;
+            }
+            let machineName;
+            try {
+                machineName = await getMachineName() || "";
+            } catch (e) {
+                machineName = null;
+            }
+            let machineID;
+            try {
+                machineID = await getMachineID() || "";
+            } catch (e) {
+                machineID = null;
+            }
+
+            await sleep(10);
+
+            if (!isOk(machineFirmware) || !isOk(machineName) || !isOk(machineID)) {
+                if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
+                // start reconnect procedure
+                if (tryCount === 0) {
+                    tryCount++;
+                    alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
+                    await sendCommandGeneral("MISC REBOOT");
+                    await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
+                    await logMessage("   Rebooting via Command.\n");
+                    throw new Error("Device not responding");
+
+                } else if (tryCount === 1) {
+                    tryCount++;
+                    alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
+                    await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
+                    await logMessage("   Rebooting via DTR toggle.\n");
+                    await setSerialSignals(comPort, false, false, false); // Set DTR to false
+                    await sleep(250);
+                    await setSerialSignals(comPort, true, false, false); // Set DTR to true
+                    await sleep(2_500);
+                    throw new Error("Device not responding");
+
+                } else {
+                    console.error("Device not responding after multiple attempts.");
+                    await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
+                    alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
+                    reconnectAttempts = 1_000;
+                    await disconnectSerial({override: true});
+                    return;
+                }
+            }
+
+            // ověření kalibrace
+            calibrationStatus = await getCalibrationStatus(2_000);
+
+            if (calibrationStatus) await unlockMovement();
+            else await lockMovementExcept(UI.calibrateBtn);
+
+            const speed = (await getSpeed(2_000)) || 15;
+            const acceleration = (await getAcceleration(2_000)) || 150;
+
+            setSpeedAndAcceleration(speed, acceleration, true);
+
+            await updateConnectionStatus("connected", "USB");
+            await logMessage("\n✅ Connected to ESP via USB\n");
+
+            tryCount = 0;
+            reconnectAttempts = 0;
+
+        } catch (error) {
+            activeWatchDog = false;
+            if (!(error.name === "InvalidStateError" && retry)) {
+                await disconnectSerial({override: true});
+                await handleError(error, "openPort");
+            }
+        }
+    }
+
+
+    async function checkSerialSignals(port) {
+        if (!port) return;
+
+        try {
+            const signals = await port.getSignals();
+            console.info("📡 Serial port signals...");
+            console.info("\t🚦 Signals:", signals);
+        } catch (error) {
+            console.error("❌ Error reading serial signals:", error);
+        }
+    }
+
+
+    async function setSerialSignals(port, dtrState, rtsState, brkState) {
+        if (!port) return;
+
+        try {
+            await port.setSignals({
+                dataTerminalReady: dtrState,
+                requestToSend: rtsState,
+                break: brkState
+            });
+
+            console.info(`✅ DTR: ${dtrState}, RTS: ${rtsState}, BRK: ${brkState}`);
+        } catch (error) {
+            console.error("❌ Error setting serial signals:", error);
+        }
+    }
+
+
+    /**
+     * Disconnects from the ESP device via USB.
+     */
+    async function disconnectSerial({override = false, verbose = true} = {}) {
+        const wasConnected = isConnected;
+        if (!override && !isConnected) {
+            console.warn("\n⚠️ Port is not connected.");
+            return;
+        }
+
+        updateConnectionStatus("disconnecting");
+
+        try {
+            try {
+                if (isExperimentRunning) endMeasuring(0, {
+                    overRide: true,
+                    ednStatus: 'disconnected',
+                    endText: "🚧 Experiment stopped due to disconnect"
+                });
+
+            } catch (error) {
+                if (debugging) console.warn("\n⚠️ Error stopping data collection:", error);
+            }
+
+            await endedMoving();
+
+            // Stop data reading before releasing the reader
+            await closeComPort({override: override, verbose: verbose});
+
+            if (wasConnected && verbose) await logMessage("✖️ Disconnected from ESP\n\n");
+
+            console.info("✅ Disconnected successfully.");
+        } catch (error) {
+            console.error("❌ disconnectSerial error:", error);
+        } finally {
+            cancelAllPending();
+            activeWatchDog = false;
+            machineOccupation = false;
+            isExperimentRunning = false;
+            await flushDB();
+            await resetValues();
+            await updateConnectionStatus("disconnected");
+            await lockMovement();
+        }
+    }
+
+    async function closePort(port, {reader = null, writer = null, verbose = false} = {}) {
+        if (!port) return;
+
+        const info = (() => {
+            try {
+                return port.getInfo();
+            } catch {
+                return {};
+            }
+        })();
+        if (verbose) console.info("\t⚓ Closing port...", info);
+
+        // 1) Ukončit čtení
+        try {
+            // Preferuj předaného readera; jinak pokud je stream locked, pokus se ho uvolnit
+            if (reader) {
+                try {
+                    await reader.cancel();
+                } catch {
+                }
+                try {
+                    reader.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("\t\t📍 Reader canceled & released.");
+            } else if (port.readable?.locked) {
+                // Někdo jiný drží lock – poslední možností je vytvořit dočasného readera a hned ho zrušit
+                const tmp = port.readable.getReader();
+                try {
+                    await tmp.cancel();
+                } catch {
+                }
+                try {
+                    tmp.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("\t📍 Forced-canceled locked readable.");
+            }
+        } catch (err) {
+            console.warn("⚠️ Error handling reader", info, ":", err);
+        }
+
+        // 2) Ukončit zápis
+        try {
+            if (writer) {
+                try {
+                    await writer.close();
+                } catch {/* může být už zavřený */
+                }
+                try {
+                    writer.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("\t\t📍 Writer closed & released.");
+            } else if (port.writable?.locked) {
+                const tmpW = port.writable.getWriter();
+                try {
+                    await tmpW.close();
+                } catch {
+                }
+                try {
+                    tmpW.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("\t📍 Forced-closed locked writable.");
+            }
+        } catch (err) {
+            console.warn("⚠️ Error handling writer", info, ":", err);
+        }
+
+        // 3) Zavřít port
+        try {
+            try {
+                await port.close();
+            } catch (e) {
+            }
+            if (verbose) console.info("\t📍 Port closed.");
+        } catch (err) {
+            console.warn("⚠️ Error closing port", info, ":", err);
+        }
+    }
+
+
+    async function closeComPort({override = false, verbose = true} = {}) {
+        const errors = {};
+
+        // 1) Reader
+        try {
+            if (serialReader) {
+                try {
+                    await serialReader.cancel();
+                } catch {
+                }
+                try {
+                    serialReader.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("\t⛏️ Released Reader...");
+            }
+        } catch (error) {
+            console.warn("⚠️ Error releasing reader:", error);
+            errors.reader = error;
+        } finally {
+            serialReader = null;
+        }
+
+        // 2) Writer
+        try {
+            if (serialWriter) {
+                try {
+                    await serialWriter.close();
+                } catch {
+                }
+                try {
+                    serialWriter.releaseLock();
+                } catch {
+                }
+                if (verbose) console.info("\t⛏️ Released Writer...");
+            }
+        } catch (error) {
+            console.warn("⚠️ Error releasing writer:", error);
+            errors.writer = error;
+        } finally {
+            serialWriter = null;
+        }
+
+        // 3) Port
+        try {
+            if (serialPort) {
+                // Pokud někde zůstal lock, pokus se ho vynutit
+                if (serialPort.readable?.locked) {
+                    const r = serialPort.readable.getReader();
+                    try {
+                        await r.cancel();
+                    } catch {
+                    }
+                    try {
+                        r.releaseLock();
+                    } catch {
+                    }
+                }
+                if (serialPort.writable?.locked) {
+                    const w = serialPort.writable.getWriter();
+                    try {
+                        await w.close();
+                    } catch {
+                    }
+                    try {
+                        w.releaseLock();
+                    } catch {
+                    }
+                }
+
+                if (override || serialPort) {
+                    try {
+                        await serialPort.close();
+                    } catch {
+                    }
+                    if (verbose) console.info("\t⛏️ Closed Serial Port...");
+                }
+            }
+        } catch (error) {
+            console.warn("⚠️ Error closing serial port:", error);
+            errors.port = error;
+        } finally {
+            serialPort = null;
+        }
+
+        isConnected = false;
+
+        return errors;
+    }
+
+
+    // /////// Reading Data from ESP /////////
+
+    /**
+     * Reads incoming data from the ESP device over a serial connection.
+     */
+    async function readSerial() {
+        let buffer = "";
+        const decoder = txtD ?? new TextDecoder(); // pokud používáš globální txtD, klidně ho nech
+
+        if (!serialPort?.readable) {
+            await logMessage("\n❌ Port is unavailable.\n");
+            return;
+        }
+
+        // Tady už PŘEDPOKLÁDÁME, že serialReader existuje z openPort()
+        if (!serialReader) {
+            // fallback, kdyby přece jen nebyl
+            serialReader = serialPort.readable.getReader();
+        }
+
+        try {
+            while (isConnected) {
+                const {value, done} = await serialReader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, {stream: true});
+
+                const lastNewline = buffer.lastIndexOf("\n");
+                if (lastNewline !== -1) {
+                    const dataChunk = buffer.slice(0, lastNewline).split("\n");
+                    buffer = buffer.slice(lastNewline + 1);
+                    await handleIncomingChunkQueued(dataChunk);
+                }
+            }
+        } catch (error) {
+            activeWatchDog = false;
+            await handleError(error, "readSerial");
+        } finally {
+            // doflushnout případný zbytek (pokud to dává smysl pro tvůj protokol)
+            const tail = decoder.decode();
+            if (tail) {
+                buffer += tail;
+                const lines = buffer.split("\n");
+                if (lines.length) await handleIncomingChunkQueued(lines);
+            }
+
+            // Bezpečné ukončení readeru
+            if (serialReader) {
+                try {
+                    await serialReader.cancel();
+                } catch {
+                }
+                try {
+                    serialReader.releaseLock();
+                } catch {
+                }
+            }
+
+            await logMessage("\n✅ Reading stopped.\n");
+        }
+    }
+
+
+    async function findPreferredPortIndex(showMessage = false) {
+        if (!fingerprint) {
+            console.warn("\n⚠️ No fingerprint available.");
+            return null;
+        }
+        const ports = await navigator.serial.getPorts();
+
+        for (let i = 0; i < ports.length; i++) {
+            const info = ports[i].getInfo();
+            const currentFingerprint = `${info.usbVendorId}:${info.usbProductId}`;
+            if (currentFingerprint === fingerprint) {
+                console.info("✅ Matched port at index:", i);
+                return ports[i];
+            }
+        }
+
+        if (showMessage) {
+            console.warn("\n⚠️ No matching port found.");
+            await logMessage("\n⚠️ No matching port found.");
+        }
+        return null;
+    }
+
+    async function attemptReconnect() {
+        console.info("%c\n🔄 Attempting to reconnect...", "color: blue; font-weight: bold;");
+
+        if (isConnected || isReconnecting) {
+            console.warn("\n🚧 Reconnect aborted - Already connected or disconnect was expected.");
+            return;
+        }
+
+        if (reconnectAttempts >= maxReconnectAttempts) {
+            console.warn("\n⚠️ Stopping auto-reconnect. Maximum attempts reached.");
+            await logMessage("\n⚠️ Stopping auto-reconnect.\n");
+            isReconnecting = false;
+            await disconnectSerial();
+            await resetValues();
+            return;
+        }
+
+        // Reset the connection status
+        // await serialReader.cancel();
+        // await serialReader.releaseLock();
+        // await serialPort.close();
+        // serialReader = null;
+        // serialPort = null;
+
+        isConnected = false;
+        await disconnectSerial({override: true, verbose: false});
+
+
+        activeWatchDog = false;
+        isReconnecting = true;
+        reconnectAttempts++;
+        await updateConnectionStatus("reconnecting");
+        await logMessage(`\n🔄 Attempting reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
+
+        try {
+
+            // TODO: implement also using machine name
+            const port = await findPreferredPortIndex();
+
+            if (port) {
+                serialPort = port; // Update the serialPort reference
+                await openPort(port, true);
+            }
+
+
+            if (isConnected) {
+                console.info("✅ Reconnected successfully!");
+                isReconnecting = false;
+                await updateConnectionStatus("connected");
+                await logMessage("✅ Reconnected successfully!\n");
+                await unlockMovement();
+            } else {
+                throw new Error("Reconnect failed: not connected after openPort");
+            }
+        } catch (error) {
+            console.warn("\n⚠️ Reconnection failed:", error);
+            await logMessage("\n❌ Reconnection failed: " + error.message);
+
+            if (reconnectAttempts < maxReconnectAttempts) {
+                setTimeout(() => {
+                    isReconnecting = false; // Allow another reconnection attempt
+                    attemptReconnect();
+                }, 3_000);
+            } else {
+                console.warn("\n⚠️ Max reconnect attempts reached. Reconnecting stoped.");
+                await logMessage("\n❌ Max reconnect attempts reached. Reconnecting stopped.\n");
+                await resetValues();
+                isReconnecting = false;
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////////////////////
 
 </script>
 
-<script  type="text/plain">
+<script type="text/plain">
 
     // Jednorázově někde po kliknutí uživatele – udělení oprávnění (není nutné opakovat pokaždé)
     async function grantSerialOnce() {
@@ -10730,6 +10715,130 @@
 
 <script>
 
+    function resetValues() {
+        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        measurementParts = measurementPartDefault;
+        liveUpdate = false
+
+        updateConnectionStatus("disconnected");
+
+        isExperimentRunning = false;
+        machineOccupation = false;
+        UI.loadingLogContainer.style.background = "#323232";
+
+        experimentEndLimits = {position: null, force: null, time: null};
+        expControl = '';
+        pendingDSLR = null;
+        dataCount = null;
+        maxForces = Array(loadCellNum).fill(null);
+        // timeData = [];
+        // positionData = [];
+        measureForces = Array(loadCellNum).fill(null).map(() => []);
+        // forceData = Array(loadCellNum).fill(null).map(() => []);
+        tareValues.force = Array(loadCellNum).fill(0);
+        tareValues.position = null;
+        tareValues.time = null;
+        lastAcceptedTime = null;
+        aggregatedDataBetweenSteps = [];
+        Object.values(measurement_limits).forEach(v => {
+            v.counter = 0;
+            v.limit = null;
+        });
+        endMeasurement = false;
+        clearTimeout(endMeasurementCounter)
+        endMeasurementCounter = null;
+        checkSpeed = true;
+
+
+        displacementSignCorrection = 0;
+        loadSignCorrections = Array(loadCellNum).fill(0);
+
+        loadcellErrRate = null;
+        measurementErrRate = null;
+        totalErrRate = null;
+
+
+        activeWatchDog = false;
+
+        isConnected = false;
+        serialPort = null;
+        serialReader = null;
+        serialWriter = null;
+        // reconnectAttempts = 0;
+    }
+
+    async function clearAndResetAll() {
+        await disconnectSerial();
+        // clear DB
+        if (liveUpdate) await chartUpdate();
+        await clearDatabase();
+        await clearLocalStorage();
+
+        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        measurementParts = measurementPartDefault;
+
+        isExperimentRunning = false;
+        machineOccupation = false;
+        UI.loadingLogContainer.style.background = "#323232";
+
+        experimentEndLimits = {position: null, force: null, time: null};
+        expControl = '';
+        pendingDSLR = null;
+        dataCount = null;
+        maxForces = Array(loadCellNum).fill(null);
+        timeData = [];
+        positionData = [];
+        measureForces = Array(loadCellNum).fill(null).map(() => []);
+        forceData = Array(loadCellNum).fill(null).map(() => []);
+        tareValues.force = Array(loadCellNum).fill(0);
+        tareValues.position = null;
+        tareValues.time = null;
+        lastAcceptedTime = null;
+        photoData = [];
+        aggregatedDataBetweenSteps = [];
+        Object.values(measurement_limits).forEach(v => {
+            v.counter = 0;
+            v.limit = null;
+        });
+        endMeasurement = false;
+        clearTimeout(endMeasurementCounter)
+        endMeasurementCounter = null;
+        checkSpeed = true;
+
+
+        displacementSignCorrection = 0;
+        loadSignCorrections = Array(loadCellNum).fill(0);
+
+        loadcellErrRate = null;
+        measurementErrRate = null;
+        totalErrRate = null;
+
+
+        activeWatchDog = false;
+
+        isConnected = false;
+        serialPort = null;
+        serialReader = null;
+        serialWriter = null;
+        reconnectAttempts = 0;
+
+        // --------------------------------
+        // Experiment parameters
+        speedForward_mmps = 0;
+        currentSpeed = null;
+        currentAcceleration = null;
+        takePhotos = false;
+        dataInterval_us = null;
+        initialForceLim_N = null;
+        experimentDoubleSpeed = false;
+        stoppingForceLimit = null;
+        holdForceTimeMs = null;
+        // --------------------------------
+    }
+</script>
+
+<script>
+
     lockMovement();
 
     UI.connectBtns?.forEach(btn => btn.classList.add('disabled'));
@@ -10763,6 +10872,14 @@
     // ===============================================
 
     document.addEventListener("DOMContentLoaded", function () {
+
+        // start at top of page
+        try {
+            history.scrollRestoration = 'manual';
+        } catch {
+        }
+        window.scrollTo(0, 0);
+        document.body.style.overflowY = "hidden";
 
         Notification.requestPermission().then(permission => {
             if (permission === "granted") {
@@ -11215,9 +11332,15 @@
             if (pageLoadTimeout > 10_000) break;
         }
 
-
         if (pageLoaded && dataLoaded) {
             recomputeAll();
+
+            await sleep(5);
+
+            const preloadScreen = $ID("preloadScreen");
+
+            if ($ID("inputAutoConnect").checked) await startSerial(false);
+            else await updateConnectionStatus("disconnected");
 
             await sleep(5);
 
@@ -11225,6 +11348,7 @@
                 console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
                 await logMessage("\nℹ️ Found previous unsaved logged data.\n");
                 alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
+                await sleep(15);
             } else {
                 console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
                 $ID("experimentName").value = "";
@@ -11236,8 +11360,13 @@
 
             await sleep(5);
 
-            if ($ID("inputAutoConnect").checked) await startSerial(false);
-            else updateConnectionStatus("disconnected");
+            preloadScreen.getBoundingClientRect(); // force reflow
+            preloadScreen.style.opacity = "0";
+            document.body.style.overflowY = "auto";
+            await new Promise(r => setTimeout(() => {
+                preloadScreen?.remove();   // <— opravené ?.remove()
+                r();
+            }, 1000));
         }
     }
 
