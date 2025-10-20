@@ -6119,9 +6119,7 @@
     function stopMachine(type = 'machine') {
         if (isConnected) {
             setAcceleration(200, false); // Set acceleration to 200 mm/s²
-            sendCommandGeneral("MC STOP"); // Stop movement
-            sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            sendCommandGeneral("DATAC 0"); // Stop data collection
+            sendStopAllMeasuring();
         }
 
         if (isExperimentRunning) {
@@ -6834,11 +6832,11 @@
                 await sendCommandGeneral(`LC SET RO ${i} ${loadcellOutputs[i]}`);
             }
 
-            // === Prepare Motor ===
-            await sendCommandGeneral("MC STOP");
-            await setSpeedAndAcceleration(initialSpeed_mmps, 200, false);
-
+            // === Prepare Machine ===
+            await sendStopAllMeasuring();
             if (takePhotos) await sendCommandGeneral('DSLR RESET COUNTERS');
+            
+            await setSpeedAndAcceleration(initialSpeed_mmps, 200, false);
 
             // === Prepare Data Collection ===
             tareValues.position = await measurePosition();
@@ -7005,9 +7003,7 @@
             isExperimentRunning = false;
 
             // === Stop Data Streaming and DSLR Shooting ===
-            await sendCommandGeneral('MC STOP');
-            await sendCommandGeneral('DSLR STOP CYCLIC');
-            await sendCommandGeneral('DATAC 0');
+            await sendStopAllMeasuring();
 
             await logMessage("🎬 Measurements stopped.");
             await console.info("🎬 Measurements stopped.");
@@ -7083,6 +7079,12 @@
         }
     }
 
+    async function sendStopAllMeasuring() {
+        await sendCommandGeneral("MC STOP"); // Stop movement
+        await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+        await sendCommandGeneral("DATAC 0"); // Stop data collection
+    }
+
 
     async function endMeasuring(timeoutMs = 0, {
 
@@ -7128,9 +7130,7 @@
             }
 
             if (isConnected) {
-                await sendCommandGeneral("MC STOP");
-                await sendCommandGeneral("DSLR STOP CYCLIC");
-                await sendCommandGeneral("DATAC 0");
+                await sendStopAllMeasuring();
             }
 
             isExperimentRunning = false;
