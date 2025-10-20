@@ -1079,7 +1079,7 @@
             gap: var(--gap);
         }
 
-        #saveData {
+        #saveDataBtn {
             width: 150px;
             height: 44px;
         }
@@ -1168,15 +1168,16 @@
 
         #consoleContainer {
             display: grid;
-            grid-template-columns: 100fr 1fr; /* One column */
+            grid-template-columns: 1fr;
             grid-auto-rows: auto;
             gap: var(--gap);
+            width: 100%;
             padding-top: 20px;
         }
 
         #regularLogWrapper {
-            max-width: 1200px;
             min-width: 300px;
+            width: 100%;
             flex-grow: 1;
             height: 200px;
             background: var(--regular-log-color);
@@ -1196,7 +1197,7 @@
         }
 
         #loadingLog {
-            max-width: 1200px;
+            width: 100%;
             min-width: 300px;
             height: 80px;
             background: var(--loading-log-color);
@@ -1206,20 +1207,20 @@
 
         .logContainer {
             display: flex;
-            flex-direction: column;
+            width: 100%;
+            flex-direction: row;
             gap: var(--gap);
         }
 
         .logBtn {
             height: -webkit-fill-available;
-            width: 150px;
+            min-width: 150px;
             background: var(--logBtn-bg);
             color: white;
         }
 
         #commandInput {
             width: 100%;
-            max-width: 1200px;
             min-width: 300px;
             height: 40px;
             border: none;
@@ -1518,7 +1519,7 @@
     <span>Loading...</span>
 </div>
 
-<main id="app" data-bugreporter-root>
+<main id="app">
     <section class="headerContainer">
 
         <div id="nameHeader">
@@ -1822,7 +1823,7 @@
                        value="1" step="1" min="1" max="999">
             </div>
 
-            <button id="saveData">💾 Save single CSV</button>
+            <button id="saveDataBtn" class="saveDataBtns">💾 Save single CSV</button>
 
             <label for="experimentDesc">📄 Experiment description:</label>
             <div class="textareaWrapper">
@@ -2038,54 +2039,54 @@
                     </div>
                 </div>
 
-                <hr>
+                <hr data-system-level="1">
 
-                <h4>🔣 Equations:</h4>
-                <div class="inputsContainer"
+                <h4 data-system-level="1">🔣 Equations:</h4>
+                <div class="inputsContainer" data-system-level="1"
                      style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
-                <span class="data-eq">
-                    \[
-                    F_{i} = F_{j} - F_{\mathrm{Tare}}
-                    \]
-                </span>
                     <span class="data-eq">
-                    \[
-                    w_{i} = w_{j} - w_{\mathrm{Tare}}
-                    \]
-                </span>
+                        \[
+                        F_{i} = F_{j} - F_{\mathrm{Tare}}
+                        \]
+                    </span>
+                    <span class="data-eq">
+                        \[
+                        w_{i} = w_{j} - w_{\mathrm{Tare}}
+                        \]
+                    </span>
                     <span class="data-eq" data-eq-type="Flx">
-                    \[
-                    I_{y} = \frac{1}{12} \cdot b \cdot h^{3}
-                    \]
-                </span>
+                        \[
+                        I_{y} = \frac{1}{12} \cdot b \cdot h^{3}
+                        \]
+                    </span>
                     <span class="data-eq" data-eq-type="Flx">
-                    \[
-                    E = \frac{F\,L^{3}}{48\,I_{y}\,w}
-                    \]
-                </span>
+                        \[
+                        E = \frac{F\,L^{3}}{48\,I_{y}\,w}
+                        \]
+                    </span>
                     <span class="data-eq" data-eq-type="InB">
-                    \[
-                    A = b \cdot h
-                    \]
-                </span>
+                        \[
+                        A = b \cdot h
+                        \]
+                    </span>
                     <span class="data-eq" data-eq-type="InB">
-                    \[ \sigma_{\mathrm{max}} = \dfrac{F_{\mathrm{max}}}{A} \]
-                </span>
+                        \[ \sigma_{\mathrm{max}} = \dfrac{F_{\mathrm{max}}}{A} \]
+                    </span>
                     <span class="data-eq" data-eq-type="HBr">
-                    \[
-                    d = 2\cdot\sqrt{\,h_{D}\,(2D - h_{D})\,}
-                    \]
-                </span>
+                        \[
+                        d = 2\cdot\sqrt{\,h_{D}\,(2D - h_{D})\,}
+                        \]
+                    </span>
                     <span class="data-eq" data-eq-type="HBr">
-                    \[
-                    H_{BW} = \frac{2F}{\pi D\left( D - \sqrt{D^{2} - d^{2}} \right)}
-                    \]
-                </span>
+                        \[
+                        H_{BW} = \frac{2F}{\pi D\left( D - \sqrt{D^{2} - d^{2}} \right)}
+                        \]
+                    </span>
                     <span class="data-eq" data-eq-type="HBr">
-                    \[
-                    v = \frac{w_{T}}{t}
-                    \]
-                </span>
+                        \[
+                        v = \frac{w_{T}}{t}
+                        \]
+                    </span>
                 </div>
 
                 <hr>
@@ -2177,6 +2178,11 @@
                                data-nonremember="true" data-unit="mm/s" data-essence="speed">
                     </div>
                 </div>
+
+                <div id="saveCalcDataBtnWrapper" style="margin-top: 60px; justify-items: center;">
+                    <hr style="width: 85% ; margin: 0 auto 10px;">
+                    <button class="controlBtn saveDataBtns">💾 Save data (CSV)</button>
+                </div>
             </div>
         </section>
 
@@ -2199,19 +2205,26 @@
                         <label for="experimentTypeDropdown">Experiment type: </label>
                         <select id="experimentTypeDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px;">
-                            <option value="Option-UP-POS-BASIC" data-essence="move_up">&nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
+                            <option value="Option-UP-POS-BASIC" data-essence="move_up">
+                                &nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
                             </option>
-                            <option value="Option-UP-POS-Ten" disabled data-essence="tensile">&nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            <option value="Option-UP-POS-Ten" disabled data-essence="tensile">
+                                &nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
-                            <option value="Option-UP-POS-InB" data-essence="internal_bond">&nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
+                            <option value="Option-UP-POS-InB" data-essence="internal_bond">
+                                &nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                             </option>
-                            <option value="Option-DOWN-POS-BASIC" data-essence="move_down" selected>&nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
+                            <option value="Option-DOWN-POS-BASIC" data-essence="move_down" selected>
+                                &nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
                             </option>
-                            <option value="Option-UP-POS-Com" disabled data-essence="compression">&nbsp;COMPRESION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            <option value="Option-UP-POS-Com" disabled data-essence="compression">
+                                &nbsp;COMPRESION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                             </option>
-                            <option value="Option-DOWN-POS-Flx" data-essence="flexural">&nbsp;FLEXURAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
+                            <option value="Option-DOWN-POS-Flx" data-essence="flexural">
+                                &nbsp;FLEXURAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                             </option>
-                            <option value="Option-DOWN-POS-HBr" data-essence="hardness_br">&nbsp;HARDNESS (Brinell)&nbsp;⏬
+                            <option value="Option-DOWN-POS-HBr" data-essence="hardness_br">
+                                &nbsp;HARDNESS (Brinell)&nbsp;⏬
                             </option>
                         </select>
                     </div>
@@ -2362,13 +2375,10 @@
                         <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
-                            <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;
-                            </option>
-                            <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;
-                            </option>
+                            <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;</option>
+                            <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;</option>
                             <option value="Option-Tab">&nbsp;Tab&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( \t )&nbsp;
-                                <!-- ↹, ⇥, ⮂ -->
-                            </option>
+                            </option> <!-- ↹, ⇥, ⮂ -->
                         </select>
                     </div>
 
@@ -2385,9 +2395,9 @@
                         </label>
                         <select id="inputAutoSave" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
-                            <option value="Option-Never">&nbsp;Never</option>
+                            <option value="Option-Never" selected>&nbsp;Never</option>
                             <option value="Option-Before">&nbsp;Before next Experiment</option>
-                            <option value="Option-After" selected>&nbsp;After the Experiment</option>
+                            <option value="Option-After">&nbsp;After the Experiment</option>
                         </select>
                     </div>
 
@@ -2427,36 +2437,43 @@
         <section class="openingContainer insetShadow">
             <button id="consoleContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="consoleContainer" class="sizeableContainer">
+
                 <div class="logContainer">
                     <div id="regularLogWrapper">
                         <pre id="regularLog"></pre>
                     </div>
-                    <pre id="loadingLog"></pre>
-                    <div style="height: 40px;">
-                        <label for="commandInput"></label>
-                        <textarea id="commandInput" placeholder="Enter command..."></textarea>
+
+                    <div style="display: flex; gap: var(--gap); flex-flow: column;"  data-system-level="2">
+                        <button id="toggleScrollBtn" class="logBtn" data-system-level="2">
+                            📌 Auto-scroll: ON
+                        </button>
+
+                        <button id="toggleLineLockBtn" class="logBtn prohibited" data-system-level="3">
+                            🔒 Fix Scroll: ON
+                        </button>
                     </div>
                 </div>
 
-                <!-- Log Control Buttons -->
                 <div class="logContainer">
-                    <button id="toggleScrollBtn" class="logBtn" data-system-level="2v">
-                        📌 Auto-scroll: ON
-                    </button>
+                    <pre id="loadingLog"></pre>
 
-                    <button id="toggleLineLockBtn" class="logBtn prohibited" data-system-level="2v">
-                        🔒 Fix Scroll: ON
-                    </button>
-
-                    <button id="clearRegularLog" class="logBtn" data-system-level="1v">
+                    <button id="clearRegularLog" class="logBtn" data-system-level="1">
                         🗑️ Clear Log
                     </button>
+                </div>
 
-                    <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton" class="logBtn">
+                <div class="logContainer"  data-system-level="1">
+                    <div style="height: 40px; width: 100%">
+                        <label for="commandInput"></label>
+                        <textarea id="commandInput" placeholder="Enter command..."></textarea>
+                    </div>
+
+                    <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton"
+                            class="logBtn">
                         📡 Send Command
                     </button>
-
                 </div>
+
             </div>
         </section>
 
@@ -4189,7 +4206,6 @@
 </script>
 
 
-
 <script>
     // ===================================
     // ======= Calculation helpers =======
@@ -4364,7 +4380,7 @@
         const inputForce = readNum("inputForce");
         const foundForce = nearest(forces, inputForce);
         const foundForceInd = foundForce.indexes;
-        const isCloseForce = foundForceInd.length > 0  && (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForce / 2)))));
+        const isCloseForce = foundForceInd.length > 0 && (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForce / 2)))));
         const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd[0]], precisionPositionSystem) : NaN; // mm
         applyAdjust('inputDisp', w_inputForce);
 
@@ -6855,7 +6871,6 @@
 
             if ($ID('inputAutoSave').value.trim().toLowerCase().endsWith('before')) {
                 UI.experimentStageLabel.textContent = `Saving`;
-                await console.info("💾 Saving data...");
                 await saveCSV();
             }
 
@@ -7171,7 +7186,6 @@
             // === Save Data ===
             if ($ID('inputAutoSave').value.trim().toLowerCase().endsWith('after')) {
                 UI.experimentStageLabel.textContent = `Saving`;
-                await console.info("💾 Saving data...");
                 await saveCSV();
             }
 
@@ -8676,7 +8690,7 @@
      * Saves the stored log entries from IndexedDB to a downloadable CSV file.
      */
     // Event listener for the save button
-    $ID("saveData")?.addEventListener("click", saveCSV);
+    $$(".saveDataBtns")?.forEach(btn => btn?.addEventListener("click", saveCSV));
 
 
     let handFolderSelect = false;
@@ -8686,6 +8700,8 @@
     }
 
     async function saveCSV() {
+        console.info("\n💾 Saving data to CSV file...");
+
         let dirHandle = null;
         // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
         const delimiterSymbolVal = await $ID("delimiterSymbol").value || "Option-Semicolon";
