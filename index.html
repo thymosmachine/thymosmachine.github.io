@@ -740,6 +740,7 @@
             padding: 5px 20px;
             height: 50px;
             width: 160px;
+            min-width: 135px;
         }
 
         .btnGraph {
@@ -4885,7 +4886,7 @@
     }
 
     function checkCommand(command) {
-        if (debugging) console.info("Preparing to send command:", command);
+        if (debugging) console.info(`Preparing to send command:\n\t\t${command}`);
         if (!isConnected || !serialPort?.writable) {
             logMessage("\n⚠️ No device is connected or port is unavailable!");
             return false;
@@ -5090,8 +5091,8 @@
         // "6790:29987",   // Thymos ESP32-S3
         // "6790:29986",   // Thymos ESP32-C3
         // "6790:29985",   // Thymos ESP32-C6
-        "12346:4097",   // Thymos ESP32-C6 old
-        "0x303a:0x1001" // Thymos ESP32-S2
+        "12346:4097",      // Thymos ESP32-C6 old
+        "0x303a:0x1001"    // Thymos ESP32-S2
     ];
     let useFilteredPort = true;
     let usePortAutoConnect = true;
@@ -5217,8 +5218,8 @@
 
                 if (serialComPort == null) {
                     if (userRequest) {
-                        console.info("\t\t⚠️ Connecting canceled.");
-                        await logMessage("\n\t\t⚠️ Connecting canceled.");
+                        // console.info("\t\t⚠️ No port selected. Connecting canceled.");
+                        // await logMessage("\n\t\t⚠️ No port selected. Connecting canceled.");
                     } else {
                         if (founds) {
                             console.info("⚠️ Multiple ports found, please select one.");
@@ -5249,7 +5250,6 @@
         }
     }
 
-
     async function openPort(comPort, retry = false) {
         try {
             activeWatchDog = false;
@@ -5270,13 +5270,14 @@
             }
             await closePort(comPort, {verbose: false});
 
-            serialPort = comPort;
-
             const {usbVendorId, usbProductId} = comPort.getInfo?.() ?? {};
             fingerprint = `${usbVendorId}:${usbProductId}`;
+
             console.info(`👣 Port Fingerprint:\n\t\tusbVendorId:${usbVendorId}\n\t\tusbProductId:${usbProductId}`);
 
             localStorage.setItem("lastFingerprint", fingerprint);
+
+            serialPort = comPort;
 
 
             console.info("🔌 Opening new port...");
@@ -5387,8 +5388,8 @@
         } catch (error) {
             activeWatchDog = false;
             if (!(error.name === "InvalidStateError" && retry)) {
-                await handleError(error, "openPort");
                 await disconnectSerial({override: true});
+                await handleError(error, "openPort");
             }
         }
     }
@@ -5480,7 +5481,7 @@
                 return {};
             }
         })();
-        if (verbose) console.info("⚓ Closing port...", info);
+        if (verbose) console.info("\t⚓ Closing port...", info);
 
         // 1) Ukončit čtení
         try {
@@ -5494,7 +5495,7 @@
                     reader.releaseLock();
                 } catch {
                 }
-                if (verbose) console.info("📍 Reader canceled & released.");
+                if (verbose) console.info("\t\t📍 Reader canceled & released.");
             } else if (port.readable?.locked) {
                 // Někdo jiný drží lock – poslední možností je vytvořit dočasného readera a hned ho zrušit
                 const tmp = port.readable.getReader();
@@ -5506,7 +5507,7 @@
                     tmp.releaseLock();
                 } catch {
                 }
-                if (verbose) console.info("📍 Forced-canceled locked readable.");
+                if (verbose) console.info("\t📍 Forced-canceled locked readable.");
             }
         } catch (err) {
             console.warn("⚠️ Error handling reader", info, ":", err);
@@ -5523,7 +5524,7 @@
                     writer.releaseLock();
                 } catch {
                 }
-                if (verbose) console.info("📍 Writer closed & released.");
+                if (verbose) console.info("\t\t📍 Writer closed & released.");
             } else if (port.writable?.locked) {
                 const tmpW = port.writable.getWriter();
                 try {
@@ -5534,7 +5535,7 @@
                     tmpW.releaseLock();
                 } catch {
                 }
-                if (verbose) console.info("📍 Forced-closed locked writable.");
+                if (verbose) console.info("\t📍 Forced-closed locked writable.");
             }
         } catch (err) {
             console.warn("⚠️ Error handling writer", info, ":", err);
@@ -5546,7 +5547,7 @@
                 await port.close();
             } catch (e) {
             }
-            if (verbose) console.info("📍 Port closed.");
+            if (verbose) console.info("\t📍 Port closed.");
         } catch (err) {
             console.warn("⚠️ Error closing port", info, ":", err);
         }
@@ -5567,7 +5568,7 @@
                     serialReader.releaseLock();
                 } catch {
                 }
-                if (verbose) console.info("⛏️ Released Reader...");
+                if (verbose) console.info("\t⛏️ Released Reader...");
             }
         } catch (error) {
             console.warn("⚠️ Error releasing reader:", error);
@@ -5587,7 +5588,7 @@
                     serialWriter.releaseLock();
                 } catch {
                 }
-                if (verbose) console.info("⛏️ Released Writer...");
+                if (verbose) console.info("\t⛏️ Released Writer...");
             }
         } catch (error) {
             console.warn("⚠️ Error releasing writer:", error);
@@ -5628,7 +5629,7 @@
                         await serialPort.close();
                     } catch {
                     }
-                    if (verbose) console.info("⛏️ Closed Serial Port...");
+                    if (verbose) console.info("\t⛏️ Closed Serial Port...");
                 }
             }
         } catch (error) {
@@ -5650,8 +5651,7 @@
      * Reads incoming data from the ESP device over a serial connection.
      */
 
-
-    async function readSerial() {
+    async function readSerialOLD() {
         let buffer = "";
 
         if (!serialPort.readable) {
@@ -5665,17 +5665,16 @@
             } catch (err) {
                 console.error("Reader lock error:", err);
             }
-        } else {
-            serialReader = serialPort.readable.getReader(); // Get a reader only once
         }
 
+        serialReader = serialPort.readable.getReader(); // Get a reader only once
 
         try {
             while (isConnected) {
                 const {value, done} = await serialReader.read();
                 if (done) break; // Stop the loop if the stream is closed
 
-                buffer += txtD.decode(value, {stream: true});
+                buffer += td.decode(value, {stream: true});
 
                 let lastNewline = buffer.lastIndexOf("\n");
                 if (lastNewline !== -1) {
@@ -5694,6 +5693,64 @@
                 await serialReader.cancel(); //  Immediately stop reading !!!!
                 serialReader.releaseLock();
             }
+            await logMessage("\n✅ Reading stopped.\n");
+        }
+    }
+
+
+    async function readSerial() {
+        let buffer = "";
+        const decoder = txtD ?? new TextDecoder(); // pokud používáš globální txtD, klidně ho nech
+
+        if (!serialPort?.readable) {
+            await logMessage("\n❌ Port is unavailable.\n");
+            return;
+        }
+
+        // Tady už PŘEDPOKLÁDÁME, že serialReader existuje z openPort()
+        if (!serialReader) {
+            // fallback, kdyby přece jen nebyl
+            serialReader = serialPort.readable.getReader();
+        }
+
+        try {
+            while (isConnected) {
+                const {value, done} = await serialReader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, {stream: true});
+
+                const lastNewline = buffer.lastIndexOf("\n");
+                if (lastNewline !== -1) {
+                    const dataChunk = buffer.slice(0, lastNewline).split("\n");
+                    buffer = buffer.slice(lastNewline + 1);
+                    await handleIncomingChunkQueued(dataChunk);
+                }
+            }
+        } catch (error) {
+            activeWatchDog = false;
+            await handleError(error, "readSerial");
+        } finally {
+            // doflushnout případný zbytek (pokud to dává smysl pro tvůj protokol)
+            const tail = decoder.decode();
+            if (tail) {
+                buffer += tail;
+                const lines = buffer.split("\n");
+                if (lines.length) await handleIncomingChunkQueued(lines);
+            }
+
+            // Bezpečné ukončení readeru
+            if (serialReader) {
+                try {
+                    await serialReader.cancel();
+                } catch {
+                }
+                try {
+                    serialReader.releaseLock();
+                } catch {
+                }
+            }
+
             await logMessage("\n✅ Reading stopped.\n");
         }
     }
@@ -6835,7 +6892,7 @@
             // === Prepare Machine ===
             await sendStopAllMeasuring();
             if (takePhotos) await sendCommandGeneral('DSLR RESET COUNTERS');
-            
+
             await setSpeedAndAcceleration(initialSpeed_mmps, 200, false);
 
             // === Prepare Data Collection ===
@@ -7317,7 +7374,7 @@
         }
         try {
             if (debugging) logMessage(" 📢\tGet firmware version...");
-            const version = `${await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut)}`;
+            const version = await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut);
 
             if (!version) {
                 throw new Error(`Version is empty: ${version}`);
@@ -7334,7 +7391,7 @@
     async function getMachineName(timeOut = 2_000) {
         try {
             if (debugging) logMessage(" 📢\tGet machine name...");
-            const name = `${await getPromisedValue("MISC GET NAME", /Machine Name:\s*(.+)/, 1, timeOut)}`;
+            const name = await getPromisedValue("MISC GET NAME", /Machine Name:\s*(.+)/, 1, timeOut);
 
             if (!name) {
                 throw new Error(`Name is empty: ${name}`);
@@ -9308,8 +9365,6 @@
 
                 const csvData = await getCSVData(raw, outputsOpts, file.name) || {};
 
-                console.log("CSV Data:", csvData);
-
                 const {
                     preamble: preambleMetaData = {},
                     fileType,
@@ -10529,7 +10584,146 @@
 
 </script>
 
-<script>
+<script  type="text/plain">
+
+    // Jednorázově někde po kliknutí uživatele – udělení oprávnění (není nutné opakovat pokaždé)
+    async function grantSerialOnce() {
+        if (!('serial' in navigator)) throw new Error('Web Serial není podporován');
+        try {
+            await navigator.serial.requestPort();
+        } catch { /* uživatel zrušil */
+        }
+    }
+
+    // Setup "devicechange" pro seriové porty
+    function setupSerialDeviceChange({onChange} = {}) {
+        if (!('serial' in navigator)) throw new Error('Web Serial není podporován');
+
+        // aktuální povolené porty (po reloadu se vrátí ty, které už mají oprávnění)
+        let known = new Set();
+
+        // pomocná funkce pro stabilní ID portu
+        const portId = async (port) => {
+            // getInfo() vrací např. { usbVendorId, usbProductId } pro USB-CDC; BT apod. může být prázdné
+            const info = port.getInfo?.() || {};
+            // některé platformy mají jen měnící se COM jméno; jako fallback použijeme String(port)
+            return JSON.stringify({
+                usbVendorId: info.usbVendorId,
+                usbProductId: info.usbProductId,
+                fallback: String(port)
+            });
+        };
+
+        async function snapshotAndNotify() {
+            const ports = await navigator.serial.getPorts();
+            const next = new Set(await Promise.all(ports.map(portId)));
+
+            // diff
+            const added = [];
+            const removed = [];
+            for (const id of next) if (!known.has(id)) added.push(id);
+            for (const id of known) if (!next.has(id)) removed.push(id);
+
+            if ((added.length || removed.length) && typeof onChange === 'function') {
+                onChange({added, removed, ports});
+            }
+            known = next;
+        }
+
+        // počáteční snapshot
+        snapshotAndNotify();
+
+        // hotplug eventy (fungují i když port ještě nemá povolení; k otevření budeš stejně potřebovat requestPort)
+        navigator.serial.addEventListener('connect', snapshotAndNotify);
+        navigator.serial.addEventListener('disconnect', snapshotAndNotify);
+
+        // // volitelný polling jako záloha (někdy ovladač nepropaguje eventy spolehlivě)
+        // const interval = setInterval(snapshotAndNotify, 10_000);
+        //
+        // // vratí teardown
+        // return () => {
+        //     clearInterval(interval);
+        //     navigator.serial.removeEventListener('connect', snapshotAndNotify);
+        //     navigator.serial.removeEventListener('disconnect', snapshotAndNotify);
+        // };
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Příklad použití:
+
+    // po udělení oprávnění (stačí jednou v historii webu na daném původu)
+    grantSerialOnce(); // await grantSerialOnce();
+
+    // pak kdekoli:
+    // const stop = setupSerialDeviceChange({
+    //     onChange: ({added, removed, ports}) => {
+    //         console.info('Přidáno:', added, 'Odebráno:', removed);
+    //         // tady si můžeš aktualizovat UI; 'ports' je aktuální pole NavigatorSerialPort
+    //     }
+    // });
+    setupSerialDeviceChange({
+        onChange: ({added, removed, ports}) => {
+            console.info('\nPřidáno:\n', added, '\n\nOdebráno:\n', removed);
+            // tady si můžeš aktualizovat UI; 'ports' je aktuální pole NavigatorSerialPort
+        }
+    })
+
+    // až nebudeš chtít poslouchat:
+    // stop();
+    //     navigator.serial.removeEventListener('connect', snapshotAndNotify);
+    //     navigator.serial.removeEventListener('disconnect', snapshotAndNotify);
+
+</script>
+
+
+<script type="text/plain">
+    // Web Serial API - connect / disconnect eventy
+    if ('serial' in navigator) {
+        (async () => {
+            const ports = await navigator.serial.getPorts();
+            for (const port of ports) onConnect('serial', port);
+        })();
+
+        navigator.serial.addEventListener('connect', e => {
+            const port = e?.target;
+            console.info('%c\n\tSerial connect:', "color: red; font-size: 13px; font-style: italic; font-weight: bold;", port?.getInfo());
+            console.info(port);
+            console.info(e);
+            onConnect('serial', port);
+        });
+        navigator.serial.addEventListener('disconnect', e => {
+            const port = e?.target;
+            console.info('%c\n\tSerial disconnect:', "color: red; font-size: 13px; font-style: italic; font-weight: bold;", port?.getInfo());
+            console.info(port);
+            console.info(e);
+            onDisconnect('serial', port);
+        });
+    }
+
+    function onConnect(type, port) { /* … */
+        switch (type) {
+            case 'serial':
+                onSerialConnect(port);
+                break;
+        }
+    }
+
+    function onDisconnect(type, port) { /* … */
+        switch (type) {
+            case 'serial':
+                onSerialDisconnect(port);
+                break;
+        }
+    }
+
+    function onSerialConnect(port) { /* … */
+    }
+
+    function onSerialDisconnect(port) { /* … */
+    }
 
 </script>
 
@@ -11014,9 +11208,6 @@
     async function onLoad() {
         pageLoadTimeout = 0;
 
-        if ($ID("inputAutoConnect").checked) await startSerial(false);
-        else updateConnectionStatus("disconnected");
-
         const waitTime = 300;
         while (!(pageLoaded && dataLoaded)) {
             await sleep(waitTime);
@@ -11042,6 +11233,11 @@
             }
 
             allLoaded = true;
+
+            await sleep(5);
+
+            if ($ID("inputAutoConnect").checked) await startSerial(false);
+            else updateConnectionStatus("disconnected");
         }
     }
 
