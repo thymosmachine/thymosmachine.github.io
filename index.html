@@ -2205,6 +2205,9 @@
                         <label for="experimentTypeDropdown">Experiment type: </label>
                         <select id="experimentTypeDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px;">
+                            <option value="none" hidden>
+                                &nbsp;⬜&nbsp;No selection
+                            </option>
                             <option value="Option-UP-POS-BASIC" data-essence="move_up">
                                 &nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
                             </option>
@@ -2311,28 +2314,12 @@
 
                 <h4>📺 App settings:</h4>
                 <div class="inputsContainer autoGrid">
-                    <div class="input-group" data-system-level="4">
-                        <label for="inputAppInterval" style="min-width: max-content;">Data Interval
-                            <span class="units-text">(µs)</span>:</label>
-                        <input data-input-type="intInput" type="number" id="inputAppInterval"
-                               value="50000" min="1" step="any" max="100000000"
-                               style="height: 48px; max-width: 100px;">
-                    </div>
-
-                    <div class="input-group" data-system-level="4">
-                        <label for="inputAutoConnect">
-                            Automatically connect to the machine:
-                        </label>
-                        <input type="checkbox" id="inputAutoConnect" checked>
-                    </div>
-
-
                     <div class="input-group">
                         <label for="systemLevelSelect">System Level: </label>
                         <select id="systemLevelSelect"
                                 style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
-                            <option value="no_level" style="display: none">&nbsp;⬜&nbsp;No selection</option>
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="basic" selected>&nbsp;🟦&nbsp;Basic</option>
                             <option value="standard">&nbsp;🟩&nbsp;Standard</option>
                             <option value="advanced">&nbsp;🟨&nbsp;Advanced</option>
@@ -2341,11 +2328,51 @@
                         </select>
                     </div>
 
+
+                    <div class="input-group" data-system-level="1">
+                        <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
+                        <div style="display: flex; gap: 0;">
+                            <input data-input-type="intInput" type="text" id="inputMachineName"
+                                   placeholder="My Machine" value="" data-nonremember="true"
+                                   data-essence="identification"
+                                   style="height: 50px; width: 175px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
+                            <button id="sendMachineNameBtn"
+                                    style="height: 50px; width: 25px; border-bottom-left-radius: 0; border-top-left-radius: 0;">
+                                ▶ <!-- ↵⏎⎆ -->
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <div class="input-group" data-system-level="4">
+                        <label for="inputAppInterval" style="min-width: max-content;">Data Interval:</label>
+                        <input data-input-type="intInput" type="number" id="inputAppInterval"
+                               value="50000" min="1" step="any" max="100000000" data-unit="µs" data-essence="time"
+                               style="height: 50px; width: 200px;">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputAutoConnect">Automatically connect to the machine: </label>
+                        <select id="inputAutoConnect"
+                                style="font-family: monospace; font-weight: bold;
+                                font-size: 16px; width: max-content; height: 50px;">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                            <option value="never">&nbsp;❌&nbsp;Never</option>
+                            <option value="beginning">&nbsp;🌟&nbsp;At the beginning</option>
+                            <option value="during">&nbsp;⏳&nbsp;During session</option>
+                            <option value="ask">&nbsp;❔&nbsp;Ask every time</option>
+                            <option value="always" selected>&nbsp;✅&nbsp;Always</option>
+                        </select>
+                    </div>
+
+
                     <div class="input-group">
                         <label for="languageSelect">App Language: </label>
                         <select id="languageSelect"
                                 style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇧🇬</option>
                             <option value="cs" disabled>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
                             <option value="de" disabled>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
@@ -2365,6 +2392,7 @@
                         <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                         <select id="decimalSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="Option-Dot" selected>&nbsp;Dot&nbsp;&nbsp;&nbsp;( . )&nbsp;</option>
                             <option value="Option-Comma">&nbsp;Comma&nbsp;( , )&nbsp;</option>
                         </select>
@@ -2374,6 +2402,7 @@
                         <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                         <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
                             <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;</option>
                             <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;</option>
@@ -2395,6 +2424,7 @@
                         </label>
                         <select id="inputAutoSave" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="Option-Never" selected>&nbsp;Never</option>
                             <option value="Option-Before">&nbsp;Before next Experiment</option>
                             <option value="Option-After">&nbsp;After the Experiment</option>
@@ -2409,23 +2439,23 @@
                         🌙 Dark mode
                     </button>
 
-                    <button id="rebootButton" class="controlBtn" data-system-level="1"
-                            style="color: var(--text-info-2-color); font-weight: bold;">
+                    <button id="rebootButton" class="controlBtn controlElement" data-system-level="1"
+                            style="color: var(--text-info-2-color);">
                         🔂 Reboot device
                     </button>
 
-                    <button id="reportButton" class="controlBtn prohibited"
-                            style="color: var(--stopEpx-color); font-weight: bold;">
+                    <button id="reportButton" class="controlBtn controlElement prohibited"
+                            style="color: var(--stopEpx-color);">
                         🐞 Report bug
                     </button>
 
-                    <button id="aboutButton" class="controlBtn"
-                            style="color: var(--text-info-2-color); font-weight: bold;">
+                    <button id="aboutButton" class="controlBtn controlElement"
+                            style="color: var(--text-info-2-color);">
                         ℹ️ About app
                     </button>
 
-                    <button id="clearStorageButton" class="controlBtn"
-                            style="color: var(--text-info-2-color); font-weight: bold;">
+                    <button id="clearStorageButton" class="controlBtn controlElement"
+                            style="color: var(--text-info-2-color);">
                         🔁 Reset app
                     </button>
                 </div>
@@ -2480,6 +2510,105 @@
     </section>
 
 </main>
+
+
+<script>
+    // Zapnutí/ vypnutí varování
+    let warnOnClose = !debugging;
+
+    // Prevent native reload/close dialog (zobrazení varování)
+    window.addEventListener('beforeunload', (e) => {
+        if (warnOnClose) {
+            e.preventDefault();
+            // Standard: většina prohlížečů ignoruje vlastní text
+            e.returnValue = '';
+        }
+    });
+
+    // Zachycení kláves, které běžně reload/close/close-tab způsobují
+    window.addEventListener('keydown', (e) => {
+        // F5 (116), Ctrl+R, Ctrl+F5, Ctrl+W, Ctrl+F4, Ctrl+Shift+R, Meta(Command)+R
+        if (
+            e.key === 'F5' ||
+            (e.ctrlKey && e.key.toLowerCase() === 'r') ||
+            (e.metaKey && e.key.toLowerCase() === 'r') ||
+            (e.ctrlKey && e.key.toLowerCase() === 'w') ||
+            (e.ctrlKey && e.key === 'F4')
+        ) {
+            e.preventDefault();
+            // Místo reloadu můžeš ukázat vlastní upozornění
+            if (warnOnClose) {
+                if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
+                    // případně povolit navigaci
+                    window.location.reload();
+                }
+            }
+        }
+    });
+
+    // Zachytit kliky na odkazy, které mohly page opustit
+    document.addEventListener('click', (e) => {
+        if (warnOnClose) {
+            const a = e.target.closest && e.target.closest('a[href]');
+            if (!a) return;
+            const href = a.getAttribute('href');
+            // interní kotvy povolit
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
+                    // případně povolit navigaci
+                    window.location.href = href;
+                }
+            }
+        }
+    });
+
+    // Push state / back button trap (back-button). Pomůže zabránit "zpět" opuštění.
+    history.pushState({page: 1}, '', '');
+    window.addEventListener('popstate', (event) => {
+        // Znovu vložíme stav a ukážeme varování
+        history.pushState({page: 1}, '', '');
+        if (warnOnClose) {
+            if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
+                // případně povolit navigaci
+                history.back();
+            }
+        }
+    });
+
+    // // Funkce pro dočasné vypnutí ochrany (konstruktivní UX)
+    // function allowCloseTemporarily(action) {
+    //     warnOnClose = false;
+    //     try {
+    //         action();
+    //     } finally {
+    //         warnOnClose = true;
+    //     }
+    // }
+    //
+    // // Utility: bezpečné ukončení (např. tlačítko v UI)
+    // async function safeExit() {
+    //     // dokonči flush / ulož stav
+    //     await saveStateToServerOrLocal();
+    //     allowCloseTemporarily(() => window.close());
+    // }
+    //
+    // async function saveStateToServerOrLocal() {
+    //     // Implementuj uložení stavu (localStorage / server call)
+    //     try {
+    //         localStorage.setItem('myAppSavedAt', new Date().toISOString());
+    //         // nebo await fetch('/save', {method:'POST', body:...})
+    //     } catch (e) {
+    //         console.warn('Save failed', e);
+    //     }
+    // }
+</script>
+
+
+<script>
+
+
+</script>
 
 
 <script>
@@ -2607,7 +2736,7 @@
     const $ = (sel) => document.querySelector(String(sel));
     const $$ = (sel) => {
         let els = document.querySelectorAll(String(sel));
-        if (els.length === 0) els = document.querySelectorAll('.' + String(sel));
+        if (els.length === 0 && !String(sel).startsWith('.')) els = document.querySelectorAll('.' + String(sel));
         return els;
     }
     const $ID = (id) => document.getElementById(String(id));
@@ -4782,8 +4911,12 @@
                 if (input.type === "checkbox") {
                     input.checked = formData[input.id]; // Restore the checkbox state
                 } else if (input.tagName.toLowerCase() === "select") {
-                    if ([...input.options].some(option => option.value === formData[input.id])) {
+                    const options = Array.from(input.options).map(option => option.value);
+                    if (options.some(option => option === formData[input.id])) {
                         input.value = formData[input.id]; // Restore the select value if it exists
+                    } else if (options.some(option => option === "none")) {
+                        // Set to fallback if saved value doesn't exist and make it display properly
+                        input.value = "none";
                     }
                 } else {
                     input.value = formData[input.id]; // Restore the input value
@@ -5840,6 +5973,34 @@
         await sendCommandGeneral(command, pauseMs);
     }
 
+    async function setMachineName(name, pauseMs = 1) {
+        if (!isNonEmptyStr(name)) {
+            console.warn("⚠️ Machine name cannot be empty.");
+            return;
+        }
+        const command = `SYS SET NAME ${name.trim()}`;
+        await sendCommandGeneral(command, pauseMs);
+    }
+
+    async function setMachineID(id, pauseMs = 1) {
+        if (!isNonEmptyStr(id) || !isNum(id)) {
+            console.warn("⚠️ Machine ID cannot be empty.");
+            return;
+        }
+        id = toNumber(id);
+        if (!isNum(id)) {
+            console.warn("⚠️ Machine ID is not a valid number.");
+            return;
+        }
+        if (0 >= id || id > 255) {
+            console.warn("⚠️ Machine ID must be between 1 and 255.");
+            return;
+        }
+
+        const command = `SYS SET ID ${id}`;
+        await sendCommandGeneral(command, pauseMs);
+    }
+
 
     // /////// Loading Commands from JSON /////////
 
@@ -5988,17 +6149,35 @@
 
 
     const movementElements = $$(".movementControlElement");
+    const controlElements = $$(".controlElement");
 
-    function lockMovement() {
-        movementElements?.forEach((el) => {
+    const lockMovement = () => lockElements(movementElements);
+    const lockMovementExcept = (exceptEl) => lockElementsExcept(movementElements, exceptEl);
+    const unlockMovement = () => unlockElements(movementElements);
+
+    const lockControls = () => lockElements(controlElements);
+    const lockControlsExcept = (exceptEl) => lockElementsExcept(controlElements, exceptEl);
+    const unlockControls = () => unlockElements(controlElements);
+
+    const lockControlAndMove = () => {
+        lockMovement();
+        lockControls();
+    };
+    const unlockControlAndMove = () => {
+        unlockMovement();
+        unlockControls();
+    };
+
+    function lockElements(elements) {
+        elements?.forEach((el) => {
             el?.classList.add("disabled");
             disableInputsAndLabelsIn(el);
         });
     }
 
 
-    function lockMovementExcept(exceptEl) {
-        movementElements?.forEach(el => {
+    function lockElementsExcept(elements, exceptEl) {
+        elements?.forEach(el => {
             const isExcept = el === exceptEl || el?.contains?.(exceptEl);
             if (!isExcept) {
                 el?.classList?.add("disabled");
@@ -6010,8 +6189,8 @@
         });
     }
 
-    function unlockMovement() {
-        movementElements?.forEach((el) => {
+    function unlockElements(elements) {
+        elements?.forEach((el) => {
             el?.classList.remove("disabled");
             enableInputsAndLabelsIn(el);
         });
@@ -6052,6 +6231,7 @@
     async function beganMoving(timeoutMs = null) {
         if (machineOccupation) return; // už běží
         machineOccupation = true;
+        warnOnClose = true;
         startWatchdog(WATCHDOG_INTERVAL_MS);
 
         // naplánuj automatické ukončení (volitelné)
@@ -6116,13 +6296,14 @@
 
         if (isConnected) sendCommandGeneral("MC STOP");
 
+        warnOnClose = false;
         machineOccupation = false;
         stopWatchdog();
 
-        setSpeedAndAcceleration(currentSpeed, currentAcceleration, true, 10);
+        if (isConnected) setSpeedAndAcceleration(currentSpeed, currentAcceleration, true, 10);
 
         if (calibrationStatus) unlockMovement();
-        if (!calibrationStatus && isConnected) lockMovementExcept(UI.calibrateBtn);
+        else if (!calibrationStatus && isConnected) lockMovementExcept(UI.calibrateBtn);
     }
 
     function speedFromDistance(goal, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
@@ -6251,7 +6432,7 @@
 
         }
 
-        if (isConnected) endedMoving();
+        endedMoving();
     }
 
 
@@ -6272,7 +6453,7 @@
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
         }
 
-        if (isConnected) endedMoving();
+        endedMoving();
     }
 
     /**
@@ -6627,8 +6808,11 @@
     let dataInterval_us = null;
     let initialForceLim_N = null;
     let experimentDoubleSpeed = false;
+    let experimentHoldConstantForce = false;
     let stoppingForceLimit = null;
     let holdForceTimeMs = null;
+
+    let timer = null;
 
     let presentLoadcells = [];
 
@@ -6657,7 +6841,7 @@
         const minDistance = 5e-3;
         const minFSpeed = 0.025;
         const maxFSpeed = 25;
-        const minPhotoInt = 5e-6;
+        const minInt = 5e-6;
         const minLoadCap = 5e-4;
         const minLoadOut = 5e-4;
 
@@ -6666,6 +6850,7 @@
             UI.experimentStageLabel.textContent = `Starting`;
 
             await lockMovement();
+            await lockControls();
             await beganMoving();
 
             if (!debugging) await console.clear();
@@ -6696,20 +6881,22 @@
             let initialSpeed_mmps = speedForward_mmps;
             initialForceLim_N = null;
             experimentDoubleSpeed = false;
+            experimentHoldConstantForce = false;
             stoppingForceLimit = Number.POSITIVE_INFINITY;
             holdForceTimeMs = null;
             presentLoadcells = [];
 
 
-            const suffixes = ["-inb", "-hbr"];
+            const suffixes = ["-inb", "-hbr"]; // TODO: doplnit i pro Flex ("-flx")
             if (suffixes.some(suf => experimentType.endsWith(suf))) {
-                initialSpeed_mmps = Math.abs(parseFloat($ID("inputInitialSpeed").value));
-                initialForceLim_N = Math.abs(parseFloat($ID("inputInitialForce").value));
+                initialSpeed_mmps = getInputNumDefAbsFlt("inputInitialSpeed", NaN);
+                initialForceLim_N = getInputNumDefAbsFlt("inputInitialForce", NaN);
                 experimentDoubleSpeed = true;
 
                 if (experimentType.endsWith("-hbr")) {
-                    stoppingForceLimit = Math.abs(parseFloat($ID('inputStopForce').value));
-                    holdForceTimeMs = Math.abs(parseFloat($ID('inputEndDelay').value)) * 1_000;
+                    stoppingForceLimit = getInputNumDefAbsFlt("inputStopForce", NaN);
+                    holdForceTimeMs = Math.round(getInputNumDefAbsFlt("inputEndDelay", NaN) * 1_000);
+                    experimentHoldConstantForce = true;
                 }
             }
 
@@ -6762,20 +6949,6 @@
                 throw new Error("Loadcell output error");
             }
 
-            if (experimentType.endsWith("-hbr")) {
-                if (!isValidInputNum(stoppingForceLimit)) {
-                    console.warn(`\n⚠️ Stopping force must be greater than 0 N.`);
-                    await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
-                    alert(`⚠️ Stopping force must be greater than 0 N.`);
-                    throw new Error("Stopping force error");
-                } else if (!isNum(holdForceTimeMs) || (holdForceTimeMs / 1_000) < 0) {
-                    console.warn(`\n⚠️ Hold force time must be equal or greater than 0 s.`);
-                    await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                    alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                    throw new Error("Hold force time error");
-                }
-            }
-
             if (experimentDoubleSpeed === true) {
                 if (!isNum(initialSpeed_mmps) || initialSpeed_mmps < minFSpeed) {
                     console.warn(`\n⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
@@ -6796,20 +6969,68 @@
             }
 
             if (takePhotos) {
-                if (!isNum(photoInterval_ms) || photoInterval_ms < minPhotoInt) {
-                    console.warn(`\n⚠️ Photo interval must be greater than ${minPhotoInt * 1_000} s.`);
-                    await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt * 1_000} s.`);
-                    alert(`⚠️ Photo interval must be greater than ${minPhotoInt * 1_000} s.`);
+                if (!isNum(photoInterval_ms) || photoInterval_ms <= minInt) {
+                    console.warn(`\n⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
+                    await logMessage(`⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
+                    alert(`⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
                     throw new Error("Photo interval error");
                 }
                 if (photoInterval_ms * 1_000 < dataInterval_us) {
                     console.warn("\n⚠️ Photo interval must be bigger than data interval.");
                     await logMessage("⚠️ Photo interval must be bigger than data interval.");
-                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1_000 * 0.9} µs ❗`);
-                    dataInterval_us = photoInterval_ms * 1_000 * 0.9;
+                    const newDataInterval = photoInterval_ms * 1_000 * 0.9;
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${newDataInterval} µs ❗`);
+                    dataInterval_us = newDataInterval;
                     $ID("inputDataInterval").value = dataInterval_us;
                 }
             }
+
+            if (experimentType.endsWith("-hbr")) {
+                if (!isValidInputNum(stoppingForceLimit)) {
+                    console.warn(`\n⚠️ Stopping force must be greater than 0 N.`);
+                    await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
+                    alert(`⚠️ Stopping force must be greater than 0 N.`);
+                    throw new Error("Stopping force error");
+                } else if (!isNum(holdForceTimeMs) || (holdForceTimeMs / 1_000) < 0) {
+                    console.warn(`\n⚠️ Hold force time must be equal or greater than 0 s.`);
+                    await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
+                    alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
+                    throw new Error("Hold force time error");
+                }
+            }
+
+            if (experimentType.endsWith("-hbr")) {
+                if (!isValidInputNum(stoppingForceLimit)) {
+                    console.warn(`\n⚠️ Stopping force must be greater than 0 N.`);
+                    await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
+                    alert(`⚠️ Stopping force must be greater than 0 N.`);
+                    throw new Error("Stopping force error");
+                }
+
+                if (isNum(initialForceLim_N) && (stoppingForceLimit < initialForceLim_N)) {
+                    console.warn(`\n⚠️ Stopping force must be greater than initial force.`);
+                    await logMessage(`⚠️ Stopping force must be greater than initial force.`);
+                    alert(`⚠️ Stopping force must be greater than initial force.`);
+                    throw new Error("Stopping force error");
+                }
+
+                if (!isNum(holdForceTimeMs) || holdForceTimeMs < minInt) {
+                    console.warn(`\n⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
+                    await logMessage(`⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
+                    alert(`⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
+                    throw new Error("Hold force time error");
+                }
+
+                if (holdForceTimeMs * 1_000 * 0.05 < dataInterval_us) {
+                    console.warn(`\n⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us * 1_000} ms.`);
+                    await logMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us * 1_000} ms.`);
+                    const newDataInterval = holdForceTimeMs * 1_000 * 0.05;
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${newDataInterval} µs ❗`);
+                    dataInterval_us = newDataInterval;
+                    $ID("inputDataInterval").value = dataInterval_us;
+                }
+            }
+
 
             if (isEmptyStr(expControl)) throw new Error("Experiment control is not set.");
             if (experimentEndLimits[expControl] === undefined) throw new Error(`Experiment end limit for ${expControl} is not set.`);
@@ -6915,6 +7136,7 @@
 
             // === Reset Variables ===
             tareValues.time = null;
+            tareValues.position = null;
             lastAcceptedTime = null;
             maxForces = Array(loadCellNum).fill(null);
             timeData = [];
@@ -6944,8 +7166,9 @@
                 v.counter = 0;
                 v.limit = minimumConditionCount;
             });
-            tareValues.position = null;
-            checkSpeed = true;
+            measurement_limits.over_limitForce.limit = calculateStep(dataInterval_us, 10, 2);
+            checkSpeed = true; // TODO: reset if needed
+            timer = null;
             endedBy = null;
             pendingDSLR = null;
             parsedData = {
@@ -7193,7 +7416,8 @@
             await console.info("\n☑️ Experiment finished.");
             await showNotification("Experiment Finished", "The experiment has been completed successfully.");
 
-        } catch (error) {
+        } catch
+            (error) {
             await handleError(error, "Experiment");
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
             UI.experimentStageLabel.textContent = `Error`;
@@ -7216,7 +7440,8 @@
             UI.experimentStageLabel.textContent = `Idle`;
             maxDataPoints = maxDataPointsIdle;
 
-            if (isConnected) endedMoving();    // unlock UI and watchdog
+            endedMoving();    // unlock UI and watchdog
+            unlockControls();
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
             await console.groupEnd();
@@ -7981,23 +8206,54 @@
         }
 
         // const sumForce = newData?.force?.reduce((acc, val) => acc + (isNum(val) ? val : 0), 0);
-        // const sumForce = sumND(); // TODO: check and optimize the speed of sum calculation
+        // const sumForce = sumND(newData?.force); // TODO: check and optimize the speed of sum calculation
 
-        if (newData?.force?.some(value => isNum(value) && value >= stoppingForceLimit)) {
+        if ((newData?.force?.some(value => isNum(value) && value >= stoppingForceLimit)) || (measurement_limits.over_limitForce.limit < 0)) {
             measurement_limits.over_limitForce.counter++;
 
             if (measurement_limits.over_limitForce.counter > measurement_limits.over_limitForce.limit) {
-                checkSpeed = false; // disable speed check
-                endMeasuring(holdForceTimeMs, {
-                    ednStatus: 'force limit',
-                    endText: `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`,
-                    command: "MC STOP"
-                });
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressOnHold-color)');
-                UI.experimentStageLabel.textContent = `Holding`;
+                if (experimentHoldConstantForce) {
+                    checkSpeed = false; // disable speed check
+                    measurement_limits.over_limitForce.limit = Number.NEGATIVE_INFINITY;
+
+                    if (!isNum(timer)) {
+                        timer = newData?.time;
+                        document.documentElement.style.setProperty('--progressColor', 'var(--progressOnHold-color)');
+                        UI.experimentStageLabel.textContent = `Holding`;
+                    }
+
+                    const forceHoldTimeMs = (newData?.time - timer) * 1_000;
+
+                    if (forceHoldTimeMs >= holdForceTimeMs) {
+                        endMeasuring(0, {
+                            ednStatus: `hold force time limit [${forceHoldTimeMs / 1_000}s]`,
+                            endText: `⏹️ Experiment stopped due to hold force time limit (${stoppingForceLimit} N for ${forceHoldTimeMs / 1_000} s).`,
+                            command: "MC STOP"
+                        });
+
+                    } else {
+                        const sumF = sumND(newData?.force);
+                        const v = pi.step(newData?.time, newData?.position, sumF);
+                        // adjust speed according to PI controller to maintain constant force ...
+                        if (isValidInputNum(v)) await setSpeed(v, false);
+                        // ... or stop if invalid, negative or zero
+                        else await sendCommandGeneral("MC STOP");
+                    }
+
+                } else {
+                    endMeasuring(0, {
+                        ednStatus: 'force limit',
+                        endText: `⏹️ Movement stopped due to force limit (${stoppingForceLimit} N).`,
+                        command: "MC STOP"
+                    });
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
+                }
             }
+
         } else {
             measurement_limits.over_limitForce.counter = 0;
+            timer = null;
         }
 
 
@@ -10093,13 +10349,13 @@
             await logMessage("\n");
 
             try {
-                machineFirmware = await getFirmwareVersion() || "";
+                machineFirmware = await getFirmwareVersion()?.toLowerCase().trim() || "";
             } catch (e) {
                 machineFirmware = null;
             }
             let machineName;
             try {
-                machineName = await getMachineName() || "";
+                machineName = await getMachineName()?.toLowerCase().trim() || "";
             } catch (e) {
                 machineName = null;
             }
@@ -10160,6 +10416,22 @@
 
             tryCount = 0;
             reconnectAttempts = 0;
+
+            // TODO: implement Name-based/ID-based (reconnection) and (settings profiles => take settings or keep current)
+            // TODO: implement multi-device management and backup based on Name/ID
+            if (machineName === 'unnamed' || machineName === 'unnamedmachine' || machineName === '') {
+                machineName = 'Thymos Device' + Math.random().toString(36).substring(2, 10);
+                await setMachineName(machineName);
+            }
+            if (machineID === 0) {
+                machineID = 1; // Math.floor(100000 + Math.random() * 900000);
+                await setMachineID(machineID);
+            }
+
+            if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
+
+
+            $ID("inputMachineName").value = machineName;
 
         } catch (error) {
             activeWatchDog = false;
@@ -10725,6 +10997,11 @@
     function onSerialDisconnect(port) { /* … */
     }
 
+    // TODO: implement automatic reconnect when the device is reconnected to the computer
+    const autoConnectSetting = $ID("inputAutoConnect")?.value || 'never';
+    if (autoConnectSetting === 'always' || autoConnectSetting === 'during') await startSerial(false);
+    else if (autoConnectSetting === 'ask') if (confirm("The device was connected. Do you want to connect?")) await startSerial(true);
+
 </script>
 
 
@@ -10746,10 +11023,7 @@
         pendingDSLR = null;
         dataCount = null;
         maxForces = Array(loadCellNum).fill(null);
-        // timeData = [];
-        // positionData = [];
         measureForces = Array(loadCellNum).fill(null).map(() => []);
-        // forceData = Array(loadCellNum).fill(null).map(() => []);
         tareValues.force = Array(loadCellNum).fill(0);
         tareValues.position = null;
         tareValues.time = null;
@@ -10772,6 +11046,7 @@
         measurementErrRate = null;
         totalErrRate = null;
 
+        calibrationStatus = false;
 
         activeWatchDog = false;
 
@@ -10779,66 +11054,28 @@
         serialPort = null;
         serialReader = null;
         serialWriter = null;
-        // reconnectAttempts = 0;
     }
 
     async function clearAndResetAll() {
+        console.clear();
         await disconnectSerial();
-        // clear DB
         if (liveUpdate) await chartUpdate();
+        await clearCharts();
         await clearDatabase();
         await clearLocalStorage();
+        await clearConsoleLog();
 
-        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
-        measurementParts = measurementPartDefault;
+        resetValues();
 
-        isExperimentRunning = false;
-        machineOccupation = false;
-        UI.loadingLogContainer.style.background = "#323232";
-
-        experimentEndLimits = {position: null, force: null, time: null};
-        expControl = '';
-        pendingDSLR = null;
-        dataCount = null;
-        maxForces = Array(loadCellNum).fill(null);
         timeData = [];
         positionData = [];
-        measureForces = Array(loadCellNum).fill(null).map(() => []);
         forceData = Array(loadCellNum).fill(null).map(() => []);
-        tareValues.force = Array(loadCellNum).fill(0);
-        tareValues.position = null;
-        tareValues.time = null;
-        lastAcceptedTime = null;
         photoData = [];
-        aggregatedDataBetweenSteps = [];
-        Object.values(measurement_limits).forEach(v => {
-            v.counter = 0;
-            v.limit = null;
-        });
-        endMeasurement = false;
-        clearTimeout(endMeasurementCounter)
-        endMeasurementCounter = null;
-        checkSpeed = true;
 
-
-        displacementSignCorrection = 0;
-        loadSignCorrections = Array(loadCellNum).fill(0);
-
-        loadcellErrRate = null;
-        measurementErrRate = null;
-        totalErrRate = null;
-
-
-        activeWatchDog = false;
-
-        isConnected = false;
-        serialPort = null;
-        serialReader = null;
-        serialWriter = null;
         reconnectAttempts = 0;
 
-        // --------------------------------
         // Experiment parameters
+        // --------------------------------
         speedForward_mmps = 0;
         currentSpeed = null;
         currentAcceleration = null;
@@ -10846,8 +11083,12 @@
         dataInterval_us = null;
         initialForceLim_N = null;
         experimentDoubleSpeed = false;
+        experimentHoldConstantForce = false;
         stoppingForceLimit = null;
         holdForceTimeMs = null;
+        presentLoadcells = [];
+        checkSpeed = true;
+        timer = null;
         // --------------------------------
     }
 </script>
@@ -11091,6 +11332,8 @@
 
         // TODO: $$$("saveRegularLog")?.addEventListener("click", async () => saveLogAsText());
 
+        $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName($ID("inputMachineName")?.value?.trim()));
+
         function attachHoldHandlers(element, onStart) {
             let isHolding = false;
 
@@ -11200,7 +11443,6 @@
                 }
             });
         });
-
 
         const decSymbolElement = $ID('decimalSymbol');
         const delimSymbolElement = $ID('delimiterSymbol');
@@ -11353,8 +11595,9 @@
             await sleep(5);
 
             const preloadScreen = $ID("preloadScreen");
+            const autoConnectSetting = $ID("inputAutoConnect")?.value || 'never';
 
-            if ($ID("inputAutoConnect").checked) await startSerial(false);
+            if (autoConnectSetting === 'always' || autoConnectSetting === 'beginning') await startSerial(false);
             else await updateConnectionStatus("disconnected");
 
             await sleep(5);
@@ -11378,10 +11621,12 @@
             preloadScreen.getBoundingClientRect(); // force reflow
             preloadScreen.style.opacity = "0";
             document.body.style.overflowY = "auto";
-            await new Promise(r => setTimeout(() => {
-                preloadScreen?.remove();   // <— opravené ?.remove()
-                r();
-            }, 1000));
+
+            await sleep(750);
+
+            preloadScreen?.remove();
+
+            if (autoConnectSetting === 'ask') if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
         }
     }
 
