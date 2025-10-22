@@ -10364,21 +10364,19 @@
             await logMessage("\n");
 
             try {
-                // machineFirmware = await getFirmwareVersion()?.toLowerCase().trim() || ""; // TODO: temporary disabled due to firmware issues
-                machineFirmware = "null";
+                machineFirmware = await getFirmwareVersion()?.toLowerCase()?.trim() || "";
             } catch (e) {
                 machineFirmware = null;
             }
             let machineName;
             try {
-                machineName = await getMachineName()?.toLowerCase().trim() || "";
+                machineName = await getMachineName()?.toLowerCase()?.trim() || "";
             } catch (e) {
                 machineName = null;
             }
             let machineID;
             try {
-                // machineID = await getMachineID() || ""; // TODO: temporary disabled due to ID issues
-                machineID = 0;
+                machineID = await getMachineID() || "";
             } catch (e) {
                 machineID = null;
             }
