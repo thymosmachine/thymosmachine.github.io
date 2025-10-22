@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Moira controller</title>
 
     <!--
@@ -17,13 +18,6 @@
     <!-- https://patorjk.com/software/taag/#p=display&f=Big -->
 
 
-    <meta name="description"
-          content="Moira Controller: Open Source software for controlling scientific experiments and machines.">
-    <meta name="author" content="Matěj Porubský, Czech Republic">
-    <meta name="keywords"
-          content="Moira, Controller, Thymos, Machine, Control, Software, Experiment, Science, Standards, Open Source">
-
-
     <script>
         const softwareVersion = "0.0.2.0";
         const softwareDate = "06.10.2025";
@@ -37,7 +31,7 @@
         // Clear console - Fresh start
         console.clear();
         console.info(`%c\n\nMoira Controller - Thymos\n`, "color: #007bff; font-size: 20px; font-weight: bold;");
-        console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp inicialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
+        console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
 
         fetch("shared-header.html")
@@ -722,8 +716,8 @@
 
         #inputNumBaudRate {
             padding: 5px;
-            height: 50px;
             width: 140px;
+            height: 50px;
             border: 1px solid var(--border-color);
             text-align: center;
         }
@@ -1568,16 +1562,15 @@
     <section class="statusContainer outsetShadow">
         <!-- USB Connection Section -->
         <div class="inlineDiv">
-            <div class="inlineDiv">
+            <div class="inlineDiv" style="width: max-content">
                 <button id="connectBtnUSB" class="connectBtn"
                         title="Connect to the Thymos machine by selecting USB port.">
                     🔌 Connect via USB
                 </button>
-                <div data-system-level="3">
-                    <label for="inputNumBaudRate">Baud-Rate:
-                        <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                               value="921600" min="1">
-                    </label>
+                <div class="inlineDiv" data-system-level="3">
+                    <label for="inputNumBaudRate">Baud-Rate:</label>
+                    <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
+                           value="921600" min="1" max="921600" step="100">
                 </div>
             </div>
             <div class="inlineDiv" data-system-level="4">
@@ -1732,12 +1725,12 @@
                 <nav class="machineControlContainer outsetShadow">
                     <div class="movementWrapper movementControlElement">
                         <button id="moveMachineUP" class="controlBtn moveBtnLeft">🢁</button>
-                        <button id="moveUp100" class="controlBtn moveBtnRight">100<br>(mm)</button>
+                        <button id="moveUp50" class="controlBtn moveBtnRight">50<br>(mm)</button>
                     </div>
 
                     <div class="movementWrapper movementControlElement">
                         <button id="moveMachineDOWN" class="controlBtn moveBtnLeft">🢃</button>
-                        <button id="moveDown100" class="controlBtn moveBtnRight">100<br>(mm)</button>
+                        <button id="moveDown50" class="controlBtn moveBtnRight">50<br>(mm)</button>
                     </div>
 
                 </nav>
@@ -2341,7 +2334,7 @@
                         <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
                         <div style="display: flex; gap: 0;">
                             <input data-input-type="intInput" type="text" id="inputMachineName"
-                                   placeholder="My Machine" value="" data-nonremember="true"
+                                   placeholder="My Machine Name" value="" data-nonremember="true"
                                    data-essence="identification"
                                    style="height: 50px; width: 175px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
                             <button id="sendMachineNameBtn"
@@ -2356,7 +2349,7 @@
                         <label for="inputMachineID" style="min-width: max-content;">Machine ID:</label>
                         <div style="display: flex; gap: 0;">
                             <input data-input-type="intInput" type="text" id="inputMachineID"
-                                   placeholder="My Machine" value="" data-nonremember="true"
+                                   placeholder="My Machine ID" value="" data-nonremember="true"
                                    data-essence="identification"
                                    style="height: 50px; width: 175px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
                             <button id="sendMachineIDBtn"
@@ -2367,7 +2360,7 @@
                     </div>
 
 
-                    <div class="input-group"  data-system-level="1">
+                    <div class="input-group" data-system-level="1">
                         <label for="inputAutoConnect">Automatically connect to the machine: </label>
                         <select id="inputAutoConnect"
                                 style="font-family: monospace; font-weight: bold;
@@ -2454,17 +2447,22 @@
                         🌙 Dark mode
                     </button>
 
-                    <button id="rebootButton" class="controlBtn controlElement" data-system-level="1"
-                            style="color: var(--text-info-2-color);">
-                        🔂 Reboot device
-                    </button>
-
                     <button id="reportButton" class="controlBtn controlElement prohibited"
                             style="color: var(--stopEpx-color);">
                         🐞 Report bug
                     </button>
 
-                    <button id="aboutButton" class="controlBtn controlElement"
+                    <button id="rebootButton" class="controlBtn controlElement" data-system-level="1"
+                            style="color: var(--text-info-2-color);">
+                        🔂 Reboot device
+                    </button>
+
+                    <button id="updateMachButton" class="controlBtn controlElement" data-system-level="1"
+                            style="color: var(--text-info-2-color);">
+                        ⬆️ Update device firmware
+                    </button>
+
+                    <button id="aboutButton" class="controlBtn"
                             style="color: var(--text-info-2-color);">
                         ℹ️ About app
                     </button>
@@ -4594,7 +4592,7 @@
     // Store dataset
     let timeData = [];
     let positionData = [];
-    let forceData = Array(loadCellNum).fill(null).map(() => []);
+    let forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
     let photoData = []; // List of time markers
 
     let notificationsAllowed = false;
@@ -4656,8 +4654,8 @@
 
         moveUpBtn: $ID("moveMachineUP"), // Button to move the device up
         moveDownBtn: $ID("moveMachineDOWN"), // Button to move the device down
-        moveUp100Btn: $ID("moveUp100"), // Button to move the device up
-        moveDown100Btn: $ID("moveDown100"), // Button to move the device down
+        moveUp50Btn: $ID("moveUp50"), // Button to move the device up
+        moveDown50Btn: $ID("moveDown50"), // Button to move the device down
 
 
         moveToBtn: $ID("moveToBtn"), // Button to move to a specific position
@@ -5450,7 +5448,7 @@
             }
             hideTimeout = setTimeout(() => {
                 if (!isPageVisible) {
-                    console.info(`⏳ Page is hidden longer than ${roundDecimalFast(MIN_HIDE_TIME / 1_000, 2)}+ seconds. Hiding...`);
+                    console.info(`⏳ Page is hidden longer than ${roundDecimalFast(MIN_HIDE_TIME / 1_000, 2)}+ seconds.\n\tHiding...`);
 
                     if (liveUpdate && !liveUpdatePaused) {
                         console.info("⏸️ Pause live update of charts.");
@@ -5479,6 +5477,7 @@
 
 
     function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, photoData, overflowData) {
+        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
         if (!isNum(chunkSize)) chunkSize = 1;
         chunkSize = Math.max(1, Math.round(chunkSize));
 
@@ -5571,6 +5570,8 @@
             return;
         }
 
+        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+
         liveUpdate = false;
 
         await clearCharts();
@@ -5594,7 +5595,7 @@
             dataEntries.shift();
 
 
-            console.info(`📉 Loaded ${dataEntries.length} data points`);
+            console.info("📉 Loaded", dataEntries.length, "data points");
 
 
             // // ⏩ **Use `filter` to reduce the number of data points**
@@ -5752,6 +5753,7 @@
      */
 
     function updateChart(inputData) {
+        // TODO: problém s grafem během experimentu, není tam update
 
         const chartData = checkArray(inputData);
 
@@ -5769,9 +5771,9 @@
             }
 
             // Add new data points
-            timeData?.push(data.time);
-            positionData?.push(data.position);
-            data.force?.forEach((value, index) => forceData[index].push(value));
+            timeData?.push(data?.time);
+            positionData?.push(data?.position);
+            data.force?.forEach((value, index) => forceData[index]?.push(value));
             photoData?.push(isNum(data.photoIndex) ? 0 : null); // Mark photo event
 
 
@@ -5798,6 +5800,7 @@
     }
 
     async function clearCharts() {
+        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
         // Reset axis X and Y
         await timeChart.setScale("x", {min: 0, max: 1e-10});
@@ -5993,7 +5996,7 @@
             console.warn("⚠️ Machine name cannot be empty.");
             return;
         }
-        const command = `SYS SET NAME ${name.trim()}`;
+        const command = `MICS SET NAME ${name.trim()}`;
         await sendCommandGeneral(command, pauseMs);
     }
 
@@ -6012,7 +6015,7 @@
             return;
         }
 
-        const command = `SYS SET ID ${id}`;
+        const command = `MICS SET ID ${id}`;
         await sendCommandGeneral(command, pauseMs);
     }
 
@@ -6098,7 +6101,7 @@
 
             console.warn("\n⚠️ Connection lost! Attempting to reconnect...");
             isConnected = false;
-            await attemptReconnect();
+            await attemptReconnect(); // TODO: change reconnect handle
         } else {
             stopMachine();
             console.error(`❌ ${context} error:`, error);
@@ -6120,9 +6123,10 @@
     const WATCHDOG_INTERVAL_MS = 500; // min 500 ms
 
 
-    async function moveToOriginalPosition(override = false) {
+    async function moveToOriginalPosition({overRide = false} = {}) {
         if (!isConnected) return;
-        if (!override && (isExperimentRunning || machineOccupation)) return;
+        if (isExperimentRunning) return;
+        if (!overRide && machineOccupation) return;
 
         const endPosition = await measurePosition();
         if (!(isNum(tareValues.position) && isNum(endPosition))) {
@@ -6138,7 +6142,7 @@
         }
 
         console.info("⬅️ Moving backward...");
-        await moveBy(distance);
+        await moveBy(distance, {overRide: overRide});
         console.info("🚩 Returning to original position completed.");
     }
 
@@ -6274,7 +6278,7 @@
 
         if (!isValidInputNum(timeOut)) timeOut = 1;
 
-        if (currentSpeed !== speed) sendCommandGeneral(`MC SET SPEEDMM ${speed}`, timeOut);
+        sendCommandGeneral(`MC SET SPEEDMM ${speed}`, timeOut);
 
         if (updateCurrent === true) currentSpeed = speed;
         UI.speedSlider.value = speed;
@@ -6287,7 +6291,7 @@
         if (!isValidInputNum(acceleration)) return;
         if (!isValidInputNum(timeOut)) timeOut = 1;
 
-        if (currentAcceleration !== acceleration) sendCommandGeneral(`MC SET ACCELMM ${acceleration}`, timeOut);
+        sendCommandGeneral(`MC SET ACCELMM ${acceleration}`, timeOut);
 
         if (updateCurrent === true) currentAcceleration = acceleration;
         UI.accelerationSlider.value = acceleration;
@@ -6328,10 +6332,10 @@
         return roundDecimalFast(v, 2);                    // float f.2
     }
 
-    async function moveBy(dist, requiredSpeed = null, requiredAcceleration = null) {
+    async function moveBy(distance, {requiredSpeed = null, requiredAcceleration = null, overRide = false} = {}) {
         if (!isConnected) return;
         if (isExperimentRunning) return;
-        if (machineOccupation) {
+        if (!overRide && machineOccupation) {
             console.warn("\nMachine is already busy. Please wait.");
             return;
         }
@@ -6353,7 +6357,7 @@
             currentAcceleration = (await getAcceleration()) || 150;
 
             const acceleration = requiredAcceleration || 100; // mm/s²
-            const speed = requiredSpeed || await speedFromDistance(dist, acceleration, 0.5, 25); // mm/s
+            const speed = requiredSpeed || await speedFromDistance(distance, acceleration, 0.5, 25); // mm/s
 
             if (!speed || !acceleration) {
                 console.warn("\n⚠️ Invalid speed or acceleration values.");
@@ -6369,7 +6373,7 @@
 
 
             const movingTime =
-                Math.ceil((computeMotionTime(dist, speed, acceleration) * 1_000) + 100);
+                Math.ceil((computeMotionTime(distance, speed, acceleration) * 1_000) + 100);
 
 
             // nastav/obnov timeout ukončení pohybu
@@ -6378,7 +6382,7 @@
                 movingTimeout = null;
             }
 
-            await sendMoveCommand(`MC MOVEBY USER ${dist}`, 5);
+            await sendMoveCommand(`MC MOVEBY MACH ${distance}`, 5);
 
             movingTimeout = setTimeout(() => endedMoving(), movingTime);
 
@@ -6454,9 +6458,9 @@
     async function softStopMachine() {
         setAcceleration(200, false); // Set acceleration to 200 mm/s²
 
-        await rampSpeed(currentSpeed, 0.05);
+        await rampSpeed(currentSpeed, 0.1);
 
-        await sendCommandUser("MC STOP");
+        endedMoving();
 
         if (isExperimentRunning) {
             await endMeasuring(0, {
@@ -6467,8 +6471,6 @@
             UI.experimentStageLabel.textContent = `Stopped`;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
         }
-
-        endedMoving();
     }
 
     /**
@@ -6676,14 +6678,20 @@
     let isExperimentRunning = false;
     let machineOccupation = false;
 
-    let maxForces = Array(loadCellNum).fill(null);
+    let maxForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null);
 
-    let measureForces = Array(loadCellNum).fill(null).map(() => []);
+    let measureForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
     let takeMeasurements = false;
 
-    let tareValues = {time: null, position: null, force: Array(loadCellNum).fill(0)};
+    let tareValues = {time: null, position: null, force: Array(catchVal(loadCellNum, 0, isNum)).fill(0)};
 
-    let parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null}; // Last data log
+    let parsedData = {
+        time: null,
+        position: null,
+        speed: null,
+        force: Array(catchVal(loadCellNum, 0, isNum)).fill(null),
+        photoIndex: null
+    }; // Last data log
 
     // TODO: make One large Experiment variable object: measurementParts, tareValues, limits, loadcellErr, measuredData
     // TODO: make Tow large Experiment variable objects: measuredData (time, pos, ...) vs chartData (timeData, posData, ...)
@@ -6769,7 +6777,7 @@
             if (cfg.unilateral && vCmd < 0) vCmd = 0;
 
             // volitelný slew-rate limit přes 'accel' (mm/s²)
-            if (Number.isFinite(cfg.accel) && cfg.accel > 0) {
+            if (isValidInputNum(cfg.accel)) {
                 const dvMax = cfg.accel * dt;
                 if (vCmd > lastV + dvMax) vCmd = lastV + dvMax;
                 else if (vCmd < lastV - dvMax) vCmd = lastV - dvMax;
@@ -6851,6 +6859,7 @@
             return;
         }
 
+        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
         // === System Limits ===
         const minDistance = 5e-3;
@@ -7263,6 +7272,10 @@
 
             await sendCommandGeneral('DATA SET INTERVAL 2000');
 
+            for (let i = 0; i < loadCellNum; i++) {
+                await sendCommandGeneral(`LC TARE ${i}`);
+            }
+
             // --- 1) Take measurements ---
             takeMeasurements = true;
             await sendCommandGeneral("DATAC 1");
@@ -7274,10 +7287,10 @@
             await sendCommandGeneral("DATAC 0");
 
             // --- 2) Mean forces ---
-            tareValues.force = meanND(measureForces, 1).map(force => roundDecimalFast(force, precisionForce));
+            tareValues.force = meanND(measureForces, 1).map(force => 0); // roundDecimalFast(force, precisionForce)
 
             // --- 3) Analysis ---
-            const forceAnalysis = await analyzeForces(measureForces);
+            const forceAnalysis = await analyzeForces(measureForces);  // TODO: Implement and save present/used loadcells to the experiment log and use it when loading form DB and when loading CSV
             console.info("Force analysis:");
             console.table(forceAnalysis);
 
@@ -7328,7 +7341,8 @@
             // --- 8) Final error rate ---
             const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
             totalErrRate = alpha * measurementErrRate + (1 - alpha) * loadcellErrRate;
-            console.info("\n\t🎰 Final error rate:", totalErrRate, "N");
+            console.info("\n\t🎲 Final error rate:", totalErrRate, "N");
+            await logMessage(`\t🎲 Set error rate: ${totalErrRate} N`);
 
             // --- 9) Clear force fields ---
             measureForces = Array(loadCellNum).fill(null).map(() => []);
@@ -7337,11 +7351,12 @@
             if (experimentType.endsWith("-hbr")) {
                 pi = createPIController({
                     setForceN: stoppingForceLimit,
-                    Kp: 0.20,
-                    Ki: 0.03,
+                    Kp: 0.100,
+                    Ki: 0.015,
                     deadbandN: (totalErrRate * 1.15), // deadband set to 115% of total error rate
-                    vMin: 0.025,
-                    vMax: 25,
+                    vMin: minFSpeed,
+                    vMax: maxFSpeed / 5, // limit max speed during holding to one fifth of max speed
+                    accel: null, // slew-rate limit to 5 mm/s²
                     integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 100), // anti-windup clamp: readings in the last 25% of hold time
                 });
             }
@@ -7376,7 +7391,7 @@
 
             // === Move Forward ===
             console.info("➡️ Moving forward...");
-            await sendCommandGeneral(`MC MOVEBY USER ${distance_mm * displacementSignCorrection}`);
+            await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
 
 
             // === Data Collection Loop ===
@@ -7405,7 +7420,7 @@
                 //
                 //     console.info(`➡️ Moving further to ${endPosition - shift} mm...`);
                 //
-                //     await sendCommandGeneral(`MC MOVEBY USER -${shift}`);
+                //     await sendCommandGeneral(`MC MOVEBY MACH -${shift}`);
                 //     await sleep(((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1000) + 500)); // Wait
                 //
                 //     endPosition = await measurePosition();
@@ -7416,7 +7431,7 @@
                 // === Move Back ===
                 if (UI.autoReturnPosition.checked) {
                     UI.experimentStageLabel.textContent = `Returning`;
-                    await moveToOriginalPosition(true);
+                    await moveToOriginalPosition({overRide: true}); // TODO: neposune se: chyba (Machine is already busy. Please wait.) => add overRide
                 }
             }
 
@@ -7441,6 +7456,15 @@
 
         } finally {
             await endMeasuring(0, {endText: ''});
+
+            if (!isNum(loadCellNum)) {
+                console.error("Loadcell number is not defined during experiment finalization.");
+                alert("Loadcell number is not defined during experiment finalization.");
+            } else {
+                for (let i = 0; i < loadCellNum; i++) {
+                    await sendCommandGeneral(`LC TARE RESET ${i}`);
+                }
+            }
 
             await sleep(20);
 
@@ -7707,8 +7731,34 @@
             if (!version) {
                 throw new Error(`Version is empty: ${version}`);
             }
-            console.info(`\t📦 Firmware version: ${version}`);
+            console.info(`\n\t📦 Firmware version: ${version}`);
             return version;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error(`Firmware version not received. ${error}`);
+        }
+    }
+
+    async function getFirmwaresVersions(timeOut = 2_000) {
+        if (!isConnected) {
+            console.warn("\n⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        // TODO: doplnit další moduly
+        const tags = ['MOTORS', 'LOADCELLS', 'DSLR', 'MISC', 'PARSER']; // list of firmware tags
+        const versions = {};
+        try {
+            for (const t of tags) {
+                if (debugging) logMessage(` 📢\tGet ${t} firmware version...`);
+                let version = await getPromisedValue(`MISC GET LIBINFO ${t}`, /Firmware:\s*([^,]+)/, 1, timeOut);
+
+                version = version || null;
+
+                console.info(`\n\t\t🧩 ${t} Firmware version: ${version}`);
+                versions[t.toLowerCase()] = version;
+            }
+            return versions;
         } catch (error) {
             console.error(error.message);
             throw new Error(`Firmware version not received. ${error}`);
@@ -7724,7 +7774,7 @@
             if (!name) {
                 throw new Error(`Name is empty: ${name}`);
             }
-            console.info(`\t🏷️ Machine name: ${name}`);
+            console.info(`\n\t🏷️ Machine name: ${name}`);
             return name;
         } catch (error) {
             console.error(error.message);
@@ -7740,7 +7790,7 @@
             if (!isNum(id)) {
                 throw new Error(`ID is not a number: ${id}`);
             }
-            console.info(`\t🆔 Machine ID: ${id}`);
+            console.info("\n\t🆔 Machine ID:", id);
             return id;
         } catch (error) {
             console.error(error.message);
@@ -7763,7 +7813,7 @@
             if (!isNum(position)) {
                 throw new Error(`Position is not a number: ${position}`);
             }
-            console.info(`\t📌 Current position: ${position} mm`);
+            console.info("\t📌 Current position:", position, "mm");
             return roundDecimalFast(position, precisionPosition);
         } catch (error) {
             console.error(error.message);
@@ -7778,13 +7828,14 @@
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
-        const ldID = toInteger(loadcellID);
         try {
+            const ldID = toInteger(loadcellID);
             if (debugging) logMessage(` 📢\tGet Loadcell ${ldID} reading...`);
 
-            if (ldID < 0 || ldID > (loadCellNum - 1)) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
+            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNum(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
 
-            const force = toNumber(await getPromisedValue(`LC READ LOADCELL[${ldID}]`, /.../, 1, timeOut), true);
+            const force = toNumber(await getPromisedValue(`LC READ ${ldID}`, /.../, 1, timeOut), true);
 
             if (!isNum(force)) {
                 throw new Error(`Load on Loadcell${ldID} is not a number: ${force}`);
@@ -7796,25 +7847,68 @@
         }
     }
 
-    async function isLoadcellsPresent(timeOut = 2_000) {
+    async function readLoadcells(timeOut = 2_000) {
+        if (!isConnected) {
+            console.warn("\n⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        const forces = [];
+        try {
+            if (debugging) logMessage(" 📢\tGet Loadcells readings...");
+
+            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            for (let i = 0; i < loadCellNum; i++) {
+                const force = await readLoadcell(i, timeOut);
+                forces.push(force);
+            }
+            return forces;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error(`Load on Loadcells not received. ${error}`);
+        }
+    }
+
+    async function isLoadcellPresent(loadcellID, timeOut = 2_000) {
         if (!isConnected) {
             console.warn("\n⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
         try {
+            const ldID = toInteger(loadcellID);
+            if (debugging) logMessage(` 📢\tCheck Loadcell ${ldID} presence...`);
+
+            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNum(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
+
+            const force = await getPromisedValue(`LC READ ${ldID}`, /.../, 1, timeOut);
+
+            if (!(!isVal(force) || force === '0' || force === '-0')) {
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error(`Load on Loadcells not received ${error}`);
+        }
+    }
+
+    async function isLoadcellsPresent(timeOut = 2_000) {
+        if (!isConnected) {
+            console.warn("\n⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        const isPresent = [];
+        try {
             if (debugging) logMessage(" 📢\tCheck Loadcells presence...");
 
-            const isPresent = [];
+            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             for (let i = 0; i < loadCellNum; i++) {
-                const force = await getPromisedValue(`LC READ LOADCELL[${i}]`, /.../, 1, timeOut);
-
-                if (!(!isVal(force) || force === '0' || force === '-0')) {
-                    isPresent.push(true);
-                    continue;
-                }
-
-                isPresent.push(false);
+                const presence = await isLoadcellPresent(i, timeOut);
+                isPresent.push(presence);
             }
             return isPresent;
         } catch (error) {
@@ -7854,7 +7948,7 @@
             if (!isNum(speed)) {
                 throw new Error(`Speed is not a number: ${speed}`);
             }
-            console.info(`\t🚅 Current speed: ${speed} mm/s`);
+            console.info("\t🚅 Current speed:", speed, "mm/s");
 
             return roundDecimalFast(speed, precisionSpeed);
         } catch (error) {
@@ -7878,7 +7972,7 @@
             if (!isNum(acceleration)) {
                 throw new Error(`Acceleration is not a number: ${acceleration}`);
             }
-            console.info(`\t🚝 Current acceleration: ${acceleration} mm/s²`);
+            console.info("\t🚝 Current acceleration:", acceleration, "mm/s²");
 
             return roundDecimalFast(acceleration, precisionAcceleration);
         } catch (error) {
@@ -8092,12 +8186,12 @@
         if (totalEntries === 0) return {
             time: 0,
             position: 0,
-            force: Array(loadCellNum).fill(0)
+            force: Array(catchVal(loadCellNum, 0, isNum)).fill(0)
         }; // Return zero values if no data
 
         let sumTime = 0;
         let sumPosition = 0;
-        let sumForce = Array(loadCellNum).fill(0); // Empty list of `force` values
+        let sumForce = Array(catchVal(loadCellNum, 0, isNum)).fill(0); // Empty list of `force` values
 
         parsedDataList?.forEach(data => {
             sumTime += data.time;
@@ -8248,9 +8342,14 @@
 
                     } else {
                         const sumF = sumND(newData?.force);
-                        const v = pi.step(newData?.time, newData?.position, sumF);
+                        const v = pi.step(newData?.time, newData?.position, sumF); // TODO: use tared values for time and position and what units?? [forceHoldTimeMs/1000]
                         // adjust speed according to PI controller to maintain constant force ...
-                        if (isValidInputNum(v)) await setSpeed(v, false);
+                        if (isValidInputNum(v)) {
+                            await setSpeed(v, false);
+                            sendCommandGeneral("MC END");
+// speed: 0.6825mm/s => time: 2.6s - 5.2s => target time: 15s => new speed: 0.2944mm/s
+// (0.6825 * ((5.2-2.6) / 15) = 0.1183)
+                        }
                         // ... or stop if invalid, negative or zero
                         else await sendCommandGeneral("MC STOP");
                     }
@@ -8291,7 +8390,7 @@
 
 
         // Handle LoadCell limit checks
-        for (let i = 0; i < loadCellNum; i++) {
+        for (let i = 0; i < catchVal(loadCellNum, 0, isNum); i++) {
             const currForce = newData?.force[i];
             if (isNum(currForce)) {
                 if (!isNum(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
@@ -10320,7 +10419,7 @@
             const {usbVendorId, usbProductId} = comPort.getInfo?.() ?? {};
             fingerprint = `${usbVendorId}:${usbProductId}`;
 
-            console.info(`👣 Port Fingerprint:\n\t\tusbVendorId:${usbVendorId}\n\t\tusbProductId:${usbProductId}`);
+            console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
 
             localStorage.setItem("lastFingerprint", fingerprint);
 
@@ -10482,7 +10581,7 @@
                 break: brkState
             });
 
-            console.info(`✅ DTR: ${dtrState}, RTS: ${rtsState}, BRK: ${brkState}`);
+            console.info("✅ DTR:", dtrState, "RTS:", rtsState, "BRK:", brkState);
         } catch (error) {
             console.error("❌ Error setting serial signals:", error);
         }
@@ -11024,7 +11123,13 @@
 <script>
 
     function resetValues() {
-        parsedData = {time: null, position: null, speed: null, force: Array(loadCellNum).fill(null), photoIndex: null};
+        parsedData = {
+            time: null,
+            position: null,
+            speed: null,
+            force: Array(catchVal(loadCellNum, 0, isNum)).fill(null),
+            photoIndex: null
+        };
         measurementParts = measurementPartDefault;
         liveUpdate = false
 
@@ -11038,9 +11143,9 @@
         expControl = '';
         pendingDSLR = null;
         dataCount = null;
-        maxForces = Array(loadCellNum).fill(null);
-        measureForces = Array(loadCellNum).fill(null).map(() => []);
-        tareValues.force = Array(loadCellNum).fill(0);
+        maxForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null);
+        measureForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+        tareValues.force = Array(catchVal(loadCellNum, 0, isNum)).fill(0);
         tareValues.position = null;
         tareValues.time = null;
         lastAcceptedTime = null;
@@ -11056,7 +11161,7 @@
 
 
         displacementSignCorrection = 0;
-        loadSignCorrections = Array(loadCellNum).fill(0);
+        loadSignCorrections = Array(catchVal(loadCellNum, 0, isNum)).fill(0);
 
         loadcellErrRate = null;
         measurementErrRate = null;
@@ -11085,7 +11190,7 @@
 
         timeData = [];
         positionData = [];
-        forceData = Array(loadCellNum).fill(null).map(() => []);
+        forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
         photoData = [];
 
         reconnectAttempts = 0;
@@ -11144,6 +11249,7 @@
     // ===============================================
 
     document.addEventListener("DOMContentLoaded", function () {
+        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
         // start at top of page
         try {
@@ -11332,7 +11438,16 @@
 
         $ID("darkModeButton")?.addEventListener("click", async () => toggleDarkMode());
 
-        $ID("aboutButton")?.addEventListener("click", async () => window.location.href = 'about.html');
+        // Open in current tab:     window.location.href = 'about.html'
+        // Open in new tab:         window.open('about.html', '_blank', 'noopener,noreferrer')
+        // Open in new window:      window.open('about.html', '_blank', 'noopener,noreferrer,width=800,height=600')
+
+        $ID("aboutButton")?.addEventListener("click", async () => window.open('about.html', '_blank', 'noopener,noreferrer'));
+
+        $ID("updateMachButton")?.addEventListener("click", async () => {
+            await disconnectSerial({override: true});
+            window.location.href = 'espUpdate/update.html';
+        });
 
         $ID("rebootButton")?.addEventListener("click", async () => await sendCommandGeneral("MISC REBOOT"));
 
@@ -11383,13 +11498,13 @@
         }
 
 
-        attachHoldHandlers(UI.moveUpBtn, async () => sendMoveCommand("MC HOME"));
-        attachHoldHandlers(UI.moveDownBtn, async () => sendMoveCommand("MC END"));
+        attachHoldHandlers(UI.moveUpBtn, async () => sendMoveCommand("MC HOME")); // TODO: problém s rychlostmi na konci
+        attachHoldHandlers(UI.moveDownBtn, async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
 
         $ID("returnPositionExperimentBtn").addEventListener('click', async () => moveToOriginalPosition());
 
-        UI.moveUp100Btn.addEventListener("click", async () => moveBy(-100));
-        UI.moveDown100Btn.addEventListener("click", async () => moveBy(100));
+        UI.moveUp50Btn.addEventListener("click", async () => moveBy(-50));  // TODO: problém s rychlostmi na konci a zrychlením
+        UI.moveDown50Btn.addEventListener("click", async () => moveBy(50));  // TODO: problém s rychlostmi na konci a zrychlením
 
 
         UI.calibrateBtn.addEventListener("click", async () => {
