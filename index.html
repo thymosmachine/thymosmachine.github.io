@@ -2329,6 +2329,14 @@
                     </div>
 
 
+                    <div class="input-group" data-system-level="4">
+                        <label for="inputAppInterval" style="min-width: max-content;">Data Interval:</label>
+                        <input data-input-type="intInput" type="number" id="inputAppInterval"
+                               value="50000" min="1" step="any" max="100000000" data-unit="µs" data-essence="time"
+                               style="height: 50px; width: 200px;">
+                    </div>
+
+
                     <div class="input-group" data-system-level="1">
                         <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
                         <div style="display: flex; gap: 0;">
@@ -2345,14 +2353,21 @@
 
 
                     <div class="input-group" data-system-level="4">
-                        <label for="inputAppInterval" style="min-width: max-content;">Data Interval:</label>
-                        <input data-input-type="intInput" type="number" id="inputAppInterval"
-                               value="50000" min="1" step="any" max="100000000" data-unit="µs" data-essence="time"
-                               style="height: 50px; width: 200px;">
+                        <label for="inputMachineID" style="min-width: max-content;">Machine ID:</label>
+                        <div style="display: flex; gap: 0;">
+                            <input data-input-type="intInput" type="text" id="inputMachineID"
+                                   placeholder="My Machine" value="" data-nonremember="true"
+                                   data-essence="identification"
+                                   style="height: 50px; width: 175px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
+                            <button id="sendMachineIDBtn"
+                                    style="height: 50px; width: 25px; border-bottom-left-radius: 0; border-top-left-radius: 0;">
+                                ▶ <!-- ↵⏎⎆ -->
+                            </button>
+                        </div>
                     </div>
 
 
-                    <div class="input-group">
+                    <div class="input-group"  data-system-level="1">
                         <label for="inputAutoConnect">Automatically connect to the machine: </label>
                         <select id="inputAutoConnect"
                                 style="font-family: monospace; font-weight: bold;
@@ -2514,11 +2529,11 @@
 
 <script>
     // Zapnutí/ vypnutí varování
-    let warnOnClose = !debugging;
+    let warnOnClose = true;
 
     // Prevent native reload/close dialog (zobrazení varování)
     window.addEventListener('beforeunload', (e) => {
-        if (warnOnClose) {
+        if (warnOnClose && !debugging) {
             e.preventDefault();
             // Standard: většina prohlížečů ignoruje vlastní text
             e.returnValue = '';
@@ -2537,7 +2552,7 @@
         ) {
             e.preventDefault();
             // Místo reloadu můžeš ukázat vlastní upozornění
-            if (warnOnClose) {
+            if (warnOnClose && !debugging) {
                 if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
                     // případně povolit navigaci
                     window.location.reload();
@@ -2548,7 +2563,7 @@
 
     // Zachytit kliky na odkazy, které mohly page opustit
     document.addEventListener('click', (e) => {
-        if (warnOnClose) {
+        if (warnOnClose && !debugging) {
             const a = e.target.closest && e.target.closest('a[href]');
             if (!a) return;
             const href = a.getAttribute('href');
@@ -2568,7 +2583,7 @@
     window.addEventListener('popstate', (event) => {
         // Znovu vložíme stav a ukážeme varování
         history.pushState({page: 1}, '', '');
-        if (warnOnClose) {
+        if (warnOnClose && !debugging) {
             if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
                 // případně povolit navigaci
                 history.back();
@@ -2949,7 +2964,7 @@
             'ǃ', '❕', '❗', '❢', 'ꜝ', 'ᵎᵎ',
             '⁉', '⁈', '🙹', '🙺', '🙻',
             '﹖', '❔', '❓', '⍰', '�', '⯑', '¿', '⸮', '︖', '？',
-            '🛑', '⭕️', '🚨', '💥', '🚧', '🆘', '🅾️', '4️⃣0️⃣4️', '⁴⁰⁴',
+            '🛑', '⭕️', '🚨', '💥', '🚧', '🆘', '🅾️', '4️⃣0️⃣4️⃣', '⁴⁰⁴',
             '￼',
         ]);
 
@@ -7301,19 +7316,19 @@
             const diffs = validFields.flatMap(({
                                                    min, max
                                                }) => (isNum(min) && isNum(max)) ? [max - min] : []);
-            console.info("Valid dispersions:", diffs);
+            console.info("\nValid dispersions:", diffs);
 
             // --- 7) Error rates ---
             measurementErrRate = await roundDecimalFast(await diffs.reduce((a, b) => a + b, 0) / diffs.length, precisionForce);
-            console.info("Measurement error rate:", measurementErrRate, "N");
+            console.info("\n\t\t🎰 Measurement error rate:", measurementErrRate, "N");
 
             loadcellErrRate = await (loadcellCapacity * 9.81) / 2_000; // 0.05% of the capacity
-            console.info("Loadcell error rate:", loadcellErrRate, "N");
+            console.info("\n\t\t🎰 Loadcell error rate:", loadcellErrRate, "N");
 
             // --- 8) Final error rate ---
             const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
             totalErrRate = alpha * measurementErrRate + (1 - alpha) * loadcellErrRate;
-            console.info("Final error rate:", totalErrRate, "N");
+            console.info("\n\t🎰 Final error rate:", totalErrRate, "N");
 
             // --- 9) Clear force fields ---
             measureForces = Array(loadCellNum).fill(null).map(() => []);
@@ -10349,7 +10364,8 @@
             await logMessage("\n");
 
             try {
-                machineFirmware = await getFirmwareVersion()?.toLowerCase().trim() || "";
+                // machineFirmware = await getFirmwareVersion()?.toLowerCase().trim() || ""; // TODO: temporary disabled due to firmware issues
+                machineFirmware = "null";
             } catch (e) {
                 machineFirmware = null;
             }
@@ -10361,7 +10377,8 @@
             }
             let machineID;
             try {
-                machineID = await getMachineID() || "";
+                // machineID = await getMachineID() || ""; // TODO: temporary disabled due to ID issues
+                machineID = 0;
             } catch (e) {
                 machineID = null;
             }
@@ -10394,7 +10411,7 @@
                     console.error("Device not responding after multiple attempts.");
                     await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
                     alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
-                    reconnectAttempts = 1_000;
+                    // reconnectAttempts = 1_000; // TODO: or show error and block further retries
                     await disconnectSerial({override: true});
                     return;
                 }
@@ -10432,6 +10449,7 @@
 
 
             $ID("inputMachineName").value = machineName;
+            $ID("inputMachineID").value = machineID;
 
         } catch (error) {
             activeWatchDog = false;
@@ -11333,6 +11351,8 @@
         // TODO: $$$("saveRegularLog")?.addEventListener("click", async () => saveLogAsText());
 
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName($ID("inputMachineName")?.value?.trim()));
+        $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID($ID("inputMachineID")?.value?.trim()));
+
 
         function attachHoldHandlers(element, onStart) {
             let isHolding = false;
