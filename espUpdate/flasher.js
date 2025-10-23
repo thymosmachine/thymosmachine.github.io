@@ -265,6 +265,7 @@ async function getFileContent(inputId) {
         let compressedData;
 
         if (typeof CompressionStream !== "undefined") {
+            // without zlib header use: 'deflate-raw'
             const cs = new CompressionStream("deflate"); // Compress using CompressionStream (zlib)
             const writer = cs.writable.getWriter();
 
@@ -276,7 +277,8 @@ async function getFileContent(inputId) {
 
 
         } else if (self.pako?.gzip) {
-            compressedData = self.pako?.deflate(fileData); // Compress using pako (zlib)
+            // without zlib header use: 'pako.deflateRaw(...)'
+            compressedData = self.pako?.deflate(fileData); // Compress using pako (zlib)  // optional: { level: 6 }
 
         } else {
             compressedData = fileData; // No compression available
