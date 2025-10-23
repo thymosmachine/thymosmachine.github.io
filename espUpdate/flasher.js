@@ -1,29 +1,21 @@
 export const fileFilters = {
-    bootloaderFile: '.ino.bootloader.bin',
-    partitionsFile: '.ino.partitions.bin',
-    firmwareFile: '.ino.bin'
+    bootloaderFile: '.ino.bootloader.bin', partitionsFile: '.ino.partitions.bin', firmwareFile: '.ino.bin'
 };
 
 export const fileNames = ['bootloaderFile', 'partitionsFile', 'firmwareFile'];
 
 
 export const inputFilesLabels = {
-    bootloaderFile: 'Bootloader',
-    partitionsFile: 'Partitions',
-    firmwareFile: 'Firmware'
+    bootloaderFile: 'Bootloader', partitionsFile: 'Partitions', firmwareFile: 'Firmware'
 }
 
 
 export const fileAddresses = {
-    bootloaderFile: 0x0000,
-    partitionsFile: 0x8000,
-    firmwareFile: 0x10000
+    bootloaderFile: 0x0000, partitionsFile: 0x8000, firmwareFile: 0x10000
 };
 
 export const inputFiles = {
-    bootloaderFile: null,
-    partitionsFile: null,
-    firmwareFile: null
+    bootloaderFile: null, partitionsFile: null, firmwareFile: null
 }
 
 
@@ -34,32 +26,35 @@ export const scriptVariables = {
     consoleMode: false,
     logFunction: null,
     alertFunction: null,
-    stateFunction: () => {
-    },
+    stateFunction: () => null,
 };
 
-scriptVariables.logFunction = scriptVariables.logMessages ? logConsole : () => {
-}; // No-op if logging is disabled
+scriptVariables.logFunction = scriptVariables.logMessages ? logConsole : () => null; // No-op if logging is disabled
 scriptVariables.alertFunction = scriptVariables.consoleMode ? console.log : logAlert; // No-op if console mode is disabled
 
+
+const useESPSignals = false;
 
 function logAlert(message) {
     alert(message);
 }
 
-function logConsole(message, color = colorMeanings.regular) {
-    // if (color === 'black') {
-    //     console.log(message);
-    // } else if (color === 'red') {
-    //     console.error(message);
-    // } else if (color === 'green') {
-    //     console.info(message);
-    // } else if (color === 'orange') {
-    //     console.warn(message);
-    // } else {
-    //     console.log(`%c${message}`, `color: ${color}`);
-    // }
-    console.log(`%c${message}`, `color: ${color}`);
+function logConsole(message, color = colorMeanings.regular, mode = 'info') {
+    switch (mode) {
+        case 'warn':
+            console.warn(`%c${message}`, `color: ${color}`);
+            return;
+        case 'error':
+            console.error(`%c${message}`, `color: ${color}`);
+            return;
+        case 'log':
+            console.log(`%c${message}`, `color: ${color}`);
+            return;
+        case 'info':
+        default:
+            console.info(`%c${message}`, `color: ${color}`);
+            return;
+    }
 }
 
 export const colorMap = {
@@ -258,14 +253,33 @@ async function getFileContent(inputId) {
 
     try {
         const fileData = new Uint8Array(await file.arrayBuffer());
-        const compressedData = pako.deflate(fileData); // Compress using pako (zlib) // TODO: use default compression from browser API if available and have 'pako' as fallback
+        let compressedData;
 
-        return {
-            data: compressedData,
-            originalSize: fileData.length,
-            compressedSize: compressedData.length,
-            file: file
-        };
+        if (typeof CompressionStream !== "undefined") {
+         const cs = new CompressionStream("deflate"); // Compress using CompressionStream (zlib)
+          const writer = cs.writable.getWriter();
+
+          await writer.write(fileData);
+          await writer.close(); // důležité počkat na uzavření
+
+          const compressedArrayBuffer = await new Response(cs.readable).arrayBuffer();
+          compressedData = new Uint8Array(compressedArrayBuffer);
+
+
+        }  else if (self.pako?.gzip) {
+            compressedData = self.pako?.deflate(fileData); // Compress using pako (zlib)
+
+        } else {
+            compressedData = fileData; // No compression available
+        }
+
+        if (!compressedData || compressedData.length === 0 || compressedData.length >= fileData.length) {
+            scriptVariables.logFunction (`⚠️ Compression failed or resulted in empty data for file: ${file.name}. Using original data.`, colorMeanings.warning, 'warn');
+            compressedData = fileData;
+        }
+
+        return {data: compressedData, originalSize: fileData.length, compressedSize: compressedData.length, file: file};
+
     } catch (e) {
         return {error: `❌ Failed to read file: ${file.name}, reason: ${e.message}`};
     }
@@ -296,18 +310,7 @@ export async function initializeFlash() {
         return;
     }
 
-    await flashESP32S3(
-        scriptVariables.serialPort,
-        bootloaderResult.data,
-        partitionsResult.data,
-        firmwareResult.data,
-        bootloaderResult.originalSize,
-        partitionsResult.originalSize,
-        firmwareResult.originalSize,
-        bootloaderResult.file,
-        partitionsResult.file,
-        firmwareResult.file
-    );
+    await flashESP32S3(scriptVariables.serialPort, bootloaderResult.data, partitionsResult.data, firmwareResult.data, bootloaderResult.originalSize, partitionsResult.originalSize, firmwareResult.originalSize, bootloaderResult.file, partitionsResult.file, firmwareResult.file);
 }
 
 
@@ -324,7 +327,7 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
     scriptVariables.logFunction('✔️ Flashing completed.\n', colorMeanings.success);
 
 
-    await resetSerialPort();
+    useESPSignals ? await resetSerialPortSignals() : await resetSerialPortBasic();
 }
 
 
@@ -368,41 +371,43 @@ async function eraseFlash(writer) {
     scriptVariables.logFunction('💣 Erasing flash...', colorMeanings.regular);
 
 
-    // Reset ESP32-S3 after erasing flash memory            TODO ////////////////////////      check it
-    // await new Promise(resolve => setTimeout(resolve, 100)); // Wait
-    // await setSerialSignals(scriptVariables.serialPort, true, true);
-    //
-    // new Promise(resolve => setTimeout(resolve, 500)); // Wait (500 ms)
-    // await setSerialSignals(scriptVariables.serialPort, false, true); // Hold reset ESP
-    //
-    // new Promise(resolve => setTimeout(resolve, 200)); // Wait (200 ms)
-    // await setSerialSignals(scriptVariables.serialPort, true, false); // Start ESP
-    //
-    // new Promise(resolve => setTimeout(resolve, 100)); // Wait (100 ms)
+    if (useESPSignals) {
+        // Reset ESP32-S3 after erasing flash memory            TODO ////////////////////////      check it if works correctly
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait
+        await setSerialSignals(scriptVariables.serialPort, true, true);
 
-    const emptyBlock = new Uint8Array(0x1000).fill(0xFF);
+        new Promise(resolve => setTimeout(resolve, 500)); // Wait (500 ms)
+        await setSerialSignals(scriptVariables.serialPort, false, true); // Hold reset ESP
 
-    const totalSize = 4 * 1024 * 1024;  // Total flash size (4 MB)
-    const blockSize = emptyBlock.length;  // Block size (4 KB)
+        new Promise(resolve => setTimeout(resolve, 200)); // Wait (200 ms)
+        await setSerialSignals(scriptVariables.serialPort, true, false); // Start ESP
 
-    let lastReportedPercent = 0;
+        new Promise(resolve => setTimeout(resolve, 100)); // Wait (100 ms)
 
-    for (let address = 0; address < totalSize; address += blockSize) {
-        await writeFlashBlock(writer, address, emptyBlock);
+    } else {
 
-        // During erasing, address is the offset of the block
-        lastReportedPercent = await logProgress(address, totalSize, 0x00000000, 10, lastReportedPercent, blockSize, '🚮 Erasing', colorMeanings.progress);
+        const emptyBlock = new Uint8Array(0x1000).fill(0xFF);
+
+        const totalSize = 4 * 1024 * 1024;  // Total flash size (4 MB)
+        const blockSize = emptyBlock.length;  // Block size (4 KB)
+
+        let lastReportedPercent = 0;
+
+        for (let address = 0; address < totalSize; address += blockSize) {
+            await writeFlashBlock(writer, address, emptyBlock);
+
+            // During erasing, address is the offset of the block
+            lastReportedPercent = await logProgress(address, totalSize, 0x00000000, 10, lastReportedPercent, blockSize, '🚮 Erasing', colorMeanings.progress);
+        }
+        scriptVariables.logFunction(`\t🗑️ Flash erased up to 0x${(totalSize).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
     }
-    scriptVariables.logFunction(`\t🗑️ Flash erased up to 0x${(totalSize).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
-
     scriptVariables.logFunction('💥 Flash erased.\n', colorMeanings.success);
 
 
 }
 
 async function writeFlashBlock(writer, address, data) {
-    const commandHeader = new Uint8Array([
-        0x02,                       // Command - Write Flash
+    const commandHeader = new Uint8Array([0x02,                       // Command - Write Flash
         data.length & 0xFF,         // Length LSB
         (data.length >> 8) & 0xFF,  // Length MSB
         address & 0xFF,             // Address LSB
@@ -437,9 +442,7 @@ async function setSerialSignals(port, dtrState, rtsState, brkState) {
     try {
         // Output signals
         await port.setSignals({
-            dataTerminalReady: dtrState,
-            requestToSend: rtsState,
-            break: brkState
+            dataTerminalReady: dtrState, requestToSend: rtsState, break: brkState
         });
 
         console.log(`✅ DTR: ${dtrState}, RTS: ${rtsState}, BRK: ${brkState}`);
@@ -513,8 +516,7 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
         }
 
 
-        // await setSerialSignals(scriptVariables.serialPort, true, false); // Set DTR to true and RTS to false
-        await setSerialSignals(scriptVariables.serialPort, true, true);
+        useESPSignals ? await setSerialSignals(scriptVariables.serialPort, true, false) : await setSerialSignals(scriptVariables.serialPort, true, true);
 
 
         scriptVariables.logFunction('☑️ Serial port connected.\n', colorMeanings.stateInfo2);
@@ -535,7 +537,7 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
 }
 
 
-async function _resetSerialPort(timeOut = 200) {
+async function resetSerialPortSignals(timeOut = 200) {
     try {
         await scriptVariables.logFunction('🛡️ Restarting ESP32-S3', colorMeanings.info);
 
@@ -543,11 +545,11 @@ async function _resetSerialPort(timeOut = 200) {
         await scriptVariables.stateFunction('reconnecting');
 
         await setSerialSignals(scriptVariables.serialPort, true, true);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, timeOut));
 
 
         await setSerialSignals(scriptVariables.serialPort, false, false);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, timeOut));
         await setSerialSignals(scriptVariables.serialPort, true, false);
 
 
@@ -564,7 +566,7 @@ async function _resetSerialPort(timeOut = 200) {
 }
 
 
-async function resetSerialPort() {
+async function resetSerialPortBasic() {
     try {
         await scriptVariables.logFunction('🛡️ Restarting ESP32-S3', colorMeanings.info);
 

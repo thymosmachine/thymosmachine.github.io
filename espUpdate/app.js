@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('flashButton').addEventListener('click', () => {
         disableAllButtons(true);
         try {
-            initializeFlash().then(_ => disableAllButtons(false));
+            initializeFlash().then(() => disableAllButtons(false));
         } catch (error) {
             logMessage(`❌ Error: ${error.message}\n`, colorMeanings.error);
             disableAllButtons(false);
@@ -87,9 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const input = document.getElementById(id);
 
         // Reset style on click
-        input.addEventListener('click', () => {
-            resetFileInputStyle(input);
-        });
+        input.addEventListener('click', () => resetFileInputStyle(input));
 
         // Validate file on change
         input.addEventListener('change', async (event) => {
@@ -104,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    inputDefaultFirmwareFiles().then(_ => new Promise(resolve => setTimeout(resolve, 5)).then(_ => checkDefaultFiles())); // Stop for 1 ms
+    inputDefaultFirmwareFiles().then(() => new Promise(resolve => setTimeout(resolve, 5)).then(() => checkDefaultFiles())); // Stop for 1 ms
 })
 
 
@@ -153,11 +151,11 @@ async function folderPicker() {
     });
 
     if (result) {
-        await new Promise(resolve => setTimeout(resolve, 5)).then(_ => { // Stop for 5 ms
+        await new Promise(resolve => setTimeout(resolve, 5)).then(() => { // Stop for 5 ms
                 if (errors.length > 0) {
-                    alert(`⚠️ Some files are invalid:\n${errors.join('\n')}`, colorMap.orange);
+                    alertFunction(`⚠️ Some files are invalid:\n${errors.join('\n')}`, colorMap.orange, 'warn');
                 } else {
-                    alert('✅ All files successfully loaded from folder!', colorMap.green);
+                    alertFunction('✅ All files successfully loaded from folder!', colorMap.green);
                 }
             }
         );
