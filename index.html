@@ -75,24 +75,23 @@
 
     <script>
         /**
-         * Zkusí načíst "debug.txt" (nebo libovolnou URL) a vyhodnotí, zda obsah je "true".
-         * - Soubor neexistuje / 404 / chyba -> false
-         * - Obsah po oříznutí a bez BOM je "true" (case-insensitive) -> true
-         * - Jinak -> false
+         * Try to load "debug.txt" (or any URL) and evaluate if the content is "true".
+         * - File do not exist / 404 / error -> false
+         * - Content after trimming is "y", "yes", "true" (case-insensitive) -> true
+         * - Else -> false
          */
         async function checkDebugFlag(url = 'debug.txt', {timeoutMs = 5_000, bustCache = true} = {}) {
-            // Timeout přes AbortController (ochrana proti visícím requestům)
+            // Timeout přes AbortController (protection against hanging requests)
             const controller = new AbortController();
             const t = setTimeout(() => controller.abort(), timeoutMs);
 
-            // Volitelně rozbít cache přidáním query parametru
+            // Optionally bust cache by adding a query parameter
             const finalUrl = bustCache ? `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}` : url;
 
             try {
                 const res = await fetch(finalUrl, {
                     method: 'GET',
-                    // no-store, aby se nevracela stará verze (pokud máš server, který to respektuje)
-                    cache: 'no-store',
+                    cache: 'no-store', // 'no-store' ensures we don't get a cached response
                     headers: {'Accept': 'text/plain'},
                     signal: controller.signal
                 });
@@ -105,13 +104,13 @@
                 let text = await res.text();
                 clearTimeout(t);
 
-                // Odstraň BOM, ořízni whitespace
+                // Delete BOM, trim whitespace
                 text = text.replace(/^\uFEFF/, '').trim().toLowerCase();
 
                 // true/TRUE/True atd.
                 return text === 'true' || text === 'y' || text === 'yes';
             } catch (err) {
-                // síťová chyba, timeout, CORS atp. -> false
+                // network error, timeout, CORS atp. -> false
                 clearTimeout(t);
                 return false;
             }
@@ -120,7 +119,7 @@
         let debugging = false;
 
         (async () => {
-            debugging = await checkDebugFlag(); // hledá "debug.txt" vedle stránky
+            debugging = await checkDebugFlag(); // find "debug.txt" in the main directory
             console.info(`%c\nDebug mode ${debugging ? 'ON' : 'OFF'}`, "color: orange; font-size: 16px; font-weight: bold;");
             const debugWrapper = await document.getElementById('debuggingWrapper');
 
@@ -234,9 +233,9 @@
                         if (appStatus === 0) {
                             console.info("%c\n\t🔧\tApp is upto date!", "color: blue; font-weight: bold;");
                         } else if (appStatus === 1) {
-                            console.warn("%c\n\t🔧\tAvaileble version is older than App!", "color: red; font-weight: bold;");
+                            console.warn("%c\n\t🔧\tAvailable version is older than App!", "color: red; font-weight: bold;");
                         } else {
-                            console.info("%c\n\t🔧\tNew version is availeble!", "color: orange; font-weight: bold;");
+                            console.info("%c\n\t🔧\tNew version is available!", "color: orange; font-weight: bold;");
                         }
 
                         if (appStatus !== 0) {
@@ -253,14 +252,14 @@
         }
 
         // is online?
-        document.addEventListener("DOMContentLoaded", async () => {
+        document.addEventListener("DOMContentLoaded", async () => { // TODO: do async or window.onload ?
             reallyOnline = await hasInternet();
             if (reallyOnline) {
                 console.info("%c📶 Ping successful. User is Online! 🌐", "color: blue; font-weight: bold;");
 
                 document.getElementById("softwareInfo").innerText = `v${softwareVersion} , ${softwareDate}`;
 
-                await loadCurrentVersion();              // ať si klidně zůstane async
+                await loadCurrentVersion();
             } else {
                 console.info("%c📴 Offline.", "color: gray; font-weight: bold;");
             }
@@ -446,10 +445,10 @@
 
         .u {
             text-decoration: underline;
-            text-underline-offset: 0.1em; /* odsazení linky od textu */
-            text-decoration-thickness: 0.1em; /* tloušťka linky */
-            text-decoration-color: color-mix(in srgb, var(--text-color), white 50%); /* barva linky */
-            text-decoration-skip-ink: auto; /* nevykreslí přes “ocásky” písmen */
+            text-underline-offset: 0.1em; /* offset from text */
+            text-decoration-thickness: 0.1em; /* line thickness */
+            text-decoration-color: color-mix(in srgb, var(--text-color), white 50%); /* line color */
+            text-decoration-skip-ink: auto; /* avoid descenders from letters */
         }
 
         .insetShadow {
@@ -1338,17 +1337,17 @@
 
 
     <style>
-        /* ========== ZÁKLAD: sdílený wrapper pro akční pilulky ========== */
-        .action-wrap, .copy-wrap { /* .copy-wrap ponechána kvůli zpětné kompatibilitě */
+        /* ========== BASE: shared wrapper of action pills ========== */
+        .action-wrap, .copy-wrap { /* '.copy-wrap' left for backward compatibility */
             position: relative;
             display: inline-flex;
             flex-grow: 1;
             max-width: 230px;
         }
 
-        /* Základ pilulek (kopírovat / nastavit) */
+        /* Base of pills (copy / set) */
         .action-pill,
-        .copy-pill, .adjust-pill { /* pro kompatibilitu: copy/adjust dědí z action-pill */
+        .copy-pill, .adjust-pill { /* compatibility: copy/adjust made from action-pill */
             height: clamp(24px, 80%, 40px) !important;
             aspect-ratio: 1/1 !important;
             width: auto !important;
@@ -1395,14 +1394,14 @@
             display: none !important;
         }
 
-        /* Ikony uvnitř pilulek (základ: schovat, dle stavu ukázat) */
+        /* Icons inside pills (deff: hide or show) */
         .action-pill svg {
             display: none;
             width: 100%;
             height: 100%;
         }
 
-        /* COPY: šedá/OK/ERR */
+        /* COPY: gray/OK/ERR */
         .copy-pill[data-state="idle"] .icon-copy {
             display: block;
             stroke: #6b7280;
@@ -1418,7 +1417,7 @@
             stroke: #ef4444;
         }
 
-        /* ADJUST: šedá/OK/ERR */
+        /* ADJUST: gray/OK/ERR */
         .adjust-pill[data-state="idle"] .icon-wand {
             display: block;
             stroke: #3b82f6;
@@ -1445,7 +1444,7 @@
             stroke: #ef4444;
         }
 
-        /* Vizuální zpětná vazba uvnitř wrapperu na hover (jen když není fokus/akce) */
+        /* Visual feedback inside the wrapper on hover (only when not focused/action) */
         .action-wrap:hover > .copyableInput:not(:focus):not(.action-ok):not(.action-err) {
             outline: none;
             box-shadow: inset 0 0 0 2px #3b82f6;
@@ -1458,7 +1457,7 @@
             transition: box-shadow .1s ease;
         }
 
-        /* Po akci */
+        /* post-action */
         .action-wrap > .action-ok {
             outline: none;
             box-shadow: inset 0 0 0 2px #22c55e;
@@ -1485,10 +1484,10 @@
 
 
 <div id="preloadScreen"
-     style="position: fixed;       /* dřív bylo absolute */
+     style="position: fixed;
             inset: 0;              /* top:0; right:0; bottom:0; left:0 */
-            width: 100vw;          /* místo 100dvw, ať je to konzistentní napříč prohlížeči */
-            height: 100vh;         /* místo 100dvh */
+            width: 100vw;
+            height: 100vh;
             display: flex; flex-flow: column; gap: 5%;
             background: #181818; justify-content: center; align-items: center;  z-index: 999; pointer-events: none;
             color: lightgray; font-weight: bold; text-align: center; font-size: 2em;
@@ -1611,10 +1610,6 @@
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #4CAF50; color:white">
             🧪<br>Run Test Sequence
         </button>
-        <button onclick="clearAndResetAll()"
-                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #607d8b; color:white">
-            🗑️<br>Clear All Data
-        </button>
         <button id="degubEndTestingBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #de364c; color:white">
             🛑<br>End Testing
@@ -1636,7 +1631,7 @@
     <section class="graphContainer outsetShadow">
         <h3 class="sectionTitle">📈 Graphs:</h3>
         <nav class="graphBtnWrapper" data-system-level="1">
-            <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
+            <button class="btnGraph" id="toggleLive"> ⏯️ Activate Charts</button>
             <button id="clearChartBtn" class="btnGraph">🧹 Clear Charts</button>
             <button id="refreshChartBtn" class="btnGraph">🔄 Refresh Charts</button>
         </nav>
@@ -1740,7 +1735,7 @@
                  style="display: flex; flex-direction: row; background: var(--containers-bg); padding: 10px 20px; border-radius: 10px; justify-content: space-between; gap: 10%; font-weight: bold; color: var(--text-info-2-color);">
                 <div class="movementControlElement"
                      style="display: flex; flex-direction: row; flex-grow: 1; align-items: center; gap: 10px;">
-                    <label for="movementSpeed" style="min-width: max-content; font-weight: normal; color: black;">⏩
+                    <label for="movementSpeed" style="min-width: max-content; font-weight: normal; color: black;">▶️
                         Speed:</label>
                     <input type="range" id="movementSpeed" min="0.01" max="25" value="25" step="0.01"
                            style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
@@ -1756,7 +1751,7 @@
                 <div class="movementControlElement"
                      style="display: flex; flex-direction: row; flex-grow: 1; align-items: center; gap: 10px;">
                     <label for="movementAcceleration" style="min-width: max-content; font-weight: normal; color: black;"
-                    >⏭️ Acceleration:</label>
+                    >⏩ Acceleration:</label>
                     <input type="range" id="movementAcceleration" min="10" max="200" value="200" step="0.01"
                            style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     <label for="labelAcceleration"></label>
@@ -2434,9 +2429,9 @@
                         <select id="inputAutoSave" style="font-family: monospace; font-weight: bold;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                            <option value="Option-Never" selected>&nbsp;Never</option>
-                            <option value="Option-Before">&nbsp;Before next Experiment</option>
-                            <option value="Option-After">&nbsp;After the Experiment</option>
+                            <option value="Option-Never" selected>&nbsp;❌&nbsp;Never</option>
+                            <option value="Option-Before">&nbsp;⏮️&nbsp;Before next Experiment</option>
+                            <option value="Option-After">&nbsp;⏭️&nbsp;After the Experiment</option>
                         </select>
                     </div>
 
@@ -2453,9 +2448,25 @@
                         🐞 Report bug
                     </button>
 
-                    <button id="rebootButton" class="controlBtn controlElement" data-system-level="1"
+                    <button id="clearAllButton" class="controlBtn controlElement" data-system-level="4"
+                            style="color: var(--stopEpx-color);">
+                        🗑️ Clear All Data
+                    </button>
+
+                    <div style="padding: 0; margin: 0; display: flex; gap: 0;">
+                        <button id="exportSettingButton" class="controlBtn" data-system-level="1"
+                                style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
+                           ↗️ Export settings <!-- 📁📤 -->
+                        </button>
+                        <button id="importSettingButton" class="controlBtn" data-system-level="1"
+                                style="width: 100px; border-bottom-left-radius: 0; border-top-left-radius: 0; border-left: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
+                            ↘️ Import settings <!-- 📂 📥 -->
+                        </button>
+                    </div>
+
+                    <button id="aboutButton" class="controlBtn"
                             style="color: var(--text-info-2-color);">
-                        🔂 Reboot device
+                        ℹ️ About app
                     </button>
 
                     <button id="updateMachButton" class="controlBtn controlElement" data-system-level="1"
@@ -2463,9 +2474,10 @@
                         ⬆️ Update device firmware
                     </button>
 
-                    <button id="aboutButton" class="controlBtn"
+
+                    <button id="rebootButton" class="controlBtn controlElement" data-system-level="1"
                             style="color: var(--text-info-2-color);">
-                        ℹ️ About app
+                        🔂 Reboot device
                     </button>
 
                     <button id="clearStorageButton" class="controlBtn controlElement"
@@ -2751,6 +2763,14 @@
     const $$ = (sel) => {
         let els = document.querySelectorAll(String(sel));
         if (els.length === 0 && !String(sel).startsWith('.')) els = document.querySelectorAll('.' + String(sel));
+        if (els.length === 0 && !String(sel).startsWith('.') && !String(sel).startsWith('#')) els = $('#' + String(sel));
+        return els;
+    }
+    const $ROOT = (root, sel) => root.querySelector(String(sel));
+    const $$ROOT = (root, sel) => {
+        let els = root.querySelectorAll(String(sel));
+        if (els.length === 0 && !String(sel).startsWith('.')) els = root.querySelectorAll('.' + String(sel));
+        if (els.length === 0 && !String(sel).startsWith('.') && !String(sel).startsWith('#')) els = $ROOT(root, '#' + String(sel));
         return els;
     }
     const $ID = (id) => document.getElementById(String(id));
@@ -4006,7 +4026,7 @@
             if (!btn) return;
             if (!wrap || !wrap.classList.contains('has-auto')) return;
             if (btn.dataset.state === 'idle' || btn.dataset.state === 'set' || btn.dataset.state === 'diff') {
-                const input = wrap.querySelector(ADJUST_SELECTOR);
+                const input = $ROOT(wrap, ADJUST_SELECTOR);
                 if (!input) return;
                 const id = input.id || normalize(input.name) || normalize(input.dataset.adjustId);
                 if (!id) return;
@@ -4331,9 +4351,9 @@
         const setupOne = (el) => {
             const wrap = ensureWrap(el);
             // Pokud je to copyable, přidej copy pilulku
-            if (el.matches(COPY_SELECTOR) && !wrap.querySelector('.copy-pill')) bindCopy(wrap, el);
+            if (el.matches(COPY_SELECTOR) && !$ROOT(wrap, '.copy-pill')) bindCopy(wrap, el);
             // Pokud je to adjustable, přidej adjust pilulku
-            if (el.matches(ADJUST_SELECTOR) && !wrap.querySelector('.adjust-pill')) bindAdjust(wrap, el);
+            if (el.matches(ADJUST_SELECTOR) && !$ROOT(wrap, '.adjust-pill')) bindAdjust(wrap, el);
         };
 
         const scan = () => {
@@ -4558,7 +4578,7 @@
         $ID('inputTareDisp').value = '0';
         $ID('inputMaterialName').value = '';
         $$(".data-eq[data-eq-type]")?.forEach(el => {
-            el.querySelectorAll('input')?.forEach(input => {
+            $$ROOT(el, 'input')?.forEach(input => {
                 input.value = '';
             });
         });
@@ -4870,10 +4890,7 @@
     function clearLocalStorage() {
         setSerialSignals(serialPort, true, true);
 
-
         disconnectSerial();
-
-        sleep(200); // Wait (200 ms)
 
         localStorage.removeItem(storageKey); // Remove the saved data
         console.info("LocalStorage cleared.");
@@ -4943,6 +4960,74 @@
             input.dispatchEvent(new Event("input", {bubbles: true}));
             input.dispatchEvent(new Event("blur", {bubbles: true}));
         });
+    }
+
+
+    function importSettings() {
+        if (!allLoaded) return;
+
+        if (!storageKey) {
+            console.error("Storage key is not defined.");
+            return;
+        }
+
+        const input = $MAKE('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+
+        input.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const content = e.target.result || '';
+                    const formData = JSON.parse(String(content));
+
+                    if (typeof formData !== 'object' || formData === null) {
+                        console.error("Invalid settings file format.");
+                        return;
+                    }
+
+                    localStorage.setItem(storageKey, JSON.stringify(formData));
+                    loadInputsFromLocalStorage();
+                    console.info("\n📂 Settings imported successfully.");
+                } catch (error) {
+                    console.error("Error reading settings file:", error);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        input.click();
+    }
+
+
+    function exportSettings() {
+        if (!allLoaded) return;
+
+        if (!storageKey) {
+            console.error("Storage key is not defined.");
+            return;
+        }
+
+        const data = localStorage.getItem(storageKey)
+
+        if (!data) {
+            console.warn("No settings found to export.");
+            return;
+        }
+
+        const formData = JSON.parse(data) || {};
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formData, null, 2));
+        const downloadAnchorNode = $MAKE('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "moira_settings.json"); // TODO: add profiles later
+        document.body.appendChild(downloadAnchorNode); // required for firefox
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        console.info("\n📁 Settings exported successfully.");
     }
 </script>
 
@@ -5423,14 +5508,14 @@
 
         liveUpdate = !liveUpdate;
 
-        UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "▶️ Activate Charts";
+        UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "⏯️ Activate Charts";
         $ID("chartsWrapper").style.background = liveUpdate ? "var(--charts-bg-active)" : "var(--charts-bg)";
     }
 
 
     let isPageVisible = true; // Visibility status of the page
     let hideTimeout = null; // Timeout for hiding the page
-    const MIN_HIDE_TIME = 20_000; // 20 seconds
+    const MIN_HIDE_TIME = 20_000; // milliseconds
 
     // Event listener for page visibility change
     document.addEventListener("visibilitychange", async () => {
@@ -5467,7 +5552,7 @@
                 hideTimeout = null;
             }
 
-            console.info("\n📄 - ▶️ Page is visible");
+            console.info("\n📄 - 🆗 Page is visible");
             if (liveUpdatePaused) {
                 console.info("🔄 Resuming live update of charts.");
                 await loadDataFromDBToChart(true);
@@ -5706,8 +5791,8 @@
             // hooks: {
             //     init: [
             //         (u) => {
-            //             // najdi řádek s textem "Photos" a schovej ho
-            //             u.root.querySelectorAll(".u-legend tr").forEach((tr) => {
+            //             // find "Photos" and hide it
+            //             $$ROOT(u.root, ".u-legend tr")?.forEach((tr) => {
             //                 if (tr.textContent?.trim().startsWith("Photos")) tr.style.display = "none";
             //             });
             //         },
@@ -5721,7 +5806,7 @@
             console.error("❌ uPlot library is not loaded.");
             return null;
         }
-        let chart = new uPlot?.(options, [[], ...seriesLabels.slice(1).map(() => [])], container);
+        let chart = new uPlot(options, [[], ...seriesLabels.slice(1).map(() => [])], container);
 
         // Dynamic resizing of the chart
         window.addEventListener("resize", async () => onResize(container, chart));
@@ -7071,8 +7156,8 @@
 
 
             for (let i = 1; i <= (loadCellNum + 1); i++) {
-                if (timeChart) timeChart.setSeries?.(i, {show: false});
-                if (positionChart) positionChart.setSeries?.(i, {show: false});
+                if (timeChart) timeChart.setSeries(i, {show: false});
+                if (positionChart) positionChart.setSeries(i, {show: false});
             }
 
             calibrationStatus = await getCalibrationStatus(2_000);
@@ -7327,8 +7412,8 @@
 
             const setChart = (chart) => {
                 if (!isDef(chart)) return;
-                forceAnalysis?.forEach((r, i) => chart.setSeries?.((i + 1), {show: !r?.allInvalid}));
-                chart.setSeries?.((loadCellNum + 1), {show: takePhotos});
+                forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: !r?.allInvalid}));
+                chart.setSeries((loadCellNum + 1), {show: takePhotos});
             };
             setChart(timeChart);
             setChart(positionChart);
@@ -7672,15 +7757,15 @@
         for (let i = 0; i < _pending.length; i++) {
             const req = _pending[i];
 
-            // reset lastIndex kvůli flagu "g"
+            // reset lastIndex because of the 'g' flag
             req.regex.lastIndex = 0;
             const match = req.regex.exec(msg);
             if (match) {
                 clearTimeout(req.timeoutId);
-                _pending.splice(i, 1); // odstranit z fronty
+                _pending.splice(i, 1); // delete from pending
                 const val = match[req.valueIndex];
                 req.resolve(val);
-                return true; // zprávu už dál neporovnáváme
+                return true; // do not process further
             }
         }
         return false;
@@ -7703,13 +7788,13 @@
 
 
     /**
-     * Odešle příkaz a čeká na hodnotu vytaženou z první zprávy,
-     * která odpoví danému formátu (regex). Pokud nic nepřijde
-     * do `timeout` ms, vrátí `null`.
+     * Sends a command and waits for a value extracted from the first message
+     * that matches the given format (regex). If nothing is received within
+     * `timeout` ms, it returns `null`.
      *
-     * @param {string} command - co poslat ven
-     * @param {RegExp|string} format - regex nebo string pattern
-     * @param {number} valueIndex - index z match pole (0 = celý match, 1.. = skupiny)
+     * @param {string} command - command to send
+     * @param {RegExp|string} format - regex or string pattern
+     * @param {number} valueIndex - index from match field (0 = whole match, 1.. = capture groups)
      * @param {number} [timeout=5000]
      * @returns {Promise<any|null>}
      */
@@ -9114,7 +9199,7 @@
         let fileHandle;
         if (handFolderSelect) {
             try {
-                dirHandle = await window.showDirectoryPicker?.(); // User selects a folder
+                dirHandle = await window.showDirectoryPicker(); // User selects a folder
             } catch (error) {
                 console.error("❌ Folder selection canceled or error occurred:", error);
                 return;
@@ -9398,7 +9483,7 @@
                     },
                     conv: {
                         value: () => {
-                            const c = toNumber?.(fileSet.dataTypes?.[t]?.conversion, false);
+                            const c = toNumber(fileSet.dataTypes?.[t]?.conversion, false);
                             return Number.isFinite(c) ? c : (fileSet.dataTypes?.[t]?.conversion ?? 1);
                         },
                         enumerable: false
@@ -10280,7 +10365,7 @@
 
     const serialFunctionGetPorts = async () => {
         try {
-            const ports = await navigator.serial?.getPorts?.();
+            const ports = await navigator.serial?.getPorts();
             return ports.length ? ports : null;
         } catch (error) {
             console.error("Error getting serial ports:", error);
@@ -10290,7 +10375,7 @@
 
     const serialFunctionRequestPort = async () => {
         try {
-            return await navigator.serial?.requestPort?.(
+            return await navigator.serial?.requestPort(
                 {
                     // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
                     filters: useFilteredPort ? [
@@ -10315,7 +10400,7 @@
 
     function checkAllPorts() {
         let thymosPorts = [];
-        navigator.serial?.getPorts?.().then(ports => {
+        navigator.serial?.getPorts().then(ports => {
             ports?.forEach(port => {
                 if (port.manufacturer === "Thymos") {
                     thymosPorts.push(port);
@@ -10423,7 +10508,7 @@
             }
             await closePort(comPort, {verbose: false});
 
-            const {usbVendorId, usbProductId} = comPort?.getInfo?.() ?? {};
+            const {usbVendorId, usbProductId} = comPort?.getInfo() ?? {};
             fingerprint = `${Number(usbVendorId)?.toString(16) ?? 'N/A'}:${Number(usbProductId)?.toString(16) ?? 'N/A'}`;
 
             console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
@@ -10469,6 +10554,8 @@
 
             await logMessage("\n");
 
+
+            // TODO: put this to separate function 'HANDSHAKE()'
             try {
                 machineFirmware = await getFirmwareVersion()?.toLowerCase()?.trim() || "";
             } catch (e) {
@@ -10569,7 +10656,7 @@
         if (!port) return;
 
         try {
-            const signals = await port?.getSignals?.();
+            const signals = await port?.getSignals();
             console.info("📡 Serial port signals...");
             console.info("\t🚦 Signals:", signals);
         } catch (error) {
@@ -10582,7 +10669,7 @@
         if (!port) return;
 
         try {
-            await port?.setSignals?.({
+            await port?.setSignals({
                 dataTerminalReady: dtrState,
                 requestToSend: rtsState,
                 break: brkState
@@ -10646,7 +10733,7 @@
 
         const info = (() => {
             try {
-                return port?.getInfo?.();
+                return port?.getInfo();
             } catch {
                 return {};
             }
@@ -10883,10 +10970,10 @@
             console.warn("\n⚠️ No fingerprint available.");
             return null;
         }
-        const ports = await navigator.serial?.getPorts?.();
+        const ports = await navigator.serial?.getPorts();
 
         for (let i = 0; i < ports.length; i++) {
-            const info = ports[i]?.getInfo?.();
+            const info = ports[i]?.getInfo();
             const currentFingerprint = `${info.usbVendorId}:${info.usbProductId}`;
             if (currentFingerprint === fingerprint) {
                 console.info("✅ Matched port at index:", i);
@@ -10999,7 +11086,7 @@
         // pomocná funkce pro stabilní ID portu
         const portId = async (port) => {
             // getInfo() vrací např. { usbVendorId, usbProductId } pro USB-CDC; BT apod. může být prázdné
-            const info = port.getInfo?.() || {};
+            const info = port.getInfo() || {};
             // některé platformy mají jen měnící se COM jméno; jako fallback použijeme String(port)
             return JSON.stringify({
                 usbVendorId: info.usbVendorId,
@@ -11186,12 +11273,15 @@
 
     async function clearAndResetAll() {
         console.clear();
+        if (serialPort) await setSerialSignals(serialPort, true, true);
         await disconnectSerial();
+
         if (liveUpdate) await chartUpdate();
         await clearCharts();
         await clearDatabase();
-        await clearLocalStorage();
         await clearConsoleLog();
+
+        localStorage.removeItem(storageKey); // Remove the saved data
 
         resetValues();
 
@@ -11218,6 +11308,8 @@
         checkSpeed = true;
         timer = null;
         // --------------------------------
+
+        window.location.reload();
     }
 </script>
 
@@ -11459,10 +11551,20 @@
         $ID("rebootButton")?.addEventListener("click", async () => await sendCommandGeneral("MISC REBOOT"));
 
         $ID("clearStorageButton")?.addEventListener("click", async () => {
-            if (confirm("⚠️ This will clear all settings and disconnect the machine.\n\n     Are you sure?")) {
+            if (confirm("⚠️ This will clear all settings and disconnect from the machine.\n\n     Are you sure?")) {
                 clearLocalStorage();
             }
         });
+
+        $ID("clearAllButton")?.addEventListener("click", async () => {
+            if (confirm("⚠️ This will clear all Data and disconnect from the machine.\n\n     Are you sure?")) {
+                await clearAndResetAll();
+            }
+        });
+
+        $ID("exportSettingButton")?.addEventListener("click", async () => exportSettings());
+
+        $ID("importSettingButton")?.addEventListener("click", async () => importSettings());
 
         $ID("toggleLineLockBtn")?.addEventListener("click", async () => lineConsoleLock());
 
@@ -11590,7 +11692,7 @@
         decSymbolElement.addEventListener("change", (event) => {
             const isValueComma = event.target.value === "Option-Comma";
             const currentValue = delimSymbolElement.value;
-            const commaOptions = delimSymbolElement.querySelectorAll('option[value="Option-Comma"]');
+            const commaOptions = $$ROOT(delimSymbolElement, 'option[value="Option-Comma"]');
             if (isValueComma) {
                 commaOptions?.forEach(o => o.disabled = true);
             } else {
@@ -11604,7 +11706,7 @@
         delimSymbolElement.addEventListener("change", (event) => {
             const isValueComma = event.target.value === "Option-Comma";
             const currentValue = decSymbolElement.value;
-            const commaOptions = decSymbolElement.querySelectorAll('option[value="Option-Comma"]');
+            const commaOptions = $$ROOT(decSymbolElement, 'option[value="Option-Comma"]');
             if (isValueComma) {
                 commaOptions?.forEach(o => o.disabled = true);
             } else {
@@ -11684,7 +11786,7 @@
                 el.classList.toggle('undisplayed', !isType);
 
                 if (!isType) {
-                    el.querySelectorAll('input')?.forEach(input => {
+                    $$ROOT(el, 'input')?.forEach(input => {
                         // input.value = '';
                         input.dispatchEvent(new Event("change", {bubbles: true}));
                     });
