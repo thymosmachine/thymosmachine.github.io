@@ -24,8 +24,8 @@ export const scriptVariables = {
     serialPort: null,
     logMessages: true,
     consoleMode: false,
-    logFunction: null,
-    alertFunction: null,
+    logFunction: () => null,
+    alertFunction: () => null,
     stateFunction: () => null,
 };
 
@@ -37,8 +37,7 @@ export const scriptOptions = {
     useESPSignals: false,
     useFilteredPort: true,
     thymosFingerprints: [
-        "12346:4097",
-        "0x303a:0x1001",
+        "12346:4097", //  ≈ "0x303a:0x1001"
     ],
 };
 
@@ -346,8 +345,8 @@ async function writeFlashSection(writer, label, data, address, originalSize, fil
     const endAddress = address + data.length;
 
     scriptVariables.logFunction(`🔖 Writing ${label} [${file.name}]:`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t🚩 Start Address: 0x${address.toString(16).padStart(8, '0')}`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t🏁 End Address: 0x${endAddress.toString(16).padStart(8, '0')}`, colorMeanings.regular);
+    scriptVariables.logFunction(`\t🚩 Start Address: 0x${Number(address).toString(16).padStart(8, '0')}`, colorMeanings.regular);
+    scriptVariables.logFunction(`\t🏁 End Address: 0x${Number(endAddress).toString(16).padStart(8, '0')}`, colorMeanings.regular);
     scriptVariables.logFunction(`\t💾 Original Size: ${originalSize} bytes`, colorMeanings.regular);
     scriptVariables.logFunction(`\t📦 Compressed Size: ${data.length} bytes, (reduced to ${((data.length / originalSize) * 100).toFixed(2)}%)`, colorMeanings.regular);
 
@@ -371,7 +370,7 @@ async function writeFlashSection(writer, label, data, address, originalSize, fil
     const sizeInBits = data.length * 8;
     const speed = (sizeInBits / duration / 1000).toFixed(3);  // kBit/s
 
-    scriptVariables.logFunction(`\t📀 Firmware written upto 0x${endAddress.toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
+    scriptVariables.logFunction(`\t📀 Firmware written upto 0x${Number(endAddress).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
 
     scriptVariables.logFunction(`\t⏱️️ Write speed: ${speed} kBit/s`, colorMeanings.info);
     scriptVariables.logFunction(`✒️ ${label} written.\n`, colorMeanings.success);
@@ -432,14 +431,15 @@ async function writeFlashBlock(writer, address, data) {
     await writer.write(data);
 }
 
-function logProgress(currentOffset, totalSize, baseAddress, stepPercent, lastReportedPercent, chunkSize = '0x400', action = 'Processing', textColor = colorMeanings.regular) {
+function logProgress(currentOffset, totalSize, baseAddress, stepPercent, lastReportedPercent, chunkSize = 1024, action = 'Processing', textColor = colorMeanings.regular) {
     const percent = Math.floor((currentOffset / totalSize) * 100);
+    if (typeof chunkSize === 'string') chunkSize = parseInt(String(chunkSize), 16);
 
     if (percent >= lastReportedPercent + stepPercent) {
         const startAddress = baseAddress + currentOffset;
         const endAddress = startAddress + chunkSize - 1;
 
-        scriptVariables.logFunction(`\t${action} from 0x${startAddress.toString(16).padStart(8, '0')} to 0x${endAddress.toString(16).padStart(8, '0')} (${percent}%)`, textColor);
+        scriptVariables.logFunction(`\t${action} from 0x${Number(startAddress).toString(16).padStart(8, '0')} to 0x${endAddress.toString(16).padStart(8, '0')} (${percent}%)`, textColor);
         return percent;  // Return "lastReportedPercent"
     }
     return lastReportedPercent;  // No new log => return last reported percent
@@ -519,7 +519,7 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
             });
             await new Promise(resolve => setTimeout(resolve, 100)); // Stop for 100 ms
             const {usbVendorId, usbProductId} = scriptVariables.serialPort.getInfo();
-            scriptVariables.logFunction(`📋 Port selected - VID: ${usbVendorId?.toString(16) ?? 'N/A'}, PID: ${usbProductId?.toString(16) ?? 'N/A'}`, colorMeanings.regular);
+            scriptVariables.logFunction(`📋 Port selected - VID: ${Number(usbVendorId)?.toString(16) ?? 'N/A'}, PID: ${Number(usbProductId)?.toString(16) ?? 'N/A'}`, colorMeanings.regular);
 
             scriptVariables.logFunction(`⚡ Opening port at ${scriptVariables.baudRate} baud`, colorMeanings.regular);
             await scriptVariables.serialPort.open({baudRate: scriptVariables.baudRate});
