@@ -325,8 +325,11 @@ export async function initializeFlash() {
 
 
 async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOriginalSize, partitionsOriginalSize, firmwareOriginalSize, bootloaderFile, partitionsFile, firmwareFile) {
-    const writer = port.writable.getWriter();
+    let writer = port.writable.getWriter();
+    let reader = port.readable.getReader();
     scriptVariables.logFunction('🚀 Starting flashing process...\n', colorMeanings.info);
+
+    // TODO: 1) get values before flashing (name, id, ...)
 
     await eraseFlash(writer);
 
@@ -334,10 +337,16 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
     await writeFlashSection(writer, 'Partitions', partitions, fileAddresses.partitionsFile, partitionsOriginalSize, partitionsFile);
     await writeFlashSection(writer, 'Firmware', firmware, fileAddresses.firmwareFile, firmwareOriginalSize, firmwareFile);
     writer.releaseLock();
+    reader.releaseLock();
     scriptVariables.logFunction('✔️ Flashing completed.\n', colorMeanings.success);
 
 
     scriptOptions.useESPSignals ? await resetSerialPortSignals() : await resetSerialPortBasic();
+
+
+    // TODO: 2) refresh of memory after flashing by COMMAND
+
+    // TODO: 3) restore them after flashing
 }
 
 
