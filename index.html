@@ -2780,6 +2780,7 @@
     const isUndefined = (x) => typeof x === 'undefined';
     const isNull = (x) => x === null;
     const isDef = (x) => !isUndefined(x) && !isNull(x);
+    const isVoid = (x) => isUndefined(x) || isNull(x);
 
     const isElement = (x) => x instanceof Element;
     const isNodeList = (x) => x instanceof NodeList;
@@ -2788,8 +2789,8 @@
 
     const isNum = (x) => isFiniteNumber(x, false); // only Finite numbers
     const isVal = (x) => isNum(x) || !isEmptyStr(x); // only Finite numbers or non-empty strings
-    const isAny = (x) => isNotEmpty(x) && x !== false; // all except undefined, null and NaN
-    const isOk = (x) => isAny(x) && !isInvalidValue(x); // all except undefined, null, NaN and false
+    const isAny = (x) => isNotEmpty(x) && x !== false; // all except undefined, null and NaN + false
+    const isOk = (x) => isAny(x) && !isInvalidValue(x); // all except undefined, null, NaN and false + invalid values
 
     const not = (fn) => {
         return function (...args) {
@@ -3062,11 +3063,11 @@
 
     const decimalToHex = (num) => {
         if (!isFiniteInteger(num) || num < 0) return "N/A";
-        return "0x" + num.toString(16).toUpperCase();
+        return "0x" + Number(num).toString(16).toUpperCase();
     };
     const decimalToBinary = (num) => {
         if (!isFiniteInteger(num) || num < 0) return "N/A";
-        return "0b" + num.toString(2);
+        return "0b" + Number(num).toString(2);
     };
     const binaryToDecimal = (str) => {
         if (!isStr(str)) return NaN;
@@ -5716,7 +5717,11 @@
         };
 
         // Create the uPlot chart
-        let chart = new uPlot(options, [[], ...seriesLabels.slice(1).map(() => [])], container);
+        if (!window?.uPlot) {
+            console.error("❌ uPlot library is not loaded.");
+            return null;
+        }
+        let chart = new uPlot?.(options, [[], ...seriesLabels.slice(1).map(() => [])], container);
 
         // Dynamic resizing of the chart
         window.addEventListener("resize", async () => onResize(container, chart));
@@ -6420,6 +6425,7 @@
         if (isExperimentRunning) {
             let reason;
             let endColor;
+
             switch (type) {
                 case 'user':
                     endColor = 'var(--progressError-color)';
@@ -6447,8 +6453,9 @@
                 ednStatus: String(reason),
                 endText: '🛑 Experiment stopped',
             });
+
             UI.experimentStageLabel.textContent = `Stopped`;
-            document.documentElement.style.setProperty('--progressColor', endcolor);
+            document.documentElement.style.setProperty('--progressColor', String(endColor));
 
         }
 
@@ -7064,8 +7071,8 @@
 
 
             for (let i = 1; i <= (loadCellNum + 1); i++) {
-                if (timeChart) timeChart.setSeries(i, {show: false});
-                if (positionChart) positionChart.setSeries(i, {show: false});
+                if (timeChart) timeChart.setSeries?.(i, {show: false});
+                if (positionChart) positionChart.setSeries?.(i, {show: false});
             }
 
             calibrationStatus = await getCalibrationStatus(2_000);
@@ -7320,8 +7327,8 @@
 
             const setChart = (chart) => {
                 if (!isDef(chart)) return;
-                forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: !r?.allInvalid}));
-                chart.setSeries((loadCellNum + 1), {show: takePhotos});
+                forceAnalysis?.forEach((r, i) => chart.setSeries?.((i + 1), {show: !r?.allInvalid}));
+                chart.setSeries?.((loadCellNum + 1), {show: takePhotos});
             };
             setChart(timeChart);
             setChart(positionChart);
@@ -7829,8 +7836,8 @@
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
+        const ldID = toInteger(loadcellID);
         try {
-            const ldID = toInteger(loadcellID);
             if (debugging) logMessage(` 📢\tGet Loadcell ${ldID} reading...`);
 
             if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
@@ -9107,7 +9114,7 @@
         let fileHandle;
         if (handFolderSelect) {
             try {
-                dirHandle = await window.showDirectoryPicker(); // User selects a folder
+                dirHandle = await window.showDirectoryPicker?.(); // User selects a folder
             } catch (error) {
                 console.error("❌ Folder selection canceled or error occurred:", error);
                 return;
@@ -10238,8 +10245,7 @@
         // "6790:29987",   // Thymos ESP32-S3
         // "6790:29986",   // Thymos ESP32-C3
         // "6790:29985",   // Thymos ESP32-C6
-        "12346:4097",      // Thymos ESP32-C6 old
-        "0x303a:0x1001"    // Thymos ESP32-S2
+        "12346:4097",      // Thymos ESP32-S2   //  ≈ "0x303a:0x1001"
     ];
     let useFilteredPort = true;
     let usePortAutoConnect = true;
@@ -10274,7 +10280,7 @@
 
     const serialFunctionGetPorts = async () => {
         try {
-            const ports = await navigator.serial.getPorts();
+            const ports = await navigator.serial?.getPorts?.();
             return ports.length ? ports : null;
         } catch (error) {
             console.error("Error getting serial ports:", error);
@@ -10284,7 +10290,7 @@
 
     const serialFunctionRequestPort = async () => {
         try {
-            return await navigator.serial.requestPort(
+            return await navigator.serial?.requestPort?.(
                 {
                     // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
                     filters: useFilteredPort ? [
@@ -10309,7 +10315,7 @@
 
     function checkAllPorts() {
         let thymosPorts = [];
-        navigator.serial.getPorts().then(ports => {
+        navigator.serial?.getPorts?.().then(ports => {
             ports?.forEach(port => {
                 if (port.manufacturer === "Thymos") {
                     thymosPorts.push(port);
@@ -10317,7 +10323,7 @@
             });
 
 
-            return port
+            return thymosPorts
         }).catch(_ => {
             return null
         });
@@ -10417,8 +10423,8 @@
             }
             await closePort(comPort, {verbose: false});
 
-            const {usbVendorId, usbProductId} = comPort.getInfo?.() ?? {};
-            fingerprint = `${usbVendorId}:${usbProductId}`;
+            const {usbVendorId, usbProductId} = comPort?.getInfo?.() ?? {};
+            fingerprint = `${Number(usbVendorId)?.toString(16) ?? 'N/A'}:${Number(usbProductId)?.toString(16) ?? 'N/A'}`;
 
             console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
 
@@ -10563,7 +10569,7 @@
         if (!port) return;
 
         try {
-            const signals = await port.getSignals();
+            const signals = await port?.getSignals?.();
             console.info("📡 Serial port signals...");
             console.info("\t🚦 Signals:", signals);
         } catch (error) {
@@ -10576,7 +10582,7 @@
         if (!port) return;
 
         try {
-            await port.setSignals({
+            await port?.setSignals?.({
                 dataTerminalReady: dtrState,
                 requestToSend: rtsState,
                 break: brkState
@@ -10640,7 +10646,7 @@
 
         const info = (() => {
             try {
-                return port.getInfo();
+                return port?.getInfo?.();
             } catch {
                 return {};
             }
@@ -10877,10 +10883,10 @@
             console.warn("\n⚠️ No fingerprint available.");
             return null;
         }
-        const ports = await navigator.serial.getPorts();
+        const ports = await navigator.serial?.getPorts?.();
 
         for (let i = 0; i < ports.length; i++) {
-            const info = ports[i].getInfo();
+            const info = ports[i]?.getInfo?.();
             const currentFingerprint = `${info.usbVendorId}:${info.usbProductId}`;
             if (currentFingerprint === fingerprint) {
                 console.info("✅ Matched port at index:", i);
@@ -11464,8 +11470,8 @@
 
         // TODO: $$$("saveRegularLog")?.addEventListener("click", async () => saveLogAsText());
 
-        $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName($ID("inputMachineName")?.value?.trim()));
-        $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID($ID("inputMachineID")?.value?.trim()));
+        $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef("inputMachineName", '')));
+        $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef("inputMachineID", '')));
 
 
         function attachHoldHandlers(element, onStart) {
