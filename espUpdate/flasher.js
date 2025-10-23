@@ -33,13 +33,22 @@ scriptVariables.logFunction = scriptVariables.logMessages ? logConsole : () => n
 scriptVariables.alertFunction = scriptVariables.consoleMode ? console.log : logAlert; // No-op if console mode is disabled
 
 
-const useESPSignals = false;
+export const scriptOptions = {
+    useESPSignals: false,
+    useFilteredPort: true,
+    thymosFingerprints: [
+        "12346:4097",
+        "0x303a:0x1001",
+    ],
+};
+
 
 function logAlert(message) {
     alert(message);
 }
 
 function logConsole(message, color = colorMeanings.regular, mode = 'info') {
+    if (!message) return;
     switch (mode) {
         case 'warn':
             console.warn(`%c${message}`, `color: ${color}`);
@@ -256,17 +265,17 @@ async function getFileContent(inputId) {
         let compressedData;
 
         if (typeof CompressionStream !== "undefined") {
-         const cs = new CompressionStream("deflate"); // Compress using CompressionStream (zlib)
-          const writer = cs.writable.getWriter();
+            const cs = new CompressionStream("deflate"); // Compress using CompressionStream (zlib)
+            const writer = cs.writable.getWriter();
 
-          await writer.write(fileData);
-          await writer.close(); // důležité počkat na uzavření
+            await writer.write(fileData);
+            await writer.close(); // důležité počkat na uzavření
 
-          const compressedArrayBuffer = await new Response(cs.readable).arrayBuffer();
-          compressedData = new Uint8Array(compressedArrayBuffer);
+            const compressedArrayBuffer = await new Response(cs.readable).arrayBuffer();
+            compressedData = new Uint8Array(compressedArrayBuffer);
 
 
-        }  else if (self.pako?.gzip) {
+        } else if (self.pako?.gzip) {
             compressedData = self.pako?.deflate(fileData); // Compress using pako (zlib)
 
         } else {
@@ -274,7 +283,7 @@ async function getFileContent(inputId) {
         }
 
         if (!compressedData || compressedData.length === 0 || compressedData.length >= fileData.length) {
-            scriptVariables.logFunction (`⚠️ Compression failed or resulted in empty data for file: ${file.name}. Using original data.`, colorMeanings.warning, 'warn');
+            scriptVariables.logFunction(`⚠️ Compression failed or resulted in empty data for file: ${file.name}. Using original data.`, colorMeanings.warning, 'warn');
             compressedData = fileData;
         }
 
@@ -327,7 +336,7 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
     scriptVariables.logFunction('✔️ Flashing completed.\n', colorMeanings.success);
 
 
-    useESPSignals ? await resetSerialPortSignals() : await resetSerialPortBasic();
+    scriptOptions.useESPSignals ? await resetSerialPortSignals() : await resetSerialPortBasic();
 }
 
 
@@ -371,7 +380,7 @@ async function eraseFlash(writer) {
     scriptVariables.logFunction('💣 Erasing flash...', colorMeanings.regular);
 
 
-    if (useESPSignals) {
+    if (scriptOptions.useESPSignals) {
         // Reset ESP32-S3 after erasing flash memory            TODO ////////////////////////      check it if works correctly
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait
         await setSerialSignals(scriptVariables.serialPort, true, true);
@@ -500,7 +509,12 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
         if (!(!selectedPort && scriptVariables.serialPort)) {
             if (!toggleRequest) await closeSerial(true);
 
-            scriptVariables.serialPort = await navigator.serial.requestPort();
+            scriptVariables.serialPort = await navigator.serial.requestPort({
+                filters: scriptOptions.useFilteredPort ? [...scriptOptions.thymosFingerprints.map(fp => {
+                    const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                    return {usbVendorId: vendorId, usbProductId: productId};
+                })] : []
+            });
             await new Promise(resolve => setTimeout(resolve, 100)); // Stop for 100 ms
             const {usbVendorId, usbProductId} = scriptVariables.serialPort.getInfo();
             scriptVariables.logFunction(`📋 Port selected - VID: ${usbVendorId?.toString(16) ?? 'N/A'}, PID: ${usbProductId?.toString(16) ?? 'N/A'}`, colorMeanings.regular);
@@ -516,7 +530,7 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
         }
 
 
-        useESPSignals ? await setSerialSignals(scriptVariables.serialPort, true, false) : await setSerialSignals(scriptVariables.serialPort, true, true);
+        scriptOptions.useESPSignals ? await setSerialSignals(scriptVariables.serialPort, true, false) : await setSerialSignals(scriptVariables.serialPort, true, true);
 
 
         scriptVariables.logFunction('☑️ Serial port connected.\n', colorMeanings.stateInfo2);
