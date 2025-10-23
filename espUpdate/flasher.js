@@ -164,7 +164,7 @@ export async function validateInputFile(input, showAlerts = false) {
 export async function selectFolder() {
     let handle;
     try {
-        handle = await window.showDirectoryPicker?.();
+        handle = await window.showDirectoryPicker();
     } catch (error) {
         if (error.name === 'AbortError') {
             scriptVariables.logFunction('\t⚠️ No folder selected.', colorMeanings.warning);
@@ -277,7 +277,7 @@ async function getFileContent(inputId) {
 
         } else if (self.pako.gzip) {
             // without zlib header use: 'pako.deflateRaw(...)'
-            compressedData = self.pako.deflate?.(fileData); // Compress using pako (zlib)  // optional: { level: 6 }
+            compressedData = self.pako?.deflate(fileData); // Compress using pako (zlib)  // optional: { level: 6 }
 
         } else {
             compressedData = fileData; // No compression available
@@ -452,7 +452,7 @@ async function setSerialSignals(port, dtrState, rtsState, brkState) {
 
     try {
         // Output signals
-        await port?.setSignals?.({
+        await port?.setSignals({
             dataTerminalReady: dtrState, requestToSend: rtsState, break: brkState
         });
 
@@ -462,7 +462,7 @@ async function setSerialSignals(port, dtrState, rtsState, brkState) {
     }
 
     // Input signals
-    const signals = await port?.getSignals?.();
+    const signals = await port?.getSignals();
     console.log("🚦 Signals:", signals);
     // dictionary SerialInputSignals {
     //           required boolean dataCarrierDetect; // Data Carrier Detect (DCD)
@@ -511,14 +511,14 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
         if (!(!selectedPort && scriptVariables.serialPort)) {
             if (!toggleRequest) await closeSerial(true);
 
-            scriptVariables.serialPort = await navigator.serial?.requestPort?.({
+            scriptVariables.serialPort = await navigator.serial?.requestPort({
                 filters: scriptOptions.useFilteredPort ? [...scriptOptions.thymosFingerprints.map(fp => {
                     const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
                     return {usbVendorId: vendorId, usbProductId: productId};
                 })] : []
             });
             await new Promise(resolve => setTimeout(resolve, 100)); // Stop for 100 ms
-            const {usbVendorId, usbProductId} = scriptVariables.serialPort?.getInfo?.();
+            const {usbVendorId, usbProductId} = scriptVariables.serialPort?.getInfo();
             scriptVariables.logFunction(`📋 Port selected - VID: ${Number(usbVendorId)?.toString(16) ?? 'N/A'}, PID: ${Number(usbProductId)?.toString(16) ?? 'N/A'}`, colorMeanings.regular);
 
             scriptVariables.logFunction(`⚡ Opening port at ${scriptVariables.baudRate} baud`, colorMeanings.regular);
