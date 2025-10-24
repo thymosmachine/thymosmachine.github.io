@@ -2783,8 +2783,8 @@
     const precisionAcceleration = 4;
     const precisionAccelerationSystem = 2;
 
-    const timeConversionDATAC = 1e-6; // převod sekund na mikrosekundy
-    const timeConversionDSLR = 1e-3; // převod sekund na mikrosekundy
+    const timeConversionDATAC = 1e-6;   // převod (mikrosekund) na sekundy
+    const timeConversionDSLR = 1e-3;    // převod (milisekund) na sekundy
 
     const loadCellNumMax = 3; // maximal number of load cells supported
     let loadCellNum = loadCellNumMax;
@@ -4557,6 +4557,7 @@
     function fillComputableInputs() {
         const forces = sumND(forceData, 2); // součet sil ze všech kanálů
         const displacements = positionData;
+
         // const minimalForceID = minimumIdx(forces);
         const maximalForceID = maximumIdx(forces);
 
@@ -4598,10 +4599,32 @@
             const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
             applyAdjust('inputIndDepth', depthIndentation);
 
+            const time = timeData;
+
             // Rychlost zatěžování: v = w_T / t
-            const t = readNum("inputLoadingTime", true); // s
-            const v = calc_speed(w_Ftarget, t);  // nebo:  v_set * (timeData[FtargetInd] / t)
+            const t_goal = readNum("inputLoadingTime", true);   // s
+
+            const t_tare = time[FinitialInd];                   // s
+            const t_set_raw = time[FtargetInd];                 // s
+            const t_set = calc_val_tare(t_set_raw, t_tare);     // s
+            const v_set = speedForward_mmps;    // readNum("inputSpeedForward", true); // mm/s
+
+            const v1 = calc_speed(w_Ftarget, t_goal);   // variant 1     mm/s
+            const v2 = v_set * (t_set / t_goal);        // variant 2     mm/s
+
+            console.log("\n",
+                "\n\tGuest 1:", roundDecimalFast(v1, precisionSpeedSystem),
+                "\n\tGuest 2:", roundDecimalFast(v2, precisionSpeedSystem));
+            const v = v2;
+
             if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
+
+            // TODO: speed: 0.6825mm/s => time: 2.6s - 5.2s => target time: 15s => new speed: 0.2944mm/s
+            // TODO: ΔT = 5.2 - 2.6 = 2.6s
+            // TODO: ((5.2-2.6) / 15) = 0.1733 [-]
+            // TODO: 0.6825 * ((5.2-2.6) / 15) = 0.1183 mm/s
+            // TODO: v_new = v_old * (T_old / T_target) = (position * T_old) * (T_old / T_target) = position * (T_old^2 / T_target)
+
         } else {
             const inputDisp = readNum("inputDisp");
             const foundDisp = nearest(displacements, inputDisp);
@@ -6919,6 +6942,8 @@
 
 <script>
     function createPIController(userOpts = {}) {
+        // Kp (mm/s)/N = mm/(N·s)
+        // Ki (mm/s)/(N·s) = mm/N
         const cfg = {
             // --- nastavení převzaté z tvé simulace (lze přepsat v userOpts) ---
             setForceN: null,    // cílová síla [N]
@@ -7021,7 +7046,7 @@
     let stoppingForceLimit = null;
     let holdForceTimeMs = null;
 
-    let timer = null;
+    let timer = null; // TODO: create a universal dicionary for all experiment-based variables needed for experiment
 
     let presentLoadcells = [];
 
@@ -7049,7 +7074,7 @@
 
         // === System Limits ===
         const minDistance = 5e-3;
-        const minFSpeed = 0.025;
+        const minFSpeed = 0.025; // TODO: check this
         const maxFSpeed = 25;
         const minInt = 5e-6;
         const minLoadCap = 5e-4;
@@ -7071,7 +7096,7 @@
 
             // === Retrieve Parameters from Inputs ===
             const distance_mm = getInputNumDefAbsFlt("inputDistance", NaN);
-            const experimentType = $ID("experimentTypeDropdown").value.toLowerCase();
+            const experimentType = $ID("experimentTypeDropdown")?.value.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = getInputNumDefAbsFlt("inputSpeedForward", NaN);
             // const speedBackward_mmps = parseFloat($$("inputSpeedBackward").value);
@@ -8453,13 +8478,13 @@
     async function processMeasurements(dataString) {
         const newData = parseData(dataString);
 
-        if (!takeMeasurements && !isExperimentRunning) {
-            await updateChart(newData);
+        if (takeMeasurements) { // Handle takeMeasurements
+            newData?.force?.forEach((value, index) => isNum(value) ? measureForces[index].push(value) : null);  // Collect force data for calibration
             return;
         }
 
-        if (takeMeasurements) { // Handle takeMeasurements
-            newData?.force?.forEach((value, index) => isNum(value) ? measureForces[index].push(value) : null);  // Collect force data for calibration
+        if (!takeMeasurements && !isExperimentRunning) {
+            await updateChart(newData);
             return;
         }
 
@@ -8550,13 +8575,11 @@
 
                     } else {
                         const sumF = sumND(newData?.force);
-                        const v = pi.step(newData?.time, newData?.position, sumF); // TODO: use tared values for time and position and what units?? [forceHoldTimeMs/1000]
+                        const v = pi.step(newData?.time, newData?.position, sumF);
                         // adjust speed according to PI controller to maintain constant force ...
                         if (isValidInputNum(v)) {
                             await setSpeed(v, false);
-                            sendCommandGeneral("MC END");
-// speed: 0.6825mm/s => time: 2.6s - 5.2s => target time: 15s => new speed: 0.2944mm/s
-// (0.6825 * ((5.2-2.6) / 15) = 0.1183)
+                            sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
                         }
                         // ... or stop if invalid, negative or zero
                         else await sendCommandGeneral("MC STOP");
