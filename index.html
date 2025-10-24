@@ -1577,13 +1577,13 @@
                            value="921600" min="1" max="921600" step="100">
                 </div>
             </div>
-            <div class="inlineDiv" data-system-level="4">
+            <div class="inlineDiv" data-system-level="5">
                 <button id="connectBtnBluetooth" class="connectBtn"
                         title="Connect to the Thymos machine via Bluetooth.">
                     📶 Connect via Bluetooth
                 </button>
             </div>
-            <div class="inlineDiv" data-system-level="4">
+            <div class="inlineDiv" data-system-level="5">
                 <button id="connectBtnWiFi" class="connectBtn" title="Connect to the Thymos machine via Wi-Fi.">
                     🌐 Connect via Wi-Fi
                 </button>
@@ -2101,7 +2101,8 @@
                                data-nonremember="true" data-unit="mm" data-essence="position">
                     </div>
 
-                    <div class="input-group data-eq" data-eq-type="Flx" data-system-level="1">
+                    <div class="input-group data-eq" data-eq-type="Flx">
+                        <!-- TODO: zobrazuje se když nemá: data-system-level="1"   -->
                         <label for="outputIy">Moment of Inertia \( I_{y} \)<span
                                 class="units-text"></span>: </label>
                         <input type="text" id="outputIy" class="copyableInput calcInput" readonly
@@ -2493,11 +2494,11 @@
                     </button>
 
                     <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="1">
-                        <button id="exportSettingButton" class="controlBtn"
+                        <button id="exportSettingButton" class="controlBtn controlElement"
                                 style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
                             ↗️ Export settings <!-- 📁📤 -->
                         </button>
-                        <button id="importSettingButton" class="controlBtn"
+                        <button id="importSettingButton" class="controlBtn controlElement"
                                 style="width: 100px; border-bottom-left-radius: 0; border-top-left-radius: 0; border-left: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
                             ↘️ Import settings <!-- 📂 📥 -->
                         </button>
@@ -2934,7 +2935,7 @@
         if (isNumber(x) && Number.isInteger(x)) return x;
         if (isBigInt(x) && bigInt) return x;
 
-        const n = toRounds(toNumber(x, true), 0, way);
+        const n = toRounds(x, 0, way);
 
         if (Number.isInteger(n)) return n;
 
@@ -5592,7 +5593,7 @@
         isPageVisible = !document.hidden;
 
         if (!isPageVisible) {
-            console.info("\n📄 - ⏸️ Page is hidden.");
+            console.info("\n📄 - 🕶️ Page is hidden.");
 
 
             // Set timeout for hiding the page
@@ -5619,7 +5620,7 @@
                 hideTimeout = null;
             }
 
-            console.info("\n📄 - 🆗 Page is visible");
+            console.info("\n📄 - 👓 Page is visible");
             if (liveUpdatePaused) {
                 console.info("🔄 Resuming live update of charts.");
                 await loadDataFromDBToChart(true);
@@ -5915,7 +5916,8 @@
 
         const chartData = checkArray(inputData);
 
-        if (isNonEmptyArr(chartData)) return;
+        if (!isNonEmptyArr(chartData)) return;
+
 
         for (let i = 0; i < chartData.length; i++) {
             const data = chartData[i];
@@ -6154,6 +6156,10 @@
             console.warn("⚠️ Machine name cannot be empty.");
             return;
         }
+        if (isInvalidValue(name, true)) {
+            console.warn("⚠️ Machine name contains invalid value.");
+            return;
+        }
         // ensure forbidden characters are removed
         name = name.replace(/[^a-zA-Z0-9 _-]/g, '').trim().replaceAll(" ", "_");
         if (name.length === 0) {
@@ -6161,18 +6167,23 @@
             return;
         }
 
-        $ID("machineNameInput").value = name;
-        const command = `MICS SET NAME ${name}`;
+        $ID("inputMachineName").value = name;
+        machineName = name;
+        const command = `MISC SET NAME ${name}`;
 
         await sendCommandGeneral(command, pauseMs);
     }
 
     async function setMachineID(id, pauseMs = 1) {
-        if (!isNonEmptyStr(id) || !isNum(id)) {
+        if (!isNonEmptyStr(id) && !isNum(id)) {
             console.warn("⚠️ Machine ID cannot be empty.");
             return;
         }
-        id = toNumber(id);
+        if (isInvalidValue(id, true)) {
+            console.warn("⚠️ Machine ID contains invalid value.");
+            return;
+        }
+        id = toInteger(id);
         if (!isNum(id)) {
             console.warn("⚠️ Machine ID is not a valid number.");
             return;
@@ -6182,7 +6193,10 @@
             return;
         }
 
-        const command = `MICS SET ID ${id}`;
+        $ID("inputMachineID").value = id;
+        machineID = id;
+        const command = `MISC SET MACHINE_ID ${id}`;
+
         await sendCommandGeneral(command, pauseMs);
     }
 
@@ -6540,7 +6554,7 @@
 
 
             const movingTime =
-                Math.ceil((computeMotionTime(distance, speed, acceleration) * 1_000) + 100);
+                Math.ceil((computeMotionTime(distance, speed, acceleration) * 1_000) + 150);
 
 
             // nastav/obnov timeout ukončení pohybu
@@ -6552,6 +6566,9 @@
             await sendMoveCommand(`MC MOVEBY MACH ${distance}`, 5);
 
             movingTimeout = setTimeout(() => endedMoving(), movingTime);
+
+
+            await sleep(movingTime);
 
         } catch (e) {
             console.error("Error during moveBy:", e);
@@ -7066,10 +7083,21 @@
             forceLimitDropPercent = catchVal((toNumber($ID("inputLoadLimitDropPercent").value) / 100), Infinity, isNum);
             forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", Infinity);
 
+            let loadcellCapacities = Array(loadCellNum).fill(null);
+            let loadcellOutputs = Array(loadCellNum).fill(null);
+            if (systemLevel >= 2) {
+                for (let i = 0; i < loadCellNum; i++) {
+                    loadcellCapacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
+                    loadcellOutputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
+                }
+            } else {
+                const loadcellCapacity = getInputNumDefAbsInt("inputLoadcellCapacity", NaN);
+                const loadcellOutput = getInputNumDefAbsFlt("inputLoadcellOutput", NaN);
 
-            // TODO: temporary disable loadcells
-            const loadcellCapacities = Array(loadCellNum).fill(loadcellCapacity);
-            const loadcellOutputs = Array(loadCellNum).fill(loadcellOutput);
+                loadcellCapacities = Array(loadCellNum).fill(loadcellCapacity);
+                loadcellOutputs = Array(loadCellNum).fill(loadcellOutput);
+            }
+
 
             let initialSpeed_mmps = speedForward_mmps;
             initialForceLim_N = null;
@@ -7131,9 +7159,9 @@
             }
 
             if (!isArr(loadcellCapacities) || loadcellCapacities.some(cap => !isNum(cap) || cap < minLoadCap)) {
-                console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
-                await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
-                alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} N.`);
+                console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
+                await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
+                alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 throw new Error("Loadcell capacity error");
             } else if (!isArr(loadcellOutputs) || loadcellOutputs.some(out => !isNum(out) || out < minLoadOut)) {
                 console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
@@ -7335,9 +7363,9 @@
             timeData = [];
             positionData = [];
             forceData = Array(loadCellNum).fill(null).map(() => []);
+            photoData = [];
             measureForces = Array(loadCellNum).fill(null).map(() => []);
             tareValues.force = Array(loadCellNum).fill(0);
-            photoData = [];
 
 
             measurementParts = {
@@ -7449,14 +7477,17 @@
             takeMeasurements = true;
             await sendCommandGeneral("DATAC 1");
 
+
             // Take measurements for 1.5 second
             await sleep(1_500); // Wait
 
-            takeMeasurements = false;
+
             await sendCommandGeneral("DATAC 0");
+            takeMeasurements = false;
+
 
             // --- 2) Mean forces ---
-            tareValues.force = meanND(measureForces, 1).map(force => 0); // roundDecimalFast(force, precisionForce)
+            tareValues.force = meanND(measureForces, 1).map(force => roundDecimalFast(force, precisionForce)); // TODO: zbytečné
 
             // --- 3) Analysis ---
             const forceAnalysis = await analyzeForces(measureForces);  // TODO: Implement and save present/used loadcells to the experiment log and use it when loading form DB and when loading CSV
@@ -7468,6 +7499,7 @@
 
             // indexes of valid fields => presentLoadcells
             presentLoadcells = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
+
 
             // --- 5) Check for errors ---
             // If more one force is not eaqule to zero, than Stop and Alert
@@ -7541,6 +7573,12 @@
             endMeasurement = false;
             clearTimeout(endMeasurementCounter)
             endMeasurementCounter = null;
+
+
+            timeData = [];
+            positionData = [];
+            forceData = Array(loadCellNum).fill(null).map(() => []);
+            photoData = [];
 
             UIupdate();
 
@@ -7718,7 +7756,7 @@
             UI.loadingLogContainer.style.background = "#323232";
 
             if (aggregatedDataBetweenSteps.length > 0) {
-                console.info("⚠️ Data not sent to chart.", aggregatedDataBetweenSteps.length);
+                console.info("\n👁️‍🗨️ Data not sent to chart.", aggregatedDataBetweenSteps.length);
                 await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
             }
 
@@ -7915,7 +7953,7 @@
             return;
         }
         // TODO: doplnit další moduly
-        const tags = ['MOTORS', 'LOADCELLS', 'DSLR', 'MISC', 'PARSER']; // list of firmware tags
+        const tags = ['MOTOR', 'LOADCELL', 'POWER', 'MOTION', 'DSLR', 'FAN', 'EXP', 'MEMORY', 'REPORT', 'COMMAND']; // list of firmware tags
         const versions = {};
         try {
             for (const t of tags) {
@@ -8117,7 +8155,7 @@
             if (!isNum(speed)) {
                 throw new Error(`Speed is not a number: ${speed}`);
             }
-            console.info("\t🚅 Current speed:", speed, "mm/s");
+            console.info("\n\t🚅 Current speed:", speed, "mm/s");
 
             return roundDecimalFast(speed, precisionSpeed);
         } catch (error) {
@@ -8141,7 +8179,7 @@
             if (!isNum(acceleration)) {
                 throw new Error(`Acceleration is not a number: ${acceleration}`);
             }
-            console.info("\t🚝 Current acceleration:", acceleration, "mm/s²");
+            console.info("\n\t🚝 Current acceleration:", acceleration, "mm/s²");
 
             return roundDecimalFast(acceleration, precisionAcceleration);
         } catch (error) {
@@ -8442,6 +8480,7 @@
             // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
             const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), (newData?.time - tareValues.time), (dataInterval_us * timeConversionDATAC));
             newData.time = roundDecimalFast(corrected, precisionTime);
+
         }
         lastAcceptedTime = newData?.time;
 
@@ -10399,7 +10438,9 @@
      * Opens a serial port for communication.
      *  SerialPort => comPort - The selected serial port.
      */
-    let machineFirmware = "NaN";
+    let machineFirmware = "";
+    let machineName = "";
+    let machineID = "";
     let fingerprint = null;
 
     const thymosFingerprints = [
@@ -10633,27 +10674,28 @@
 
             // TODO: put this to separate function 'HANDSHAKE()'
             try {
-                machineFirmware = await getFirmwareVersion()?.toLowerCase()?.trim() || "";
+                machineFirmware = (await getFirmwareVersion())?.toLowerCase().trim() || "";
             } catch (e) {
                 machineFirmware = null;
+                console.error('Firmware error:', e);
             }
-            let machineName;
             try {
-                machineName = await getMachineName()?.toLowerCase()?.trim() || "";
+                machineName = (await getMachineName()).trim() || "";
             } catch (e) {
                 machineName = null;
+                console.error('Name error:', e);
             }
-            let machineID;
             try {
                 machineID = await getMachineID() || "";
             } catch (e) {
                 machineID = null;
+                console.error('ID error:', e);
             }
 
-            await sleep(10);
-
-            if (!isOk(machineFirmware) || !isOk(machineName) || !isOk(machineID)) {
+            if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
                 if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
+                if (debugging) console.info(`\nFirmware:  ${machineFirmware} = ${isOk(machineFirmware)}\nName:  ${machineName} = ${isOk(machineName)}\nID:  ${machineID} = ${isOk(machineID)}\n`);
+
                 // start reconnect procedure
                 if (tryCount === 0) {
                     tryCount++;
@@ -10703,12 +10745,13 @@
 
             // TODO: implement Name-based/ID-based (reconnection) and (settings profiles => take settings or keep current)
             // TODO: implement multi-device management and backup based on Name/ID
-            if (machineName === 'unnamed' || machineName === 'unnamedmachine' || machineName === '') {
+            const machName = machineName?.toLowerCase();
+            if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
                 machineName = 'Thymos Device' + Math.random().toString(36).substring(2, 10);
                 await setMachineName(machineName);
             }
             if (machineID === 0) {
-                machineID = 1; // Math.floor(100000 + Math.random() * 900000);
+                machineID = 1; // Math.ceil(Math.random() * 255);
                 await setMachineID(machineID);
             }
 
@@ -10730,9 +10773,10 @@
                 userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to keep saving current settings for this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\nCLICK 'CANCEL' TO NOT SAVE SETTINGS");
             }
 
-            if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true)  storageKey = `${storageKeyBase}_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
+            if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKey = `${storageKeyBase}_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
             else storageKey = storageKeyIdle;
 
+            // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení
             if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsElements);
             await saveAllInputsToLocalStorage(settingsElements, storageKey);
 
@@ -11364,7 +11408,9 @@
 
 
         storageKey = storageKeyIdle;
-        // machineFirmware = null;
+        machineFirmware = "";
+        machineName = "";
+        machineID = "";
         // fingerprint = null;
         // tryCount = 0;
         // reconnectAttempts = 0;
@@ -11679,8 +11725,38 @@
 
         // TODO: $$$("saveRegularLog")?.addEventListener("click", async () => saveLogAsText());
 
-        $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef("inputMachineName", '')));
-        $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef("inputMachineID", '')));
+        const machNameInput = $ID("inputMachineName");
+        const machIDInput = $ID("inputMachineID");
+        $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
+        $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
+
+        machNameInput?.addEventListener("change", async (event) => event.target.value.trim() === '' ? event.target.value = machineName : null);
+        machIDInput?.addEventListener("change", async (event) => {
+            const val = event.target.value.trim();
+            if (val === '') {
+                if (isOk(machineID)) event.target.value = machineID;
+                return;
+            }
+            const num = clamp(toInteger(val), 1, 255);
+            if (isNum(num)) {
+                event.target.value = num;
+                await sleep(3_500);
+                if (isOk(machineID)) event.target.value = machineID;
+            }
+        });
+
+
+        machNameInput?.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                await setMachineName(getInputValDef(machNameInput, ''));
+            }
+        });
+
+        machIDInput?.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                await setMachineID(getInputValDef(machIDInput, ''));
+            }
+        });
 
 
         function attachHoldHandlers(element, onStart) {
