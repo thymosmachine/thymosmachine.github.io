@@ -139,7 +139,11 @@
                 const systemLevelSelect = $ID('systemLevelSelect');
                 if (systemLevelSelect) {
                     systemLevelSelect.querySelectorAll('option')?.forEach(option => {
-                        if (option.value === 'developer') {
+                        if (option.value === 'admin') {
+                            option.disabled = false;
+                        } else if (option.value === 'developer') {
+                            option.disabled = false;
+                        } else if (option.value === 'god') {
                             option.disabled = false;
                         }
                     });
@@ -2306,14 +2310,16 @@
                     <div class="input-group">
                         <label for="systemLevelSelect">System Level: </label>
                         <select id="systemLevelSelect"
-                                style="font-family: monospace; font-weight: bold;
+                                style="font-family: monospace; font-weight: bold; min-width: 200px;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="basic" selected>&nbsp;🟦&nbsp;Basic</option>
                             <option value="standard">&nbsp;🟩&nbsp;Standard</option>
                             <option value="advanced">&nbsp;🟨&nbsp;Advanced</option>
                             <option value="expert">&nbsp;🟧&nbsp;Expert</option>
-                            <option value="developer" disabled>&nbsp;🟥&nbsp;Developer</option>
+                            <option value="admin" disabled>&nbsp;🟥&nbsp;Administrator</option>
+                            <option value="developer" disabled>&nbsp;🟪&nbsp;Developer</option>
+                            <option value="god" disabled>&nbsp;♾️&nbsp;God Mode</option>
                         </select>
                     </div>
 
@@ -2359,14 +2365,26 @@
                     <div class="input-group" data-system-level="1">
                         <label for="inputAutoConnect">Automatically connect to the machine: </label>
                         <select id="inputAutoConnect"
-                                style="font-family: monospace; font-weight: bold;
+                                style="font-family: monospace; font-weight: bold; min-width: 200px;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                            <option value="never">&nbsp;❌&nbsp;Never</option>
-                            <option value="beginning">&nbsp;🌟&nbsp;At the beginning</option>
-                            <option value="during">&nbsp;⏳&nbsp;During session</option>
-                            <option value="ask">&nbsp;❔&nbsp;Ask every time</option>
-                            <option value="always" selected>&nbsp;✅&nbsp;Always</option>
+                            <option value="never" title="Don't connect to the device automatically">&nbsp;❌&nbsp;Never
+                            </option>
+                            <option value="beginning"
+                                    title="Connect to the device automatically on the start-up of the app">&nbsp;🌟&nbsp;Beginning
+                            </option>
+                            <option value="during"
+                                    title="Connect to the device automatically at any point of time during the session">
+                                &nbsp;⏳&nbsp;During
+                            </option>
+                            <option value="ask"
+                                    title="Always ask if connect to the device at any point of time during the session">
+                                &nbsp;❔&nbsp;Ask
+                            </option>
+                            <option value="always"
+                                    title="Always connect to the device automatically at any point of time during the session"
+                                    selected>&nbsp;✅&nbsp;Always
+                            </option>
                         </select>
                     </div>
 
@@ -2374,7 +2392,7 @@
                     <div class="input-group">
                         <label for="languageSelect">App Language: </label>
                         <select id="languageSelect"
-                                style="font-family: monospace; font-weight: bold;
+                                style="font-family: monospace; font-weight: bold; min-width: 200px;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇧🇬</option>
@@ -2394,7 +2412,7 @@
 
                     <div class="input-group" data-system-level="1">
                         <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
-                        <select id="decimalSymbol" style="font-family: monospace; font-weight: bold;
+                        <select id="decimalSymbol" style="font-family: monospace; font-weight: bold; min-width: 200px;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="Option-Dot" selected>&nbsp;Dot&nbsp;&nbsp;&nbsp;( . )&nbsp;</option>
@@ -2404,7 +2422,7 @@
 
                     <div class="input-group" data-system-level="1">
                         <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
-                        <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold;
+                        <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold; min-width: 200px;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
@@ -2415,24 +2433,45 @@
                         </select>
                     </div>
 
-                    <div class="input-group">
-                        <label for="inputClearCalculations">
-                            Clear calculation inputs at the start of each experiment:
+                    <!-- TODO: add that this and some other settings are tight to the Different storage 'System'  -->
+                    <div class="input-group" data-system-level="2">
+                        <label for="inputUseMachineSettings">
+                            Apply machine settings on connect:
                         </label>
-                        <input type="checkbox" id="inputClearCalculations" checked>
+                        <select id="inputUseMachineSettings" style="font-family: monospace; font-weight: bold;
+                                 min-width: 200px; font-size: 16px; width: max-content; height: 50px;">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                            <option value="no_not" title="Keep and don't save to machine">&nbsp;❌&nbsp;No (keep)
+                            </option>
+                            <option value="no_save" title="Keep and save to machine">&nbsp;✖️&nbsp;No (save)</option>
+                            <option value="ask" title="Ask what to do">&nbsp;❔&nbsp;Ask</option>
+                            <option value="yes_save" title="Overwrite and save to machine" selected>&nbsp;✅&nbsp;Yes
+                                (save)
+                            </option>
+                            <option value="yes_not" title="Overwrite and don't save to machine">&nbsp;☑️&nbsp;Yes
+                                (keep)
+                            </option>
+                        </select>
                     </div>
 
                     <div class="input-group">
                         <label for="inputAutoSave">
                             Save data to CSV automatically:
                         </label>
-                        <select id="inputAutoSave" style="font-family: monospace; font-weight: bold;
+                        <select id="inputAutoSave" style="font-family: monospace; font-weight: bold; min-width: 200px;
                                 font-size: 16px; width: max-content; height: 50px;">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                            <option value="Option-Never" selected>&nbsp;❌&nbsp;Never</option>
-                            <option value="Option-Before">&nbsp;⏮️&nbsp;Before next Experiment</option>
-                            <option value="Option-After">&nbsp;⏭️&nbsp;After the Experiment</option>
+                            <option value="Option-Never" title="Save data only by 'save' buttons" selected>&nbsp;❌&nbsp;Never</option>
+                            <option value="Option-Before" title="Save data before start of the next Experiment">&nbsp;⏮️&nbsp;Before</option>
+                            <option value="Option-After" title="Save data right at the end of Experiment">&nbsp;⏭️&nbsp;After</option>
                         </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="inputClearCalculations">
+                            Clear calculation inputs at the start of each experiment:
+                        </label>
+                        <input type="checkbox" id="inputClearCalculations" checked>
                     </div>
 
                     <button id="clearCalculationsButton" class="controlBtn" data-system-level="1">
@@ -2453,12 +2492,12 @@
                         🗑️ Clear All Data
                     </button>
 
-                    <div style="padding: 0; margin: 0; display: flex; gap: 0;">
-                        <button id="exportSettingButton" class="controlBtn" data-system-level="1"
+                    <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="1">
+                        <button id="exportSettingButton" class="controlBtn"
                                 style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
-                           ↗️ Export settings <!-- 📁📤 -->
+                            ↗️ Export settings <!-- 📁📤 -->
                         </button>
-                        <button id="importSettingButton" class="controlBtn" data-system-level="1"
+                        <button id="importSettingButton" class="controlBtn"
                                 style="width: 100px; border-bottom-left-radius: 0; border-top-left-radius: 0; border-left: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
                             ↘️ Import settings <!-- 📂 📥 -->
                         </button>
@@ -4619,6 +4658,21 @@
 
     let notificationsAllowed = false;
 
+
+    /////////////////////////////////////////////////////////////////
+
+    // -------- Local Storage Keys ------ //
+    const storageKeyBase = "MoiraUIData";                    // Base-name of Key in localStorage
+    const storageKeyDefaults = `${storageKeyBase}_Defaults`; // System Defaults Key in localStorage (all)
+    const storageKeyIdle = `${storageKeyBase}_Idle`;         // User Defaults Key in localStorage (some)
+    const storageKeySys = `${storageKeyBase}_Sys`;           // User-System Defaults Key in localStorage (rest)
+    let storageKey = storageKeyIdle;                         // Current Key in localStorage
+
+    // -------- IndexedDB Setup -------- //
+    const DB_NAME = "MoiraMeasurementData";// Database name
+    const STORE_NAME = "LastLog";// Store name for saving log entries
+    let db;// Database instance
+
 </script>
 
 <script>
@@ -4884,10 +4938,13 @@
 
 
 <script>
-    const storageKey = "formData"; // Key in localStorage
 
     // Function Clear `localStorage`
     function clearLocalStorage() {
+        if (!storageKey) {
+            console.error("Storage key is not defined.");
+            return;
+        }
         setSerialSignals(serialPort, true, true);
 
         disconnectSerial();
@@ -4900,6 +4957,10 @@
 
     // Function to save ONE input to localStorage
     function saveInputToLocalStorage(event) {
+        if (!storageKey) {
+            console.error("Storage key is not defined.");
+            return;
+        }
         const input = event.target; // Get the input element
         let formData = JSON.parse(localStorage.getItem(storageKey)) || {}; // Load the saved data
 
@@ -4911,7 +4972,13 @@
 
 
     // Function to save ALL inputs to localStorage
-    function saveAllInputsToLocalStorage(elements) {
+    function saveAllInputsToLocalStorage(elements, storage = storageKey) {
+        if (!storage && !storageKey) {
+            console.error("Storage key is not defined.");
+            return;
+        } else if (!storage) {
+            storage = storageKey;
+        }
         let formData = {};
 
         if (!elements) {
@@ -4925,18 +4992,22 @@
 
         });
 
-        localStorage.setItem(storageKey, JSON.stringify(formData));
+        localStorage.setItem(storage, JSON.stringify(formData));
         console.info("All data saved to localStorage.");
     }
 
     // Function to load inputs from localStorage
     function loadInputsFromLocalStorage(elements) {
+        if (!storageKey) {
+            console.error("Storage key is not defined.");
+            return;
+        }
         const formData = JSON.parse(localStorage.getItem(storageKey)) || {}; // Load the saved data
         if (!elements) {
             elements = $$("input, select");
         }
 
-        if (!formData) saveAllInputsToLocalStorage(elements);
+        if (!formData) saveAllInputsToLocalStorage(elements, storageKey);
 
         elements?.forEach(input => {
             if (formData.hasOwnProperty(input.id)) {
@@ -5257,10 +5328,6 @@
 
 <script>
     // /////// IndexedDB Database Configuration /////////
-
-    const DB_NAME = "SerialPortData";// Database name
-    const STORE_NAME = "LastLog";// Store name for saving log entries
-    let db;// Database instance
 
     // /////// Opening IndexedDB /////////
 
@@ -6087,7 +6154,16 @@
             console.warn("⚠️ Machine name cannot be empty.");
             return;
         }
-        const command = `MICS SET NAME ${name.trim()}`;
+        // ensure forbidden characters are removed
+        name = name.replace(/[^a-zA-Z0-9 _-]/g, '').trim().replaceAll(" ", "_");
+        if (name.length === 0) {
+            console.warn("⚠️ Machine name cannot be empty or contain only forbidden characters.");
+            return;
+        }
+
+        $ID("machineNameInput").value = name;
+        const command = `MICS SET NAME ${name}`;
+
         await sendCommandGeneral(command, pauseMs);
     }
 
@@ -10636,11 +10712,29 @@
                 await setMachineID(machineID);
             }
 
-            if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
 
+            if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
 
             $ID("inputMachineName").value = machineName;
             $ID("inputMachineID").value = machineID;
+
+
+            const settingsElements = $$("input, select");
+            const saveSelected = getInputValDef("inputUseMachineSettings", null)
+
+            let userChoiceSave = null;
+            let userChoiceLoad = null;
+
+            if (saveSelected === 'ask' || saveSelected === 'none') {
+                userChoiceLoad = confirm("\n✅ Connected successfully!\n\nDo you want to load the previous settings for this device?\n\n   CLICK 'OK' TO LOAD SETTINGS\nCLICK 'CANCEL' TO KEEP CURRENT SETTINGS");
+                userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to keep saving current settings for this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\nCLICK 'CANCEL' TO NOT SAVE SETTINGS");
+            }
+
+            if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true)  storageKey = `${storageKeyBase}_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
+            else storageKey = storageKeyIdle;
+
+            if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsElements);
+            await saveAllInputsToLocalStorage(settingsElements, storageKey);
 
         } catch (error) {
             activeWatchDog = false;
@@ -11227,8 +11321,6 @@
         measurementParts = measurementPartDefault;
         liveUpdate = false
 
-        updateConnectionStatus("disconnected");
-
         isExperimentRunning = false;
         machineOccupation = false;
         UI.loadingLogContainer.style.background = "#323232";
@@ -11269,21 +11361,30 @@
         serialPort = null;
         serialReader = null;
         serialWriter = null;
+
+
+        storageKey = storageKeyIdle;
+        // machineFirmware = null;
+        // fingerprint = null;
+        // tryCount = 0;
+        // reconnectAttempts = 0;
     }
 
     async function clearAndResetAll() {
         console.clear();
-        if (serialPort) await setSerialSignals(serialPort, true, true);
-        await disconnectSerial();
-
         if (liveUpdate) await chartUpdate();
         await clearCharts();
         await clearDatabase();
         await clearConsoleLog();
 
-        localStorage.removeItem(storageKey); // Remove the saved data
 
-        resetValues();
+        // Remove all other saved data from local storage
+        Object.keys(localStorage).forEach(key => (key.startsWith(storageKeyBase)) ? localStorage.removeItem(key) : null);
+
+
+        if (serialPort) await setSerialSignals(serialPort, true, true);
+        await disconnectSerial();
+
 
         timeData = [];
         positionData = [];
@@ -11383,8 +11484,14 @@
                 case 'expert':
                     systemLevel = 3;
                     break;
-                case 'developer':
+                case 'admin':
                     systemLevel = 4;
+                    break;
+                case 'developer':
+                    systemLevel = 5;
+                    break;
+                case 'god':
+                    systemLevel = 6;
                     break;
                 default:
                     systemLevel = 0;
@@ -11800,8 +11907,19 @@
         });
 
 
+        saveAllInputsToLocalStorage(optionsElements, storageKeyDefaults);
+
+
         // Load saved data when the page loads
         loadInputsFromLocalStorage(optionsElements);
+        if (!storageKey) {
+            optionsElements?.forEach(input => {
+                // Trigger change event to update the UI
+                input.dispatchEvent(new Event("change", {bubbles: true}));
+                input.dispatchEvent(new Event("input", {bubbles: true}));
+                input.dispatchEvent(new Event("blur", {bubbles: true}));
+            });
+        }
         pageLoaded = true;
 
         setTimeout(() => window.dispatchEvent(new Event('resize', {bubbles: true})), 0);
