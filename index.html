@@ -277,6 +277,7 @@
             --blue-color: #007bff;
             --blue-lighter-color: #2196F3;
             --blue-light-color: #4CA2FF;
+            --blue-lighest-color: #4bbae0;
             --green-color: #28a745;
             --green-light-color: #68C17C;
             --green-lighter-color: #90EE90;
@@ -339,6 +340,7 @@
             --text-color: black;
             --text-info-1-color: var(--blue-lighter-color);
             --text-info-2-color: var(--blue-dark-color);
+            --text-info-3-color: var(--blue-dark-color);
 
             --slider-bg: #ddd;
             --slider-fg: var(--blue-color);
@@ -398,6 +400,7 @@
             --text-color: #b4b4b4;
             --text-info-1-color: #4e4e4e;
             --text-info-2-color: black;
+            --text-info-3-color: var(--blue-lighest-color);
 
             --slider-bg: #4e4e4e;
             --slider-fg: #303030;
@@ -522,6 +525,10 @@
             accent-color: var(--blue-color);
         }
 
+        label {
+            pointer-events: none; /* makes labels unselectable */
+        }
+
         pre {
             white-space: pre-wrap; /* zachová \n a vícenásobné mezery, ale dovolí zalomení */
             overflow-wrap: break-word; /* primárně láme na mezerách, dlouhá slova zlomí jen když musí */
@@ -602,7 +609,7 @@
             white-space: nowrap; /* Prevents wrapping */
             padding-left: 20px;
             align-items: center;
-            justify-content: center;
+            width: calc(var(--inputLabelWidth) + var(--inputMinWidth) + var(--gap)); /* Total width of the group */
 
         }
 
@@ -617,15 +624,24 @@
             height: 25px;
         }
 
-        .input-group input[type="number"], .input-group input[type="text"] {
+        .input-group input[type="number"], .input-group input[type="text"], .input-group select {
             flex-grow: 1; /* Input will grow if there is space */
             justify-self: left;
-            max-width: var(--inputMinWidth);
+            width: -webkit-fill-available;
         }
 
         input[type="checkbox"] {
             transform: scale(1.5); /* Scale the checkbox to 1.5 */
             margin: 5px; /* Space around the checkbox */
+            width: 16px;
+            height: 16px;
+            aspect-ratio: 1/1; /* Keep it square */
+        }
+
+        .input-group select {
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 16px;
         }
 
         h3 {
@@ -961,14 +977,6 @@
             width: 200px;
         }
 
-        #autoReturnPositionExperiment {
-            display: flex;
-            height: 50px;
-            padding: 20px;
-            align-items: center;
-            justify-content: center;
-        }
-
         #experimentProgress {
             flex-grow: 1;
             max-width: 450px;
@@ -1038,6 +1046,12 @@
             border-radius: var(--radius);
         }
 
+        .appSelector {
+            min-width: 200px;
+            width: max-content;
+            height: 50px;
+        }
+
         #experimentInputsContainer {
             display: grid;
             grid-template-columns: max-content minmax(min-content, 1fr) min-content;
@@ -1102,11 +1116,12 @@
 
         .inputsContainer, #machSettings {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(calc(var(--inputLabelWidth) + var(--gap) + var(--inputMinWidth)), 1fr)); /* Dynamic grid */
+            grid-template-columns: repeat(auto-fit, minmax(calc(var(--inputLabelWidth) + var(--inputMinWidth) + var(--gap) + 20px + 5px), 1fr)); /* Dynamic grid */
             grid-auto-rows: auto;
             overflow: hidden;
             width: -webkit-fill-available;
             gap: var(--gap);
+            justify-items: center;
         }
 
         /* prvek přes celou šířku gridu v obou kontejnerech */
@@ -1136,20 +1151,13 @@
             justify-items: center;
         }
 
-        #experimentTypeDropdown {
-            flex-grow: 1;
-            min-width: 0;
-            max-width: 230px;
-        }
-
-        #inputPhotoIntervalLabel {
+        .innerInputLabel {
             min-width: fit-content;
-            width: 125px;
+            width: 125px !important;
         }
 
-        #inputPhotoInterval {
+        .innerInput {
             min-width: 25px;
-            max-width: 61.5px;
         }
 
         #inputInitialForceLabel {
@@ -1488,12 +1496,20 @@
 
 
 <div id="preloadScreen"
+     tabindex="-1"
      style="position: fixed;
             inset: 0;              /* top:0; right:0; bottom:0; left:0 */
             width: 100vw;
             height: 100vh;
-            display: flex; flex-flow: column; gap: 5%;
-            background: #181818; justify-content: center; align-items: center;  z-index: 999; pointer-events: none;
+            display: flex;
+            flex-flow: column; gap: 5%;
+            background: #181818; justify-content: center; align-items: center;  z-index: 999;
+            user-select: none !important; /* Disables text selection */
+            -webkit-user-select: none !important; /* Safari */
+            -moz-user-select: none !important; /* Firefox */
+            -ms-user-select: none !important; /* IE/Edge */
+            pointer-events: auto; /* Prevents interaction */
+            tab-index: -1 !important;
             color: lightgray; font-weight: bold; text-align: center; font-size: 2em;
             opacity: 1;
             transition: opacity 0.5s;">
@@ -1683,15 +1699,17 @@
                 <nav class="machineControlContainer outsetShadow">
                     <div class="btnControlWrapper">
                         <!-- Start Experiment Button -->
-                        <button id="startExperiment" class="controlBtn movementControlElement">⚡<br>Start Experiment
+                        <button id="startExperiment" class="controlBtn movementControlElement machineControlElement">
+                            ⚡<br>Start Experiment
                         </button>
 
                         <!-- Stop Experiment Button -->
-                        <button id="stopMachine" class="controlBtn">🛑<br>Stop Machine</button>
+                        <button id="stopMachine" class="controlBtn machineControlElement">🛑<br>Stop Machine</button>
 
                         <!-- Return to the original position Button -->
                         <button id="returnPositionExperimentBtn"
-                                class="controlBtn movementControlElement">↩️ Return to start position
+                                class="controlBtn movementControlElement machineControlElement">↩️ Return to start
+                            position
                         </button>
 
                         <!-- Automatic returning to the original position Checkmark -->
@@ -1723,12 +1741,12 @@
                 </nav>
 
                 <nav class="machineControlContainer outsetShadow">
-                    <div class="movementWrapper movementControlElement">
+                    <div class="movementWrapper movementControlElement machineControlElement">
                         <button id="moveMachineUP" class="controlBtn moveBtnLeft">🢁</button>
                         <button id="moveUp50" class="controlBtn moveBtnRight">50<br>(mm)</button>
                     </div>
 
-                    <div class="movementWrapper movementControlElement">
+                    <div class="movementWrapper movementControlElement machineControlElement">
                         <button id="moveMachineDOWN" class="controlBtn moveBtnLeft">🢃</button>
                         <button id="moveDown50" class="controlBtn moveBtnRight">50<br>(mm)</button>
                     </div>
@@ -1737,31 +1755,33 @@
             </div>
             <nav class="outsetShadow"
                  style="display: flex; flex-direction: row; background: var(--containers-bg); padding: 10px 20px; border-radius: 10px; justify-content: space-between; gap: 10%; font-weight: bold; color: var(--text-info-2-color);">
-                <div class="movementControlElement"
+                <div class="movementControlElement machineControlElement"
                      style="display: flex; flex-direction: row; flex-grow: 1; align-items: center; gap: 10px;">
                     <label for="movementSpeed" style="min-width: max-content; font-weight: normal; color: black;">▶️
                         Speed:</label>
                     <input type="range" id="movementSpeed" min="0.01" max="25" value="25" step="0.01"
+                           data-system="-1"
                            style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     <label for="labelSpeed"></label>
                     <div style="display: inline-flex; gap: .2em; align-items: center;">
                         <input type="number"
-                               data-nonremember="true"
+                               data-system="-1"
                                placeholder="Num."
                                id="labelSpeed"
                                class="sliderInputLabel"><span>mm/s</span>
                     </div>
                 </div>
-                <div class="movementControlElement"
+                <div class="movementControlElement machineControlElement"
                      style="display: flex; flex-direction: row; flex-grow: 1; align-items: center; gap: 10px;">
                     <label for="movementAcceleration" style="min-width: max-content; font-weight: normal; color: black;"
                     >⏩ Acceleration:</label>
                     <input type="range" id="movementAcceleration" min="10" max="200" value="200" step="0.01"
+                           data-system="-1"
                            style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     <label for="labelAcceleration"></label>
                     <div style="display: inline-flex; gap: .2em; align-items: center;">
                         <input type="number"
-                               data-nonremember="true"
+                               data-system="-1"
                                placeholder="Num."
                                id="labelAcceleration"
                                class="sliderInputLabel"><span>mm/s<sup style="font-size: 65%;">2</sup></span></div>
@@ -1788,13 +1808,17 @@
                         <input type="number" id="moveToInput" min="0" max="450" step="0.01" placeholder="0.00 mm"
                                style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     </div>
-                    <button id="moveToBtn" class="movementControlElement controlBtn controllerBtn">➡️ Move</button>
+                    <button id="moveToBtn"
+                            class="movementControlElement machineControlElement controlBtn controllerBtn">➡️ Move
+                    </button>
 
                 </div>
-                <button id="setUserZeroBtn" class="movementControlElement controlBtn controllerBtn prohibited">🎯 Set
+                <button id="setUserZeroBtn"
+                        class="movementControlElement machineControlElement controlBtn controllerBtn prohibited">🎯 Set
                     Zero
                 </button>
-                <button id="calibrateBtn" class="movementControlElement controlBtn controllerBtn">📏
+                <button id="calibrateBtn" class="movementControlElement machineControlElement controlBtn controllerBtn">
+                    📏
                     Calibrate
                 </button>
             </nav>
@@ -1809,22 +1833,22 @@
             <label for="experimentName">🧪 Experiment Name:</label>
             <div style="display: flex; width: 100%; gap: var(--gap);">
                 <input type="text" id="experimentName" placeholder="Experiment name (mandatory) ..."
-                       data-nonremember="true">
+                       data-system="-1">
                 <label for="experimentCount">🔢 Experiment count:</label>
                 <input type="number" id="experimentCount" placeholder="Num ..."
-                       data-input-type="intInput" data-nonremember="true"
+                       data-input-type="intInput" data-system="-1"
                        value="1" step="1" min="1" max="999">
             </div>
 
-            <button id="saveDataBtn" class="saveDataBtns">💾 Save single CSV</button>
+            <button id="saveDataBtn" class="saveDataBtns controlElement">💾 Save single CSV</button>
 
             <label for="experimentDesc">📄 Experiment description:</label>
             <div class="textareaWrapper">
                 <textarea id="experimentDesc" placeholder="Short description of the experiment (optional)..."
-                          data-nonremember="true"></textarea>
+                          data-system="-1"></textarea>
             </div>
 
-            <button id="convertCSV">
+            <button id="convertCSV" class="controlElement">
                 📊 Convert CSV files to XLSX (MATTES)
             </button>
 
@@ -1835,7 +1859,7 @@
             </div>
 
             <div>
-                <button type="button" id="btnLoadSettings">🗃️ Load experiment data (CSV)</button>
+                <button type="button" id="btnLoadSettings" class="controlElement">🗃️ Load experiment data (CSV)</button>
                 <div hidden>
                     <span id="loadedFileName" aria-live="polite"></span>
                     <input type="file" id="appFileInput" accept=".csv,text/csv">
@@ -2090,7 +2114,7 @@
                         <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \)<span class="units-text"></span>:
                         </label>
                         <input type="text" id="outputForceMax" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="N" data-essence="force">
+                               data-system="-1" data-unit="N" data-essence="force">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="-HBr">
@@ -2098,7 +2122,7 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputDisp" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm" data-essence="position">
+                               data-system="-1" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
@@ -2106,7 +2130,7 @@
                         <label for="outputIy">Moment of Inertia \( I_{y} \)<span
                                 class="units-text"></span>: </label>
                         <input type="text" id="outputIy" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm^4"
+                               data-system="-1" data-unit="mm^4"
                                data-essence="dimension, cross-section, moment-of-inertia">
                     </div>
 
@@ -2114,7 +2138,7 @@
                         <label for="outputModulus">Young's Module \( E \)<span class="units-text"></span>:
                         </label>
                         <input type="text" id="outputModulus" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="MPa" data-essence="result, modulus">
+                               data-system="-1" data-unit="MPa" data-essence="result, modulus">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
@@ -2122,7 +2146,7 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputFlexStrength" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="MPa" data-essence="result, strength">
+                               data-system="-1" data-unit="MPa" data-essence="result, strength">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="InB">
@@ -2130,14 +2154,14 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputArea" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm^2" data-essence="dimension, cross-section, area">
+                               data-system="-1" data-unit="mm^2" data-essence="dimension, cross-section, area">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="InB">
                         <label for="outputMaxStress">Max Stress \( \sigma_{\mathrm{max}} \)<span
                                 class="units-text"></span>: </label>
                         <input type="text" id="outputMaxStress" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="MPa" data-essence="result, stress">
+                               data-system="-1" data-unit="MPa" data-essence="result, stress">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
@@ -2145,7 +2169,7 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputDiameterInd" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm" data-essence="dimension">
+                               data-system="-1" data-unit="mm" data-essence="dimension">
                     </div>
 
 
@@ -2154,7 +2178,7 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="inputTargetDisp" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm" data-essence="position">
+                               data-system="-1" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
@@ -2162,20 +2186,20 @@
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputHardness" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="-" data-essence="result, hardness, ratio">
+                               data-system="-1" data-unit="-" data-essence="result, hardness, ratio">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
                         <label for="outputLoadingSpeed">Loading speed \( v \)<span class="units-text"></span>:
                         </label>
                         <input type="text" id="outputLoadingSpeed" class="copyableInput calcInput" readonly
-                               data-nonremember="true" data-unit="mm/s" data-essence="speed">
+                               data-system="-1" data-unit="mm/s" data-essence="speed">
                     </div>
                 </div>
 
                 <div id="saveCalcDataBtnWrapper" style="margin-top: 60px; justify-items: center;">
                     <hr style="width: 85% ; margin: 0 auto 10px;">
-                    <button class="controlBtn saveDataBtns">💾 Save data (CSV)</button>
+                    <button class="controlBtn saveDataBtns controlElement">💾 Save data (CSV)</button>
                 </div>
             </div>
         </section>
@@ -2197,8 +2221,7 @@
 
                     <div class="input-group">
                         <label for="experimentTypeDropdown">Experiment type: </label>
-                        <select id="experimentTypeDropdown" class="expInput" style="font-family: monospace; font-weight: bold;
-                                font-size: 16px;">
+                        <select id="experimentTypeDropdown" class="expInput">
                             <option value="none" hidden>
                                 &nbsp;⬜&nbsp;No selection
                             </option>
@@ -2239,9 +2262,10 @@
                     <div class="input-group">
                         <label for="inputTakePhotos">Take photos: </label>
                         <input type="checkbox" id="inputTakePhotos" class="expInput" data-essence="switch">
-                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval<span
-                                class="units-text"></span>: </label>
-                        <input data-input-type="floatInput" type="number" id="inputPhotoInterval" class="expInput"
+                        <label id="inputPhotoIntervalLabel" class="innerInputLabel" for="inputPhotoInterval">Photo
+                            Interval<span class="units-text"></span>: </label>
+                        <input data-input-type="floatInput" type="number" id="inputPhotoInterval"
+                               class="expInput innerInput"
                                value="1" min="0" step="any" max="120000000" data-unit="s" data-essence="time">
                     </div>
 
@@ -2293,6 +2317,15 @@
                         <input data-input-type="floatInput" type="number" id="inputEndDelay" class="expInput"
                                value="25" min="0" step="any" max="120000000" data-unit="s" data-essence="time">
                     </div>
+
+                    <div class="input-group" data-eq-type="-Flx, -InB,-HBr">
+                        <label for="inputDoCycles">Do cycles: </label>
+                        <input type="checkbox" id="inputDoCycles" class="expInput" data-essence="switch">
+                        <label id="inputCyclesLabel" class="innerInputLabel" for="inputCycles">Cycles<span
+                                class="units-text"></span>: </label>
+                        <input data-input-type="intInput" type="number" id="inputCycles" class="expInput innerInput"
+                               value="1" min="1" step="any" data-unit="-" data-essence="count">
+                    </div>
                 </div>
 
                 <hr>
@@ -2302,6 +2335,35 @@
                     <div id="machSettings">
                         <!-- Machine settings (LoadCells) will be dynamically inserted here -->
                     </div>
+
+                    <div class="input-group machineControlElement" data-system-level="1">
+                        <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
+                        <div style="display: flex; gap: 0;">
+                            <input data-input-type="intInput" type="text" id="inputMachineName"
+                                   placeholder="My Machine Name" value="" data-system="-1"
+                                   data-essence="identification"
+                                   style="height: 40px; width: 200px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
+                            <button id="sendMachineNameBtn"
+                                    style="height: 40px; width: 30px; border-bottom-left-radius: 0; border-top-left-radius: 0;">
+                                ▶ <!-- ↵⏎⎆ -->
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <div class="input-group machineControlElement" data-system-level="4">
+                        <label for="inputMachineID" style="min-width: max-content;">Machine ID:</label>
+                        <div style="display: flex; gap: 0;">
+                            <input data-input-type="intInput" type="text" id="inputMachineID"
+                                   placeholder="My Machine ID" value="" data-system="-1"
+                                   data-essence="identification"
+                                   style="height: 40px; width: 200px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
+                            <button id="sendMachineIDBtn"
+                                    style="height: 40px; width: 30px; border-bottom-left-radius: 0; border-top-left-radius: 0;">
+                                ▶ <!-- ↵⏎⎆ -->
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <hr>
@@ -2310,64 +2372,57 @@
                 <div class="inputsContainer autoGrid">
                     <div class="input-group">
                         <label for="systemLevelSelect">System Level: </label>
-                        <select id="systemLevelSelect"
-                                style="font-family: monospace; font-weight: bold; min-width: 200px;
-                                font-size: 16px; width: max-content; height: 50px;">
+                        <select id="systemLevelSelect" class="appSelector" data-system="1">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                            <!--                            <option value="" hidden>&nbsp;🅿️&nbsp;Public</option>-->
+                            <!--                            <option value="" hidden>&nbsp;➿&nbsp;Guest</option>-->
+                            <!--                            <option value="" hidden>&nbsp;Ⓜ️&nbsp;Member</option>-->
+                            <!--                            <option value="" hidden>&nbsp;®️&nbsp;Registered</option>-->
+                            <!--                            <option value="" hidden>&nbsp;👽&nbsp;Remote</option>-->
+                            <!--                            <option value="" hidden>&nbsp;⬛&nbsp;Restricted</option>-->
+                            <!--                            <option value="" hidden>&nbsp;🔳&nbsp;Protected</option>-->
+                            <!--                            <option value="" hidden>&nbsp;🔲&nbsp;Limited</option>-->
+                            <!--                            <option value="" hidden>&nbsp;⏹️&nbsp;Minimal</option>-->
                             <option value="basic" selected>&nbsp;🟦&nbsp;Basic</option>
                             <option value="standard">&nbsp;🟩&nbsp;Standard</option>
                             <option value="advanced">&nbsp;🟨&nbsp;Advanced</option>
                             <option value="expert">&nbsp;🟧&nbsp;Expert</option>
                             <option value="admin" disabled>&nbsp;🟥&nbsp;Administrator</option>
+                            <option value="operator" disabled>&nbsp;🅾️&nbsp;Operator</option>
                             <option value="developer" disabled>&nbsp;🟪&nbsp;Developer</option>
                             <option value="god" disabled>&nbsp;♾️&nbsp;God Mode</option>
                         </select>
                     </div>
 
-
                     <div class="input-group" data-system-level="4">
                         <label for="inputAppInterval" style="min-width: max-content;">Data Interval:</label>
-                        <input data-input-type="intInput" type="number" id="inputAppInterval"
+                        <input data-input-type="intInput" type="number" id="inputAppInterval" data-system="1"
                                value="50000" min="1" step="any" max="100000000" data-unit="µs" data-essence="time"
                                style="height: 50px; width: 200px;">
                     </div>
 
-
-                    <div class="input-group" data-system-level="1">
-                        <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
-                        <div style="display: flex; gap: 0;">
-                            <input data-input-type="intInput" type="text" id="inputMachineName"
-                                   placeholder="My Machine Name" value="" data-nonremember="true"
-                                   data-essence="identification"
-                                   style="height: 50px; width: 175px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
-                            <button id="sendMachineNameBtn"
-                                    style="height: 50px; width: 25px; border-bottom-left-radius: 0; border-top-left-radius: 0;">
-                                ▶ <!-- ↵⏎⎆ -->
-                            </button>
-                        </div>
+                    <div class="input-group">
+                        <label for="languageSelect">App Language: </label>
+                        <select id="languageSelect" class="appSelector" data-system="1">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                            <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇧🇬</option>
+                            <option value="cs" disabled>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
+                            <option value="de" disabled>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
+                            <option value="es" disabled>&nbsp;Español&nbsp;&nbsp;&nbsp;&nbsp;🇪🇸</option>
+                            <option value="pt" disabled>&nbsp;Português&nbsp;&nbsp;🇵🇹</option>
+                            <option value="fr" disabled>&nbsp;Français&nbsp;&nbsp;&nbsp;🇫🇷</option>
+                            <option value="it" disabled>&nbsp;Italiano&nbsp;&nbsp;&nbsp;🇮🇹</option>
+                            <option value="ru" disabled>&nbsp;Русский&nbsp;&nbsp;&nbsp;&nbsp;🇷🇺</option>
+                            <option value="ja" disabled>&nbsp;日本語&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇯🇵</option>
+                            <option value="ko" disabled>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
+                            <option value="zh" disabled>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳
+                            </option>
+                        </select>
                     </div>
-
-
-                    <div class="input-group" data-system-level="4">
-                        <label for="inputMachineID" style="min-width: max-content;">Machine ID:</label>
-                        <div style="display: flex; gap: 0;">
-                            <input data-input-type="intInput" type="text" id="inputMachineID"
-                                   placeholder="My Machine ID" value="" data-nonremember="true"
-                                   data-essence="identification"
-                                   style="height: 50px; width: 175px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
-                            <button id="sendMachineIDBtn"
-                                    style="height: 50px; width: 25px; border-bottom-left-radius: 0; border-top-left-radius: 0;">
-                                ▶ <!-- ↵⏎⎆ -->
-                            </button>
-                        </div>
-                    </div>
-
 
                     <div class="input-group" data-system-level="1">
                         <label for="inputAutoConnect">Automatically connect to the machine: </label>
-                        <select id="inputAutoConnect"
-                                style="font-family: monospace; font-weight: bold; min-width: 200px;
-                                font-size: 16px; width: max-content; height: 50px;">
+                        <select id="inputAutoConnect" class="appSelector" data-system="1">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="never" title="Don't connect to the device automatically">&nbsp;❌&nbsp;Never
                             </option>
@@ -2389,58 +2444,12 @@
                         </select>
                     </div>
 
-
-                    <div class="input-group">
-                        <label for="languageSelect">App Language: </label>
-                        <select id="languageSelect"
-                                style="font-family: monospace; font-weight: bold; min-width: 200px;
-                                font-size: 16px; width: max-content; height: 50px;">
-                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                            <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇧🇬</option>
-                            <option value="cs" disabled>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
-                            <option value="de" disabled>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
-                            <option value="es" disabled>&nbsp;Español&nbsp;&nbsp;&nbsp;&nbsp;🇪🇸</option>
-                            <option value="pt" disabled>&nbsp;Português&nbsp;&nbsp;🇵🇹</option>
-                            <option value="fr" disabled>&nbsp;Français&nbsp;&nbsp;&nbsp;🇫🇷</option>
-                            <option value="it" disabled>&nbsp;Italiano&nbsp;&nbsp;&nbsp;🇮🇹</option>
-                            <option value="ru" disabled>&nbsp;Русский&nbsp;&nbsp;&nbsp;&nbsp;🇷🇺</option>
-                            <option value="ja" disabled>&nbsp;日本語&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇯🇵</option>
-                            <option value="ko" disabled>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
-                            <option value="zh" disabled>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="input-group" data-system-level="1">
-                        <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
-                        <select id="decimalSymbol" style="font-family: monospace; font-weight: bold; min-width: 200px;
-                                font-size: 16px; width: max-content; height: 50px;">
-                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                            <option value="Option-Dot" selected>&nbsp;Dot&nbsp;&nbsp;&nbsp;( . )&nbsp;</option>
-                            <option value="Option-Comma">&nbsp;Comma&nbsp;( , )&nbsp;</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group" data-system-level="1">
-                        <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
-                        <select id="delimiterSymbol" style="font-family: monospace; font-weight: bold; min-width: 200px;
-                                font-size: 16px; width: max-content; height: 50px;">
-                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                            <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
-                            <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;</option>
-                            <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;</option>
-                            <option value="Option-Tab">&nbsp;Tab&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( \t )&nbsp;
-                            </option> <!-- ↹, ⇥, ⮂ -->
-                        </select>
-                    </div>
-
                     <!-- TODO: add that this and some other settings are tight to the Different storage 'System'  -->
                     <div class="input-group" data-system-level="2">
                         <label for="inputUseMachineSettings">
                             Apply machine settings on connect:
                         </label>
-                        <select id="inputUseMachineSettings" style="font-family: monospace; font-weight: bold;
-                                 min-width: 200px; font-size: 16px; width: max-content; height: 50px;">
+                        <select id="inputUseMachineSettings" class="appSelector" data-system="1">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="no_not" title="Keep and don't save to machine">&nbsp;❌&nbsp;No (keep)
                             </option>
@@ -2455,16 +2464,38 @@
                         </select>
                     </div>
 
+                    <div class="input-group" data-system-level="1">
+                        <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
+                        <select id="decimalSymbol" class="appSelector" data-system="1">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                            <option value="Option-Dot" selected>&nbsp;Dot&nbsp;&nbsp;&nbsp;( . )&nbsp;</option>
+                            <option value="Option-Comma">&nbsp;Comma&nbsp;( , )&nbsp;</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" data-system-level="1">
+                        <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
+                        <select id="delimiterSymbol" class="appSelector" data-system="1">
+                            <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                            <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
+                            <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;</option>
+                            <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;</option>
+                            <option value="Option-Tab">&nbsp;Tab&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( \t )&nbsp;
+                            </option> <!-- ↹, ⇥, ⮂ -->
+                        </select>
+                    </div>
+
                     <div class="input-group">
                         <label for="inputAutoSave">
                             Save data to CSV automatically:
                         </label>
-                        <select id="inputAutoSave" style="font-family: monospace; font-weight: bold; min-width: 200px;
-                                font-size: 16px; width: max-content; height: 50px;">
+                        <select id="inputAutoSave" class="appSelector" data-system="1">
                             <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                             <option value="Option-Never" title="Save data only by 'save' buttons" selected>&nbsp;❌&nbsp;Never</option>
-                            <option value="Option-Before" title="Save data before start of the next Experiment">&nbsp;⏮️&nbsp;Before</option>
-                            <option value="Option-After" title="Save data right at the end of Experiment">&nbsp;⏭️&nbsp;After</option>
+                            <option value="Option-Before" title="Save data before the start of the next Experiment">
+                                &nbsp;⏮️&nbsp;Before
+                            </option>
+                            <option value="Option-After" title="Save data right at the end of the Experiment">&nbsp;⏭️&nbsp;After</option>
                         </select>
                     </div>
 
@@ -2472,7 +2503,7 @@
                         <label for="inputClearCalculations">
                             Clear calculation inputs at the start of each experiment:
                         </label>
-                        <input type="checkbox" id="inputClearCalculations" checked>
+                        <input type="checkbox" id="inputClearCalculations" data-system="1" checked>
                     </div>
 
                     <button id="clearCalculationsButton" class="controlBtn" data-system-level="1">
@@ -2495,33 +2526,35 @@
 
                     <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="1">
                         <button id="exportSettingButton" class="controlBtn controlElement"
-                                style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
+                                style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-3-color); font-size: 12px;">
                             ↗️ Export settings <!-- 📁📤 -->
                         </button>
                         <button id="importSettingButton" class="controlBtn controlElement"
-                                style="width: 100px; border-bottom-left-radius: 0; border-top-left-radius: 0; border-left: 0 solid transparent;  color: var(--text-info-2-color); font-size: 12px;">
+                                style="width: 100px; border-bottom-left-radius: 0; border-top-left-radius: 0; border-left: 0 solid transparent;  color: var(--text-info-3-color); font-size: 12px;">
                             ↘️ Import settings <!-- 📂 📥 -->
                         </button>
                     </div>
 
                     <button id="aboutButton" class="controlBtn"
-                            style="color: var(--text-info-2-color);">
+                            style="color: var(--text-info-3-color);">
                         ℹ️ About app
                     </button>
 
-                    <button id="updateMachButton" class="controlBtn controlElement" data-system-level="1"
-                            style="color: var(--text-info-2-color);">
+                    <button id="updateMachButton" class="controlBtn controlElement machineControlElement"
+                            data-system-level="1"
+                            style="color: var(--text-info-3-color);">
                         ⬆️ Update device firmware
                     </button>
 
 
-                    <button id="rebootButton" class="controlBtn controlElement" data-system-level="1"
-                            style="color: var(--text-info-2-color);">
+                    <button id="rebootButton" class="controlBtn controlElement machineControlElement"
+                            data-system-level="1"
+                            style="color: var(--text-info-3-color);">
                         🔂 Reboot device
                     </button>
 
                     <button id="clearStorageButton" class="controlBtn controlElement"
-                            style="color: var(--text-info-2-color);">
+                            style="color: var(--text-info-3-color);">
                         🔁 Reset app
                     </button>
                 </div>
@@ -2558,7 +2591,7 @@
                     </button>
                 </div>
 
-                <div class="logContainer" data-system-level="1">
+                <div class="logContainer machineControlElement controlElement" data-system-level="1">
                     <div style="height: 40px; width: 100%">
                         <label for="commandInput"></label>
                         <textarea id="commandInput" placeholder="Enter command..."></textarea>
@@ -2799,26 +2832,23 @@
 
 
     // -------------------- Pomocné DOM utilitky --------------------
-    const $ = (sel) => document.querySelector(String(sel));
-    const $$ = (sel) => {
-        let els = document.querySelectorAll(String(sel));
-        if (els.length === 0 && !String(sel).startsWith('.')) els = document.querySelectorAll('.' + String(sel));
-        if (els.length === 0 && !String(sel).startsWith('.') && !String(sel).startsWith('#')) els = $('#' + String(sel));
-        return els;
-    }
-    const $ROOT = (root, sel) => root.querySelector(String(sel));
-    const $$ROOT = (root, sel) => {
+    const $ = (sel, root = null) => (root || document).querySelector(String(sel));
+    const $$ = (sel, root = null) => {
+        root = root || document;
         let els = root.querySelectorAll(String(sel));
         if (els.length === 0 && !String(sel).startsWith('.')) els = root.querySelectorAll('.' + String(sel));
-        if (els.length === 0 && !String(sel).startsWith('.') && !String(sel).startsWith('#')) els = $ROOT(root, '#' + String(sel));
+        if (els.length === 0) els = catchVal($ID(String(sel)), [], not(isVoid));
         return els;
     }
     const $ID = (id) => document.getElementById(String(id));
-    const $$CLS = (cls) => document.getElementsByClassName(String(cls));
-    const $$TAG = (tag) => document.getElementsByTagName(String(tag));
-    const $MAKE = (tag) => document.createElement(String(tag));
-    const $MAKE_NS = (tag, ns) => document.createElementNS(String(ns), String(tag));
-    const $FRAG = () => document.createDocumentFragment();
+
+    const $NAME = (name, root = null) => (root || document).getElementsByName(String(name));
+    const $$CLS = (cls, root = null) => (root || document).getElementsByClassName(String(cls));
+    const $$TAG = (tag, root = null) => (root || document).getElementsByTagName(String(tag));
+    const $MAKE = (tag, root = null) => (root || document).createElement(String(tag));
+    const $MAKE_NS = (tag, ns, root = null) => (root || document).createElementNS(String(ns), String(tag));
+    const $FRAG = (root = null) => (root || document).createDocumentFragment();
+
     const exists = (id) => !!$ID(id);
 
 
@@ -2833,11 +2863,11 @@
     const isNonEmptyStr = (x) => isStr(x) && x.trim() !== '';
     const isBool = (x) => typeof x === 'boolean';
     const isFunc = (x) => typeof x === 'function';
-    const isObj = (x) => x !== null && typeof x === 'object' && !isArr(x);
+    const isObj = (x) => isDef(x) && typeof x === 'object' && !isArr(x);
     const isEmptyObj = (x) => isObj(x) && Object.keys(x).length === 0;
     const isNonEmptyObj = (x) => isObj(x) && Object.keys(x).length > 0;
     const isSymbol = (x) => typeof x === 'symbol';
-    const isUndefined = (x) => typeof x === 'undefined';
+    const isUndefined = (x) => x === undefined || typeof x === 'undefined';
     const isNull = (x) => x === null;
     const isDef = (x) => !isUndefined(x) && !isNull(x);
     const isVoid = (x) => isUndefined(x) || isNull(x);
@@ -2981,7 +3011,7 @@
     const hasValueButNotBoolean = (x) => hasValue(x) && !isBool(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
 
     const isNotEmpty = (x) => {
-        if (!isDef(x)) return false;
+        if (isVoid(x)) return false;
         if (isNumberOrInfinity(x) && !Number.isNaN(x)) return true; // 0 i ±Infinity projde,  0n i velké hodnoty projdou
         if (isStr(x)) return x.trim() !== '';
         if (isArr(x)) return x.length > 0;
@@ -3088,7 +3118,7 @@
 
         if (strOut && typeof isBigInt(n)) n = Number(n);
 
-        if (dec == null || dec === "none" || isBigInt(n)) {
+        if (isVoid(dec) || dec === "none" || isBigInt(n)) {
             // žádné dec -> vrať n
             return strOut ? String(n) : n;
         }
@@ -3233,7 +3263,7 @@
     const aggregateND = (input, dim, op1D) => {
         const rows = normalize2D(input);
 
-        if (dim === 0 || dim == null) {
+        if (dim === 0 || isVoid(dim)) {
             const flat = [];
             for (const r of rows) flat.push(...r);
             return op1D(flat);
@@ -3351,7 +3381,7 @@
     const extremumNDIdx = (input, dim = 0, which = 'min', acceptInf = false) => {
         const rows = normalize2D(input);
 
-        if (dim === 0 || dim == null) {
+        if (dim === 0 || isVoid(dim)) {
             return argExtremum2D(rows, acceptInf, which === 'min');
         }
         if (dim === 1) {
@@ -3373,7 +3403,7 @@
         const idx = extremumNDIdx(rows, dim, which, acceptInf);
         if (Number.isNaN(idx)) return {value: NaN, index: NaN};
 
-        if (dim === 0 || dim == null) {
+        if (dim === 0 || isVoid(dim)) {
             const [i, j] = idx;
             return {value: toNumber(rows[i]?.[j], true), index: [i, j]};
         }
@@ -3524,6 +3554,17 @@
 
     // =====================================================================
 
+    const isSkippable = (el) =>
+        el.type === 'file' ||
+        el.type === 'password' ||
+        el.dataset.system === '-1' ||
+        el.dataset.system === 'skip' ||
+        el.dataset.system === 'none' ||
+        el.dataset.system === 'null' ||
+        el.dataset.system === 'false';
+
+    // =====================================================================
+
 
     function getLocaleOrder(locales = null, {
         timeZone = undefined,           // nech prázdné pro aktuální zónu
@@ -3539,7 +3580,7 @@
             timeZone
         };
 
-        if (locales == null) {
+        if (isVoid(locales)) {
             locales = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en-US'];
         }
 
@@ -3584,6 +3625,7 @@
     // =====================================================================
 
     function progressCalculate(current, end) {
+        if (!isFiniteNumber(current) || !isFiniteNumber(end) || end === 0) return NaN;
         let progress = clamp((current / end) * 100, 0, 100);
         return roundDecimalFast(progress, 6);
     }
@@ -3762,7 +3804,7 @@
     // 2) nahradí textové předpony & jednotky & překlepy
     // 3) slepí "<prefix><mezera><unit>" → "<prefix><unit>" (např. "k m" → "km")
     function normalizeUnitsString(input) {
-        if (input == null) return input;
+        if (isVoid(input)) return input;
         let s = String(input);
 
         // °C / °F → degC / degF
@@ -3861,8 +3903,8 @@
         let pf = 1;
         if (prefixStr) {
             pf = PREFIX.get(prefixStr);
-            if (pf == null && prefixStr === 'da') pf = 10; // fallback
-            if (pf == null) throw new Error(`Unknown prefix: "${prefixStr}" in "${tok}"`);
+            if (isVoid(pf) && prefixStr === 'da') pf = 10; // fallback
+            if (isVoid(pf)) throw new Error(`Unknown prefix: "${prefixStr}" in "${tok}"`);
         }
 
         return {
@@ -4020,7 +4062,7 @@
         /* ======= KONFIG ======= */
         const COPY_SELECTOR = '.copyableInput';
         const ADJUST_SELECTOR = '.adjustableInput';
-        const LINGER_MS = 1000; // jak dlouho zůstane pilulka viditelná po akci/opuštění
+        const LINGER_MS = 1_000; // jak dlouho zůstane pilulka viditelná po akci/opuštění
 
         /* ======= POMOCNÉ FUNKCE (bezpečné fallbacky) ======= */
         const normalize = (v) => String(v || '').toLowerCase()
@@ -4066,7 +4108,7 @@
             if (!btn) return;
             if (!wrap || !wrap.classList.contains('has-auto')) return;
             if (btn.dataset.state === 'idle' || btn.dataset.state === 'set' || btn.dataset.state === 'diff') {
-                const input = $ROOT(wrap, ADJUST_SELECTOR);
+                const input = $(ADJUST_SELECTOR, wrap);
                 if (!input) return;
                 const id = input.id || normalize(input.name) || normalize(input.dataset.adjustId);
                 if (!id) return;
@@ -4212,7 +4254,7 @@
         };
         window.adjustGet = (id) => adjustRegistryAPI.get(id);
         window.adjustDel = (id) => {
-            if (adjustRegistryAPI.get(id) !== undefined) {
+            if (!isUndefined(adjustRegistryAPI.get(id))) {
                 adjustRegistryAPI.set(id, NaN);
             }
         };
@@ -4264,7 +4306,7 @@
                             el.focus();
                             el.select();
                             ok = document.execCommand('copy');
-                            if ((s != null && e != null) && (s <= e) && e !== 0) {
+                            if ((isDef(s) && isDef(e)) && (s <= e) && e !== 0) {
                                 el.setSelectionRange(s, e);
                                 ok = true;
                             } else {
@@ -4337,7 +4379,7 @@
                     el.dispatchEvent(new Event('input', {bubbles: true}));
                     el.dispatchEvent(new Event('change', {bubbles: true}));
                     // navrátit caret pokud dává smysl
-                    if (prev.s != null && prev.e != null && el.setSelectionRange) {
+                    if (isDef(prev.s) && isDef(prev.e) && el.setSelectionRange) {
                         const end = str.length;
                         el.setSelectionRange(end, end);
                     }
@@ -4391,9 +4433,9 @@
         const setupOne = (el) => {
             const wrap = ensureWrap(el);
             // Pokud je to copyable, přidej copy pilulku
-            if (el.matches(COPY_SELECTOR) && !$ROOT(wrap, '.copy-pill')) bindCopy(wrap, el);
+            if (el.matches(COPY_SELECTOR) && !$('.copy-pill', wrap)) bindCopy(wrap, el);
             // Pokud je to adjustable, přidej adjust pilulku
-            if (el.matches(ADJUST_SELECTOR) && !$ROOT(wrap, '.adjust-pill')) bindAdjust(wrap, el);
+            if (el.matches(ADJUST_SELECTOR) && !$('.adjust-pill', wrap)) bindAdjust(wrap, el);
         };
 
         const scan = () => {
@@ -4422,6 +4464,7 @@
     const calc_flex_strength = (F, L, b, h) => (3 * F * L) / (2 * b * (h * h));
     const calc_stress = (F, A) => F / A;
     const calc_speed = (d, t) => d / t;
+    const calc_load_speed = (v_orig, t_orig, t_load) => v_orig * (t_orig / t_load);
     const calc_indentation_diameter = (h, D) => 2 * Math.sqrt(h * (D - h));
     const calc_hardness_brinell = (F, D, d) => (2 * F) / (Math.PI * D * (D - Math.sqrt((D * D) - (d * d))));
 
@@ -4599,18 +4642,20 @@
             const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
             applyAdjust('inputIndDepth', depthIndentation);
 
-            const time = timeData;
 
             // Rychlost zatěžování: v = w_T / t
-            const t_goal = readNum("inputLoadingTime", true);   // s
+            const time = timeData;
 
-            const t_tare = time[FinitialInd];                   // s
-            const t_set_raw = time[FtargetInd];                 // s
-            const t_set = calc_val_tare(t_set_raw, t_tare);     // s
-            const v_set = speedForward_mmps;    // readNum("inputSpeedForward", true); // mm/s
+            const t_goal = readNum("inputLoadingTime", true);                   // s
+            const w_goal = calc_val_tare(w_Ftarget_raw, w_Finitial_raw);        // mm
 
-            const v1 = calc_speed(w_Ftarget, t_goal);   // variant 1     mm/s
-            const v2 = v_set * (t_set / t_goal);        // variant 2     mm/s
+            const t_Finitial_raw = time[FinitialInd];                                               // s
+            const t_set_raw = time[FtargetInd];                                                     // s
+            const t_set = calc_val_tare(t_set_raw, t_Finitial_raw);                                 // s
+            const v_set = catchVal(speedForward_mmps, readNum("inputSpeedForward", true), isNum);   // mm/s
+
+            const v1 = calc_speed(w_goal, t_goal);              // variant 1     mm/s
+            const v2 = calc_load_speed(v_set, t_set, t_goal);  // variant 2     mm/s
 
             console.log("\n",
                 "\n\tGuest 1:", roundDecimalFast(v1, precisionSpeedSystem),
@@ -4623,7 +4668,9 @@
             // TODO: ΔT = 5.2 - 2.6 = 2.6s
             // TODO: ((5.2-2.6) / 15) = 0.1733 [-]
             // TODO: 0.6825 * ((5.2-2.6) / 15) = 0.1183 mm/s
-            // TODO: v_new = v_old * (T_old / T_target) = (position * T_old) * (T_old / T_target) = position * (T_old^2 / T_target)
+
+            // TODO: v_new1 = position / T_target = (v_old * T_old) / T_target = ((position / T_old) * T_old) / T_target = position / T_target
+            // TODO: v_new2 = v_old * (T_old / T_target) = (position / T_old) * (T_old / T_target) = position / T_target
 
         } else {
             const inputDisp = readNum("inputDisp");
@@ -4641,7 +4688,7 @@
         $ID('inputTareDisp').value = '0';
         $ID('inputMaterialName').value = '';
         $$(".data-eq[data-eq-type]")?.forEach(el => {
-            $$ROOT(el, 'input')?.forEach(input => {
+            $$('input', el)?.forEach(input => {
                 input.value = '';
             });
         });
@@ -4856,7 +4903,7 @@
             else return;
         } else if (typeof valueType === "string") {
             if (valueType === "intInput") {
-                newVal = Math.round(val);
+                newVal = Math.floor(val)
             }
 
             // Enforce min/max constraints
@@ -4996,23 +5043,20 @@
 
 
     // Function to save ALL inputs to localStorage
-    function saveAllInputsToLocalStorage(elements, storage = storageKey) {
-        if (!storage && !storageKey) {
+    function saveAllInputsToLocalStorage(elements, storage) {
+        if (!storage) {
             console.error("Storage key is not defined.");
             return;
-        } else if (!storage) {
-            storage = storageKey;
         }
+        if (!elements) {
+            console.error("Elements to load are not defined.");
+            return;
+        }
+
         let formData = {};
 
-        if (!elements) {
-            elements = $$("input, select");
-        }
-
         elements?.forEach(input => {
-            if (input.dataset.nonremember !== "true") {
-                formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
-            }
+            formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
 
         });
 
@@ -5021,17 +5065,19 @@
     }
 
     // Function to load inputs from localStorage
-    function loadInputsFromLocalStorage(elements) {
-        if (!storageKey) {
+    function loadInputsFromLocalStorage(elements, storage) {
+        if (!storage) {
             console.error("Storage key is not defined.");
             return;
         }
-        const formData = JSON.parse(localStorage.getItem(storageKey)) || {}; // Load the saved data
         if (!elements) {
-            elements = $$("input, select");
+            console.error("Elements to load are not defined.");
+            return;
         }
 
-        if (!formData) saveAllInputsToLocalStorage(elements, storageKey);
+        const formData = JSON.parse(localStorage.getItem(storage)) || {}; // Load the saved data
+
+        if (!formData) saveAllInputsToLocalStorage(elements, storage);
 
         elements?.forEach(input => {
             if (formData.hasOwnProperty(input.id)) {
@@ -5060,6 +5106,7 @@
 
     function importSettings() {
         if (!allLoaded) return;
+        if (isExperimentRunning) return;
 
         if (!storageKey) {
             console.error("Storage key is not defined.");
@@ -5080,13 +5127,13 @@
                     const content = e.target.result || '';
                     const formData = JSON.parse(String(content));
 
-                    if (typeof formData !== 'object' || formData === null) {
+                    if (typeof formData !== 'object' || isVoid(formData)) {
                         console.error("Invalid settings file format.");
                         return;
                     }
 
                     localStorage.setItem(storageKey, JSON.stringify(formData));
-                    loadInputsFromLocalStorage();
+                    loadInputsFromLocalStorage(null, storageKey); // TODO: pass elements instead of null
                     console.info("\n📂 Settings imported successfully.");
                 } catch (error) {
                     console.error("Error reading settings file:", error);
@@ -5466,7 +5513,7 @@
 
         for (const {data, id} of items) {
             // pozor: id může být 0 => kontrola na null/undefined
-            const hasId = id !== undefined && id !== null;
+            const hasId = isDef(id);
 
             if (hasId) {
                 // Upsert se zadaným klíčem
@@ -5498,7 +5545,7 @@
      * - patch se merguje přes stávající hodnotu.
      */
     function updateLogById(id, patch, {upsert = true} = {}) {
-        if (id == null) return Promise.resolve(false);
+        if (isVoid(id)) return Promise.resolve(false);
         if (!(dataLoaded && pageLoaded)) return Promise.resolve(false);
         if (!db) return Promise.resolve(false);
         return new Promise((resolve, reject) => {
@@ -5589,7 +5636,7 @@
 
     // Maximum number of data points displayed in the charts
     const maxDataPointsExp = 1e5;
-    const maxDataPointsIdle = 1000 / 10; // 10x in 1 seconds (100 ms)
+    const maxDataPointsIdle = 1_000 / 10; // 10x in 1 seconds (100 ms)
     let maxDataPoints = maxDataPointsIdle;
 
 
@@ -5883,7 +5930,7 @@
             //     init: [
             //         (u) => {
             //             // find "Photos" and hide it
-            //             $$ROOT(u.root, ".u-legend tr")?.forEach((tr) => {
+            //             $$(".u-legend tr", u.root)?.forEach((tr) => {
             //                 if (tr.textContent?.trim().startsWith("Photos")) tr.style.display = "none";
             //             });
             //         },
@@ -6373,6 +6420,7 @@
 
     const movementElements = $$(".movementControlElement");
     const controlElements = $$(".controlElement");
+    const machineElements = $$(".machineControlElement");
 
     const lockMovement = () => lockElements(movementElements);
     const lockMovementExcept = (exceptEl) => lockElementsExcept(movementElements, exceptEl);
@@ -6381,6 +6429,10 @@
     const lockControls = () => lockElements(controlElements);
     const lockControlsExcept = (exceptEl) => lockElementsExcept(controlElements, exceptEl);
     const unlockControls = () => unlockElements(controlElements);
+
+    const lockMachineControls = () => lockElements(machineElements);
+    const unlockMachineControls = () => unlockElements(machineElements);
+    const lockMachineControlsExcept = (exceptEl) => lockElementsExcept(machineElements, exceptEl);
 
     const lockControlAndMove = () => {
         lockMovement();
@@ -6453,19 +6505,20 @@
     // ------- Správa pohybu -------
     async function beganMoving(timeoutMs = null) {
         if (machineOccupation) return; // už běží
-        machineOccupation = true;
-        warnOnClose = true;
-        startWatchdog(WATCHDOG_INTERVAL_MS);
 
         // naplánuj automatické ukončení (volitelné)
-        if (timeoutMs != null) {
+        if (isValidInputNum(timeoutMs)) {
+            machineOccupation = true;
+            warnOnClose = true;
+            startWatchdog(WATCHDOG_INTERVAL_MS);
+
             const delay = toInteger(timeoutMs, "round");
             if (!isNumber(delay)) {
                 console.warn("\nInvalid delay for beganMoving:", timeoutMs);
                 endedMoving();
                 return;
             }
-            if (movingTimeout != null) {
+            if (isDef(movingTimeout)) {
                 clearTimeout(movingTimeout);
                 movingTimeout = null;
             }
@@ -6512,7 +6565,7 @@
 
     function endedMoving() {
         // idempotence
-        if (movingTimeout != null) {
+        if (isDef(movingTimeout)) {
             clearTimeout(movingTimeout);
             movingTimeout = null;
         }
@@ -6581,7 +6634,7 @@
 
 
             // nastav/obnov timeout ukončení pohybu
-            if (movingTimeout != null) {
+            if (isDef(movingTimeout)) {
                 clearTimeout(movingTimeout);
                 movingTimeout = null;
             }
@@ -6927,7 +6980,7 @@
     let endMeasurementCounter = null;
     const delayMsAfterEndMeasurement = 100; // microseconds
 
-    let positionProgress = 0;
+    let experimentProgress = 0;
 
     let endedBy = null;
 
@@ -6965,7 +7018,7 @@
 
         function step(t, x, F) {
             // t [s], x [mm], F [N]  →  v [mm/s]
-            if (lastT === null) lastT = t;
+            if (isNull(lastT)) lastT = t;
             const dt = Math.max(1e-6, t - lastT);
             lastT = t;
 
@@ -7084,8 +7137,7 @@
         try {
             UI.experimentStageLabel.textContent = `Starting`;
 
-            await lockMovement();
-            await lockControls();
+            await lockControlAndMove();
             await beganMoving();
 
             if (!debugging) await console.clear();
@@ -7099,10 +7151,7 @@
             const experimentType = $ID("experimentTypeDropdown")?.value.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = getInputNumDefAbsFlt("inputSpeedForward", NaN);
-            // const speedBackward_mmps = parseFloat($$("inputSpeedBackward").value);
             dataInterval_us = Math.max(getInputNumDefAbsInt("inputDataInterval", NaN), 100);
-            const loadcellCapacity = getInputNumDefAbsInt("inputLoadcellCapacity", NaN);
-            const loadcellOutput = getInputNumDefAbsFlt("inputLoadcellOutput", NaN);
             takePhotos = $ID("inputTakePhotos").checked;
             const photoInterval_ms = Math.round(getInputNumDefAbsFlt("inputPhotoInterval", NaN) * 1_000);
             forceLimitDropPercent = catchVal((toNumber($ID("inputLoadLimitDropPercent").value) / 100), Infinity, isNum);
@@ -7146,6 +7195,15 @@
                 }
             }
 
+            let doCycles = false;
+            let cyclesCount = NaN;
+
+            if (!experimentType.endsWith("-basic")) {
+                doCycles = $ID("inputDoCycles").checked;
+                if (doCycles) cyclesCount = getInputNumDefAbsInt("inputCycles", NaN);
+
+            }
+
             if (experimentType.includes("-pos-")) {
                 experimentEndLimits = {position: distance_mm, force: null, time: null};  // The total distance to be moved; force and time limits are not used now
                 expControl = 'position'; // Control the experiment by position
@@ -7163,6 +7221,13 @@
                     throw new Error("Distance error");
                 }
             }
+
+            if (doCycles && !(isNum(cyclesCount) && cyclesCount > 0)) {
+                    console.warn(`\n⚠️ Number of cycles must be a positive integer.`);
+                    await logMessage(`⚠️ Number of cycles must be a positive integer.`);
+                    alert(`⚠️ Number of cycles must be a positive integer.`);
+                    throw new Error("Cycles count error");
+                }
 
             if (!isNum(speedForward_mmps) || speedForward_mmps < minFSpeed) {
                 console.warn(`\n⚠️ Speed must be greater than ${minFSpeed} mm.`);
@@ -7237,50 +7302,45 @@
                     await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
                     alert(`⚠️ Stopping force must be greater than 0 N.`);
                     throw new Error("Stopping force error");
-                } else if (!isNum(holdForceTimeMs) || (holdForceTimeMs / 1_000) < 0) {
-                    console.warn(`\n⚠️ Hold force time must be equal or greater than 0 s.`);
-                    await logMessage(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                    alert(`⚠️ Hold force time must be equal or greater than 0 s.`);
-                    throw new Error("Hold force time error");
-                }
-            }
-
-            if (experimentType.endsWith("-hbr")) {
-                if (!isValidInputNum(stoppingForceLimit)) {
-                    console.warn(`\n⚠️ Stopping force must be greater than 0 N.`);
-                    await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
-                    alert(`⚠️ Stopping force must be greater than 0 N.`);
-                    throw new Error("Stopping force error");
                 }
 
-                if (isNum(initialForceLim_N) && (stoppingForceLimit < initialForceLim_N)) {
+                if (stoppingForceLimit <= initialForceLim_N) {
                     console.warn(`\n⚠️ Stopping force must be greater than initial force.`);
                     await logMessage(`⚠️ Stopping force must be greater than initial force.`);
                     alert(`⚠️ Stopping force must be greater than initial force.`);
                     throw new Error("Stopping force error");
                 }
 
-                if (!isNum(holdForceTimeMs) || holdForceTimeMs < minInt) {
+                if (!isNum(holdForceTimeMs) || holdForceTimeMs < minInt || (holdForceTimeMs / 1_000) < 0) {
                     console.warn(`\n⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
                     await logMessage(`⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
                     alert(`⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
                     throw new Error("Hold force time error");
                 }
 
-                if (holdForceTimeMs * 1_000 * 0.05 < dataInterval_us) {
-                    console.warn(`\n⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us * 1_000} ms.`);
-                    await logMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us * 1_000} ms.`);
-                    const newDataInterval = holdForceTimeMs * 1_000 * 0.05;
-                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${newDataInterval} µs ❗`);
-                    dataInterval_us = newDataInterval;
-                    $ID("inputDataInterval").value = dataInterval_us;
+                const minDataInterval = 25_000;
+                if (dataInterval_us < minDataInterval) {
+                    console.warn(`\n⚠️ Data interval must be at least 30000 µs for hold constant force mode.`);
+                    await logMessage(`⚠️ Data interval must be at least 30000 µs for hold constant force mode.`);
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${minDataInterval} µs ❗`);
+                    dataInterval_us = minDataInterval;
+                    $ID("inputDataInterval").value = minDataInterval;
+                }
+
+                const minDataIntervalHold = holdForceTimeMs * 1_000 * 0.05;
+                if (minDataIntervalHold < dataInterval_us) {
+                    console.warn(`\n⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us / 1_000} ms.`);
+                    await logMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us / 1_000} ms.`);
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${minDataIntervalHold} µs ❗`);
+                    dataInterval_us = minDataIntervalHold;
+                    $ID("inputDataInterval").value = minDataIntervalHold;
                 }
             }
 
 
             if (isEmptyStr(expControl)) throw new Error("Experiment control is not set.");
-            if (experimentEndLimits[expControl] === undefined) throw new Error(`Experiment end limit for ${expControl} is not set.`);
-            if (parsedData[expControl] === undefined) throw new Error(`Parsed data for ${expControl} is not available.`);
+            if (isUndefined(experimentEndLimits[expControl])) throw new Error(`Experiment end limit for ${expControl} is not set.`);
+            if (isUndefined(parsedData[expControl])) throw new Error(`Parsed data for ${expControl} is not available.`);
             if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throw new Error("Experiment end limits are not properly set.");
 
 
@@ -7408,11 +7468,17 @@
 
             aggregatedDataBetweenSteps = [];
             dataCount = 0;
+
             Object.values(measurement_limits).forEach(v => {
                 v.counter = 0;
                 v.limit = minimumConditionCount;
             });
             measurement_limits.over_limitForce.limit = calculateStep(dataInterval_us, 10, 2);
+            if (doCycles) {
+                experimentEndLimits = {position: null, force: null, time: null};
+                measurement_limits.zero_speed.limit = calculateStep(dataInterval_us, 1_000, 2);
+            }
+
             checkSpeed = true; // TODO: reset if needed
             timer = null;
             endedBy = null;
@@ -7474,7 +7540,7 @@
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
                 endStatus: endedBy,
-                positionProgress: positionProgress,
+                experimentProgress: experimentProgress,
                 precisions: {
                     time: precisionTime,
                     position: precisionPosition,
@@ -7544,7 +7610,7 @@
             }
 
             const setChart = (chart) => {
-                if (!isDef(chart)) return;
+                if (isVoid(chart)) return;
                 forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: !r?.allInvalid}));
                 chart.setSeries((loadCellNum + 1), {show: takePhotos});
             };
@@ -7581,9 +7647,9 @@
                     Ki: 0.015,
                     deadbandN: (totalErrRate * 1.15), // deadband set to 115% of total error rate
                     vMin: minFSpeed,
-                    vMax: maxFSpeed / 5, // limit max speed during holding to one fifth of max speed
+                    vMax: Math.max(minFSpeed * 3 / 2, speedForward_mmps * 2 / 3), // limit max speed during holding
                     accel: null, // slew-rate limit to 5 mm/s²
-                    integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 100), // anti-windup clamp: readings in the last 25% of hold time
+                    integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 125), // anti-windup clamp: readings in the last 25% of hold time
                 });
             }
 
@@ -7591,7 +7657,7 @@
             // ==================================
             // === Reset Experiment Variables ===
 
-            positionProgress = 0
+            experimentProgress = 0
             tareValues.time = null;
             lastAcceptedTime = null;
             isExperimentRunning = true;
@@ -7625,6 +7691,20 @@
             console.info("➡️ Moving forward...");
             await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
 
+            if (doCycles && isNum(cyclesCount) && cyclesCount > 0) {
+                const movementTime = computeMotionTime(distance_mm, speedForward_mmps, 200);
+
+                setInterval(async () => {
+                    if (!isExperimentRunning) return;
+                    if (cyclesCount <= 0) return;
+
+                    cyclesCount--;
+                    console.info(`🔄 Cycle detected, moving back. Cycles left: ${cyclesCount}`);
+                    displacementSignCorrection *= -1;
+                    await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
+                }, movementTime + 5);
+            }
+
 
             // === Data Collection Loop ===
             while (isExperimentRunning) {
@@ -7653,7 +7733,7 @@
                 //     console.info(`➡️ Moving further to ${endPosition - shift} mm...`);
                 //
                 //     await sendCommandGeneral(`MC MOVEBY MACH -${shift}`);
-                //     await sleep(((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1000) + 500)); // Wait
+                //     await sleep(((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1_000) + 500)); // Wait
                 //
                 //     endPosition = await measurePosition();
                 //
@@ -7704,15 +7784,15 @@
             dbFlushTimer = null;
             await flushDB();
             await recomputeAll();
-            if (endedBy != null) await updateLogById(0, {endStatus: endedBy});
-            await updateLogById(0, {positionProgress: positionProgress, status: "collected"});
+            if (isDef(endedBy)) await updateLogById(0, {endStatus: endedBy});
+            await updateLogById(0, {experimentProgress: experimentProgress, status: "collected"});
             document.title = initialTitle;
 
             UI.experimentStageLabel.textContent = `Idle`;
             maxDataPoints = maxDataPointsIdle;
 
             endedMoving();    // unlock UI and watchdog
-            unlockControls();
+            unlockControlAndMove();
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
             await console.groupEnd();
@@ -7748,7 +7828,7 @@
             endMeasurementCounter = null;
         }
 
-        if (timeoutMs == null || !isNumber(timeoutMs)) timeoutMs = 0;
+        if (!isNum(timeoutMs)) timeoutMs = 0;
 
         if (isNonEmptyStr(command)) {
             await sendCommandGeneral(command);
@@ -7786,8 +7866,8 @@
             }
 
             // progress UI
-            if (positionProgress >= 99.999_900) {
-                positionProgress = 100;
+            if (experimentProgress >= 99.999_900) {
+                experimentProgress = 100;
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressDone-color)');
                 UI.experimentStageLabel.textContent = `Finished`;
                 UI.progressBar.value = 100;
@@ -7822,14 +7902,31 @@
 
     async function UIupdate() {
         lastTitle = document.title;
+
         while (isExperimentRunning) {
-            UI.progressBar.value = positionProgress;
-            UI.progressLabel.innerText = `${positionProgress.toFixed(2)}%`; // .padStart(5, "0")
-            const newTitle = `Μοῖρα - ${Math.floor(positionProgress)}%`;
+
+            let progressNumber, progressLabel, progressTitle;
+
+            if (!isNum(experimentProgress)) {
+                progressNumber = 0;
+                progressLabel = 'N/A';
+                progressTitle = 'Unknown';
+            } else {
+                progressNumber = experimentProgress;
+                progressLabel = `${experimentProgress.toFixed(2)}%`; // .padStart(5, "0")
+                progressTitle = `${Math.floor(experimentProgress)}%`;
+            }
+
+            UI.progressBar.value = progressNumber;
+            UI.progressLabel.innerText = progressLabel;
+            const newTitle = `Μοῖρα - ${progressTitle}`;
             if (lastTitle !== newTitle) {
                 document.title = newTitle;
                 lastTitle = newTitle;
             }
+
+            if (experimentProgress >= 100) break;
+
             // wait for 50 ms => 20FPS
             await sleep(50);
         }
@@ -8464,7 +8561,7 @@
             const num = parseFloat(val);
             return catchVal(num, null, isNum);
         }); // LoadCell values
-        // const photoIndexRaw = measurementParts?.photoIndex != null ? parseInt(parts[measurementParts?.photoIndex]) : null; // DSLR photo index
+        // const photoIndexRaw = isDef(measurementParts?.photoIndex) ? parseInt(parts[measurementParts?.photoIndex]) : null; // DSLR photo index
 
         return {
             time: catchVal(timeRaw, null, isNum),
@@ -8645,8 +8742,8 @@
         let progressValue;
         progressValue = progressCalculate(newData[expControl], experimentEndLimits[expControl]);
 
-        if (progressValue >= 100) {
-            if (positionProgress < 100) {
+        if (isNum(progressValue) && progressValue >= 100) {
+            if (experimentProgress < 100) {
                 const delayMs = endMeasurement ? 0 : delayMsAfterEndMeasurement;
                 endMeasuring(delayMs, {
                     overRide: true,
@@ -8656,7 +8753,7 @@
                 if (takePhotos) setTimeout(() => sendCommandGeneral("DSLR STOP CYCLIC"), 30); // small delay to allow data processing
             }
         }
-        positionProgress = progressValue;
+        experimentProgress = progressValue;
 
         // Live chart update
         dataCount++;
@@ -8735,7 +8832,7 @@
             cap.dataset.systemLevel = '2';
             cap.innerHTML = `
         <label for="inputLoadcellCapacity${i}">
-          <b>Loadcell</b> <b style="color: var(--text-info-2-color);">${i}</b>
+          <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
           Capacity <span class="units-text"></span>:
         </label>
         <input
@@ -8755,7 +8852,7 @@
             out.dataset.systemLevel = '2';
             out.innerHTML = `
         <label for="inputLoadcellOutput${i}">
-          <b>Loadcell</b> <b style="color: var(--text-info-2-color);">${i}</b>
+          <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
           Rated Output <span class="units-text"></span>:
         </label>
         <input
@@ -8986,7 +9083,7 @@
         const tag = el.tagName.toLowerCase();
         const type = (el.type || "").toLowerCase();
 
-        if (fire == null) fire = (el) => {
+        if (isVoid(fire)) fire = (el) => {
             if (!fireEvents) return;
             el.dispatchEvent(new Event("input", {bubbles: true}));
             el.dispatchEvent(new Event("change", {bubbles: true}));
@@ -9021,7 +9118,7 @@
         if (type === "number" || type === "range") {
             let v = val;
             if (typeof v === "string" && v.includes(",")) v = v.replace(",", ".");
-            if (v == null || v === "") el.value = "";
+            if (!isNonEmptyStr(v)) el.value = "";
             else if (Number.isFinite(+v)) ("valueAsNumber" in el) ? el.valueAsNumber = +v : el.value = String(+v);
             else el.value = "";
             fire(el);
@@ -9156,6 +9253,7 @@
     const inputLoadCSV = $ID("appFileInput");
 
     btnLoadCSV.addEventListener("click", async () => {
+        if (isExperimentRunning) return;
         if ("showOpenFilePicker" in window) {
             try {
                 const [handle] = await window.showOpenFilePicker({
@@ -9176,6 +9274,7 @@
     });
 
     inputLoadCSV.addEventListener("change", async (e) => {
+        if (isExperimentRunning) return;
         const file = e.target.files?.[0];
         if (!file) return;
         await processFile(file);
@@ -9300,6 +9399,7 @@
     }
 
     async function saveCSV() {
+        if (isExperimentRunning) return;
         console.info("\n💾 Saving data to CSV file...");
 
         let dirHandle = null;
@@ -9558,7 +9658,7 @@
 
                 // 2.4 Konverze (preferuj předvyplněnou)
                 let conversion = isDef(prev.conversion) ? toNumber(prev.conversion) : undefined;
-                if (!isDef(conversion) || !isNum(conversion)) {
+                if (isVoid(conversion) || !isNum(conversion)) {
                     if (targetUnit && fromUnit) {
                         try {
                             conversion = convertUnits(1, fromUnit, targetUnit) || 1;
@@ -9805,7 +9905,7 @@
 
         let err = false;
         for (const key of Object.keys(fileOptions)) {
-            if (fileOptions[key].columnLimit != null && getters[key].count() > fileOptions[key].columnLimit) {
+            if (isDef(fileOptions[key].columnLimit) && (getters[key].count() > fileOptions[key].columnLimit)) {
                 logMessage(`✖️ Invalid number of columns for '${key}' in file: ${fileName}. Expected ${fileOptions[key].columnLimit}, but found ${getters[key].count()}.`);
                 console.warn(`\n✖️ Invalid number of columns for '${key}' in file: ${fileName}. Expected ${fileOptions[key].columnLimit}, but found ${getters[key].count()}.`);
                 err = true;
@@ -9916,6 +10016,7 @@
 
 
     async function convertCSVtoXLSX_MATTES() {
+        if (isExperimentRunning) return;
         try {
             await waitForXLSX();
         } catch (e) {
@@ -10031,7 +10132,7 @@
                     let maxLen = 0;
                     for (let r = 0; r < rows.length; r++) {
                         const v = rows[r][c];
-                        const s = v == null ? "" : String(v);
+                        const s = isVoid(v) ? "" : String(v);
                         if (s.length > maxLen) maxLen = s.length;
                     }
                     out[c].wch = Math.max(min, maxLen + pad);
@@ -10269,11 +10370,11 @@
 
                     const force = (getForce(rowIndex) - firstForce) || 0; // Force sum
 
-                    // if (firstShiftAbove1 == null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
+                    // if (isVoid(firstShiftAbove1) && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
                     const shift = (getPosition(rowIndex) - firstShift) || 0; // Displacement (mm)
 
-                    // deformation = (firstShiftAbove1 == null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                    // deformation = isVoid(firstShiftAbove1) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
                     const deformation = shift; // Calculate deformation
 
                     dataRow[columnOffset] = time;
@@ -10594,7 +10695,7 @@
                     if (!serialPort) serialComPort = await serialFunctionRequestPort();
                 }
 
-                if (serialComPort == null) {
+                if (isVoid(serialComPort)) {
                     if (userRequest) {
                         // console.info("\t\t⚠️ No port selected. Connecting canceled.");
                         // await logMessage("\n\t\t⚠️ No port selected. Connecting canceled.");
@@ -10697,13 +10798,7 @@
 
             // TODO: put this to separate function 'HANDSHAKE()'
             try {
-                machineFirmware = (await getFirmwareVersion())?.toLowerCase().trim() || "";
-            } catch (e) {
-                machineFirmware = null;
-                console.error('Firmware error:', e);
-            }
-            try {
-                machineName = (await getMachineName()).trim() || "";
+                machineName = (await getMachineName())?.trim() || "";
             } catch (e) {
                 machineName = null;
                 console.error('Name error:', e);
@@ -10713,6 +10808,12 @@
             } catch (e) {
                 machineID = null;
                 console.error('ID error:', e);
+            }
+            try {
+                machineFirmware = (await getFirmwareVersion())?.toLowerCase().trim() || "";
+            } catch (e) {
+                machineFirmware = null;
+                console.error('Firmware error:', e);
             }
 
             if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
@@ -10749,16 +10850,6 @@
                 }
             }
 
-            // ověření kalibrace
-            calibrationStatus = await getCalibrationStatus(2_000);
-
-            if (calibrationStatus) await unlockMovement();
-            else await lockMovementExcept(UI.calibrateBtn);
-
-            const speed = (await getSpeed(2_000)) || 15;
-            const acceleration = (await getAcceleration(2_000)) || 150;
-
-            setSpeedAndAcceleration(speed, acceleration, true);
 
             await updateConnectionStatus("connected", "USB");
             await logMessage("\n✅ Connected to ESP via USB\n");
@@ -10766,8 +10857,7 @@
             tryCount = 0;
             reconnectAttempts = 0;
 
-            // TODO: implement Name-based/ID-based (reconnection) and (settings profiles => take settings or keep current)
-            // TODO: implement multi-device management and backup based on Name/ID
+            // TODO: implement Name-based/ID-based (reconnection)
             const machName = machineName?.toLowerCase();
             if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
                 machineName = 'Thymos Device' + Math.random().toString(36).substring(2, 10);
@@ -10784,6 +10874,19 @@
             $ID("inputMachineName").value = machineName;
             $ID("inputMachineID").value = machineID;
 
+            // ověření kalibrace
+            calibrationStatus = await getCalibrationStatus(2_000);
+
+            await unlockMachineControls();
+
+            if (calibrationStatus) await unlockMovement();
+            else await lockMovementExcept(UI.calibrateBtn);
+
+            const speed = (await getSpeed(2_000)) || 15;
+            const acceleration = (await getAcceleration(2_000)) || 150;
+
+            setSpeedAndAcceleration(speed, acceleration, true);
+
 
             const settingsElements = $$("input, select");
             const saveSelected = getInputValDef("inputUseMachineSettings", null)
@@ -10799,8 +10902,9 @@
             if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKey = `${storageKeyBase}_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
             else storageKey = storageKeyIdle;
 
-            // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení
-            if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsElements);
+            // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou
+            if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsElements, storageKey);
+            // TODO: implement that specific element in App settings section (like 'systemLevelSelect', language, ...) are saved to specific 'storageKeySys' => not tied to machine
             await saveAllInputsToLocalStorage(settingsElements, storageKey);
 
         } catch (error) {
@@ -10885,7 +10989,7 @@
             await flushDB();
             await resetValues();
             await updateConnectionStatus("disconnected");
-            await lockMovement();
+            await lockMachineControls();
         }
     }
 
@@ -11199,7 +11303,7 @@
                 isReconnecting = false;
                 await updateConnectionStatus("connected");
                 await logMessage("✅ Reconnected successfully!\n");
-                await unlockMovement();
+                await unlockMachineControls();
             } else {
                 throw new Error("Reconnect failed: not connected after openPort");
             }
@@ -11485,7 +11589,7 @@
 
 <script>
 
-    lockMovement();
+    unlockMachineControls();
 
     UI.connectBtns?.forEach(btn => btn.classList.add('disabled'));
 
@@ -11606,7 +11710,7 @@
 
         // Listen for changes in all inputs
         optionsElements?.forEach(input => {
-            if (input.dataset.nonremember !== "true") {
+            if (isVoid(input.dataset.system) || input.dataset.system === "0" || input.dataset.system === "false") {
                 input.addEventListener("change", async (event) => saveInputToLocalStorage(event));
             }
         });
@@ -11683,21 +11787,46 @@
         });
 
         $ID("inputTakePhotos")?.addEventListener('change', async (event) => {
+            const photosInput = $ID("inputPhotoInterval");
+            const photosLabel = $(`label[for="inputPhotoInterval"]`);
             if (event.target.checked) {
                 // disable photo interval input
-                $ID("inputPhotoInterval")?.classList.remove("disabled");
-                $ID("inputPhotoInterval").readOnly = false;
-                $ID("inputPhotoInterval").tabIndex = 1;
+                photosInput.classList.remove("disabled");
+                photosInput.readOnly = false;
+                photosInput.tabIndex = 1;
 
                 // disable photo interval input label
-                $(`label[for="inputPhotoInterval"]`)?.classList.remove("disabled");
+                photosLabel.classList.remove("disabled");
             } else {
                 // disable photo interval input
-                $ID("inputPhotoInterval")?.classList.add("disabled");
-                $ID("inputPhotoInterval").readOnly = true;
-                $ID("inputPhotoInterval").tabIndex = -1;
+                photosInput.classList.add("disabled");
+                photosInput.readOnly = true;
+                photosInput.tabIndex = -1;
+
                 // disable photo interval input label
-                $(`label[for="inputPhotoInterval"]`)?.classList.add("disabled");
+                photosLabel.classList.add("disabled");
+            }
+        });
+
+        $ID("inputDoCycles")?.addEventListener('change', async (event) => {
+            const cyclesInput = $ID("inputCycles");
+            const cyclesLabel = $(`label[for="inputCycles"]`);
+            if (event.target.checked) {
+                // disable photo interval input
+                cyclesInput.classList.remove("disabled");
+                cyclesInput.readOnly = false;
+                cyclesInput.tabIndex = 1;
+
+                // disable photo interval input label
+                cyclesLabel.classList.remove("disabled");
+            } else {
+                // disable photo interval input
+                cyclesInput.classList.add("disabled");
+               cyclesInput.readOnly = true;
+                cyclesInput.tabIndex = -1;
+
+                // disable photo interval input label
+                cyclesLabel.classList.add("disabled");
             }
         });
 
@@ -11753,7 +11882,18 @@
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
 
-        machNameInput?.addEventListener("change", async (event) => event.target.value.trim() === '' ? event.target.value = machineName : null);
+        machNameInput?.addEventListener("change", async (event) => {
+            const val = event.target.value.trim();
+            if (val === '') {
+                if (isOk(machineName)) event.target.value = machineName;
+                return;
+            }
+            if (isNonEmptyStr(val) && isOk(val)) {
+                event.target.value = val;
+                await sleep(3_500);
+                if (isOk(machineName)) event.target.value = machineName;
+            }
+        });
         machIDInput?.addEventListener("change", async (event) => {
             const val = event.target.value.trim();
             if (val === '') {
@@ -11898,7 +12038,7 @@
         decSymbolElement.addEventListener("change", (event) => {
             const isValueComma = event.target.value === "Option-Comma";
             const currentValue = delimSymbolElement.value;
-            const commaOptions = $$ROOT(delimSymbolElement, 'option[value="Option-Comma"]');
+            const commaOptions = $$('option[value="Option-Comma"]', delimSymbolElement);
             if (isValueComma) {
                 commaOptions?.forEach(o => o.disabled = true);
             } else {
@@ -11912,7 +12052,7 @@
         delimSymbolElement.addEventListener("change", (event) => {
             const isValueComma = event.target.value === "Option-Comma";
             const currentValue = decSymbolElement.value;
-            const commaOptions = $$ROOT(decSymbolElement, 'option[value="Option-Comma"]');
+            const commaOptions = $$('option[value="Option-Comma"]', decSymbolElement);
             if (isValueComma) {
                 commaOptions?.forEach(o => o.disabled = true);
             } else {
@@ -11992,7 +12132,7 @@
                 el.classList.toggle('undisplayed', !isType);
 
                 if (!isType) {
-                    $$ROOT(el, 'input')?.forEach(input => {
+                    $$('input', el)?.forEach(input => {
                         // input.value = '';
                         input.dispatchEvent(new Event("change", {bubbles: true}));
                     });
@@ -12010,15 +12150,8 @@
 
 
         // Load saved data when the page loads
-        loadInputsFromLocalStorage(optionsElements);
-        if (!storageKey) {
-            optionsElements?.forEach(input => {
-                // Trigger change event to update the UI
-                input.dispatchEvent(new Event("change", {bubbles: true}));
-                input.dispatchEvent(new Event("input", {bubbles: true}));
-                input.dispatchEvent(new Event("blur", {bubbles: true}));
-            });
-        }
+        loadInputsFromLocalStorage(optionsElements, storageKeyDefaults);
+
         pageLoaded = true;
 
         setTimeout(() => window.dispatchEvent(new Event('resize', {bubbles: true})), 0);
@@ -12051,15 +12184,12 @@
         if (pageLoaded && dataLoaded) {
             recomputeAll();
 
-            await sleep(5);
 
             const preloadScreen = $ID("preloadScreen");
             const autoConnectSetting = $ID("inputAutoConnect")?.value || 'never';
 
             if (autoConnectSetting === 'always' || autoConnectSetting === 'beginning') await startSerial(false);
             else await updateConnectionStatus("disconnected");
-
-            await sleep(5);
 
             if (timeData.length > 1) {
                 console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
@@ -12075,17 +12205,21 @@
 
             allLoaded = true;
 
-            await sleep(5);
 
-            preloadScreen.getBoundingClientRect(); // force reflow
+            preloadScreen?.getBoundingClientRect(); // force reflow
             preloadScreen.style.opacity = "0";
             document.body.style.overflowY = "auto";
 
-            await sleep(750);
 
-            preloadScreen?.remove();
+            preloadScreen?.addEventListener('transitionend', async () => {
 
-            if (autoConnectSetting === 'ask') if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
+                preloadScreen?.remove();
+
+                await sleep(500);
+                if (autoConnectSetting === 'ask') if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
+
+            }, {once: true});
+
         }
     }
 
@@ -12094,6 +12228,18 @@
     /////////////////////////////////////////////////////////////////
 
 
+</script>
+
+<script type="text/plain">
+    const overlay = document.getElementById('preloadScreen');
+    window.addEventListener('load', () => {
+      overlay.style.opacity = '0';
+      overlay.addEventListener('transitionend', () => {
+        // až teď (nebo rovnou remove()):
+        overlay.style.pointerEvents = 'none';
+        overlay.remove(); // volitelné
+      }, { once: true });
+    });
 </script>
 
 </body>
