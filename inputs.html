@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form id="myForm">
+    <label>
+        <input name="firstName" placeholder="Jméno">
+    </label>
+    <label>
+        <input name="age" type="number" placeholder="Věk">
+    </label>
+
+    <!-- skupina checkboxů se stejným name -->
+    <label><input id="test1" type="checkbox" name="hobbies" value="run">Běh</label>
+    <label><input type="checkbox" name="hobbies" value="swim">Plavání</label>
+
+    <!-- radio -->
+    <label><input id="test2" type="radio" name="role" value="user">User</label>
+    <label><input type="radio" name="role" value="admin">Admin</label>
+    <label><input type="radio" name="position" value="admin">Here</label>
+
+    <!-- systémový (půjde do jiného klíče) -->
+    <label>
+        <input name="machineId" data-system="1" placeholder="ID stroje">
+    </label>
+
+    <label>
+        <select name="mode">
+            <option value="fast">Rychlý</option>
+            <option value="accurate">Přesný</option>
+        </select>
+    </label>
+
+    <label>
+        <select name="channels" multiple>
+            <option value="ch1">CH1</option>
+            <option value="ch2">CH2</option>
+            <option value="ch3">CH3</option>
+        </select>
+    </label>
+
+    <label>
+        <select multiple size="5">
+            <option>Jablko</option>
+            <option>Hruška</option>
+            <option>Banán</option>
+            <option>Pomeranč</option>
+            <option>Mango</option>
+            <option>Ananas</option>
+             <option>Kiwi</option>
+        </select>
+    </label>
+    <label>
+        <select size="5">
+            <option>Jablko</option>
+            <option>Hruška</option>
+            <option>Banán</option>
+            <option>Pomeranč</option>
+            <option>Mango</option>
+            <option>Ananas</option>
+             <option>Kiwi</option>
+        </select>
+    </label>
+
+
+    <label for="browser">Vyber svůj prohlížeč:</label>
+    <input list="browsers" id="browser" name="browser" placeholder="Začni psát...">
+
+    <datalist id="browsers">
+        <option value="Google Chrome">
+        <option value="Mozilla Firefox">
+        <option value="Microsoft Edge">
+        <option value="Safari">
+        <option value="Opera">
+    </datalist>
+</form>
+</body>
+</html>
