@@ -139,7 +139,9 @@
                 const systemLevelSelect = $ID('systemLevelSelect');
                 if (systemLevelSelect) {
                     systemLevelSelect.querySelectorAll('option')?.forEach(option => {
-                        if (option.value === 'admin') {
+                        if (option.value === 'operator') {
+                            option.disabled = false;
+                        } else if (option.value === 'admin') {
                             option.disabled = false;
                         } else if (option.value === 'developer') {
                             option.disabled = false;
@@ -153,6 +155,29 @@
             } else {
                 debugWrapper?.remove();
                 document.querySelector('html').style.background = 'none';
+
+                // go through all localStorage that start with 'storageKeyBase', and change 'systemLevel' to 'expert' if it's higher
+                const selectorId = 'systemLevelSelect';
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(storageKeyBase)) {
+                        try {
+                            const data = JSON.parse(localStorage.getItem(key));
+                            if (data && data[selectorId]) {
+                                const levels = ['operator', 'admin', 'developer', 'god'];
+                                if (levels.some(level => level === data[selectorId])) {
+                                    const level = 'expert';
+                                    data[selectorId] = level;
+                                    $ID(selectorId).value = level;
+                                    localStorage.setItem(key, JSON.stringify(data));
+                                    console.info(`%c\nSystem level downgraded to ' ${level}' in localStorage key: ${key}`, "color: orange; font-size: 12px;");
+                                }
+                            }
+                        } catch (e) {
+                            // ignore JSON parse errors
+                        }
+                    }
+                }
             }
         })();
 
@@ -365,9 +390,8 @@
             --returnEpx-bg: lightgray;
             --returnEpx-color: black;
 
-            --logo-bg: white;
-            --logo-fg: var(--blue-color);
-            --logo-text: var(--blue-color);
+            --logo-main: var(--blue-color);
+            --logo-second: var(--page-bg);
 
             --highligth: rgba(255, 255, 255, 0.5);
             --shadow: rgba(0, 0, 0, 0.2);
@@ -424,12 +448,44 @@
             --returnEpx-bg: var(--gray-color);
             --returnEpx-color: #181818;
 
-            --logo-bg: var(--blue-light-color);
-            --logo-fg: var(--page-bg);
-            --logo-text: var(--blue-light-color);
+            --logo-main: var(--blue-light-color);
+            --logo-second: var(--page-bg);
 
             --highligth: rgba(255, 255, 255, 0.2);
             --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        body[data-system-level="god"] {
+            --logo-main: var(--orange-color);
+            --logo-second: var(--page-bg);
+        }
+
+        body[data-system-level="developer"] {
+            --logo-main: var(--purple-light-color);
+            --logo-second: var(--page-bg);
+        }
+
+        body[data-system-level="operator"] {
+            --logo-main: var(--pink-color);
+            --logo-second: var(--page-bg);
+        }
+
+        body[data-system-level="admin"] {
+            --logo-main: var(--red-color);
+            --logo-second: var(--page-bg);
+        }
+
+        body[data-theme="light"] {
+            --logo-bg: var(--logo-second);
+            --logo-fg: var(--logo-main);
+            --logo-text: var(--logo-main);
+
+        }
+
+        body[data-theme="dark"] {
+            --logo-bg: var(--logo-main);
+            --logo-fg: var(--logo-second);
+            --logo-text: var(--logo-main);
         }
 
         /* General styling for the body */
@@ -1534,7 +1590,7 @@
 </div>
 
 <main id="app">
-    <section class="headerContainer">
+    <header class="headerContainer">
 
         <div id="nameHeader">
             <svg id="thymosLogo" class="custom-icon" viewBox="0 0 177.81437 177.9034"
@@ -1577,7 +1633,7 @@
             <a id="updateHeaderVersion" style="color: coral; font-size: 12px;">[from: v0.0.3 to v0.0.4]</a>
             (press 'F5')
         </div>
-    </section>
+    </header>
 
     <section class="statusContainer outsetShadow">
         <!-- USB Connection Section -->
@@ -1657,7 +1713,7 @@
         </nav>
 
 
-        <div id="chartsWrapper" class="outsetShadow">
+        <article id="chartsWrapper" class="outsetShadow">
             <div id="chartsContainer">
                 <div id="timeChart" class="chart"></div>
                 <div id="positionChart" class="chart"></div>
@@ -1688,13 +1744,13 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </article>
 
         <hr>
 
         <!-- Progress Bar -->
         <h3 class="sectionTitle">💻 Control Panel:</h3>
-        <div style="gap:15px; display: flex; flex-direction: column;">
+        <article style="gap:15px; display: flex; flex-direction: column;">
             <div id="controlContainer">
                 <nav class="machineControlContainer outsetShadow">
                     <div class="btnControlWrapper">
@@ -1823,13 +1879,13 @@
                     Calibrate
                 </button>
             </nav>
-        </div>
+        </article>
     </section>
 
 
     <section class="experimentContainer outsetShadow">
         <h3>📝 Experiment options:</h3>
-        <form id="experimentInputsContainer">
+        <article id="experimentInputsContainer">
 
             <label for="experimentName">🧪 Experiment Name:</label>
             <div style="display: flex; width: 100%; gap: var(--gap);">
@@ -1866,7 +1922,7 @@
                     <input type="file" id="appFileInput" accept=".csv,text/csv">
                 </div>
             </div>
-        </form>
+        </article>
 
 
         <!--            <div id="experimentBtnsWrapper">-->
@@ -1879,7 +1935,7 @@
             <button id="resultsContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="resultsContainer" class="sizeableContainer">
                 <h4>✏️ Calculation inputs:</h4>
-                <form class="inputsContainer">
+                <article class="inputsContainer">
                     <div class="input-group data-eq">
                         <label for="inputTareForce">Taring Force \( F_{\mathrm{Tare}} \)<span
                                 class="units-text"></span>:
@@ -1977,7 +2033,7 @@
                         <input type="text" id="inputMaterialName" class="adjustableInput calcInput"
                                step="any" data-essence="label">
                     </div>
-                </form>
+                </article>
 
                 <div data-eq-type="Flx" style="display: inline-flex; width: 100%">
                     <hr style="width: 85% ; margin: 50px auto 10px;">
@@ -1985,7 +2041,7 @@
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px;">
 
-                    <form style="display: flex; flex-direction: column; gap: 10px;">
+                    <article style="display: flex; flex-direction: column; gap: 10px;">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">☔ <a class="u"> Before drying</a>:</h4>
                         <div class="input-group data-eq" data-eq-type="Flx">
                             <label for="inputWidth_BeforeDrying">Cross-section width \( b_{w} \)<span
@@ -2019,8 +2075,8 @@
                                    data-essence="weight">
                         </div>
 
-                    </form>
-                    <form style="display: flex; flex-direction: column; gap: 10px;">
+                    </article>
+                    <article style="display: flex; flex-direction: column; gap: 10px;">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">🌂 <a class="u"> After drying</a>:</h4>
                         <div class="input-group data-eq" data-eq-type="Flx">
                             <label for="inputWidth_AfterDrying">Cross-section width \( b_{0} \)<span
@@ -2054,14 +2110,14 @@
                                    data-essence="weight">
                         </div>
 
-                    </form>
+                    </article>
                 </div>
 
                 <hr data-system-level="1">
 
                 <h4 data-system-level="1">🔣 Equations:</h4>
-                <form class="inputsContainer" data-system-level="1"
-                      style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
+                <article class="inputsContainer" data-system-level="1"
+                         style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
                     <span class="data-eq">
                         \[
                         F_{i} = F_{j} - F_{\mathrm{Tare}}
@@ -2105,12 +2161,12 @@
                         v = \frac{w_{T}}{t}
                         \]
                     </span>
-                </form>
+                </article>
 
                 <hr>
 
                 <h4>📐 Calculated values:</h4>
-                <form class="inputsContainer">
+                <article class="inputsContainer">
                     <div class="input-group data-eq" data-eq-type="-HBr">
                         <label for="outputForceMax">Max Force \( F_{\mathrm{max}} \)<span class="units-text"></span>:
                         </label>
@@ -2196,7 +2252,7 @@
                         <input type="text" id="outputLoadingSpeed" class="copyableInput calcInput" readonly
                                data-system="skip" data-unit="mm/s" data-essence="speed">
                     </div>
-                </form>
+                </article>
 
                 <div id="saveCalcDataBtnWrapper" style="margin-top: 60px; justify-items: center;">
                     <hr style="width: 85% ; margin: 0 auto 10px;">
@@ -2212,7 +2268,7 @@
             <button id="settingsContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="settingsContainer" class="sizeableContainer">
 
-                <form id="loadingSettingsSection">
+                <article id="loadingSettingsSection">
                     <h4>🛠️ Loading settings:</h4>
                     <div class="inputsContainer">
                         <div class="input-group">
@@ -2342,11 +2398,11 @@
                                    value="1" data-unit="-" data-essence="count">
                         </div>
                     </div>
-                </form>
+                </article>
 
                 <hr>
 
-                <form id="machineSettingsSection">
+                <article id="machineSettingsSection">
                     <h4>📟 Machine settings:</h4>
                     <div class="inputsContainer">
                         <div id="machSettings">
@@ -2382,11 +2438,11 @@
                             </div>
                         </div>
                     </div>
-                </form>
+                </article>
 
                 <hr>
 
-                <form id="appSettingsSection">
+                <article id="appSettingsSection">
                     <h4>📺 App settings:</h4>
                     <div class="inputsContainer autoGrid">
                         <div class="input-group">
@@ -2581,7 +2637,7 @@
                             🔁 Reset app
                         </button>
                     </div>
-                </form>
+                </article>
             </div>
         </section>
 
@@ -2726,13 +2782,6 @@
     //     }
     // }
 </script>
-
-
-<script>
-
-
-</script>
-
 
 <script>
 
@@ -2901,6 +2950,7 @@
     const isEmptyNodeList = (x) => isNodeList(x) && x.length === 0;
     const isNonEmptyNodeList = (x) => isNodeList(x) && x.length > 0;
 
+    const isValid = (x) => isDef(x) && !Number.isNaN(x);
     const isNum = (x) => isFiniteNumber(x, false); // only Finite numbers
     const isVal = (x) => isNum(x) || !isEmptyStr(x); // only Finite numbers or non-empty strings
     const isAny = (x) => isNotEmpty(x) && x !== false; // all except undefined, null and NaN + false
@@ -2913,28 +2963,49 @@
     };
 
 
-    const getInputVal = (id) => {
-        if (isFiniteNumber(id)) return id;
-        const el = isElement(id) ? id : $ID(String(id));
-        if (el?.classList.contains('undisplayed') || el?.classList.contains('invisible')) { // el.disabled
-            if (el?.dataset.hasOwnProperty('defaultValue')) {
-                return el?.dataset.defaultValue;
-            } else {
-                return null;
-            }
-        }
+    const getElement = (id) => {
+        return isElement(id) ? id : $ID(String(id));
+    }
+
+    const getElementValue = (id) => {
+        const el = getElement(id);
+        if (!isElement(el)) return null;
         return catchVal(el?.value?.trim(), null, isNonEmptyStr);
     }
 
+    const getInputVal = (id) => {
+        if (isFiniteNumber(id)) return id;
+        const el = getElement(id);
+        if (!isElement(el)) return null;
 
-    const getInputValDef = (id, d) =>
+        let val = null;
+        if (!isUnavailable(el)) val = catchVal(el?.value?.trim(), null, isNonEmptyStr); // TODO: el.disabled, el.hidden
+        if (isNotEmpty(val)) return val;
+
+        if (debugging) console.info('Getting default value for', el.id);
+
+        if (el.dataset.hasOwnProperty('defaultValue')) return el.dataset.defaultValue;
+
+        const defaultVal = localStorage.getItem(storageKeyDefaults)[el.id];
+        if (isNotEmpty(defaultVal)) return defaultVal;
+
+        return null;
+    }
+
+
+    const getInputValDef = (id, d = null) =>
         catchVal(getInputVal(id), d, isNotEmpty);
 
-    const getInputNumDef = (id_x, d) =>
-        catchVal(toNumber((isFiniteNumeric(id_x) ? id_x : getInputValDef(id_x, null)), true), d, isNum);
-    const getInputNumDefAbsFlt = (id_x, d) =>
+    const getInputNum = (id) =>
+        toNumber((isFiniteNumeric(id) ? id : getInputValDef(id, NaN)), true);
+
+    const getInputNumDef = (id_x, d = NaN) =>
+        catchVal(getInputNum(id_x), d, isNum);
+
+    const getInputNumDefAbsFlt = (id_x, d = NaN) =>
         Math.abs(getInputNumDef(id_x, d));
-    const getInputNumDefAbsInt = (id_x, d) =>
+
+    const getInputNumDefAbsInt = (id_x, d = NaN) =>
         Math.round(getInputNumDefAbsFlt(id_x, d));
 
     const isValidInputNum = (x) =>
@@ -3620,6 +3691,7 @@
 
 
     const isHidden = (el) => { // TODO: rozšířit o kontrolu rodičů + use 'el.hidden'
+        el = getElement(el);
         if (!isElement(el)) return null;
         const style = window.getComputedStyle(el);
         return (style.display === 'none' || style.visibility === 'hidden' || el.hidden ||
@@ -3627,8 +3699,17 @@
     };
 
     const isDisabled = (el) => { // TODO: rozšířit o kontrolu rodičů + use 'el.disabled'
+        el = getElement(el);
         if (!isElement(el)) return null;
-        return el.disabled || el.classList.contains('disabled');
+        return el.disabled || el.classList.contains('disabled') || el.classList.contains('prohibited');
+    };
+
+    const isUnavailable = (el) => {
+        el = getElement(el);
+        if (!isElement(el)) return true;
+        const hidden = isHidden(el);
+        const disabled = isDisabled(el);
+        return hidden || disabled;
     };
 
     // =====================================================================
@@ -4541,7 +4622,7 @@
 
 
     // čtení čísla z inputu přes tvoje utility
-    const readNum = (id, positiveOnly = false) => {
+    const readNum = (id, positiveOnly = false) => { // TODO: use my previous element functions
         const el = $ID(id);
         if (!el) return NaN;
         const val = getNumValue(el.value, "none");  // umožní čárku, ±, apod.
@@ -4549,7 +4630,7 @@
     };
 
     // zápis do outputu jako čísla s fixní přesností
-    const writeOut = (id, value, dec = 3) => {
+    const writeOut = (id, value, dec = 3) => {// TODO: use my previous element functions
         const el = $ID(id);
         if (!el) return;
         el.value = getCustomStrValue(value, String(dec), '.', false, false, "ⁿ/ₐ"); // TODO: dec jako číslo nebo string??
@@ -5193,7 +5274,7 @@
             if (!file) return;
 
             const allOptionsElements = Array.from($$("input, select")).filter(el => !isSkippable(el));
-            const appSettingsWrapper = document.getElementById('appSettingsSection');
+            const appSettingsWrapper = $ID('appSettingsSection');
             const allSettingsInputsLoad = allOptionsElements.filter(el => !appSettingsWrapper.contains(el));
             const allSettingsInputsSys = allOptionsElements.filter(el => appSettingsWrapper.contains(el));
 
@@ -5329,13 +5410,13 @@
     UI.commandInput.addEventListener("keydown", async (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            await sendCommandConsole(UI.commandInput.value.trim());
+            await sendCommandConsole(getElementValue(UI.commandInput));
         }
     });
 
     // Sends command when clicking the send-button
     UI.sendButton.addEventListener('click', async () => {
-        await sendCommandConsole(UI.commandInput.value.trim());
+        await sendCommandConsole(getElementValue(UI.commandInput));
     });
 
 
@@ -6389,7 +6470,7 @@
         let command;
 
         if (name === "read Loadcell[#]") { // LC GET FORCE 0-2
-            let loadcellId = parseInt($ID("inputNumLoadID").value);
+            let loadcellId = parseInt(getElementValue("inputNumLoadID"));
             command = replaceVariables(inputCommand, {loadcellId: loadcellId});
         } else {
             command = inputCommand;
@@ -7233,13 +7314,13 @@
 
             // === Retrieve Parameters from Inputs ===
             const distance_mm = getInputNumDefAbsFlt("inputDistance", NaN);
-            const experimentType = $ID("experimentTypeDropdown")?.value.toLowerCase();
+            const experimentType = getElementValue("experimentTypeDropdown")?.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = getInputNumDefAbsFlt("inputSpeedForward", NaN);
             dataInterval_us = Math.max(getInputNumDefAbsInt("inputDataInterval", NaN), 100);
             takePhotos = $ID("inputTakePhotos").checked;
             const photoInterval_ms = Math.round(getInputNumDefAbsFlt("inputPhotoInterval", NaN) * 1_000);
-            forceLimitDropPercent = catchVal((toNumber($ID("inputLoadLimitDropPercent").value) / 100), Number.POSITIVE_INFINITY, isNum);
+            forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), Number.POSITIVE_INFINITY, isNum);
             forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", Number.POSITIVE_INFINITY);
 
             let loadcellCapacities = Array(loadCellNum).fill(null);
@@ -7485,7 +7566,7 @@
             }
 
 
-            if ($ID('inputAutoSave').value.trim().toLowerCase().endsWith('before')) {
+            if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('before')) {
                 UI.experimentStageLabel.textContent = `Saving`;
                 await saveCSV();
             }
@@ -7616,10 +7697,10 @@
             await addDataToLog({
                 status: "collecting",
                 expSettings: settings,
-                experimentName: $ID("experimentName")?.value?.trim(),
+                experimentName: getElementValue("experimentName"),
                 experimentLabel: experimentLabel?.trim(),
-                experimentCounter: $ID("experimentCount")?.value?.trim(),
-                experimentDescription: $ID("experimentDesc")?.value?.trim(),
+                experimentCounter: getElementValue("experimentCount"),
+                experimentDescription: getElementValue("experimentDesc"),
                 experimentDate: (new Date().toLocaleString())?.replaceAll(". ", "."),
                 loadDirection: displacementSignCorrection,
                 loadDistance: distance_mm,
@@ -7840,7 +7921,7 @@
             }
 
             // === Save Data ===
-            if ($ID('inputAutoSave').value.trim().toLowerCase().endsWith('after')) {
+            if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
                 UI.experimentStageLabel.textContent = `Saving`;
                 await saveCSV();
             }
@@ -9496,10 +9577,10 @@
 
         let dirHandle = null;
         // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
-        const delimiterSymbolVal = await $ID("delimiterSymbol").value || "Option-Semicolon";
+        const delimiterSymbolVal = await getElementValue("delimiterSymbol") || "Option-Semicolon";
         let delimiter = await (delimiterSymbolVal === "Option-Comma" ? "," : delimiterSymbolVal === "Option-Semicolon" ? ";" : delimiterSymbolVal === "Option-Tab" ? "\t" : delimiterSymbolVal === "Option-Space" ? " " : ";") || ";";
         // Decimal symbol for CSV file "." = dot, "," = comma
-        const decimalSymbol = await ($ID("decimalSymbol").value === "Option-Comma" ? "," : ".") || ".";
+        const decimalSymbol = await (getElementValue("decimalSymbol") === "Option-Comma" ? "," : ".") || ".";
 
         // 6 of random symbols that are unlikely to be in the data
         const delimiterPlaceHolder = "§" + Math.random().toString(36).substring(2, 4) + Math.random().toString(36).substring(2, 4) + Math.random().toString(36).substring(2, 4) + "§";
@@ -9507,9 +9588,9 @@
         if (decimalSymbol === "," && delimiter === ",") delimiter = ";"; // If comma is selected as decimal symbol, use semicolon as delimiter to avoid conflicts
 
 
-        const expNum = parseInt($ID("experimentCount").value.trim()) || 0;
-        const experimentName = $ID("experimentName").value.trim();
-        const experimentDesc = $ID("experimentDesc").value.replaceAll(/(\r\n|\n|\r)/gm, " ").trim();
+        const expNum = parseInt(getElementValue("experimentCount")) || 0;
+        const experimentName = getElementValue("experimentName");
+        const experimentDesc = getElementValue("experimentDesc")?.replaceAll(/(\r\n|\n|\r)/gm, " ").trim();
 
         handFolderSelect = $ID("storagePath").checked || false;
 
@@ -10854,7 +10935,12 @@
 
             console.info("🔌 Opening new port...");
             await comPort.open({
-                baudRate: parseInt($ID("inputNumBaudRate").value)
+                baudRate: parseInt(getElementValue("inputNumBaudRate")) || 115200,
+                // dataBits: 8,
+                // stopBits: 1,
+                // parity: "none",
+                // bufferSize: 255,
+                // flowControl: "none"
             });
 
             serialWriter = comPort.writable.getWriter(); // 🔥  writer
@@ -10982,7 +11068,7 @@
 
 
             const settingsElements = Array.from($$("input, select"))
-                .filter(el => !isSkippable(el) && !(document.getElementById('appSettingsSection').contains(el)));
+                .filter(el => !isSkippable(el) && !($ID('appSettingsSection').contains(el)));
 
             const saveSelected = getInputValDef("inputUseMachineSettings", null)
 
@@ -11737,7 +11823,7 @@
 
         const levelElements = $$('[data-system-level]');
         $ID('systemLevelSelect').addEventListener('change', (event) => {
-            const selectedLevel = event.target.value;
+            const selectedLevel = event.target.value.toLowerCase().trim();
             switch (selectedLevel) {
                 case 'basic':
                     systemLevel = 0;
@@ -11754,16 +11840,21 @@
                 case 'admin':
                     systemLevel = 4;
                     break;
-                case 'developer':
+                case 'operator':
                     systemLevel = 5;
                     break;
-                case 'god':
+                case 'developer':
                     systemLevel = 6;
+                    break;
+                case 'god':
+                    systemLevel = 7;
                     break;
                 default:
                     systemLevel = 0;
             }
 
+
+            document.body.setAttribute('data-system-level', selectedLevel);
             console.info(`\n\t⚙️ Selected System-level: ${selectedLevel} (${systemLevel})`);
 
             levelElements.forEach(el => {
@@ -11802,7 +11893,7 @@
 
         const allOptionsElements = Array.from($$("input, select")).filter(el => !isSkippable(el));
 
-        const appSettingsWrapper = document.getElementById('appSettingsSection');
+        const appSettingsWrapper = $ID('appSettingsSection');
 
 
         const loadOptionsElements = allOptionsElements.filter(el => !appSettingsWrapper.contains(el));
@@ -12287,7 +12378,7 @@
 
 
             const preloadScreen = $ID("preloadScreen");
-            const autoConnectSetting = $ID("inputAutoConnect")?.value || 'never';
+            const autoConnectSetting = getInputValDef("inputAutoConnect", 'never')?.toLowerCase();
 
             if (autoConnectSetting === 'always' || autoConnectSetting === 'beginning') await startSerial(false);
             else await updateConnectionStatus("disconnected");
@@ -12332,7 +12423,7 @@
 </script>
 
 <script type="text/plain">
-    const overlay = document.getElementById('preloadScreen');
+    const overlay = $ID('preloadScreen');
     window.addEventListener('load', () => {
       overlay.style.opacity = '0';
       overlay.addEventListener('transitionend', () => {
