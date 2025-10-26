@@ -492,7 +492,7 @@
         body {
             font-family: Arial, sans-serif;
             min-width: 730px;
-            padding: 5px 20px 0;
+            padding: 5px 20px 10px;
             border-radius: 1em;
             background: var(--page-bg);
             color: var(--text-color);
@@ -1228,13 +1228,13 @@
             padding: 10px;
         }
 
-        #consoleContainer {
+        #consoleWrapper {
             display: grid;
             grid-template-columns: 1fr;
             grid-auto-rows: auto;
             gap: var(--gap);
             width: 100%;
-            padding-top: 20px;
+            padding-top: 15px;
         }
 
         #regularLogWrapper {
@@ -2279,12 +2279,12 @@
                             <label for="inputDistance">Distance<span class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputDistance" class="expInput"
                                    value="20" min="0.01" step="any" max="100000000" data-unit="mm"
-                                   data-essence="position">
+                                   data-essence="position" required>
                         </div>
 
                         <div class="input-group">
                             <label for="experimentTypeDropdown">Experiment type: </label>
-                            <select id="experimentTypeDropdown" class="expInput">
+                            <select id="experimentTypeDropdown" class="expInput" required>
                                 <option value="none" hidden>
                                     &nbsp;⬜&nbsp;No selection
                                 </option>
@@ -2317,7 +2317,7 @@
                             </label>
                             <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent"
                                    class="expInput"
-                                   value="30" min="0" max="1000000" data-unit="%" data-essence="ratio">
+                                   value="30" min="0" max="1000000" data-unit="%" data-essence="ratio" required>
                             <!-- % ‰ -->
                         </div>
 
@@ -2328,7 +2328,7 @@
                                    data-essence="switch">
                             <label id="inputPhotoIntervalLabel" class="innerInputLabel" for="inputPhotoInterval">Photo
                                 Interval<span class="units-text"></span>: </label>
-                            <input data-input-type="floatInput" type="number" id="inputPhotoInterval"
+                            <input data-input-type="floatInput" type="number" id="inputPhotoInterval" required
                                    class="expInput innerInput"
                                    value="1" min="0" step="any" max="120000000" data-unit="s" data-essence="time">
                         </div>
@@ -2340,21 +2340,22 @@
                             <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue"
                                    class="expInput"
                                    value="5" min="0" step="any" max="100000000" data-unit="N"
-                                   data-essence="ratio, force">
+                                   data-essence="ratio, force" required>
                         </div>
 
 
                         <div class="input-group">
                             <label for="inputSpeedForward">Loading speed<span class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputSpeedForward" class="expInput"
-                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed">
+                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed"
+                                   required>
                         </div>
 
                         <div class="input-group">
                             <label for="inputDataInterval">Data Interval<span class="units-text"></span>: </label>
                             <input data-input-type="intInput" type="number" id="inputDataInterval" class="expInput"
                                    value="30000" min="10000" step="any" max="100000000" data-unit="µs"
-                                   data-essence="time">
+                                   data-essence="time" required>
                         </div>
 
                         <div class="input-group" data-eq-type="InB, HBr">
@@ -2362,13 +2363,15 @@
                                     class="units-text"></span>:</label>
                             <input data-input-type="floatInput" type="number"
                                    id="inputInitialSpeed" class="expInput" style="max-width: 60px; min-width: 25px;"
-                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed">
+                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed"
+                                   required>
                             <label id="inputInitialForceLabel" for="inputInitialForce"
                                    style="min-width: max-content;">Force lim.
                                 <span class="units-text"></span>:</label>
                             <input data-input-type="floatInput" type="number"
                                    id="inputInitialForce" class="expInput" style="max-width: 50px; min-width: 25px;"
-                                   value="1" min="0" step="any" max="100000000" data-unit="N" data-essence="force">
+                                   value="1" min="0" step="any" max="100000000" data-unit="N" data-essence="force"
+                                   required>
                         </div>
 
                         <div class="input-group" data-eq-type="HBr">
@@ -2376,7 +2379,7 @@
                                     class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputStopForce" class="expInput"
                                    value="1000" min="0" step="any" max="100000000" data-unit="N" data-essence="force"
-                                   list="stopForces" placeholder="Select or type...">
+                                   list="stopForces" placeholder="Select or type..." required>
 
                             <datalist id="stopForces">
                                 <option value="1000">
@@ -2389,17 +2392,20 @@
                             <label id="inputEndDelayLabel" for="inputEndDelay">End load delay<span
                                     class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputEndDelay" class="expInput"
-                                   value="25" min="0" step="any" max="120000000" data-unit="s" data-essence="time">
+                                   value="25" min="0" step="any" max="120000000" data-unit="s" data-essence="time"
+                                   required>
                         </div>
 
                         <div class="input-group" data-eq-type="-Flx, -InB,-HBr">
                             <label for="inputDoCycles">Do cycles: </label>
                             <input type="checkbox" id="inputDoCycles" class="expInput" value="doCycles"
-                                   data-essence="switch">
+                                   data-essence="switch"
+                                   required>
                             <label id="inputCyclesLabel" class="innerInputLabel" for="inputCycles">Cycles<span
                                     class="units-text"></span>: </label>
                             <input data-input-type="intInput" type="text" id="inputCycles" class="expInput innerInput"
-                                   value="1" data-unit="-" data-essence="count">
+                                   value="1" data-unit="-" data-essence="count"
+                                   required>
                         </div>
                     </div>
                 </article>
@@ -2451,7 +2457,7 @@
                     <div class="inputsContainer autoGrid">
                         <div class="input-group">
                             <label for="systemLevelSelect">System Level: </label>
-                            <select id="systemLevelSelect" class="appSelector" data-system="app">
+                            <select id="systemLevelSelect" class="appSelector" data-system="app" required>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                                 <!--                            <option value="" hidden>&nbsp;🅿️&nbsp;Public</option>-->
                                 <!--                            <option value="" hidden>&nbsp;➿&nbsp;Guest</option>-->
@@ -2650,43 +2656,45 @@
         <section class="openingContainer insetShadow">
             <button id="consoleContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="consoleContainer" class="sizeableContainer">
+                <div id="consoleWrapper">
 
-                <div class="logContainer">
-                    <div id="regularLogWrapper">
-                        <pre id="regularLog"></pre>
+                    <div class="logContainer">
+                        <div id="regularLogWrapper">
+                            <pre id="regularLog"></pre>
+                        </div>
+
+                        <div style="display: flex; gap: var(--gap); flex-flow: column;" data-system-level="2">
+                            <button id="toggleScrollBtn" class="logBtn" data-system-level="2">
+                                📌 Auto-scroll: ON
+                            </button>
+
+                            <button id="toggleLineLockBtn" class="logBtn prohibited" data-system-level="3">
+                                🔒 Fix Scroll: ON
+                            </button>
+                        </div>
                     </div>
 
-                    <div style="display: flex; gap: var(--gap); flex-flow: column;" data-system-level="2">
-                        <button id="toggleScrollBtn" class="logBtn" data-system-level="2">
-                            📌 Auto-scroll: ON
+                    <div class="logContainer">
+                        <pre id="loadingLog"></pre>
+
+                        <button id="clearRegularLog" class="logBtn" data-system-level="1">
+                            🗑️ Clear Log
                         </button>
+                    </div>
 
-                        <button id="toggleLineLockBtn" class="logBtn prohibited" data-system-level="3">
-                            🔒 Fix Scroll: ON
+                    <div class="logContainer machineControlElement controlElement" data-system-level="1">
+                        <div style="height: 40px; width: 100%">
+                            <label for="commandInput"></label>
+                            <textarea id="commandInput" placeholder="Enter command..."></textarea>
+                        </div>
+
+                        <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton"
+                                class="logBtn">
+                            📡 Send Command
                         </button>
                     </div>
+
                 </div>
-
-                <div class="logContainer">
-                    <pre id="loadingLog"></pre>
-
-                    <button id="clearRegularLog" class="logBtn" data-system-level="1">
-                        🗑️ Clear Log
-                    </button>
-                </div>
-
-                <div class="logContainer machineControlElement controlElement" data-system-level="1">
-                    <div style="height: 40px; width: 100%">
-                        <label for="commandInput"></label>
-                        <textarea id="commandInput" placeholder="Enter command..."></textarea>
-                    </div>
-
-                    <button style="height: 40px; min-height: 40px; max-height: 40px;" id="sendButton"
-                            class="logBtn">
-                        📡 Send Command
-                    </button>
-                </div>
-
             </div>
         </section>
 
@@ -2697,7 +2705,7 @@
 
 <script>
     // Zapnutí/ vypnutí varování
-    let warnOnClose = true;
+    let warnOnClose = false;
 
     // Prevent native reload/close dialog (zobrazení varování)
     window.addEventListener('beforeunload', (e) => {
@@ -2711,20 +2719,20 @@
     // Zachycení kláves, které běžně reload/close/close-tab způsobují
     window.addEventListener('keydown', (e) => {
         // F5 (116), Ctrl+R, Ctrl+F5, Ctrl+W, Ctrl+F4, Ctrl+Shift+R, Meta(Command)+R
-        if (
-            e.key === 'F5' ||
-            (e.ctrlKey && e.key.toLowerCase() === 'r') ||
-            (e.metaKey && e.key.toLowerCase() === 'r') ||
-            (e.ctrlKey && e.key.toLowerCase() === 'w') ||
-            (e.ctrlKey && e.key === 'F4')
-        ) {
+        if ((warnOnClose && !debugging) &&
+            (
+                e.key === 'F5' ||
+                (e.ctrlKey && e.key.toLowerCase() === 'r') ||
+                (e.metaKey && e.key.toLowerCase() === 'r') ||
+                (e.ctrlKey && e.key.toLowerCase() === 'w') ||
+                (e.ctrlKey && e.key === 'F4')
+            )) {
             e.preventDefault();
             // Místo reloadu můžeš ukázat vlastní upozornění
-            if (warnOnClose && !debugging) {
-                if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
-                    // případně povolit navigaci
-                    window.location.reload();
-                }
+
+            if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
+                // případně povolit navigaci
+                window.location.reload();
             }
         }
     });
@@ -2738,7 +2746,7 @@
             // interní kotvy povolit
             if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                 e.preventDefault();
-                if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
+                if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
                     // případně povolit navigaci
                     window.location.href = href;
                 }
@@ -2752,7 +2760,7 @@
         // Znovu vložíme stav a ukážeme varování
         history.pushState({page: 1}, '', '');
         if (warnOnClose && !debugging) {
-            if (confirm('Are you sure you want to leave this page? Make sure to fisish all tasks, stop machine and save your data before leaving.')) {
+            if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
                 // případně povolit navigaci
                 history.back();
             }
@@ -3349,8 +3357,8 @@
     // S T A T   &   E X T R E M A   U T I L S   (2D, ragged-friendly)
     // =====================================================================
 
-    // ---------- interní helpery ----------
-    /** Normalizace vstupu na 2D pole řádků; prázdno -> [] */
+    // ---------- internal helpers ----------
+    /** Normalize input to 2D field of rows; empty -> [] */
     const normalize2D = (input) => {
         const outer = checkArray(input);
         if (Number.isNaN(outer)) return [];
@@ -4697,7 +4705,7 @@
 
 
             // (Max strength) f_m = (3*F*L) / (2*b*h^2)
-            const Fmax = readNum("outputForceMax", false); // N
+            const Fmax = readNum("outputForceMax"); // N
             const f_m = calc_flex_strength(Fmax, L, b, h) // N/mm^2 = MPa
             if (exists("outputFlexStrength")) writeOut("outputFlexStrength", f_m, 3);
 
@@ -5009,6 +5017,8 @@
         addControlContainer("resultsContainer");
         addControlContainer("settingsContainer");
         addControlContainer("consoleContainer");
+
+        // window.dispatchEvent(new Event("resize", {bubbles: true}));
     })();
 
 
@@ -5025,7 +5035,9 @@
         if (!container || !btn) return;
 
         if (window.getComputedStyle(container).maxHeight === "0px") {
+            container.style.display = 'block';
             container.style.visibility = 'visible';
+            container.style.contentVisibility = 'unset';
             container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
             container.style.opacity = "1";
             btn.textContent = "🔼";
@@ -5033,7 +5045,11 @@
             container.style.maxHeight = "0"; // Close the container
             container.style.opacity = "0";
             btn.textContent = "🔽";
-            setTimeout(() => container.style.visibility = 'hidden', 550);
+            container.addEventListener('transitionend', () => {
+                container.style.visibility = 'hidden';
+                container.style.display = 'none';
+                container.style.contentVisibility = 'auto';
+            }, {once: true});
         }
     }
 
@@ -7324,10 +7340,14 @@
 
             let loadcellCapacities = Array(loadCellNum).fill(null);
             let loadcellOutputs = Array(loadCellNum).fill(null);
+            const presentLC = [];
             if (systemLevel >= 2) {
                 for (let i = 0; i < loadCellNum; i++) {
-                    loadcellCapacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
-                    loadcellOutputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
+                    if ($ID(`activateLoadcell${i}`).checked === true) {
+                        presentLC.push(i);
+                        loadcellCapacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
+                        loadcellOutputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
+                    }
                 }
             } else {
                 const loadcellCapacity = getInputNumDefAbsInt("inputLoadcellCapacity", NaN);
@@ -7417,12 +7437,23 @@
                 throw new Error("Data interval error");
             }
 
-            if (!isArr(loadcellCapacities) || loadcellCapacities.some(cap => !isNum(cap) || cap < minLoadCap)) {
+            if (!isArr(loadcellCapacities) || loadcellCapacities.every(cap => isVoid(cap))) {
+                console.warn(`\n⚠️ At least one loadcell must be activated with valid capacity.`);
+                await logMessage(`⚠️ At least one loadcell must be activated with valid capacity.`);
+                alert(`⚠️ At least one loadcell must be activated with valid capacity.`);
+                throw new Error("Loadcell activation error");
+            } else if (loadcellCapacities.some(cap => Number.isNaN(cap) || cap < minLoadCap)) {
                 console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 throw new Error("Loadcell capacity error");
-            } else if (!isArr(loadcellOutputs) || loadcellOutputs.some(out => !isNum(out) || out < minLoadOut)) {
+            }
+            if (!isArr(loadcellOutputs) || loadcellOutputs.every(out => isVoid(out))) {
+                console.warn(`\n⚠️ At least one loadcell must be activated with valid output.`);
+                await logMessage(`⚠️ At least one loadcell must be activated with valid output.`);
+                alert(`⚠️ At least one loadcell must be activated with valid output.`);
+                throw new Error("Loadcell activation error");
+            } else if (loadcellOutputs.some(out => Number.isNaN(out) || out < minLoadOut)) {
                 console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
@@ -7665,6 +7696,7 @@
 
             // === LoadCell Configuration ===
             for (let i = 0; i < loadCellNum; i++) {
+                if (isNull(loadcellCapacities[i]) || isNull(loadcellOutputs[i])) continue;
                 await sendCommandGeneral(`LC SET CAP ${i} ${loadcellCapacities[i]}`);
                 await sendCommandGeneral(`LC SET RO ${i} ${loadcellOutputs[i]}`);
             }
@@ -7760,17 +7792,26 @@
             // indexes of valid fields => presentLoadcells
             presentLoadcells = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
 
+            if (systemLevel >= 2) {
+                if (!presentLC.every(lc => presentLoadcells.includes(lc))) {
+                    console.warn("\n⚠️ Activated Loadcell in the App does not match detected loadcells in Machine.");
+                    await logMessage("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
+                    alert("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
+                    throw new Error("Not all selected loadcells are connected");
+                }
+            }
+
 
             // --- 5) Check for errors ---
             // If more one force is not eaqule to zero, than Stop and Alert
             if (!experimentType.endsWith("-basic")) {
-                if (validFields.length > 1) {
+                if (validFields.length > 1 || (systemLevel >= 2 && presentLC.length > 1)) {
                     console.warn("\n⚠️ Multiple loadcells are connected.");
                     await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     throw new Error("Multiple loadcells connected");
 
-                } else if (validFields.length === 0) {
+                } else if (validFields.length === 0 || (systemLevel >= 2 && presentLC.length === 0)) {
                     console.warn("\n⚠️ No loadcell is connected.");
                     await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                     alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
@@ -8964,15 +9005,8 @@
         Loadcell Capacity<span class="units-text"></span>:
       </label>
       <input
-        data-input-type="intInput"
-        type="number"
-        id="inputLoadcellCapacity"
-        value="0"
-        step="any"
-        min="0"
-        max="100000000"
-        data-unit="kg"
-        data-essence="scale, conversion">
+        data-input-type="intInput" type="number" id="inputLoadcellCapacity" value="0"
+        step="any" min="0" max="100000000" data-unit="kg" data-essence="scale, conversion" required>
     `;
 
         const baseOut = $MAKE('div');
@@ -8983,15 +9017,8 @@
         Loadcell Rated Output<span class="units-text"></span>:
       </label>
       <input
-        data-input-type="floatInput2"
-        type="number"
-        id="inputLoadcellOutput"
-        value="2.0"
-        step="any"
-        min="0"
-        max="100000000"
-        data-unit="mV/V"
-        data-essence="voltage, ratio, scale, conversion">
+        data-input-type="floatInput2" type="number" id="inputLoadcellOutput" value="2.0"
+        step="any" min="0" max="100000000" data-unit="mV/V" data-essence="voltage, ratio, scale, conversion" required>
     `;
 
         frag.appendChild(baseCap);
@@ -9003,20 +9030,19 @@
             cap.className = 'input-group';
             cap.dataset.systemLevel = '2';
             cap.innerHTML = `
-        <label for="inputLoadcellCapacity${i}">
-          <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
-          Capacity <span class="units-text"></span>:
-        </label>
+        <div style="display: inline-flex; gap: var(--gap); min-width: var(--inputLabelWidth);
+                    justify-content: flex-end; align-items: center;">
+            <label for="activateLoadcell${i}" hidden></label>
+            <input type="checkbox" id="activateLoadcell${i}" class="expInput" value="activateLoadcell${i}"
+                   data-essence="switch">
+            <label for="inputLoadcellCapacity${i}" style="width: calc(var(--inputLabelWidth) - 80px);">
+              <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
+              Capacity <span class="units-text"></span>:
+            </label>
+        </div>
         <input
-          data-input-type="intInput"
-          type="number"
-          id="inputLoadcellCapacity${i}"
-          value="0"
-          step="any"
-          min="0"
-          max="100000000"
-          data-unit="kg"
-          data-essence="scale, conversion">
+          data-input-type="intInput" type="number" id="inputLoadcellCapacity${i}" value="0"
+          step="any" min="0" max="100000000" data-unit="kg" data-essence="scale, conversion" required>
       `;
 
             const out = $MAKE('div');
@@ -9028,15 +9054,8 @@
           Rated Output <span class="units-text"></span>:
         </label>
         <input
-          data-input-type="floatInput"
-          type="number"
-          id="inputLoadcellOutput${i}"
-          value="2.0"
-          step="any"
-          min="0"
-          max="100000000"
-          data-unit="mV/V"
-          data-essence="voltage, ratio, scale, conversion">
+          data-input-type="floatInput" type="number" id="inputLoadcellOutput${i}" value="2.0"
+          step="any" min="0" max="100000000" data-unit="mV/V" data-essence="voltage, ratio, scale, conversion" required>
       `;
 
             frag.appendChild(cap);
@@ -11767,6 +11786,9 @@
 
     unlockMachineControls();
 
+
+    renderLoadcells(loadCellNum);
+
     const allSettingsInputs = Array.from($$("input, select")).filter(el => !isSkippable(el));
     const appSettingsWrapper = $ID('appSettingsSection');
 
@@ -11819,9 +11841,6 @@
                 notificationsAllowed = true;
             }
         });
-
-
-        renderLoadcells(loadCellNum);
 
         const levelElements = $$('[data-system-level]');
         $ID('systemLevelSelect').addEventListener('change', (event) => {
@@ -11971,49 +11990,55 @@
             // forceLimitDropValue = parseFloat(event.target.value);
         });
 
-        $ID("inputTakePhotos")?.addEventListener('change', async (event) => {
-            const photosInput = $ID("inputPhotoInterval");
-            const photosLabel = $(`label[for="inputPhotoInterval"]`);
-            if (event.target.checked) {
+        const activate = (input, label, active) => {
+            if (active) {
                 // disable photo interval input
-                photosInput.classList.remove("disabled");
-                photosInput.readOnly = false;
-                photosInput.tabIndex = 1;
+                input.classList.remove("disabled");
+                input.readOnly = false;
+                input.tabIndex = 1;
 
                 // disable photo interval input label
-                photosLabel.classList.remove("disabled");
+                label.classList.remove("disabled");
             } else {
                 // disable photo interval input
-                photosInput.classList.add("disabled");
-                photosInput.readOnly = true;
-                photosInput.tabIndex = -1;
+                input.classList.add("disabled");
+                input.readOnly = true;
+                input.tabIndex = -1;
 
                 // disable photo interval input label
-                photosLabel.classList.add("disabled");
+                label.classList.add("disabled");
             }
+        }
+
+        $ID("inputTakePhotos")?.addEventListener('change', async (event) => {
+            const isActive = event.target.checked;
+            const photosInput = $ID("inputPhotoInterval");
+            const photosLabel = $(`label[for="inputPhotoInterval"]`);
+            activate(photosInput, photosLabel, isActive);
+            if (timeChart) timeChart.setSeries(loadCellNum + 1, {show: isActive});
+            if (positionChart) positionChart.setSeries(loadCellNum + 1, {show: isActive});
         });
 
         $ID("inputDoCycles")?.addEventListener('change', async (event) => {
             const cyclesInput = $ID("inputCycles");
             const cyclesLabel = $(`label[for="inputCycles"]`);
-            if (event.target.checked) {
-                // disable photo interval input
-                cyclesInput.classList.remove("disabled");
-                cyclesInput.readOnly = false;
-                cyclesInput.tabIndex = 1;
-
-                // disable photo interval input label
-                cyclesLabel.classList.remove("disabled");
-            } else {
-                // disable photo interval input
-                cyclesInput.classList.add("disabled");
-                cyclesInput.readOnly = true;
-                cyclesInput.tabIndex = -1;
-
-                // disable photo interval input label
-                cyclesLabel.classList.add("disabled");
-            }
+            activate(cyclesInput, cyclesLabel, event.target.checked);
         });
+
+        for (let i = 1; i <= (loadCellNum); i++) {
+            $ID(`activateLoadcell${i}`)?.addEventListener('change', async (event) => {
+                const isActive = event.target.checked;
+                const capInput = $ID(`inputLoadcellCapacity${i}`);
+                const capLabel = $(`label[for="inputLoadcellCapacity${i}"]`);
+                const outInput = $ID(`inputLoadcellOutput${i}`);
+                const outLabel = $(`label[for="inputLoadcellOutput${i}"]`);
+                activate(capInput, capLabel, isActive);
+                activate(outInput, outLabel, isActive);
+                if (timeChart) timeChart.setSeries(i, {show: isActive});
+                if (positionChart) positionChart.setSeries(i, {show: isActive});
+            });
+        }
+
 
         $ID("clearChartBtn")?.addEventListener("click", async () => clearCharts());
 
@@ -12404,7 +12429,6 @@
                 if (autoConnectSetting === 'ask') if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
 
             }, {once: true});
-
         }
     }
 
