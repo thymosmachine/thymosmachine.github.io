@@ -1752,7 +1752,8 @@
         <h3 class="sectionTitle">💻 Control Panel:</h3>
         <article style="gap:15px; display: flex; flex-direction: column;">
             <div id="controlContainer">
-                <nav class="machineControlContainer outsetShadow" style="max-width: calc(1065px - 30px - 205px); width: 100%;">
+                <nav class="machineControlContainer outsetShadow"
+                     style="max-width: calc(1065px - 30px - 205px); width: 100%;">
                     <div class="btnControlWrapper">
                         <!-- Start Experiment Button -->
                         <button id="startExperiment" class="controlBtn movementControlElement machineControlElement">
@@ -5276,11 +5277,6 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            const allOptionsElements = Array.from($$("input, select")).filter(el => !isSkippable(el));
-            const appSettingsWrapper = $ID('appSettingsSection');
-            const allSettingsInputsLoad = allOptionsElements.filter(el => !appSettingsWrapper.contains(el));
-            const allSettingsInputsSys = allOptionsElements.filter(el => appSettingsWrapper.contains(el));
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -5298,8 +5294,8 @@
                     localStorage.setItem(storageKeyLoad, JSON.stringify(loadData));
                     localStorage.setItem(storageKeySys, JSON.stringify(sysData));
 
-                    loadInputsFromLocalStorage(allSettingsInputsLoad, storageKeyLoad);
-                    loadInputsFromLocalStorage(allSettingsInputsSys, storageKeySys);
+                    loadInputsFromLocalStorage(settingsInputsLoad, storageKeyLoad);
+                    loadInputsFromLocalStorage(settingsInputsSys, storageKeySys);
                     console.info("\n📂 Settings imported successfully.");
                 } catch (error) {
                     console.error("Error reading settings file:", error);
@@ -11069,10 +11065,6 @@
 
             setSpeedAndAcceleration(speed, acceleration, true);
 
-
-            const settingsElements = Array.from($$("input, select"))
-                .filter(el => !isSkippable(el) && !($ID('appSettingsSection').contains(el)));
-
             const saveSelected = getInputValDef("inputUseMachineSettings", null)
 
             let userChoiceSave = null;
@@ -11087,8 +11079,8 @@
             else storageKeyLoad = storageKeyIdle;
 
             // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou
-            if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsElements, storageKeyLoad);
-            await saveAllInputsToLocalStorage(settingsElements, storageKeyLoad);
+            if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsInputsLoad, storageKeyLoad);
+            await saveAllInputsToLocalStorage(settingsInputsLoad, storageKeyLoad);
 
         } catch (error) {
             activeWatchDog = false;
@@ -11169,6 +11161,7 @@
             activeWatchDog = false;
             machineOccupation = false;
             isExperimentRunning = false;
+            await saveAllInputsToLocalStorage(settingsInputsLoad, storageKeyIdle);
             await flushDB();
             await resetValues();
             await updateConnectionStatus("disconnected");
@@ -11774,6 +11767,12 @@
 
     unlockMachineControls();
 
+    const allSettingsInputs = Array.from($$("input, select")).filter(el => !isSkippable(el));
+    const appSettingsWrapper = $ID('appSettingsSection');
+
+    const settingsInputsLoad = allSettingsInputs.filter(el => !appSettingsWrapper.contains(el));
+    const settingsInputsSys = allSettingsInputs.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
+
     UI.connectBtns?.forEach(btn => btn.classList.add('disabled'));
 
     // #TODO do better disabling of elements //////////////////////////////////////////////////
@@ -11893,25 +11892,16 @@
             });
         })();
 
-
-        const allOptionsElements = Array.from($$("input, select")).filter(el => !isSkippable(el));
-
-        const appSettingsWrapper = $ID('appSettingsSection');
-
-
-        const loadOptionsElements = allOptionsElements.filter(el => !appSettingsWrapper.contains(el));
-        const appOptionsElements = allOptionsElements.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
-
         // Listen for changes in all inputs
-        loadOptionsElements?.forEach(input => {
+        settingsInputsLoad?.forEach(input => {
             input.addEventListener("change", async (event) => saveInputToLocalStorage(event, storageKeyLoad));
         });
-        appOptionsElements?.forEach(input => {
+        settingsInputsSys?.forEach(input => {
             input.addEventListener("change", async (event) => saveInputToLocalStorage(event, storageKeySys));
         });
 
 
-        allOptionsElements.filter(el => el.matches('[id][data-unit]')).forEach((input) => {
+        allSettingsInputs.filter(el => el.matches('[id][data-unit]')).forEach((input) => {
             updateUnitsLabel(input);
 
             // Use examples:
@@ -12341,11 +12331,11 @@
         });
 
 
-        saveAllInputsToLocalStorage(allOptionsElements, storageKeyDefaults);
+        saveAllInputsToLocalStorage(allSettingsInputs, storageKeyDefaults);
 
         // Load saved data when the page loads
-        loadInputsFromLocalStorage(loadOptionsElements, storageKeyLoad);
-        loadInputsFromLocalStorage(appOptionsElements, storageKeySys);
+        loadInputsFromLocalStorage(settingsInputsLoad, storageKeyIdle);
+        loadInputsFromLocalStorage(settingsInputsSys, storageKeySys);
 
         pageLoaded = true;
 
