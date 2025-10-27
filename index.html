@@ -1012,6 +1012,7 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
+             min-width: fit-content;
         }
 
         #startExperiment {
@@ -1031,6 +1032,7 @@
             color: var(--returnEpx-color);
             border-color: color-mix(in srgb, var(--returnEpx-color) 30%, transparent);
             width: 200px;
+            min-width: unset;
         }
 
         #experimentProgress {
@@ -1546,6 +1548,23 @@
         }
     </style>
 
+    <style>
+        @media (max-width: 989px) {
+            label[for="movementSpeed"], label[for="movementAcceleration"]  {
+                min-width: 120px !important;
+            }
+        }
+        @media (max-width: 1178px) {
+            #controlContainerExp  {
+                max-width: 100% !important;
+            }
+            #controlContainerMove  {
+                width: 100% !important;
+            }
+        }
+
+    </style>
+
 </head>
 
 <body>
@@ -1752,7 +1771,7 @@
         <h3 class="sectionTitle">💻 Control Panel:</h3>
         <article style="gap:15px; display: flex; flex-direction: column;">
             <div id="controlContainer">
-                <nav class="machineControlContainer outsetShadow"
+                <nav id="controlContainerExp" class="machineControlContainer outsetShadow"
                      style="max-width: calc(1065px - 30px - 205px); width: 100%;">
                     <div class="btnControlWrapper">
                         <!-- Start Experiment Button -->
@@ -1801,7 +1820,7 @@
                     </div>
                 </nav>
 
-                <nav class="machineControlContainer outsetShadow">
+                <nav  id="controlContainerMove" class="machineControlContainer outsetShadow">
                     <div class="movementWrapper movementControlElement machineControlElement">
                         <button id="moveMachineUP" class="controlBtn moveBtnLeft">🢁</button>
                         <button id="moveUp50" class="controlBtn moveBtnRight">50<br>(mm)</button>
@@ -1824,7 +1843,7 @@
                            data-system="skip"
                            style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     <label for="labelSpeed"></label>
-                    <div style="display: inline-flex; gap: .2em; align-items: center;">
+                    <div style="display: inline-flex; min-width: fit-content; width: 100%; max-width: 130px; gap: .2em; align-items: center;">
                         <input type="number"
                                data-system="skip"
                                placeholder="Num."
@@ -1840,7 +1859,7 @@
                            data-system="skip"
                            style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     <label for="labelAcceleration"></label>
-                    <div style="display: inline-flex; gap: .2em; align-items: center;">
+                    <div style="display: inline-flex; min-width: fit-content; width: 100%;  max-width: 130px;  gap: .2em; align-items: center;">
                         <input type="number"
                                data-system="skip"
                                placeholder="Num."
@@ -2455,7 +2474,7 @@
                 <article id="appSettingsSection">
                     <h4>📺 App settings:</h4>
                     <div class="inputsContainer autoGrid">
-                        <div class="input-group">
+                        <div class="input-group controlElement">
                             <label for="systemLevelSelect">System Level: </label>
                             <select id="systemLevelSelect" class="appSelector" data-system="app" required>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
@@ -2905,7 +2924,7 @@
     const timeConversionDSLR = 1e-3;    // převod (milisekund) na sekundy
 
     const loadCellNumMax = 3; // maximal number of load cells supported
-    let loadCellNum = loadCellNumMax;
+    const loadCellNum = loadCellNumMax; // TODO: for now constant, else (dynamic assignment based on machine capabilities)
 </script>
 
 
@@ -6417,6 +6436,11 @@
             console.warn("⚠️ Machine name cannot be empty or contain only forbidden characters.");
             return;
         }
+        const nameMaxLength = 35;
+        if (name.length > nameMaxLength) {
+            name = name.substring(0, nameMaxLength);
+            console.warn(`⚠️ Machine name truncated to ${nameMaxLength} characters.`);
+        }
 
         $ID("inputMachineName").value = name;
         machineName = name;
@@ -7153,9 +7177,9 @@
     let displacementSignCorrection = 1;
     let loadSignCorrections = [-1, -1, -1];
 
-    let loadcellErrRate = null;
-    let measurementErrRate = null;
-    let totalErrRate = null;
+    let loadcellErrRate = [];
+    let measurementErrRate = [];
+    let totalErrRate = [];
 
     let endMeasurement = false;
     let endMeasurementCounter = null;
@@ -7257,8 +7281,8 @@
     // // jednou při startu:
     // pi = createPIController({
     //     setForceN: 100,
-    //     Kp: 0.20,
-    //     Ki: 0.03,
+    //     Kp: 0.200,
+    //     Ki: 0.030,
     //     deadbandN: 0.5,
     //     vMin: 0.025,
     //     vMax: 25,
@@ -7282,7 +7306,7 @@
 
     let timer = null; // TODO: create a universal dicionary for all experiment-based variables needed for experiment
 
-    let presentLoadcells = [];
+    let loadcellsInfo = {presentLoadcells: [], loadcellsIDX: [], capacities: [], outputs: []};
 
     async function startExperiment() {
 
@@ -7304,8 +7328,6 @@
             return;
         }
 
-        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
-
         // === System Limits ===
         const minDistance = 5e-3;
         const minFSpeed = 0.025; // TODO: check this
@@ -7316,7 +7338,7 @@
 
 
         try {
-            UI.experimentStageLabel.textContent = `Starting`;
+            UI.experimentStageLabel.textContent = `Preparing`;
 
             await lockControlAndMove();
             await beganMoving();
@@ -7338,25 +7360,43 @@
             forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), Number.POSITIVE_INFINITY, isNum);
             forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", Number.POSITIVE_INFINITY);
 
-            let loadcellCapacities = Array(loadCellNum).fill(null);
-            let loadcellOutputs = Array(loadCellNum).fill(null);
-            const presentLC = [];
-            if (systemLevel >= 2) {
-                for (let i = 0; i < loadCellNum; i++) {
-                    if ($ID(`activateLoadcell${i}`).checked === true) {
-                        presentLC.push(i);
-                        loadcellCapacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
-                        loadcellOutputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
+
+            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+
+            const loadcellCount = loadCellNum; // TODO: Change by user selection if needed
+
+            loadcellsInfo = {
+                presentLoadcells: Array(loadcellCount).fill(false),
+                loadcellsIDX: [],
+                capacities: Array(loadcellCount).fill(null),
+                outputs: Array(loadcellCount).fill(null)
+            };
+            loadcellErrRate = [];
+            measurementErrRate = [];
+            totalErrRate = [];
+
+
+            const userLcSelectionLevel = 2;
+
+            if (systemLevel >= userLcSelectionLevel) {
+                for (let i = 0; i < loadcellCount; i++) {
+                    const active = $ID(`activateLoadcell${i}`).checked;
+                    if (active === true) {
+                        loadcellsInfo.loadcellsIDX.push(i)
+                        loadcellsInfo.presentLoadcells[i] = true;
+                        loadcellsInfo.capacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
+                        loadcellsInfo.outputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
                     }
                 }
             } else {
                 const loadcellCapacity = getInputNumDefAbsInt("inputLoadcellCapacity", NaN);
                 const loadcellOutput = getInputNumDefAbsFlt("inputLoadcellOutput", NaN);
 
-                loadcellCapacities = Array(loadCellNum).fill(loadcellCapacity);
-                loadcellOutputs = Array(loadCellNum).fill(loadcellOutput);
+                loadcellsInfo.presentLoadcells = Array(loadcellCount).fill(true);
+                loadcellsInfo.loadcellsIDX = Array.from({length: loadcellCount}, (_, i) => i);
+                loadcellsInfo.capacities = Array(loadcellCount).fill(loadcellCapacity);
+                loadcellsInfo.outputs = Array(loadcellCount).fill(loadcellOutput);
             }
-
 
             let initialSpeed_mmps = speedForward_mmps;
             initialForceLim_N = null;
@@ -7364,7 +7404,6 @@
             experimentHoldConstantForce = false;
             stoppingForceLimit = Number.POSITIVE_INFINITY;
             holdForceTimeMs = null;
-            presentLoadcells = [];
 
 
             const suffixes = ["-inb", "-hbr"]; // TODO: doplnit i pro Flex ("-flx")
@@ -7402,6 +7441,11 @@
                 throw new Error("Unknown Experiment type error");
             }
 
+            calibrationStatus = await getCalibrationStatus(2_000);
+
+            // =================================
+            // ======= Input Validations =======
+            // =================================
             if (expControl === 'position') {
                 if (!isValidInputNum(distance_mm) || distance_mm < minDistance) {
                     console.warn(`\n⚠️ Distance must be greater than ${minDistance} mm.`);
@@ -7437,23 +7481,29 @@
                 throw new Error("Data interval error");
             }
 
-            if (!isArr(loadcellCapacities) || loadcellCapacities.every(cap => isVoid(cap))) {
+            if (!isArr(loadcellsInfo.loadcellsIDX) || loadcellsInfo.loadcellsIDX.length === 0) {
+                console.warn(`\n⚠️ At least one loadcell must be activated.`);
+                await logMessage(`⚠️ At least one loadcell must be activated.`);
+                alert(`⚠️ At least one loadcell must be activated.`);
+                throw new Error("Loadcell activation error");
+            }
+            if (!isArr(loadcellsInfo.capacities) || loadcellsInfo.capacities.every(cap => isVoid(cap))) {
                 console.warn(`\n⚠️ At least one loadcell must be activated with valid capacity.`);
                 await logMessage(`⚠️ At least one loadcell must be activated with valid capacity.`);
                 alert(`⚠️ At least one loadcell must be activated with valid capacity.`);
                 throw new Error("Loadcell activation error");
-            } else if (loadcellCapacities.some(cap => Number.isNaN(cap) || cap < minLoadCap)) {
+            } else if (loadcellsInfo.capacities.some(cap => Number.isNaN(cap) || cap < minLoadCap)) {
                 console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 throw new Error("Loadcell capacity error");
             }
-            if (!isArr(loadcellOutputs) || loadcellOutputs.every(out => isVoid(out))) {
+            if (!isArr(loadcellsInfo.outputs) || loadcellsInfo.outputs.every(out => isVoid(out))) {
                 console.warn(`\n⚠️ At least one loadcell must be activated with valid output.`);
                 await logMessage(`⚠️ At least one loadcell must be activated with valid output.`);
                 alert(`⚠️ At least one loadcell must be activated with valid output.`);
                 throw new Error("Loadcell activation error");
-            } else if (loadcellOutputs.some(out => Number.isNaN(out) || out < minLoadOut)) {
+            } else if (loadcellsInfo.outputs.some(out => Number.isNaN(out) || out < minLoadOut)) {
                 console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
@@ -7544,13 +7594,6 @@
             if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throw new Error("Experiment end limits are not properly set.");
 
 
-            for (let i = 1; i <= (loadCellNum + 1); i++) {
-                if (timeChart) timeChart.setSeries(i, {show: false});
-                if (positionChart) positionChart.setSeries(i, {show: false});
-            }
-
-            calibrationStatus = await getCalibrationStatus(2_000);
-
             if (!calibrationStatus) {
                 // if (confirm("⚠️ Motors are not calibrated. Calibrate the motor?\n\nOK = Calibrate\tCancel = Not Calibrate")) {
                 //     let confirmCalibrationCount = 0;
@@ -7594,6 +7637,19 @@
                 // }
                 throw new Error("Calibration is required to start the experiment.");
             }
+            // =================================
+            // =================================
+
+
+            await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
+            await console.info("🧪 Starting experiment...");
+            UI.loadingLogContainer.style.background = "black";
+
+
+            for (let i = 1; i <= (loadcellCount + 1); i++) {
+                if (timeChart) timeChart.setSeries(i, {show: false});
+                if (positionChart) positionChart.setSeries(i, {show: false});
+            }
 
 
             if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('before')) {
@@ -7601,35 +7657,16 @@
                 await saveCSV();
             }
 
-            await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
-            await console.info("🧪 Starting experiment...");
-            UI.loadingLogContainer.style.background = "black";
 
+            await sleep(5);
             await clearDatabase();
             await clearCharts();
-
-            // for (let attempt = 1; attempt <= 3; attempt++) {
-            //     try {
-            //         presentLoadcells = (await isLoadcellsPresent(2000)) || [];
-            //         if (presentLoadcells.some(p => p)) break; // At least one loadcell is present
-            //     } catch (e) {
-            //         console.warn("⚠️ Warning: Could not determine loadcell presence, attempt", attempt, "of 3.");
-            //     }
-            //     if (attempt === 3) {
-            //         await logMessage("❌ No loadcells detected. Please check the connection.");
-            //         console.error("❌ No loadcells detected. Please check the connection.");
-            //         alert("❌ No loadcells detected. Please check the connection.");
-            //         throw new Error("No loadcells detected. Please check the connection.");
-            //     }
-            //     await sleep(500); // Wait before retrying
-            // }
-
             if (!liveUpdate) await chartUpdate();
 
 
             // === Progress Bar Setup ===
             document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
-            UI.experimentStageLabel.textContent = `Running`;
+            UI.experimentStageLabel.textContent = `Starting`;
             UI.progressBar.value = 0;
             UI.progressLabel.textContent = `0%`;
 
@@ -7639,18 +7676,17 @@
             maxDataPoints = maxDataPointsExp;
 
             // TODO: use 'resetVariables' function !!!!!!!!!!!!!!!!
-
             // === Reset Variables ===
             tareValues.time = null;
             tareValues.position = null;
             lastAcceptedTime = null;
-            maxForces = Array(loadCellNum).fill(null);
+            maxForces = Array(loadcellCount).fill(null);
             timeData = [];
             positionData = [];
-            forceData = Array(loadCellNum).fill(null).map(() => []);
+            forceData = Array(loadcellCount).fill(null).map(() => []);
             photoData = [];
-            measureForces = Array(loadCellNum).fill(null).map(() => []);
-            tareValues.force = Array(loadCellNum).fill(0);
+            measureForces = Array(loadcellCount).fill(null).map(() => []);
+            tareValues.force = Array(loadcellCount).fill(0);
 
 
             measurementParts = {
@@ -7687,7 +7723,7 @@
                 time: 0,
                 position: 0,
                 speed: 0,
-                force: Array(loadCellNum).fill(0),
+                force: Array(loadcellCount).fill(0),
                 photoIndex: takePhotos ? 0 : null // Store DSLR photo order
             };
 
@@ -7695,10 +7731,10 @@
             currentAcceleration = (await getAcceleration()) || 150;
 
             // === LoadCell Configuration ===
-            for (let i = 0; i < loadCellNum; i++) {
-                if (isNull(loadcellCapacities[i]) || isNull(loadcellOutputs[i])) continue;
-                await sendCommandGeneral(`LC SET CAP ${i} ${loadcellCapacities[i]}`);
-                await sendCommandGeneral(`LC SET RO ${i} ${loadcellOutputs[i]}`);
+            for (let i = 0; i < loadcellCount; i++) {
+                if (isNull(loadcellsInfo.capacities[i]) || isNull(loadcellsInfo.outputs[i])) continue;
+                await sendCommandGeneral(`LC SET CAP ${i} ${loadcellsInfo.capacities[i]}`);
+                await sendCommandGeneral(`LC SET RO ${i} ${loadcellsInfo.outputs[i]}`);
             }
 
             // === Prepare Machine ===
@@ -7711,59 +7747,20 @@
             tareValues.position = await measurePosition();
             $ID("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${tareValues.position} mm`;
 
-            loadSignCorrections = Array(loadCellNum).fill(displacementSignCorrection * -1);
-            for (let i = 0; i < loadCellNum; i++) {
-                if (loadcellCapacities[i] <= 50) loadSignCorrections[i] *= -1; // Reverse direction if loadcell capacity is less than or equal to 50 N
+            loadSignCorrections = Array(loadcellCount).fill(displacementSignCorrection * -1);
+            for (let i = 0; i < loadcellCount; i++) {
+                if (loadcellsInfo.capacities[i] <= 50) loadSignCorrections[i] *= -1; // Reverse direction if loadcell capacity is less than or equal to 50 N
             }
 
-            const settings = await collectExpSettings(".expInput", "Moira-exp-settings") || {};
-
-            const expInfoV = settings?.version;
-            let experimentKey = null;
-            if (expInfoV === 1) {
-                experimentKey = settings?.inputs["experimentTypeDropdown"]?.extra?.essence;
-            }
-            const experimentLabel = catchVal(expTypesLabels[experimentKey], "", isOk);
-
-            await addDataToLog({
-                status: "collecting",
-                expSettings: settings,
-                experimentName: getElementValue("experimentName"),
-                experimentLabel: experimentLabel?.trim(),
-                experimentCounter: getElementValue("experimentCount"),
-                experimentDescription: getElementValue("experimentDesc"),
-                experimentDate: (new Date().toLocaleString())?.replaceAll(". ", "."),
-                loadDirection: displacementSignCorrection,
-                loadDistance: distance_mm,
-                loadSpeed: speedForward_mmps,
-                loadcellCapacity: loadcellCapacities,
-                loadcellType: 'Undefined',
-                appSoftWare: softwareVersion,
-                machineFirmware: machineFirmware,
-                endStatus: endedBy,
-                experimentProgress: experimentProgress,
-                precisions: {
-                    time: precisionTime,
-                    position: precisionPosition,
-                    speed: precisionSpeed,
-                    acceleration: precisionAcceleration,
-                    force: precisionForce,
-                },
-                experimentLimits: experimentEndLimits,
-                experimentControl: expControl,
-            }, 0);
-
-
-            await addDataToLog(parsedData);
-            await updateChart(parsedData);
 
             UI.experimentStageLabel.textContent = `Tarring`;
 
             await sendCommandGeneral('DATA SET INTERVAL 2000');
 
-            for (let i = 0; i < loadCellNum; i++) {
+            for (let i = 0; i < loadcellCount; i++) {
                 await sendCommandGeneral(`LC TARE ${i}`);
             }
+            await sleep(1_500); // Wait for 1.5 second between taring loadcells
 
             // --- 1) Take measurements ---
             takeMeasurements = true;
@@ -7788,12 +7785,35 @@
 
             // --- 4) Valid fields ---
             const validFields = await forceAnalysis.filter(r => !r.allInvalid);
+            console.info("\nValid fields:", validFields);
 
-            // indexes of valid fields => presentLoadcells
-            presentLoadcells = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
+            // indexes of valid fields => present Loadcells indexes
+            const presentLC = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
 
-            if (systemLevel >= 2) {
-                if (!presentLC.every(lc => presentLoadcells.includes(lc))) {
+            if (!(systemLevel >= userLcSelectionLevel)) {
+                loadcellsInfo.presentLoadcells = validFields;
+                loadcellsInfo.loadcellsIDX = presentLC;
+            }
+
+            // --- 5) Check for errors ---
+            // If more one force is not eaqule to zero, than Stop and Alert
+            if (!experimentType.endsWith("-basic")) {
+                if (validFields.length > 1 || (systemLevel >= userLcSelectionLevel && loadcellsInfo.loadcellsIDX.length > 1)) {
+                    console.warn("\n⚠️ Multiple loadcells are connected.");
+                    await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
+                    alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
+                    throw new Error("Multiple loadcells connected");
+
+                }
+            }
+            if (validFields.length === 0 || (systemLevel >= userLcSelectionLevel && loadcellsInfo.loadcellsIDX.length === 0)) {
+                console.warn("\n⚠️ No loadcell is connected.");
+                await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                throw new Error("No loadcell connected");
+            }
+            if (systemLevel >= userLcSelectionLevel) {
+                if (!loadcellsInfo.loadcellsIDX.every(lc => presentLC.includes(lc))) {
                     console.warn("\n⚠️ Activated Loadcell in the App does not match detected loadcells in Machine.");
                     await logMessage("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
                     alert("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
@@ -7801,28 +7821,72 @@
                 }
             }
 
+            // for (let attempt = 1; attempt <= 3; attempt++) {
+            //     try {
+            //         loadcellsInfo.presentLoadcells = (await isLoadcellsPresent(2000)) || [];
+            //         if (loadcellsInfo.presentLoadcells.some(p => p === true)) break; // At least one loadcell is present
+            //     } catch (e) {
+            //         console.warn("⚠️ Warning: Could not determine loadcell presence, attempt", attempt, "of 3.");
+            //     }
+            //     if (attempt === 3) {
+            //         await logMessage("❌ No loadcells detected. Please check the connection.");
+            //         console.error("❌ No loadcells detected. Please check the connection.");
+            //         alert("❌ No loadcells detected. Please check the connection.");
+            //         throw new Error("No loadcells detected. Please check the connection.");
+            //     }
+            //     await sleep(500); // Wait before retrying
+            // }
 
-            // --- 5) Check for errors ---
-            // If more one force is not eaqule to zero, than Stop and Alert
-            if (!experimentType.endsWith("-basic")) {
-                if (validFields.length > 1 || (systemLevel >= 2 && presentLC.length > 1)) {
-                    console.warn("\n⚠️ Multiple loadcells are connected.");
-                    await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
-                    alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
-                    throw new Error("Multiple loadcells connected");
 
-                } else if (validFields.length === 0 || (systemLevel >= 2 && presentLC.length === 0)) {
-                    console.warn("\n⚠️ No loadcell is connected.");
-                    await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
-                    alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
-                    throw new Error("No loadcell connected");
-                }
+            const settings = await collectExpSettings(".expInput", "Moira-exp-settings") || {};
+
+            const expInfoV = settings?.version;
+            let experimentKey = null;
+            if (expInfoV === 1) {
+                experimentKey = settings?.inputs["experimentTypeDropdown"]?.extra?.essence;
             }
+            const experimentLabel = catchVal(expTypesLabels[experimentKey], "", isOk);
+
+            await addDataToLog({
+                status: "collecting",
+                expSettings: settings,
+                experimentName: getElementValue("experimentName"),
+                experimentLabel: experimentLabel?.trim(),
+                experimentCounter: getElementValue("experimentCount"),
+                experimentDescription: getElementValue("experimentDesc"),
+                experimentDate: (new Date().toLocaleString())?.replaceAll(". ", "."),
+                loadDirection: displacementSignCorrection,
+                loadDistance: distance_mm,
+                loadSpeed: speedForward_mmps,
+                loadcellsInfo: loadcellsInfo,
+                loadcellType: 'Undefined',
+                appSoftWare: softwareVersion,
+                machineFirmware: machineFirmware,
+                // TODO: machineFirmwares: machineFirmwares,
+                endStatus: endedBy,
+                experimentProgress: experimentProgress,
+                precisions: {
+                    time: precisionTime,
+                    position: precisionPosition,
+                    speed: precisionSpeed,
+                    acceleration: precisionAcceleration,
+                    force: precisionForce,
+                },
+                experimentLimits: experimentEndLimits,
+                experimentControl: expControl,
+            }, 0);
+
+
+            await addDataToLog(parsedData);
+            await updateChart(parsedData);
+
+            UI.experimentStageLabel.textContent = `Running`;
+
 
             const setChart = (chart) => {
                 if (isVoid(chart)) return;
-                forceAnalysis?.forEach((r, i) => chart.setSeries((i + 1), {show: !r?.allInvalid}));
-                chart.setSeries((loadCellNum + 1), {show: takePhotos});
+                loadcellsInfo.presentLoadcells?.forEach((r, i) => chart.setSeries((i + 1), {show: r}));
+                chart.setSeries((loadcellCount + 1), {show: takePhotos});
             };
             setChart(timeChart);
             setChart(positionChart);
@@ -7834,29 +7898,34 @@
             console.info("\nValid dispersions:", diffs);
 
             // --- 7) Error rates ---
-            measurementErrRate = await roundDecimalFast(await diffs.reduce((a, b) => a + b, 0) / diffs.length, precisionForce);
-            console.info("\n\t\t🎰 Measurement error rate:", measurementErrRate, "N");
+            for (let i = 0; i < loadcellCount; i++) {
+                measurementErrRate[i] = await roundDecimalFast(diffs[i], precisionForce);
+                console.info(`\n\t\tLC ${i}: 🎰 Measurement error rate:`, measurementErrRate[i], "N");
 
-            loadcellErrRate = await (loadcellCapacity * 9.81) / 2_000; // 0.05% of the capacity
-            console.info("\n\t\t🎰 Loadcell error rate:", loadcellErrRate, "N");
 
-            // --- 8) Final error rate ---
-            const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
-            totalErrRate = alpha * measurementErrRate + (1 - alpha) * loadcellErrRate;
-            console.info("\n\t🎲 Final error rate:", totalErrRate, "N");
-            await logMessage(`\t🎲 Set error rate: ${totalErrRate} N`);
+                loadcellErrRate[i] = (loadcellsInfo.capacities[i] * 9.81) / 2_000; // 0.05% of the capacity
+                console.info(`\n\t\tLC ${i}: 🎰 Loadcell error rate:`, loadcellErrRate[i], "N");
+
+                // --- 8) Final error rate ---
+                const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
+                totalErrRate[i] = alpha * measurementErrRate[i] + (1 - alpha) * loadcellErrRate[i];
+                console.info(`\n\tLC ${i}: 🎲 Final error rate:`, totalErrRate[i], "N");
+                await logMessage(`\tLC ${i}: 🎲 Set error rate: ${totalErrRate[i]} N`);
+            }
+
+            const err = mean1D(totalErrRate); // TODO: dle sledovaných sil
 
             // --- 9) Clear force fields ---
-            measureForces = Array(loadCellNum).fill(null).map(() => []);
+            measureForces = Array(loadcellCount).fill(null).map(() => []);
 
 
             if (experimentType.endsWith("-hbr")) {
                 pi = createPIController({
                     setForceN: stoppingForceLimit,
-                    Kp: 0.100,
-                    Ki: 0.015,
-                    deadbandN: (totalErrRate * 1.15), // deadband set to 115% of total error rate
-                    vMin: minFSpeed,
+                    Kp: 0.100, // Proportional gain (default: 0.200)
+                    Ki: 0.015, // Integral gain     (default: 0.030)
+                    deadbandN: (err * 1.15), // deadband set to 115% of total error rate
+                    vMin: minFSpeed, // minimum speed during holding
                     vMax: Math.max(minFSpeed * 3 / 2, speedForward_mmps * 2 / 3), // limit max speed during holding
                     accel: null, // slew-rate limit to 5 mm/s²
                     integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 125), // anti-windup clamp: readings in the last 25% of hold time
@@ -7875,10 +7944,9 @@
             clearTimeout(endMeasurementCounter)
             endMeasurementCounter = null;
 
-
             timeData = [];
             positionData = [];
-            forceData = Array(loadCellNum).fill(null).map(() => []);
+            forceData = Array(loadcellCount).fill(null).map(() => []);
             photoData = [];
 
             UIupdate();
@@ -7980,15 +8048,11 @@
             await alert(`Experiment Finished\n     ❌ Experiment failed. Please check the logs and machine.\n\n     Error:${error.message || error}`);
 
         } finally {
-            await endMeasuring(0, {endText: ''});
+            await endMeasuring(0, {endText: '♻️ Experiment finalizing...'});
 
-            if (!isNum(loadCellNum)) {
-                console.error("Loadcell number is not defined during experiment finalization.");
-                alert("Loadcell number is not defined during experiment finalization.");
-            } else {
-                for (let i = 0; i < loadCellNum; i++) {
-                    await sendCommandGeneral(`LC TARE RESET ${i}`);
-                }
+
+            for (let i = 0; i < loadcellCount; i++) {
+                await sendCommandGeneral(`LC TARE RESET ${i}`);
             }
 
             await sleep(20);
@@ -8789,7 +8853,7 @@
         const newData = parseData(dataString);
 
         if (takeMeasurements) { // Handle takeMeasurements
-            newData?.force?.forEach((value, index) => isNum(value) ? measureForces[index].push(value) : null);  // Collect force data for calibration
+            newData?.force?.forEach((value, index) => (loadcellsInfo.presentLoadcells[index] && isNum(value)) ? measureForces[index].push(value) : null);  // Collect force data for calibration
             return;
         }
 
@@ -8821,8 +8885,12 @@
 
         newData.position = roundDecimalFast((newData.position - tareValues.position) * displacementSignCorrection, precisionPosition);
         newData.speed = roundDecimalFast(newData.speed * displacementSignCorrection, precisionSpeed);
-        // TODO: do only Present loadcellls
-        newData.force = newData?.force?.map((value, index) => roundDecimalFast((value * loadSignCorrections[index]) - (tareValues.force[index] || 0), precisionForce));
+        newData.force = newData?.force?.map((value, index) =>
+            (loadcellsInfo.presentLoadcells[index] && isNum(value))
+                ?
+                roundDecimalFast((value * loadSignCorrections[index]) - (tareValues.force[index] || 0), precisionForce)
+                :
+                null);
 
         // If a pending DSLR timestamp exists, interpolate values
         if (takePhotos && pendingDSLR) {
@@ -8884,7 +8952,7 @@
                         });
 
                     } else {
-                        const sumF = sumND(newData?.force);
+                        const sumF = sum1D(newData?.force);
                         const v = pi.step(newData?.time, newData?.position, sumF);
                         // adjust speed according to PI controller to maintain constant force ...
                         if (isValidInputNum(v)) {
@@ -8934,7 +9002,6 @@
         for (let i = 0; i < catchVal(loadCellNum, 0, isNum); i++) {
             const currForce = newData?.force[i];
             if (isNum(currForce)) {
-                if (!isNum(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
                 if (isNum(maxForces[i])) {
                     if ((maxForces[i] - currForce) > (Math.abs(maxForces[i]) * forceLimitDropPercent) && (maxForces[i] - currForce) > forceLimitDropValue) {
                         endMeasuring(50, {
@@ -8946,6 +9013,7 @@
                         break; // Stop checking other LoadCells if one fails
                     }
                 }
+                if (!isNum(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
             }
         }
 
@@ -9687,13 +9755,13 @@
                 'Experiment end:', experimentInfo.endStatus,
                 'Loading speed (mm/s):', experimentInfo.loadSpeed,
                 'Load distance (mm):', experimentInfo.loadDistance,
-                'Loadcell capacity (kg):', experimentInfo.loadcellCapacity.join('/'),
+                'Loadcell capacity (kg):', experimentInfo.loadcellsInfo.capacities.join('/'),
                 'Software version:', `v${experimentInfo.appSoftWare}`,
                 'Firmware version:', `v${experimentInfo.machineFirmware}`,
             ];
 
             const head = [
-                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', ...experimentInfo.loadcellCapacity.map((cap, idx) => `Force ${idx + 1} [N]`), 'Photo Index'
+                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', ...experimentInfo.loadcellsInfo.capacities.map((cap, idx) => `Force ${idx + 1} [N]`), 'Photo Index'
             ];
 
 
@@ -11057,11 +11125,11 @@
             // TODO: implement Name-based/ID-based (reconnection)
             const machName = machineName?.toLowerCase();
             if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
-                machineName = 'Thymos Device' + Math.random().toString(36).substring(2, 10);
+                machineName = 'Thymos_Device-' + Math.random().toString(36).substring(2, 10);
                 await setMachineName(machineName);
             }
             if (machineID === 0) {
-                machineID = 1; // Math.ceil(Math.random() * 255);
+                machineID = clamp(Math.ceil(Math.random() * 255), 1, 255);
                 await setMachineID(machineID);
             }
 
@@ -11691,6 +11759,8 @@
         machineOccupation = false;
         UI.loadingLogContainer.style.background = "#323232";
 
+        maxDataPoints = maxDataPointsIdle;
+
         experimentEndLimits = {position: null, force: null, time: null};
         expControl = '';
         pendingDSLR = null;
@@ -11715,9 +11785,9 @@
         displacementSignCorrection = 0;
         loadSignCorrections = Array(catchVal(loadCellNum, 0, isNum)).fill(0);
 
-        loadcellErrRate = null;
-        measurementErrRate = null;
-        totalErrRate = null;
+        loadcellErrRate = [];
+        measurementErrRate = [];
+        totalErrRate = [];
 
         calibrationStatus = false;
 
@@ -11773,7 +11843,7 @@
         experimentHoldConstantForce = false;
         stoppingForceLimit = null;
         holdForceTimeMs = null;
-        presentLoadcells = [];
+        loadcellsInfo = {presentLoadcells: [], loadcellsIDX: [], capacities: [], outputs: []};
         checkSpeed = true;
         timer = null;
         // --------------------------------
@@ -11783,6 +11853,8 @@
 </script>
 
 <script>
+
+    resetValues();
 
     unlockMachineControls();
 
