@@ -19,8 +19,8 @@
 
 
     <script>
-        const softwareVersion = "0.0.2.0";
-        const softwareDate = "06.10.2025";
+        const softwareVersion = "0.0.2.5";
+        const softwareDate = "28.10.2025";
 
         // Initial title
         const initialTitle = 'Μοῖρα Controller - Thymos';
@@ -734,6 +734,7 @@
             flex-direction: row;
             align-items: center;
             gap: var(--gap);
+            margin-bottom: 5px;
         }
 
         #updateHeader {
@@ -1659,7 +1660,7 @@
         </div>
         <div id="updateHeader">
             <a style="font-size: 22px; color: darkorange;">Upgrade available</a>
-            <a id="updateHeaderVersion" style="color: coral; font-size: 12px;">[from: v0.0.3 to v0.0.4]</a>
+            <a id="updateHeaderVersion" style="color: coral; font-size: 12px;">[from: v0.0.0 to v0.0.0]</a>
             (press 'F5')
         </div>
     </header>
@@ -1686,8 +1687,8 @@
             </div>
             <div class="inlineDiv" data-system-level="6">
                 <button id="connectBtnWiFi" class="connectBtn" data-connection-type="wifi"
-                        title="Connect to the Thymos machine via Wi&#8209;Fi.">
-                    🌐 Connect via<br>Wi&#8209;Fi
+                        title="Connect to the Thymos machine via Wi-Fi.">
+                    🌐 Connect via<br>Wi-Fi
                 </button>
             </div>
         </div>
@@ -5040,9 +5041,10 @@
         reconnecting: {dot: '🟠', btn: '🔄', color: '#FFA500', verb: 'Reconnecting…'},
         disconnected: {dot: '🔴', btn: null, color: '#FF0000', verb: 'Connect'},
         disconnecting: {dot: '🟣', btn: '🔐', color: '#886CE4', verb: 'Disconnecting…'},
+        error: {dot: '⛔', btn: '❗', color: '#DC143C', verb: 'Error'},
     };
 
-    const TYPE_LABEL = {serial: 'USB', bluetooth: 'Bluetooth', wifi: 'Wi&#8209;Fi'};
+    const TYPE_LABEL = {serial: 'USB', bluetooth: 'Bluetooth', wifi: 'Wi-Fi'};
     const TYPE_CONNECT_EMOJI = {serial: '🔌', bluetooth: '📶', wifi: '🌐'};
 
     // jednoduchý „výrobcе textu“ pro aktivní tlačítko
