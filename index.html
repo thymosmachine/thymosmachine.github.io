@@ -1012,32 +1012,33 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-             min-width: fit-content;
+
         }
 
         #startExperiment {
             background: var(--startEpx-bg);
             color: var(--startEpx-color);
             border-color: color-mix(in srgb, var(--startEpx-color) 30%, transparent);
+            min-width: fit-content;
         }
 
         #stopMachine {
             background: var(--stopEpx-bg);
             color: var(--stopEpx-color);
             border-color: color-mix(in srgb, var(--stopEpx-color) 30%, transparent);
+            min-width: fit-content;
         }
 
         #returnPositionExperimentBtn {
             background: var(--returnEpx-bg);
             color: var(--returnEpx-color);
             border-color: color-mix(in srgb, var(--returnEpx-color) 30%, transparent);
-            width: 200px;
-            min-width: unset;
+            width: 210px;
         }
 
         #experimentProgress {
             flex-grow: 1;
-            max-width: 450px;
+            max-width: 460px;
             min-width: 50px;
             height: 15px;
             appearance: none; /* reset of style */
@@ -1563,6 +1564,13 @@
             }
         }
 
+
+        .u-wrap {
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: var(--radius);
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
     </style>
 
 </head>
@@ -1808,7 +1816,7 @@
 
                     <!-- Experiment Progress -->
                     <div id="progressWrapper">
-                        <div style="flex-grow: 1; display: flex; align-items: center; gap: 10px; max-width: 630px;">
+                        <div style="flex-grow: 1; display: flex; align-items: center; gap: 10px; max-width: 640px;">
                             <label for="experimentProgress">Experiment Progress:</label>
                             <progress id="experimentProgress" value="0" max="100"></progress>
                             <span id="experimentProgressLabel"></span>
@@ -3050,7 +3058,7 @@
 
     const isInfinity = (x) => {
         const v = toNumber(x);
-        return v === number.POSITIVE_INFINITY || v === number.NEGATIVE_INFINITY;
+        return v === Number.POSITIVE_INFINITY || v === Number.NEGATIVE_INFINITY;
     };
 
     const isPositive = (x) => {
@@ -3063,7 +3071,7 @@
         return isNumberOrInfinity(v) && v < 0;
     };
 
-    const isZero = (x) => toNumber(x) === 0;
+    const isZero = (x) => toNumber(x) === 0  || !isNotEmpty(x);
 
     const isNumberOrInfinity = (x, bigInt = true) =>
         (isNumber(x) && !Number.isNaN(x)) || (isBigInt(x) && bigInt); // true i pro ±Infinity
@@ -3227,12 +3235,12 @@
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     const checkArray = (arr) => {
-        if (!isNotEmpty(arr)) return NaN;
+        if (!isNotEmpty(arr)) return null;
         return isArr(arr) ? arr : [arr];
     }
 
     const checkObject = (obj) => {
-        if (!isNotEmpty(obj)) return NaN;
+        if (!isNotEmpty(obj)) return null;
         if (isObj(obj)) return obj;
         if (isArr(obj)) {
             const res = {};
@@ -3244,7 +3252,7 @@
         if (isStr(obj) || isNumberOrInfinity(obj) || isBool(obj)) {
             return {0: obj};
         }
-        return NaN;
+        return null;
     }
 
     const decimalSymbol = (num, symbol = '.') => {
@@ -3345,10 +3353,10 @@
 
     const arrayWrapper = (arr, func, args) => {
         // console.log(arrayWrapper([0.000, "0", 454214878181871n, 0n, "0n", "900800700600500400300200100", "   -45   ", "   +45   ", "   ±45±45   ", 488.45, "100.005  ", "100. 005  ", "12,34", "  56.78  ", "text", null, undefined, {}, [], "NaN", "Infinity", "-Infinity"], getCustomStrValue, [12, '.', false, true]));
-        if ((!arr && arr !== 0) || !func) return NaN;
-        if (!isFunc(func)) return NaN;
+        if ((!arr && arr !== 0) || !func) return null;
+        if (!isFunc(func)) return null;
         arr = checkArray(arr);
-        if (!isNotEmpty(arr)) return NaN;
+        if (!isNonEmptyArr(arr)) return null;
         args = checkArray(args);
         const res = [];
         for (let i = 0; i < arr.length; i++) {
@@ -3358,10 +3366,10 @@
     }
 
     const objectWrapper = (obj, func, args) => {
-        if ((!obj && obj !== 0) || !func) return NaN;
-        if (!isFunc(func)) return NaN;
+        if ((!obj && obj !== 0) || !func) return null;
+        if (!isFunc(func)) return null;
         obj = checkObject(obj);
-        if (!isNotEmpty(obj)) return NaN;
+        if (!isNonEmptyObj(obj)) return null;
         args = checkArray(args);
         const res = {};
         for (const key in obj) {
@@ -3380,10 +3388,10 @@
     /** Normalize input to 2D field of rows; empty -> [] */
     const normalize2D = (input) => {
         const outer = checkArray(input);
-        if (Number.isNaN(outer)) return [];
+        if (!isNonEmptyArr(outer)) return [];
         return outer.map(r => {
             const row = checkArray(r);
-            return Number.isNaN(row) ? [] : row;
+            return !isNonEmptyArr(row) ? [] : row;
         });
     };
 
@@ -3396,7 +3404,7 @@
     /** Vrátí pouze konečná čísla (toNumber(..., true)); ostatní vyhodí */
     const valuesFinite = (list) => {
         const arr = checkArray(list);
-        if (Number.isNaN(arr)) return [];
+        if (!isNonEmptyArr(arr)) return [];
         const out = [];
         for (const v of arr) {
             const n = toNumber(v, true);
@@ -3447,6 +3455,7 @@
 
     // ---------- 1D operátory ----------
     const sum1D = (list) => {
+        if (isNum(list)) return list;
         const v = valuesFinite(list);
         if (!v.length) return NaN;
         let s = 0;
@@ -3455,11 +3464,13 @@
     };
 
     const mean1D = (list) => {
+        if (isNum(list)) return list;
         const v = valuesFinite(list);
         return v.length ? sum1D(v) / v.length : NaN;
     };
 
     const median1D = (list) => {
+        if (isNum(list)) return list;
         const v = valuesFinite(list);
         if (!v.length) return NaN;
         v.sort((a, b) => a - b);
@@ -3469,6 +3480,7 @@
 
     /** Směrodatná odchylka; sample=true -> Bessel (N-1), jinak populace (N) */
     const std1D = (list, sample = false) => {
+        if (isNum(list)) return list;
         const v = valuesFinite(list);
         const n = v.length;
         if (!n || (sample && n < 2)) return NaN;
@@ -3580,7 +3592,7 @@
     // Pokud nic validního, vrací { indexes: NaN, values: NaN, distance: NaN }.
     const nearest1D = (list, target) => {
         const arr = checkArray(list);
-        if (Number.isNaN(arr)) return {indexes: NaN, values: NaN, distance: NaN};
+        if (!isNonEmptyArr(arr)) return {indexes: NaN, values: NaN, distance: NaN};
 
         const t = toNumber(target, true);
         if (Number.isNaN(t)) return {indexes: NaN, values: NaN, distance: NaN};
@@ -5654,7 +5666,7 @@
                         console.info(`\t\n🕒 %cLast log date: ${date}`, "color: #0078d7; font-style: italic; font-weight: normal;");
                     }
 
-                    const loadDirection = experimentInfo.loadDirection === -1 ? "DOWN" : (experimentInfo.loadDirection === 1 ? "UP" : "N/A");
+                    const loadDirection =( experimentInfo.loadDirection === -1 ? "DOWN" : (experimentInfo.loadDirection === 1 ? "UP" : (experimentInfo.loadDirection === 0 ? "CYCLING" : "N/A")));
 
                     const experimentLabel = experimentInfo.experimentLabel || "";
 
@@ -7855,14 +7867,14 @@
                 experimentCounter: getElementValue("experimentCount"),
                 experimentDescription: getElementValue("experimentDesc"),
                 experimentDate: (new Date().toLocaleString())?.replaceAll(". ", "."),
-                loadDirection: displacementSignCorrection,
+                loadDirection: doCycles ? 0 : displacementSignCorrection,
                 loadDistance: distance_mm,
                 loadSpeed: speedForward_mmps,
-                loadcellsInfo: loadcellsInfo,
+                loadcellsInfo: structuredClone(loadcellsInfo),
                 loadcellType: 'Undefined',
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
-                // TODO: machineFirmwares: machineFirmwares,
+                // TODO: machineFirmwares: structuredClone(machineFirmwares),
                 endStatus: endedBy,
                 experimentProgress: experimentProgress,
                 precisions: {
@@ -7872,7 +7884,7 @@
                     acceleration: precisionAcceleration,
                     force: precisionForce,
                 },
-                experimentLimits: experimentEndLimits,
+                experimentLimits: structuredClone(experimentEndLimits),
                 experimentControl: expControl,
             }, 0);
 
@@ -7969,7 +7981,7 @@
             console.info("➡️ Moving forward...");
             await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
 
-            if (doCycles && isNumberOrInfinity(cyclesCount) && cyclesCount > 0) {
+            if (doCycles) {
                 const movementTime = computeMotionTime(distance_mm, speedForward_mmps, 200);
 
                 let interval = setInterval(async () => {
@@ -9755,13 +9767,13 @@
                 'Experiment end:', experimentInfo.endStatus,
                 'Loading speed (mm/s):', experimentInfo.loadSpeed,
                 'Load distance (mm):', experimentInfo.loadDistance,
-                'Loadcell capacity (kg):', experimentInfo.loadcellsInfo.capacities.join('/'),
+                'Loadcell capacity (kg):', experimentInfo.loadcellsInfo.capacities.map((v, i) => experimentInfo.loadcellsInfo.presentLoadcells[i] ? v : NaN).join('/'),
                 'Software version:', `v${experimentInfo.appSoftWare}`,
                 'Firmware version:', `v${experimentInfo.machineFirmware}`,
             ];
 
             const head = [
-                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', ...experimentInfo.loadcellsInfo.capacities.map((cap, idx) => `Force ${idx + 1} [N]`), 'Photo Index'
+                'Time [s]', 'Displacement [mm]', 'Speed [mm/s]', ...experimentInfo.loadcellsInfo.capacities.map((_, idx) => `Force ${idx + 1} [N]`), 'Photo Index'
             ];
 
 
@@ -12024,8 +12036,8 @@
         });
 
         // Initialization of uPlot charts
-        timeChart = createChart("timeChart", ["Time (s)", "Force 1", "Force 2", "Force 3"], "Force-Time Graph", "Time [s]", "Force [N]");
-        positionChart = createChart("positionChart", ["Position (mm)", "Force 1", "Force 2", "Force 3"], "Force-Position Graph", "Position [mm]", "Force [N]");
+        timeChart = createChart("timeChart", ["Time (s)", "Force 1", "Force 2", "Force 3"], "Force-Time", "Time [s]", "Force [N]");
+        positionChart = createChart("positionChart", ["Position (mm)", "Force 1", "Force 2", "Force 3"], "Force-Position", "Position [mm]", "Force [N]");
 
 
         $ID("experimentName")?.addEventListener("change", async (event) => {
