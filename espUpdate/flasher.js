@@ -37,7 +37,7 @@ export const scriptOptions = {
     useESPSignals: false,
     useFilteredPort: true,
     thymosFingerprints: [
-        "12346:4097", //  ≈ "0x303a:0x1001"
+        "0x303a:0x1001", //  ≈ "12346:4097"
     ],
 };
 
@@ -264,23 +264,33 @@ async function getFileContent(inputId) {
         let compressedData;
 
         if (typeof CompressionStream !== "undefined") {
+            console.log('\n\tUsing CompressionStream for compression', file?.name);
+
             // without zlib header use: 'deflate-raw'
-            const cs = new CompressionStream("deflate"); // Compress using CompressionStream (zlib)
-            const writer = cs.writable.getWriter();
+            const stream = new Blob([fileData])  // fileData: ArrayBuffer/Uint8Array
+                .stream()
+                .pipeThrough(new CompressionStream('deflate'));   // Compress using CompressionStream (zlib)
 
-            await writer.write(fileData);
-            await writer.close(); // důležité počkat na uzavření
+            compressedData = new Uint8Array(await new Response(stream).arrayBuffer());
 
-            const compressedArrayBuffer = await new Response(cs.readable).arrayBuffer();
-            compressedData = new Uint8Array(compressedArrayBuffer);
+            console.log('\n\t\tCompressionStream compressed size:', compressedData.length);
 
 
         } else if (self.pako.gzip) {
+            console.log('\n\tUsing pako for compression', file?.name);
+
             // without zlib header use: 'pako.deflateRaw(...)'
             compressedData = self.pako?.deflate(fileData); // Compress using pako (zlib)  // optional: { level: 6 }
 
+            console.log('\n\t\tPako compressed size:', compressedData.length);
+
+
         } else {
+            console.log('\n\tNo compression method available', file?.name);
+
             compressedData = fileData; // No compression available
+
+            console.log('\n\t\tCompressionStream compressed size:', compressedData.length);
         }
 
         if (!compressedData || compressedData.length === 0 || compressedData.length >= fileData.length) {
@@ -304,6 +314,7 @@ export async function initializeFlash() {
         return;
     }
 
+
     const bootloaderResult = await getFileContent('bootloaderFile');
     const partitionsResult = await getFileContent('partitionsFile');
     const firmwareResult = await getFileContent('firmwareFile');
@@ -325,11 +336,13 @@ export async function initializeFlash() {
 
 
 async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOriginalSize, partitionsOriginalSize, firmwareOriginalSize, bootloaderFile, partitionsFile, firmwareFile) {
+
     let writer = port.writable.getWriter();
     let reader = port.readable.getReader();
     scriptVariables.logFunction('🚀 Starting flashing process...\n', colorMeanings.info);
 
     // TODO: 1) get values before flashing (name, id, ...)
+    // TODO:                                                'MISC get NAME' + 'MISC GET MACHINE_ID'
 
     await eraseFlash(writer);
 
@@ -345,6 +358,7 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
 
 
     // TODO: 2) refresh of memory after flashing by COMMAND
+    // TODO:                                                'MEMORY RESET'
 
     // TODO: 3) restore them after flashing
 }
