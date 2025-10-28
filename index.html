@@ -1034,7 +1034,7 @@
             background: var(--returnEpx-bg);
             color: var(--returnEpx-color);
             border-color: color-mix(in srgb, var(--returnEpx-color) 30%, transparent);
-            width: 210px;
+            min-width: 210px;
         }
 
         #experimentProgress {
@@ -1713,6 +1713,14 @@
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #2196F3; color:white">
             📊<br>Data Measurement<br><em style="font-weight: normal;">(DATAC)</em>
         </button>
+        <button onclick="sendCommandGeneral('mc moveto mach 0')"
+                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #607d8b; color:white">
+            ⬅️<br>Move to 0 mm
+        </button>
+        <button onclick="sendCommandGeneral('mc moveto mach 300')"
+                style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #607d8b; color:white">
+            ➡️<br>Move to 300 mm
+        </button>
         <button id="degubRunTestSequenceBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #4CAF50; color:white">
             🧪<br>Run Test Sequence
@@ -1738,9 +1746,9 @@
     <section class="graphContainer outsetShadow">
         <h3 class="sectionTitle">📈 Graphs:</h3>
         <nav class="graphBtnWrapper" data-system-level="1">
-            <button class="btnGraph" id="toggleLive"> ⏯️ Activate Charts</button>
+            <button class="btnGraph" id="toggleLiveGraph"> ⏯️ Activate Charts</button>
             <button id="clearChartBtn" class="btnGraph">🧹 Clear Charts</button>
-            <button id="refreshChartBtn" class="btnGraph">🔄 Refresh Charts</button>
+            <button id="reloadChartBtn" class="btnGraph">🔄 Reload Charts</button>
         </nav>
 
 
@@ -2520,7 +2528,7 @@
                             </select>
                         </div>
 
-                        <div class="input-group" data-system-level="4">
+                        <div class="input-group controlElement" data-system-level="4">
                             <label for="inputAppInterval" style="min-width: max-content;">Data Interval:</label>
                             <input data-input-type="intInput" type="number" id="inputAppInterval" data-system="app"
                                    value="50000" min="1" step="any" max="100000000" data-unit="µs" data-essence="time"
@@ -2532,16 +2540,16 @@
                             <select id="languageSelect" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                                 <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇧🇬</option>
-                                <option value="cs" disabled>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
-                                <option value="de" disabled>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
-                                <option value="es" disabled>&nbsp;Español&nbsp;&nbsp;&nbsp;&nbsp;🇪🇸</option>
-                                <option value="pt" disabled>&nbsp;Português&nbsp;&nbsp;🇵🇹</option>
-                                <option value="fr" disabled>&nbsp;Français&nbsp;&nbsp;&nbsp;🇫🇷</option>
-                                <option value="it" disabled>&nbsp;Italiano&nbsp;&nbsp;&nbsp;🇮🇹</option>
-                                <option value="ru" disabled>&nbsp;Русский&nbsp;&nbsp;&nbsp;&nbsp;🇷🇺</option>
-                                <option value="ja" disabled>&nbsp;日本語&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇯🇵</option>
-                                <option value="ko" disabled>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
-                                <option value="zh" disabled>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳
+                                <option value="cs" hidden>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
+                                <option value="de" hidden>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
+                                <option value="es" hidden>&nbsp;Español&nbsp;&nbsp;&nbsp;&nbsp;🇪🇸</option>
+                                <option value="pt" hidden>&nbsp;Português&nbsp;&nbsp;🇵🇹</option>
+                                <option value="fr" hidden>&nbsp;Français&nbsp;&nbsp;&nbsp;🇫🇷</option>
+                                <option value="it" hidden>&nbsp;Italiano&nbsp;&nbsp;&nbsp;🇮🇹</option>
+                                <option value="ru" hidden>&nbsp;Русский&nbsp;&nbsp;&nbsp;&nbsp;🇷🇺</option>
+                                <option value="ja" hidden>&nbsp;日本語&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇯🇵</option>
+                                <option value="ko" hidden>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
+                                <option value="zh" hidden>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳
                                 </option>
                             </select>
                         </div>
@@ -2577,21 +2585,25 @@
                             </label>
                             <select id="inputUseMachineSettings" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                                <option value="no_not" title="Keep and don't save to machine">&nbsp;❌&nbsp;No (keep)
+                                <option value="no_not" title="Keep current and don't save to machine">
+                                    &nbsp;❌&nbsp;No (keep)
                                 </option>
-                                <option value="no_save" title="Keep and save to machine">&nbsp;✖️&nbsp;No (save)
+                                <option value="no_save" title="Keep current and save to machine">
+                                    &nbsp;✖️&nbsp;No (keep & save)
                                 </option>
-                                <option value="ask" title="Ask what to do">&nbsp;❔&nbsp;Ask</option>
-                                <option value="yes_save" title="Overwrite and save to machine" selected>&nbsp;✅&nbsp;Yes
-                                    (save)
+                                <option value="ask" title="Ask what to do">
+                                    &nbsp;❔&nbsp;Ask
                                 </option>
-                                <option value="yes_not" title="Overwrite and don't save to machine">&nbsp;☑️&nbsp;Yes
-                                    (keep)
+                                <option value="yes_save" title="Overwrite current and save to machine" selected>
+                                    &nbsp;✅&nbsp;Yes (load & save)
+                                </option>
+                                <option value="yes_not" title="Overwrite current and don't save to machine">
+                                    &nbsp;☑️&nbsp;Yes (load & keep)
                                 </option>
                             </select>
                         </div>
 
-                        <div class="input-group" data-system-level="1">
+                        <div class="input-group" data-system-level="2">
                             <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                             <select id="decimalSymbol" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
@@ -2600,7 +2612,7 @@
                             </select>
                         </div>
 
-                        <div class="input-group" data-system-level="1">
+                        <div class="input-group" data-system-level="2">
                             <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                             <select id="delimiterSymbol" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
@@ -2654,7 +2666,7 @@
                             🗑️ Clear All Data
                         </button>
 
-                        <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="1">
+                        <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="2">
                             <button id="exportSettingButton" class="controlBtn controlElement"
                                     style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-3-color); font-size: 12px;">
                                 ↗️ Export settings <!-- 📁📤 -->
@@ -3039,7 +3051,7 @@
 
         if (el.dataset.hasOwnProperty('defaultValue')) return el.dataset.defaultValue;
 
-        const defaultVal = localStorage.getItem(storageKeyDefaults)[el.id];
+        const defaultVal = JSON.parse(localStorage.getItem(storageKeyDefaults))[el.id] || null;
         if (isNotEmpty(defaultVal)) return defaultVal;
 
         return null;
@@ -3752,19 +3764,64 @@
     };
 
 
-    const isHidden = (el) => { // TODO: rozšířit o kontrolu rodičů + use 'el.hidden'
+    function isHidden(el) {
         el = getElement(el);
         if (!isElement(el)) return null;
-        const style = window.getComputedStyle(el);
-        return (style.display === 'none' || style.visibility === 'hidden' || el.hidden ||
-            el.classList.contains('undisplayed') || el.classList.contains('invisible'));
-    };
 
-    const isDisabled = (el) => { // TODO: rozšířit o kontrolu rodičů + use 'el.disabled'
+        // není v DOM
+        if (!el.isConnected) return true;
+
+        // atribut [hidden] na něm nebo na libovolném předku
+        if (el.closest('[hidden]')) return true; // el.hasAttribute('hidden') , el.hidden
+
+        // tvoje "custom" třídy na něm nebo předcích
+        if (el.closest('.undisplayed, .invisible')) return true;
+
+        // display:none (nebo mimo DOM) → nemá layout → žádné rects
+        if (el.getClientRects().length === 0) return true;
+
+        // visibility je dědičná – zkontroluj sebe i předky
+        for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+            const cs = getComputedStyle(node);
+            if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return true;
+            if (cs.display === 'none') return true; // (redundantní k getClientRects, ale explicitní)
+        }
+
+        return false;
+    }
+
+    function isDisabled(el, opts = {}) {
+        const {
+            includeAria = true,         // [aria-disabled="true"] na prvku nebo předcích
+            includeInert = true,        // [inert] na předcích
+            includeClasses = true,      // .disabled/.prohibited/[data-disabled="true"] na prvku/předcích
+            checkPointerEvents = false, // volitelně považovat pointer-events:none jako "disabled"
+        } = opts;
+
         el = getElement(el);
-        if (!isElement(el)) return null;
-        return el.disabled || el.classList.contains('disabled') || el.classList.contains('prohibited');
-    };
+        if (!isElement(el)) return false;
+
+        // 1) Nativní disabled logika (včetně <fieldset disabled> a :disabled)
+        //    :disabled funguje pro nativní ovládací prvky (button, input, select, textarea, option, optgroup, fieldset)
+        if (typeof el.matches === 'function' && el.matches(':disabled')) return true;
+        if (el.hasAttribute('disabled')) return true; // pro jistotu i mimo :disabled
+
+        // 2) ARIA a inert (dědí se přes předky)
+        if (includeAria && el.closest('[aria-disabled="true"]')) return true;
+        if (includeInert && el.closest('[inert]')) return true;
+
+        // 3) Tvoje “soft” disabled třídy/flagy na prvku nebo předcích
+        if (includeClasses && el.closest('.disabled, .prohibited, [data-disabled="true"]')) return true;
+
+        // 4) (Volitelně) stylové znepřístupnění
+        if (checkPointerEvents) {
+            for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                if (getComputedStyle(node).pointerEvents === 'none') return true;
+            }
+        }
+
+        return false;
+    }
 
     const isUnavailable = (el) => {
         el = getElement(el);
@@ -4810,8 +4867,8 @@
     }
 
     function fillComputableInputs() {
-        const forces = sumND(forceDataChart, 2); // součet sil ze všech kanálů
-        const displacements = positionDataChart;
+        const forces = sumND(forceData, 2); // součet sil ze všech kanálů
+        const displacements = positionData;
 
         // const minimalForceID = minimumIdx(forces);
         const maximalForceID = maximumIdx(forces);
@@ -4856,23 +4913,22 @@
 
 
             // Rychlost zatěžování: v = w_T / t
-            const time = timeDataChart;
-
             const t_goal = readNum("inputLoadingTime", true);                   // s
             const w_goal = calc_val_tare(w_Ftarget_raw, w_Finitial_raw);        // mm
 
+            const time = timeData;
             const t_Finitial_raw = time[FinitialInd];                                               // s
             const t_set_raw = time[FtargetInd];                                                     // s
             const t_set = calc_val_tare(t_set_raw, t_Finitial_raw);                                 // s
             const v_set = catchVal(speedForward_mmps, readNum("inputSpeedForward", true), isNum);   // mm/s
 
             const v1 = calc_speed(w_goal, t_goal);              // variant 1     mm/s
-            const v2 = calc_load_speed(v_set, t_set, t_goal);  // variant 2     mm/s
+            const v2 = calc_load_speed(v_set, t_set, t_goal);   // variant 2     mm/s
 
             console.log("\n",
                 "\n\tGuest 1:", roundDecimalFast(v1, precisionSpeedSystem),
                 "\n\tGuest 2:", roundDecimalFast(v2, precisionSpeedSystem));
-            const v = v2;
+            const v = v1;
 
             if (exists("outputLoadingSpeed")) writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
 
@@ -4880,6 +4936,11 @@
             // TODO: ΔT = 5.2 - 2.6 = 2.6s
             // TODO: ((5.2-2.6) / 15) = 0.1733 [-]
             // TODO: 0.6825 * ((5.2-2.6) / 15) = 0.1183 mm/s
+
+            // 2.6 => 1.7745, 5.2 => 3.549
+            // Δt = 2.6s, Δw = 1.7745
+            // v1 = 1.7745 / 15 = 0.1183 mm/s
+            // v2 = 0.6825 * (2.6 / 15) = 0.1183 mm/s
 
             // TODO: v_new1 = position / T_target = (v_old * T_old) / T_target = ((position / T_old) * T_old) / T_target = position / T_target
             // TODO: v_new2 = v_old * (T_old / T_target) = (position / T_old) * (T_old / T_target) = position / T_target
@@ -4940,10 +5001,11 @@
     let positionDataChart = [];
     let forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
     let photoDataChart = []; // List of time markers
+    let dataCount = 0;
 
-    // let timeData = [];
-    // let positionData = [];
-    // let forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+    let timeData = [];
+    let positionData = [];
+    let forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
 
     let notificationsAllowed = false;
 
@@ -4999,7 +5061,7 @@
         commandInput: $ID('commandInput'),// Input elements for command entry and settings
         sendButton: $ID('sendButton'),// Input elements for command entry and settings
 
-        chartsLiveButton: $ID('toggleLive'),// Input elements for command entry and settings
+        chartsLiveButton: $ID('toggleLiveGraph'),// Input elements for command entry and settings
         connectionStatus: $ID("connectionStatus"), // Display for connection status
         connectBtns: $$(".connectBtn"), // Container for connection buttons
         Serial: $ID("connectBtnSerial"), // Button to connect via Serial
@@ -5285,11 +5347,15 @@
             console.error("Storage key is not defined.");
             return;
         }
-        setSerialSignals(serialPort, true, true);
+        // setSerialSignals(serialPort, true, true);
+
+        sendCommandGeneral("MISC REBOOT");
 
         disconnectSerial();
 
-        localStorage.removeItem(storageKeyLoad); // Remove the saved data
+        localStorage.removeItem(storageKeyDefaults);    // Remove the saved data
+        localStorage.removeItem(storageKeyIdle);        // Remove the saved data
+        localStorage.removeItem(storageKeyLoad);        // Remove the saved data
         console.info("LocalStorage cleared.");
 
         window.location.reload();
@@ -5406,9 +5472,31 @@
 
                     const loadData = formData?.settingsLoad || {};
                     const sysData = formData?.settingsSys || {};
+                    if (!debugging) {
+                        const levels = ['operator', 'admin', 'developer', 'god'];
+                        if (levels.some(level => level === sysData?.systemLevelSelect)) {
+                            const level = 'expert';
+                            sysData.systemLevelSelect = level;
+                            console.info(`%c\nLoaded system level downgraded to ' ${level}'`, "color: orange; font-size: 12px;");
+                        }
+                    }
 
                     localStorage.setItem(storageKeyLoad, JSON.stringify(loadData));
                     localStorage.setItem(storageKeySys, JSON.stringify(sysData));
+                    if (isNonEmptyStr(formData?.expName)) {
+                        const expNameInput = $ID("experimentName");
+                        if (expNameInput) {
+                            expNameInput.value = formData.expName;
+                            expNameInput.dispatchEvent(new Event("change", {bubbles: true}));
+                        }
+                    }
+                    if (isNonEmptyStr(formData?.expDesc)) {
+                        const expDescInput = $ID("experimentDesc");
+                        if (expDescInput) {
+                            expDescInput.value = formData.expDesc;
+                            expDescInput.dispatchEvent(new Event("change", {bubbles: true}));
+                        }
+                    }
 
                     loadInputsFromLocalStorage(settingsInputsLoad, storageKeyLoad);
                     loadInputsFromLocalStorage(settingsInputsSys, storageKeySys);
@@ -5432,17 +5520,18 @@
             return;
         }
 
-        const completeData = {};
+        const formData = {};
 
-        completeData.settingsLoad = localStorage.getItem(storageKeyLoad);
-        completeData.settingsSys = localStorage.getItem(storageKeySys);
+        formData.settingsLoad = JSON.parse(localStorage.getItem(storageKeyLoad)) || {};
+        formData.settingsSys = JSON.parse(localStorage.getItem(storageKeySys)) || {};
+        formData.expName = getElementValue("experimentName") || "";
+        formData.expDesc = getElementValue("experimentDesc")?.replaceAll(/(\r\n|\n|\r)/gm, " ").trim() || "";
 
-        if (!data) {
+        if (!isNonEmptyObj(formData)) {
             console.warn("No settings found to export.");
             return;
         }
 
-        const formData = JSON.parse(completeData) || {};
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formData, null, 2));
         const downloadAnchorNode = $MAKE('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -5925,10 +6014,58 @@
 
     // /////// Toggle Live Update /////////
     function chartUpdate() {
-        if (!liveUpdate) loadDataFromDBToChart(!liveUpdate);
+        if (!liveUpdate && isExperimentRunning) loadDataFromDBToChart(!liveUpdate);
 
         liveUpdate = !liveUpdate;
 
+        if (!isExperimentRunning) {
+            if (liveUpdate) {
+
+                const dataAppInterval = getInputNumDefAbsInt("inputAppInterval", NaN);
+                sendCommandGeneral(`DATA SET INTERVAL ${dataAppInterval}`)
+                const dataDuration = 10 * 1_000; // 10 seconds
+
+                maxDataPoints = (isNum(dataAppInterval) ?
+                    calculateStep(dataAppInterval, dataDuration, maxDataPointsIdle) :
+                    maxDataPointsIdle);
+
+                let capacities = [];
+                let outputs = [];
+                let present = Array(loadCellNum).fill(true);
+                if (systemLevel >= 2) {
+                    for (let i = 0; i < loadCellNum; i++) {
+                        const active = $ID(`activateLoadcell${i + 1}`).checked;
+                        present[i] = active;
+                        if (active === true) {
+                            capacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
+                            outputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
+                        }
+                    }
+                } else {
+                    const loadcellCapacity = getInputNumDefAbsInt("inputLoadcellCapacity", NaN);
+                    const loadcellOutput = getInputNumDefAbsFlt("inputLoadcellOutput", NaN);
+
+                    capacities = Array(loadCellNum).fill(loadcellCapacity);
+                    outputs = Array(loadCellNum).fill(loadcellOutput);
+                }
+
+
+                for (let i = 0; i < loadCellNum; i++) {
+                    if (isNum(capacities[i]) && isNum(outputs[i])) {
+                        sendCommandGeneral(`LC SET CAP ${i} ${capacities[i]}`);
+                        sendCommandGeneral(`LC SET RO ${i} ${outputs[i]}`);
+                        sendCommandGeneral(`LC TARE RESET ${i}`);
+                    } else {
+                        present[i] = false;
+                    }
+
+                    if (timeChart) timeChart.setSeries(i + 1, {show: present[i]});
+                    if (positionChart) positionChart.setSeries(i + 1, {show: present[i]});
+                }
+            }
+
+            sendCommandGeneral(`DATAC ${liveUpdate ? 1 : 0}`);
+        }
         UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "⏯️ Activate Charts";
         $ID("chartsWrapper").style.background = liveUpdate ? "var(--charts-bg-active)" : "var(--charts-bg)";
     }
@@ -6144,13 +6281,21 @@
             forceDataChart = forceDataTemp;
             photoDataChart = photoDataTemp;
 
-            // timeData = timeDataTemp;
-            // positionData = positionDataTemp;
-            // forceData = photoDataTemp;
+            timeData = timeDataTemp;
+            positionData = positionDataTemp;
+            forceData = forceDataTemp;
 
-            // TODO: replace with 'updateChart' function
+            /* TODO: replace with 'updateChart' function
+                //      await propagateData({
+                //            time: timeDataTemp,
+                //             position: positionDataTemp,
+                //             force: forceDataTemp,
+                //             photoIndex: photoDataTemp,
+                //      }, {overRide: true});
+            */
             timeChart.setData([timeDataTemp, ...forceDataTemp, photoDataTemp]);
             positionChart.setData([positionDataTemp, ...forceDataTemp, photoDataTemp]);
+
 
             timeChart.setScale("x", {min: minTime - timeRange, max: maxTime + timeRange});
             positionChart.setScale("x", {min: minDist - distRange, max: maxDist + distRange});
@@ -6274,29 +6419,75 @@
      */
 
     function updateChart(inputData) {
-        // TODO: problém s grafem během experimentu, není tam update
-
-        const chartData = checkArray(inputData);
-
-        if (!isNonEmptyArr(chartData)) return;
+        if (!isObj(inputData)) return;
 
 
-        for (let i = 0; i < chartData.length; i++) {
-            const data = chartData[i];
+        // Check if the data is valid
+        if (!isNum(inputData.time) || !isNum(inputData.position)) {
+            return;
+        }
 
-            if (!isObj(data)) continue;
+        // Add new data points
+        timeDataChart?.push(inputData?.time);
+        positionDataChart?.push(inputData?.position);
+        inputData.force?.forEach((value, index) => forceDataChart[index]?.push(value));
+        photoDataChart?.push(isNum(inputData.photoIndex) ? 0 : null); // Mark photo event
+
+
+        // Maintain max data points
+        if (timeDataChart?.length > maxDataPoints) {
+            timeDataChart?.shift();
+            positionDataChart?.shift();
+            forceDataChart?.forEach(dataset => dataset?.shift());
+            photoDataChart?.shift();
+        }
+
+        // Update charts
+        timeChart.setData([timeDataChart, ...forceDataChart, photoDataChart]);
+        positionChart.setData([positionDataChart, ...forceDataChart, photoDataChart]);
+
+    }
+
+    function updateChartNEW(inputData) {
+        if (!isObj(inputData)) return;
+
+        // check if all arrays in inputData are same length
+        inputData.time = checkArray(inputData.time);
+        inputData.position = checkArray(inputData.position);
+        inputData.force = checkArray(inputData.force);
+        inputData.force = inputData.force.map(arr => checkArray(arr));
+        if (isDef(inputData.photoIndex)) inputData.photoIndex = checkArray(inputData.photoIndex);
+
+
+        const lengths = [
+            inputData.time.length,
+            inputData.position.length,
+            ...inputData.force.map(arr => arr.length),
+            isDef(inputData.photoIndex) ? inputData.photoIndex.length : null
+        ];
+        const allSameLength = lengths.every(len => isVoid(len) || len === lengths[0]);
+        if (!allSameLength) {
+            console.error("❌ Input data arrays are not of the same length:", lengths);
+            return;
+        }
+
+        for (let i = 0; i < lengths[0]; i++) {
+
+
+            const validTime = isNum(inputData.time[i]);
+            const validPos = isNum(inputData.position[i]);
 
             // Check if the data is valid
-            if (!isNum(data.time) || !isNum(data.position)) {
-                //   || data.force.every(x => !isNum(x))   ///    || data.force.some(!isNum)
+            if ((!validTime || !validPos)) { // isExperimentRunning &&
+                //  || data.force.every(x => !isNum(x))   ///    || data.force.some(!isNum)
                 return;
             }
 
             // Add new data points
-            timeDataChart?.push(data?.time);
-            positionDataChart?.push(data?.position);
-            data.force?.forEach((value, index) => forceDataChart[index]?.push(value));
-            photoDataChart?.push(isNum(data.photoIndex) ? 0 : null); // Mark photo event
+            timeDataChart.push(inputData.time[i]);
+            positionDataChart.push(inputData.position[i]);
+            inputData.force.forEach((value, index) => forceDataChart[index].push(value[i]));
+            photoDataChart.push(isNum(inputData.photoIndex)[i] ? 0 : null); // Mark photo event
 
 
             // Maintain max data points
@@ -6314,7 +6505,7 @@
 
     }
 
-    async function refreshCharts() {
+    async function reloadCharts() {
         await loadDataFromDBToChart(liveUpdate);  // Load data from DB to charts will wait for the data to be loaded
         timeChart.redraw();
         positionChart.redraw();
@@ -6328,10 +6519,11 @@
         await timeChart.setScale("x", {min: 0, max: 1e-10});
         await positionChart.setScale("x", {min: 0, max: 1e-10});
 
-        // timeDataChart = [];
-        // positionDataChart = [];
-        // photoDataChart = [];
-        // forceDataChart?.forEach((_) => []);
+        timeDataChart = [];
+        positionDataChart = [];
+        photoDataChart = [];
+        forceDataChart = Array(loadCellNum).fill(null).map(() => []);
+        dataCount = 0;
 
         await timeChart.setData(Array(loadCellNum + 1 + 1).fill(null).map(() => []));
         await positionChart.setData(Array(loadCellNum + 1 + 1).fill(null).map(() => []));
@@ -6372,7 +6564,7 @@
 
             return true;
         } catch (error) {
-            await handleError(error, "sendCommand");
+            await handleError(error, "writeCommand");
 
             return false;
         }
@@ -6637,7 +6829,10 @@
             "Device not responding",
         ];
 
-        if (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError") {
+        const reconnectTurnOff = true;
+
+        if (reconnectTurnOff &&
+            (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError")) {
 
             if (isExperimentRunning) {
                 await endMeasuring(0, {
@@ -6653,7 +6848,6 @@
             isConnected = false;
             await attemptReconnect(); // TODO: change reconnect handle
         } else {
-            stopMachine();
             console.error(`❌ ${context} error:`, error);
             await logMessage(`❌ ${context} error: ${error}`);
         }
@@ -6805,6 +6999,7 @@
     async function beganMoving(timeoutMs = null) {
         if (machineOccupation) return; // už běží
         lockConnectionButtons(true);
+        lockControls();
 
         // naplánuj automatické ukončení (volitelné)
         if (isValidInputNum(timeoutMs)) {
@@ -6881,6 +7076,7 @@
         if (calibrationStatus) unlockMovement();
         else if (!calibrationStatus && isConnected) lockMovementExcept(UI.calibrateBtn);
         lockConnectionButtons(true, connectionType);
+        unlockControls();
     }
 
     function speedFromDistance(goal, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
@@ -7436,7 +7632,7 @@
         try {
             UI.experimentStageLabel.textContent = `Preparing`;
 
-            await lockControlAndMove();
+            await lockMovement();
             await beganMoving();
             await lockConnectionButtons(true);
 
@@ -7789,9 +7985,9 @@
             lastAcceptedTime = null;
             maxForces = Array(loadcellCount).fill(null);
 
-            // timeData = [];
-            // positionData = [];
-            // forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+            timeData = [];
+            positionData = [];
+            forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
             measureForces = Array(loadcellCount).fill(null).map(() => []);
             tareValues.force = Array(loadcellCount).fill(0);
 
@@ -7799,6 +7995,7 @@
             positionDataChart = [];
             forceDataChart = Array(loadcellCount).fill(null).map(() => []);
             photoDataChart = [];
+            dataCount = 0;
 
 
             measurementParts = {
@@ -7898,7 +8095,6 @@
 
             // --- 4) Valid fields ---
             const validFields = await forceAnalysis.filter(r => !r.allInvalid);
-            console.info("\nValid fields:", validFields);
 
             // indexes of valid fields => present Loadcells indexes
             const presentLC = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
@@ -8064,14 +8260,15 @@
             clearTimeout(endMeasurementCounter)
             endMeasurementCounter = null;
 
-            // timeData = [];
-            // positionData = [];
-            // forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+            timeData = [];
+            positionData = [];
+            forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
 
             timeDataChart = [];
             positionDataChart = [];
             forceDataChart = Array(loadcellCount).fill(null).map(() => []);
             photoDataChart = [];
+            dataCount = 0;
 
             UIupdate();
 
@@ -8238,7 +8435,7 @@
             }
 
 
-            await sleep(200);
+            await sleep(100);
 
             if (isDef(endedBy)) await updateLogById(0, {endStatus: endedBy});
             await updateLogById(0, {experimentProgress: experimentProgress, status: "collected"});
@@ -8249,7 +8446,7 @@
             maxDataPoints = maxDataPointsIdle;
 
 
-            await sleep(1_000);
+            await sleep(400);
 
             clearTimeout(dbFlushTimer);
             dbFlushTimer = null;
@@ -8258,7 +8455,8 @@
             await recomputeAll();
 
             endedMoving();    // unlock UI and watchdog
-            unlockControlAndMove();
+            unlockMovement();
+            await setSpeedAndAcceleration(currentSpeed, currentAcceleration, true)
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
             await console.groupEnd();
@@ -8332,7 +8530,7 @@
             }
 
             // progress UI
-            if (experimentProgress >= 99.999_900) {
+            if (experimentProgress >= 99.990) {
                 experimentProgress = 100;
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressDone-color)');
                 UI.experimentStageLabel.textContent = `Finished`;
@@ -8357,7 +8555,7 @@
 
             await sleep(1_000); // Allow any final data processing
 
-            await refreshCharts();
+            await reloadCharts();
 
         }, totDelayMs);
     }
@@ -8798,7 +8996,6 @@
 <script>
 
     let pendingDSLR = null; // Store DSLR event until the next data arrives
-    let dataCount = null;
     let lastAcceptedTime = null;
 
     function timeStepCheck(previous, current, stepSize, tolerance = null) {
@@ -9047,7 +9244,7 @@
         }
 
         if (!takeMeasurements && !isExperimentRunning) {
-            await updateChart(newData);
+            await propagateData(newData);
             return;
         }
 
@@ -9209,8 +9406,7 @@
         addDataToLog(newData);
 
         // Update Progress Bar
-        let progressValue;
-        progressValue = progressCalculate(newData[expControl], experimentEndLimits[expControl]);
+        const progressValue = progressCalculate(newData[expControl], experimentEndLimits[expControl]);
 
         if (isNum(progressValue) && progressValue >= 100) {
             if (experimentProgress < 100) {
@@ -9228,25 +9424,35 @@
         await propagateData(newData);
     }
 
-    async function propagateData(data) {
-        // Live chart update
-        dataCount++;
-        aggregatedDataBetweenSteps.push(data);
-        if (liveUpdate) {
-            if (dataChartInterval === 1) {
-                updateChart(data);
-            } else if (dataCount % dataChartInterval === 0) {
-                updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+    async function propagateData(data, {overRide = false} = {}) {
+        if (isExperimentRunning) {
+            // Live chart update
+            dataCount++;
+            aggregatedDataBetweenSteps.push(data);
+            if (liveUpdate) {
+                if (dataChartInterval === 1) {
+                    updateChart(data);
+                } else if (dataCount % dataChartInterval === 0) {
+                    updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+                }
             }
-        }
-        if (dataCount % dataChartInterval === 0) {
-            aggregatedDataBetweenSteps = [];
+            if (dataCount % dataChartInterval === 0) {
+                aggregatedDataBetweenSteps = [];
+            }
+
+            // Data for Calculations / Exports
+            timeData.push(data.time);
+            positionData.push(data.position);
+            data.force.forEach((val, index) => forceData[index].push(val));
+            return;
         }
 
-        // Data for Calculations / Exports
-        // timeData.push(data.time);
-        // positionData.push(data.position);
-        // data.force.forEach((val, index) => forceData[index].push(val));
+        if (liveUpdate || overRide) {
+            // const lastPos = positionDataChart[positionDataChart.length - 1]
+            // const deltaPos = Math.abs(data.position - lastPos);
+            // if (deltaPos <= (9 / Math.pow(10, precisionPosition + 1))) data.position = null; // prevent too dense data in chart
+            updateChart(data);
+        }
     }
 
 
@@ -11370,7 +11576,7 @@
 
             if (saveSelected === 'ask' || saveSelected === 'none') {
                 userChoiceLoad = confirm("\n✅ Connected successfully!\n\nDo you want to LOAD previous settings for this device?\n\n   CLICK 'OK' TO LOAD SETTINGS\n   CLICK 'CANCEL' TO KEEP CURRENT SETTINGS");
-                userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to SAVE current settings for this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\n   CLICK 'CANCEL' TO NOT SAVE SETTINGS");
+                userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to SAVE current settings to this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\n   CLICK 'CANCEL' TO NOT SAVE SETTINGS");
             }
 
             if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_Device_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
@@ -11755,6 +11961,9 @@
         isConnected = false;
         await disconnectSerial({override: true, verbose: false});
 
+        // TODO: opravit;
+        return;
+
 
         activeWatchDog = false;
         isReconnecting = true;
@@ -11822,6 +12031,16 @@
         } catch (error) {
             console.error("Error checking serial ports:", error);
             return false;
+        }
+    }
+
+    async function availablePorts() {
+        try {
+            const ports = await navigator.serial.getPorts();
+            return ports.length;
+        } catch (error) {
+            console.error("Error checking serial ports:", error);
+            return 0;
         }
     }
 
@@ -12203,15 +12422,16 @@
         await disconnectSerial();
 
 
-        // timeData = [];
-        // positionData = [];
-        // forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+        timeData = [];
+        positionData = [];
+        forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
 
 
         timeDataChart = [];
         positionDataChart = [];
         forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
         photoDataChart = [];
+        dataCount = 0;
 
         reconnectAttempts = 0;
 
@@ -12240,8 +12460,7 @@
 
     resetValues();
 
-    unlockMachineControls();
-
+    lockMachineControls();
 
     renderLoadcells(loadCellNum);
 
@@ -12336,7 +12555,7 @@
 
             levelElements.forEach(el => {
 
-                const elVal = el.getAttribute('data-system-level').toLowerCase().trim();
+                const elVal = el.getAttribute('data-system-level')?.toLowerCase().trim();
 
                 const elLevel = elVal.split('-');
                 const valLevel = parseInt(elLevel[0]);
@@ -12348,6 +12567,8 @@
             });
 
             window.dispatchEvent(new Event('resize'));
+
+            if (!isExperimentRunning && liveUpdate && systemLevel === 0) chartUpdate();
         });
 
 
@@ -12446,6 +12667,7 @@
             // forceLimitDropValue = parseFloat(event.target.value);
         });
 
+
         const activate = (input, label, active) => {
             if (active) {
                 // disable photo interval input
@@ -12500,7 +12722,7 @@
 
         // TODO:  $$$("saveChartBtn")?.addEventListener("click", async () => saveChartsAsPNG());
 
-        $ID("refreshChartBtn")?.addEventListener("click", async () => refreshCharts());
+        $ID("reloadChartBtn")?.addEventListener("click", async () => reloadCharts());
 
         $ID("convertCSV")?.addEventListener("click", async () => convertCSVtoXLSX_MATTES());
 
@@ -12552,6 +12774,8 @@
         const machIDInput = $ID("inputMachineID");
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
+
+        $ID("inputAppInterval")?.addEventListener("change", async (event) => !isExperimentRunning ? await sendCommandGeneral(`DATA SET INTERVAL ${event.target.value}`) : null);
 
         machNameInput?.addEventListener("change", async (event) => {
             const val = event.target.value.trim();
@@ -12863,11 +13087,13 @@
 
             const preloadScreen = $ID("preloadScreen");
             const autoConnectSetting = getInputValDef("inputAutoConnect", 'never')?.toLowerCase();
+            const portsCount = await availablePorts();
 
-            if (serialAllowed && (autoConnectSetting === 'always' || autoConnectSetting === 'beginning')) await startSerial(false);
+            if (serialAllowed && portsCount === 1 &&
+                (autoConnectSetting === 'always' || autoConnectSetting === 'beginning')) await startSerial(false);
             else await updateConnectionStatus("disconnected");
 
-            if (timeDataChart.length > 1) {
+            if (timeData.length > 1) {
                 console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
                 await logMessage("\nℹ️ Found previous unsaved logged data.\n");
                 alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
@@ -12893,7 +13119,14 @@
                 // preloadScreen?.remove();
                 preloadScreen.style.display = "none";
 
-                if (serialAllowed && autoConnectSetting === 'ask') if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
+                if (serialAllowed && !isConnected) {
+                    if (
+                        (portsCount >= 1 && autoConnectSetting === 'ask') ||
+                        (portsCount > 1 && (autoConnectSetting === 'always' || autoConnectSetting === 'beginning'))
+                    ) {
+                        if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
+                    }
+                }
 
                 await sleep(1_000);
                 if (!serialAllowed) await grantSerialOnce();
@@ -12919,6 +13152,96 @@
         overlay.remove(); // volitelné
       }, { once: true });
     });
+
+</script>
+
+
+<script type="text/plain">
+
+    const big = 1234567890123456789012345678901234567890n;
+    console.log(big);                                   // 1234567890123456789012345678901234567890n
+    console.log(big.toString());                        // "1234567890123456789012345678901234567890"
+    console.log(big + 1n);                              // 1234567890123456789012345678901234567891n
+    console.log(big * 2n);                              // 2469135780246913578024691357802469135780n
+    console.log(big.toLocaleString('en-US'));           // 12,345,678,…
+    console.log(big.toLocaleString('cs-CZ'));           // 12 345 678 …
+    console.log(Number.MAX_SAFE_INTEGER);               // 9007199254740991
+    console.log(Number.MIN_SAFE_INTEGER);               // -9007199254740991
+    console.log(9007199254740992 === 9007199254740993); // true 😱
+    console.log(Number.MAX_VALUE);                      // 1.7976931348623157e+308
+    console.log(Number.MIN_VALUE);                      // 5e-324
+    console.log(2**-1022);                              // 2.2250738585072014e-308 ≈ MIN_NORMAL
+    console.log(Number.EPSILON);                        // 2.220446049250313e-16
+    console.log(Math.PI);                               // 3.141592653589793
+    console.log(Math.E);                                // 2.718281828459045
+    console.log(Math.SQRT2);                            // 1.4142135623730951
+    console.log(Math.SQRT1_2);                          // 0.7071067811865476
+    console.log(Math.LN2);                              // 0.6931471805599453
+    console.log(Math.LN10);                             // 2.302585092994046
+    console.log(Math.LOG2E);                            // 1.4426950408889634
+    console.log(Math.LOG10E);                           // 0.4342944819032518
+    console.log(Math.cbrt(27));                         // 3 (cube root)
+    console.log(Math.hypot(3, 4));                      // 5 (sqrt(3² + 4²))
+    console.log(Math.clz32(16));                        // 28 (32bit leading zeros)
+    console.log(Math.imul(4294967295, 2));              // -2 (32bit overflow)
+    console.log(Math.fround(1.337));                     // 1.3370000123977661 (32bit float)
+
+    const x = 0.1 + 0.2;                                // 0.30000000000000004 (float64)
+    Math.fround(x);                                     // 0.30000001192092896 (closest float32)
+    new Float32Array([x])[0];                           // same as 'fround'
+
+    // min float32: min = 2⁻¹²⁶ = 1.1754943508222875e-38 ≈ 1.1754944 × 10^−38
+    new Float32Array([1e-38])[0];                       // => 1.1754943508222875e-38
+    new Float32Array([1e-45])[0];                       // => 1.401298464324817e-45
+    new Float32Array([1e-46])[0];                       // => 0 (underflow!)
+    // max float32: max = (2 − 2⁻²³) × 2¹²⁷ = 3.4028234663852886e+38 ≈ 3.4028235 × 10^38
+    new Float32Array([Infinity])[0];                    // => Infinity
+    new Float32Array([3.4028235e38])[0];                // => 3.4028234663852886e38
+    new Float32Array([3.5e38])[0];                      // => Infinity  (overflow!)
+</script>
+
+
+<script type="text/plain">
+
+    1) Pevná šířka (wrap-around modulo 2⁶⁴)
+
+    Hodí se, pokud chceš 64bit „otáčecí“ čítač (jako uint64):
+
+    const MOD64 = 1n << 64n;
+    let u64 = 0n;
+    function nextU64() {
+      const cur = u64;
+      u64 = (u64 + 1n) % MOD64;
+      return cur;               // v rozsahu 0..2^64-1
+    }
+
+
+
+
+
+    2) Sdílený a atomický counter (více workerů / vláken)
+
+    Atomics umí pracovat s BigInt64Array/BigUint64Array na SharedArrayBuffer.
+    To je ideální, pokud potřebuješ bezpečné inkrementy napříč workery.
+
+    // hlavní vláknо
+    const sab = new SharedArrayBuffer(8); // 8 bytů = 64 bitů
+    const view = new BigUint64Array(sab); // počáteční 0n
+
+    // Atomický fetch-add: vrátí starou hodnotu, pak přičte 1
+    function nextShared() {
+      return Atomics.add(view, 0, 1n); // BigInt
+    }
+
+    // předání sab do workerů (new Worker(..., { type: 'module' }))
+    worker.postMessage({ sab });
+
+    // ve workeru:
+    onmessage = ({ data: { sab } }) => {
+      const view = new BigUint64Array(sab);
+      const id = Atomics.add(view, 0, 1n);
+      // ... použij id (BigInt)
+    };
 </script>
 
 </body>
