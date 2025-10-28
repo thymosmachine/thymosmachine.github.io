@@ -26,5 +26,8 @@ node_modules/
 .idea/
 *.xml
 *.pem
-*.bat
 debug.txt
+startServer_Ngorok.bat
+startServer_NPM-NODE.JS.bat
+startServer_NPX.bat
+startServer_PYTHON.bat
