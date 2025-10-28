@@ -18,8 +18,8 @@
 
 
     <script>
-        const softwareVersion = "0.0.2.5";
-        const softwareDate = "28.10.2025";
+        const softwareVersion = "0.0.2.6";
+        const softwareDate = "31.10.2025";
 
         // Initial title
         const initialTitle = 'Μοῖρα Controller - Thymos';
@@ -1423,6 +1423,7 @@
             max-width: 230px;
             will-change: display, visibility, opacity; /* Optimize for show/hide */
         }
+
         .action-wrap {
             will-change: box-shadow;
         }
@@ -1596,8 +1597,6 @@
         #preloadScreen {
             position: fixed;
             inset: 0; /* top:0; right:0; bottom:0; left:0 */
-            top: -10px;
-            left: -10px;
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -2625,6 +2624,7 @@
                                 <option value="ko" hidden>&nbsp;한국어&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇰🇷</option>
                                 <option value="zh" hidden>&nbsp;中文&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🇨🇳
                                 </option>
+                                <option value="en" disabled>&nbsp;Custom&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🏳️‍</option>
                             </select>
                         </div>
 
@@ -2846,92 +2846,96 @@
     // Zapnutí/ vypnutí varování
     let warnOnClose = false;
 
-    // Prevent native reload/close dialog (zobrazení varování)
-    window.addEventListener('beforeunload', (e) => {
-        if (warnOnClose && !debugging) {
-            e.preventDefault();
-            // Standard: většina prohlížečů ignoruje vlastní text
-            e.returnValue = '';
-        }
-    });
 
-    // Zachycení kláves, které běžně reload/close/close-tab způsobují
-    window.addEventListener('keydown', (e) => {
-        // F5 (116), Ctrl+R, Ctrl+F5, Ctrl+W, Ctrl+F4, Ctrl+Shift+R, Meta(Command)+R
-        if ((warnOnClose && !debugging) &&
-            (
-                e.key === 'F5' ||
-                (e.ctrlKey && e.key.toLowerCase() === 'r') ||
-                (e.metaKey && e.key.toLowerCase() === 'r') ||
-                (e.ctrlKey && e.key.toLowerCase() === 'w') ||
-                (e.ctrlKey && e.key === 'F4')
-            )) {
-            e.preventDefault();
-            // Místo reloadu můžeš ukázat vlastní upozornění
+    function bindCloseHandler() {
 
-            if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
-                // případně povolit navigaci
-                window.location.reload();
-            }
-        }
-    });
-
-    // Zachytit kliky na odkazy, které mohly page opustit
-    document.addEventListener('click', (e) => {
-        if (warnOnClose && !debugging) {
-            const a = e.target.closest && e.target.closest('a[href]');
-            if (!a) return;
-            const href = a.getAttribute('href');
-            // interní kotvy povolit
-            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+        // Prevent native reload/close dialog (zobrazení varování)
+        window.addEventListener('beforeunload', (e) => {
+            if (warnOnClose && !debugging) {
                 e.preventDefault();
+                // Standard: většina prohlížečů ignoruje vlastní text
+                e.returnValue = '';
+            }
+        });
+
+        // Zachycení kláves, které běžně reload/close/close-tab způsobují
+        window.addEventListener('keydown', (e) => {
+            // F5 (116), Ctrl+R, Ctrl+F5, Ctrl+W, Ctrl+F4, Ctrl+Shift+R, Meta(Command)+R
+            if ((warnOnClose && !debugging) &&
+                (
+                    e.key === 'F5' ||
+                    (e.ctrlKey && e.key.toLowerCase() === 'r') ||
+                    (e.metaKey && e.key.toLowerCase() === 'r') ||
+                    (e.ctrlKey && e.key.toLowerCase() === 'w') ||
+                    (e.ctrlKey && e.key === 'F4')
+                )) {
+                e.preventDefault();
+                // Místo reloadu můžeš ukázat vlastní upozornění
+
                 if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
                     // případně povolit navigaci
-                    window.location.href = href;
+                    window.location.reload();
                 }
             }
-        }
-    });
+        });
 
-    // Push state / back button trap (back-button). Pomůže zabránit "zpět" opuštění.
-    history.pushState({page: 1}, '', '');
-    window.addEventListener('popstate', (event) => {
-        // Znovu vložíme stav a ukážeme varování
-        history.pushState({page: 1}, '', '');
-        if (warnOnClose && !debugging) {
-            if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
-                // případně povolit navigaci
-                history.back();
+        // Zachytit kliky na odkazy, které mohly page opustit
+        document.addEventListener('click', (e) => {
+            if (warnOnClose && !debugging) {
+                const a = e.target.closest && e.target.closest('a[href]');
+                if (!a) return;
+                const href = a.getAttribute('href');
+                // interní kotvy povolit
+                if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
+                        // případně povolit navigaci
+                        window.location.href = href;
+                    }
+                }
             }
-        }
-    });
+        });
 
-    // // Funkce pro dočasné vypnutí ochrany (konstruktivní UX)
-    // function allowCloseTemporarily(action) {
-    //     warnOnClose = false;
-    //     try {
-    //         action();
-    //     } finally {
-    //         warnOnClose = true;
-    //     }
-    // }
-    //
-    // // Utility: bezpečné ukončení (např. tlačítko v UI)
-    // async function safeExit() {
-    //     // dokonči flush / ulož stav
-    //     await saveStateToServerOrLocal();
-    //     allowCloseTemporarily(() => window.close());
-    // }
-    //
-    // async function saveStateToServerOrLocal() {
-    //     // Implementuj uložení stavu (localStorage / server call)
-    //     try {
-    //         localStorage.setItem('myAppSavedAt', new Date().toISOString());
-    //         // nebo await fetch('/save', {method:'POST', body:...})
-    //     } catch (e) {
-    //         console.warn('Save failed', e);
-    //     }
-    // }
+        // Push state / back button trap (back-button). Pomůže zabránit "zpět" opuštění.
+        history.pushState({page: 1}, '', '');
+        window.addEventListener('popstate', (event) => {
+            // Znovu vložíme stav a ukážeme varování
+            history.pushState({page: 1}, '', '');
+            if (warnOnClose && !debugging) {
+                if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
+                    // případně povolit navigaci
+                    history.back();
+                }
+            }
+        });
+
+        // // Funkce pro dočasné vypnutí ochrany (konstruktivní UX)
+        // function allowCloseTemporarily(action) {
+        //     warnOnClose = false;
+        //     try {
+        //         action();
+        //     } finally {
+        //         warnOnClose = true;
+        //     }
+        // }
+        //
+        // // Utility: bezpečné ukončení (např. tlačítko v UI)
+        // async function safeExit() {
+        //     // dokonči flush / ulož stav
+        //     await saveStateToServerOrLocal();
+        //     allowCloseTemporarily(() => window.close());
+        // }
+        //
+        // async function saveStateToServerOrLocal() {
+        //     // Implementuj uložení stavu (localStorage / server call)
+        //     try {
+        //         localStorage.setItem('myAppSavedAt', new Date().toISOString());
+        //         // nebo await fetch('/save', {method:'POST', body:...})
+        //     } catch (e) {
+        //         console.warn("Save failed", e);
+        //     }
+        // }
+    }
 </script>
 
 <script>
@@ -4412,7 +4416,7 @@
 </script>
 
 <script>
-    (() => {
+    function bindCopyAdjustButtons() {
         /* ======= KONFIG ======= */
         const COPY_SELECTOR = '.copyableInput';
         const ADJUST_SELECTOR = '.adjustableInput';
@@ -4802,8 +4806,7 @@
         // INIT
         scan();
 
-    })
-    ();
+    }
 </script>
 
 
@@ -4846,7 +4849,6 @@
 
     // -------------------- Hlavní přepočet --------------------
     function recomputeAll() {
-        if (!pageLoaded) return;
         if (isExperimentRunning) return;
 
         fillComputableInputs();
@@ -5063,10 +5065,7 @@
 
     let connectionType = null; // 'serial' | 'bluetooth' | 'wifi' | null
 
-    let pageLoaded = false;
-    let dataLoaded = false;
     let allLoaded = false;
-    let pageLoadTimeout = 0;
 
     let lastTitle = document.title;
 
@@ -5139,48 +5138,7 @@
 
 <script>
     // /////// UI Elements /////////
-    const UI = {
-        regularLogContainer: $ID("regularLog"),// Reference to the log display container
-        loadingLogContainer: $ID("loadingLog"),// Reference to the loading log display container
-        toggleScrollBtn: $ID("toggleScrollBtn"), // Button to toggle automatic scrolling
-        lineLockBtn: $ID("toggleLineLockBtn"), // Button to lock the log view
-        commandInput: $ID('commandInput'),// Input elements for command entry and settings
-        sendButton: $ID('sendButton'),// Input elements for command entry and settings
-
-        chartsLiveButton: $ID('toggleLiveGraph'),// Input elements for command entry and settings
-        connectionStatus: $ID("connectionStatus"), // Display for connection status
-        connectBtns: $$(".connectBtn"), // Container for connection buttons
-        Serial: $ID("connectBtnSerial"), // Button to connect via Serial
-        Bluetooth: $ID("connectBtnBluetooth"), // Button to connect via Bluetooth
-        WiFi: $ID("connectBtnWiFi"), // Button to connect via WiFi
-
-        progressBar: $ID("experimentProgress"), // Progress bar for experiment status
-        progressLabel: $ID("experimentProgressLabel"), // Label for progress percentage
-        experimentStageLabel: $ID("experimentStage"), // Label for current experiment stage
-
-        timeChartContainer: $ID("timeChart"),
-        positionChartContainer: $ID("positionChart"),
-        chartsContainer: $ID("chartsContainer"),
-
-        autoReturnPosition: $ID("autoReturnPositionExperiment"),
-        autoReturnPositionLabel: $ID("autoReturnPositionExperimentLabel"),
-
-        moveUpBtn: $ID("moveMachineUP"), // Button to move the device up
-        moveDownBtn: $ID("moveMachineDOWN"), // Button to move the device down
-        moveUp50Btn: $ID("moveUp50"), // Button to move the device up
-        moveDown50Btn: $ID("moveDown50"), // Button to move the device down
-
-
-        moveToBtn: $ID("moveToBtn"), // Button to move to a specific position
-        moveToInput: $ID("moveToInput"), // Input field for target position
-
-        calibrateBtn: $ID("calibrateBtn"), // Button to calibrate the device
-
-        speedSlider: $ID("movementSpeed"), // Slider for speed adjustment
-        speedLabel: $ID("labelSpeed"), // Label for speed value
-        accelerationSlider: $ID("movementAcceleration"), // Slider for acceleration adjustment
-        accelerationLabel: $ID("labelAcceleration"), // Label for acceleration value
-    };
+    let UI;
 
     // Connection status messages and colors
     const STATE = {
@@ -5251,24 +5209,6 @@
         UI.connectBtns?.forEach(btn =>
             btn.classList.toggle('disabled', isNonEmptyStr(exceptType) ? (String(btn.dataset.connectionType)?.toLowerCase().trim() === exceptType ? false : lock) : lock));
     }
-
-    // /////// Event Listeners for UI Buttons /////////
-    // These were commented out, but they could be used to attach click events
-    (() => {
-        const addControlContainer = (name) => {
-            const btn = $ID(name + "OpenBtn");
-            const el = $ID(name);
-            btn?.addEventListener('click', async () => controlContainer(btn, el));
-            window.addEventListener('resize', async () => controlContainerWidth(el));
-        };
-
-        addControlContainer("resultsContainer");
-        addControlContainer("settingsContainer");
-        addControlContainer("consoleContainer");
-
-        // window.dispatchEvent(new Event("resize", {bubbles: true}));
-    })();
-
 
     function controlContainerWidth(container) {
         if (!container) return;
@@ -5416,34 +5356,7 @@
         console.info("Theme changed to:", newTheme);
     }
 
-
-    // Load the saved theme from localStorage on initialization
-    const savedTheme = localStorage.getItem("theme") || "light";
-    if (exists('darkModeButton')) $ID('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
-    document.body.dataset.theme = savedTheme;
-
 </script>
-
-
-<script>
-
-
-    async function isSerialConnected() {
-        if (!serialPort) {
-            isConnected = false;
-            return false;
-        }
-        try {
-            await serialPort.getSignals();
-            isConnected = true;
-            return true;
-        } catch (error) {
-            isConnected = false;
-            return false;
-        }
-    }
-</script>
-
 
 <script>
 
@@ -5672,32 +5585,6 @@
     let lastAutoScroll = null;
     let rafId = null;
 
-    // ------------ Auto-scroll ------------
-    UI.toggleScrollBtn.addEventListener('click', async () => {
-        isAutoScroll = !isAutoScroll;
-        UI.toggleScrollBtn.classList.toggle('active', isAutoScroll);
-        UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${isAutoScroll ? "ON" : "OFF"}`;
-        if (isAutoScroll) {
-            UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
-        }
-    });
-
-    // Detects manual scrolling by the user
-    UI.regularLogContainer.addEventListener('scroll', () => {
-        if (rafId) return;
-        rafId = requestAnimationFrame(() => {
-            const atBottom = checkScrolledToBottom();
-            if (atBottom !== lastAutoScroll) {
-                lastAutoScroll = atBottom;
-                isAutoScroll = atBottom;
-                UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${atBottom ? "ON" : "OFF"}`;
-                UI.toggleScrollBtn.classList.toggle('active', atBottom);
-            }
-            rafId = null;
-        });
-    }, {passive: true}); // scroll je sice necancelovatelný, ale passive=hint
-
-
     // Checks if the user is scrolled to the bottom of the log
     function checkScrolledToBottom(scrollTop = UI.regularLogContainer.scrollTop, clientHeight = UI.regularLogContainer.clientHeight, scrollHeight = UI.regularLogContainer.scrollHeight) {
         return Math.abs(scrollTop + clientHeight - scrollHeight) < 2;
@@ -5719,23 +5606,6 @@
         logCount = 0;
         UI.regularLogContainer.textContent = "";
     }
-
-
-    // ------------ Command Input Handling ------------
-
-    // Listens for the Enter key in the command input field and sends command
-    UI.commandInput.addEventListener("keydown", async (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            await sendCommandConsole(getElementValue(UI.commandInput));
-        }
-    });
-
-    // Sends command when clicking the send-button
-    UI.sendButton.addEventListener('click', async () => {
-        await sendCommandConsole(getElementValue(UI.commandInput));
-    });
-
 
 </script>
 
@@ -5951,12 +5821,8 @@
                     $ID("experimentCount").value = experimentInfo.experimentCounter || "1";
                     $ID("experimentName").value = experimentInfo.experimentName || "";
                     $ID("experimentDesc").value = description || "";
-
-                    dataLoaded = true;
                 };
                 // }
-            } else {
-                dataLoaded = true;
             }
         };
     }
@@ -5981,7 +5847,7 @@
             dbFlushTimer = null;
             return;
         } else {
-            if (!db || !(pageLoaded && dataLoaded)) {
+            if (!db) {
                 console.warn("\n❌ IndexedDB not ready, cannot flush log.");
                 // Wait for another 5 seconds and try again
                 dbFlushTimer = setTimeout(flushDB, 5_000);
@@ -6031,7 +5897,6 @@
      */
     function updateLogById(id, patch, {upsert = true} = {}) {
         if (isVoid(id)) return Promise.resolve(false);
-        if (!(dataLoaded && pageLoaded)) return Promise.resolve(false);
         if (!db) return Promise.resolve(false);
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -6188,8 +6053,7 @@
     let hideTimeout = null; // Timeout for hiding the page
     const MIN_HIDE_TIME = 20_000; // milliseconds
 
-    // Event listener for page visibility change
-    document.addEventListener("visibilitychange", async () => {
+    async function handlePageVisibility() {
         if (!isExperimentRunning) return;
         if (!liveUpdate && !liveUpdatePaused) return;
 
@@ -6231,7 +6095,7 @@
                 liveUpdate = true;
             }
         }
-    });
+    }
 
 
     function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, photoData, overflowData) {
@@ -6345,7 +6209,7 @@
             if (!dataEntries || dataEntries.length === 0) {
                 return;
             } else if (dataEntries.length < 3) {
-                console.warn("\n⚠️ Not enough data to load.");
+                console.warn("⚠️ Not enough data to load.");
                 return;
             }
 
@@ -6426,10 +6290,6 @@
             liveUpdate = stateAtEnd;
         };
     }
-
-
-    // Attach live update toggle to button
-    UI.chartsLiveButton.addEventListener("click", async () => chartUpdate());
 
 
     // /////// uPlot Chart Initialization /////////
@@ -6561,7 +6421,7 @@
 
     }
 
-    function updateChart(inputData) {
+    function updateChartNEW(inputData) {
         if (!isObj(inputData)) return;
 
         // --- Helpers ---
@@ -7055,6 +6915,10 @@
     let activeWatchDog = false;
     const WATCHDOG_INTERVAL_MS = 500; // min 500 ms
 
+    let movementElements;
+    let controlElements;
+    let machineElements;
+
 
     async function moveToOriginalPosition({overRide = false} = {}) {
         if (!isConnected) return;
@@ -7098,11 +6962,6 @@
             if (el.shadowRoot) enableInputsAndLabelsIn(el.shadowRoot);
         });
     }
-
-
-    const movementElements = $$(".movementControlElement");
-    const controlElements = $$(".controlElement");
-    const machineElements = $$(".machineControlElement");
 
     const lockMovement = () => lockElements(movementElements);
     const lockMovementExcept = (exceptEl) => lockElementsExcept(movementElements, exceptEl);
@@ -7279,7 +7138,7 @@
         if (!isConnected) return;
         if (isExperimentRunning) return;
         if (!overRide && machineOccupation) {
-            console.warn("\nMachine is already busy. Please wait.");
+            console.warn("Machine is already busy.\nPlease wait.");
             return;
         }
 
@@ -7804,19 +7663,19 @@
     async function startExperiment() {
 
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
 
         if (isExperimentRunning) {
-            console.warn("\n⚠️ Experiment is already running.");
+            console.warn("⚠️ Experiment is already running.");
             await logMessage("⚠️ Experiment is already running.");
             return;
         }
 
         if (machineOccupation) {
-            console.warn("\n⚠️ Machine is currently moving. Please wait until it stops.");
+            console.warn("⚠️ Machine is currently moving. Please wait until it stops.");
             await logMessage("⚠️ Machine is currently moving. Please wait until it stops.");
             return;
         }
@@ -8924,7 +8783,7 @@
     // === Firmware version ===
     async function getFirmwareVersion(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -8945,7 +8804,7 @@
 
     async function getFirmwaresVersions(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9005,7 +8864,7 @@
     // === Measure Position ===
     async function measurePosition(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9028,7 +8887,7 @@
     // === Measure Position ===
     async function readLoadcell(loadcellID, timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9053,7 +8912,7 @@
 
     async function readLoadcells(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9075,7 +8934,7 @@
 
     async function isLoadcellPresent(loadcellID, timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9101,7 +8960,7 @@
 
     async function isLoadcellsPresent(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9123,7 +8982,7 @@
 
     async function getCalibrationStatus(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9140,7 +8999,7 @@
 
     async function getSpeed(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9164,7 +9023,7 @@
 
     async function getAcceleration(timeOut = 2_000) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -9187,7 +9046,7 @@
 
     async function isMoving(timeOut = 100) {
         if (!isConnected) {
-            console.warn("\n⚠️ ESP is not connected!");
+            console.warn("⚠️ ESP is not connected!");
             await logMessage("⚠️ ESP is not connected!");
             return;
         }
@@ -10117,43 +9976,10 @@
             console.groupEnd();
         } else {
             nameEl.textContent = `⚠️ In file ${file.name} are no settings meta data`;
-            console.warn('\nDetails:', res);
+            console.warn("\nDetails:", res);
             alert("⚠️ In file are missing or are invalid meta data: (##MOIRA_EMETA=...).");
         }
     }
-
-    // ===== Ovládací logika tlačítka =====
-    const btnLoadCSV = $ID("btnLoadSettings");
-    const inputLoadCSV = $ID("appFileInput");
-
-    btnLoadCSV.addEventListener("click", async () => {
-        if (isExperimentRunning) return;
-        if ("showOpenFilePicker" in window) {
-            try {
-                const [handle] = await window.showOpenFilePicker({
-                    types: [{description: "CSV", accept: {"text/csv": [".csv"]}}],
-                    excludeAcceptAllOption: false,
-                    multiple: false
-                });
-                const file = await handle.getFile();
-                await processFile(file);
-                return;
-            } catch (e) {
-                if (e?.name === "AbortError") return; // uživatel zrušil
-                console.warn("showOpenFilePicker failed, falling back to <input type=file>:", e);
-            }
-        }
-        // fallback
-        inputLoadCSV.click();
-    });
-
-    inputLoadCSV.addEventListener("change", async (e) => {
-        if (isExperimentRunning) return;
-        const file = e.target.files?.[0];
-        if (!file) return;
-        await processFile(file);
-        inputLoadCSV.value = ""; // reset pro další výběr stejného souboru
-    });
 
 
     // --- gzip / gunzip (preferuj nativní streamy; fallback pako) ---
@@ -10262,10 +10088,6 @@
     /**
      * Saves the stored log entries from IndexedDB to a downloadable CSV file.
      */
-    // Event listener for the save button
-    $$(".saveDataBtns")?.forEach(btn => btn?.addEventListener("click", saveCSV));
-
-
     let handFolderSelect = false;
 
     function toggleDirectorySelector() {
@@ -10339,7 +10161,7 @@
             let dataEntries = request.result;
 
             if (!dataEntries || dataEntries.length === 0) {
-                console.warn("\n⚠️ No data to save.");
+                console.warn("⚠️ No data to save.");
                 alert("⚠️ No data to save. Ensure experiment has been run.");
                 return;
             }
@@ -10922,7 +10744,7 @@
         input.onchange = async function (event) {
             let files = Array.from(event.target.files); // Convert FileList to Array
             if (!files.length) {
-                console.warn("\n❌ No files selected.");
+                console.warn("❌ No files selected.");
                 alert("❌ No files were selected. Please select one or more CSV files and try again.");
                 return;
             } else {
@@ -11469,8 +11291,6 @@
 
     // /////// Serial Connection Handling /////////
 
-    UI.Serial.addEventListener("click", async () => startSerial());
-
     /**
      * Starts the Serial (USB) connection by opening the database and initiating the connection.
      */
@@ -11519,7 +11339,7 @@
             );
         } catch (error) {
             if (error.name === "NotFoundError") {
-                console.warn("\n⚠️ No port selected.");
+                console.warn("⚠️ No port selected.");
                 await logMessage("\n⚠️ No port selected.");
                 return null;
             } else {
@@ -11845,7 +11665,7 @@
     async function disconnectSerial({override = false, verbose = true} = {}) {
         const wasConnected = isConnected;
         if (!override && !isConnected) {
-            console.warn("\n⚠️ Port is not connected.");
+            console.warn("⚠️ Port is not connected.");
             return;
         }
 
@@ -12126,7 +11946,7 @@
 
     async function findPreferredPortIndex(showMessage = false) {
         if (!fingerprint) {
-            console.warn("\n⚠️ No fingerprint available.");
+            console.warn("⚠️ No fingerprint available.");
             return null;
         }
         const ports = await navigator.serial?.getPorts();
@@ -12141,7 +11961,7 @@
         }
 
         if (showMessage) {
-            console.warn("\n⚠️ No matching port found.");
+            console.warn("⚠️ No matching port found.");
             await logMessage("\n⚠️ No matching port found.");
         }
         return null;
@@ -12214,7 +12034,7 @@
                     attemptReconnect();
                 }, 3_000);
             } else {
-                console.warn("\n⚠️ Max reconnect attempts reached. Reconnecting stoped.");
+                console.warn("\n⚠️ Max reconnect attempts reached. Reconnecting stopped.");
                 await logMessage("\n❌ Max reconnect attempts reached. Reconnecting stopped.\n");
                 await resetValues();
                 isReconnecting = false;
@@ -12265,6 +12085,21 @@
         }
     }
 
+    async function isSerialConnected() {
+        if (!serialPort) {
+            isConnected = false;
+            return false;
+        }
+        try {
+            await serialPort.getSignals();
+            isConnected = true;
+            return true;
+        } catch (error) {
+            isConnected = false;
+            return false;
+        }
+    }
+
     /////////////////////////////////////////////////////////////////
 
 </script>
@@ -12308,8 +12143,6 @@
 
 <script>
 
-    UI.Bluetooth.addEventListener("click", async () => startBluetooth());
-
     async function startBluetooth(userRequest = true) {
         if (!('bluetooth' in navigator)) {
             alert('This browser do not support Bluetooth, try using Chrome/Edge.');
@@ -12338,8 +12171,6 @@
 
 
 <script>
-
-    UI.WiFi.addEventListener("click", async () => startWIFI());
 
     async function startWIFI(userRequest = true) {
 
@@ -12722,21 +12553,76 @@
 
 <script>
 
-    const allSettingsInputs = Array.from($$("input, select")).filter(el => !isSkippable(el));
-    const appSettingsWrapper = $ID('appSettingsSection');
+    let allSettingsInputs;
+    let appSettingsWrapper;
 
-    const settingsInputsLoad = allSettingsInputs.filter(el => !appSettingsWrapper.contains(el));
-    const settingsInputsSys = allSettingsInputs.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
+    let settingsInputsLoad;
+    let settingsInputsSys;
 
 
-    // /////// Page Initialization /////////
+    // ===============================================
+    // -------------------- Init --------------------
+    // ===============================================
 
-    /**
-     * Runs when the page loads.
-     * - Logs a message to the console.
-     * - Loads available commands from the JSON file.
-     */
-    window.onload = async () => {
+    document.addEventListener("DOMContentLoaded", function () {
+        UI = {
+            regularLogContainer: $ID("regularLog"),// Reference to the log display container
+            loadingLogContainer: $ID("loadingLog"),// Reference to the loading log display container
+            toggleScrollBtn: $ID("toggleScrollBtn"), // Button to toggle automatic scrolling
+            lineLockBtn: $ID("toggleLineLockBtn"), // Button to lock the log view
+            commandInput: $ID('commandInput'),// Input elements for command entry and settings
+            sendButton: $ID('sendButton'),// Input elements for command entry and settings
+
+            chartsLiveButton: $ID('toggleLiveGraph'),// Input elements for command entry and settings
+            connectionStatus: $ID("connectionStatus"), // Display for connection status
+            connectBtns: $$(".connectBtn"), // Container for connection buttons
+            Serial: $ID("connectBtnSerial"), // Button to connect via Serial
+            Bluetooth: $ID("connectBtnBluetooth"), // Button to connect via Bluetooth
+            WiFi: $ID("connectBtnWiFi"), // Button to connect via WiFi
+
+            progressBar: $ID("experimentProgress"), // Progress bar for experiment status
+            progressLabel: $ID("experimentProgressLabel"), // Label for progress percentage
+            experimentStageLabel: $ID("experimentStage"), // Label for current experiment stage
+
+            timeChartContainer: $ID("timeChart"),
+            positionChartContainer: $ID("positionChart"),
+            chartsContainer: $ID("chartsContainer"),
+
+            autoReturnPosition: $ID("autoReturnPositionExperiment"),
+            autoReturnPositionLabel: $ID("autoReturnPositionExperimentLabel"),
+
+            moveUpBtn: $ID("moveMachineUP"), // Button to move the device up
+            moveDownBtn: $ID("moveMachineDOWN"), // Button to move the device down
+            moveUp50Btn: $ID("moveUp50"), // Button to move the device up
+            moveDown50Btn: $ID("moveDown50"), // Button to move the device down
+
+
+            moveToBtn: $ID("moveToBtn"), // Button to move to a specific position
+            moveToInput: $ID("moveToInput"), // Input field for target position
+
+            calibrateBtn: $ID("calibrateBtn"), // Button to calibrate the device
+
+            speedSlider: $ID("movementSpeed"), // Slider for speed adjustment
+            speedLabel: $ID("labelSpeed"), // Label for speed value
+            accelerationSlider: $ID("movementAcceleration"), // Slider for acceleration adjustment
+            accelerationLabel: $ID("labelAcceleration"), // Label for acceleration value
+        };
+
+
+        movementElements = $$(".movementControlElement");
+        controlElements = $$(".controlElement");
+        machineElements = $$(".machineControlElement");
+        allSettingsInputs = Array.from($$("input, select")).filter(el => !isSkippable(el));
+        appSettingsWrapper = $ID('appSettingsSection');
+
+        // Load the saved theme from localStorage on initialization
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (exists('darkModeButton')) $ID('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
+        document.body.dataset.theme = savedTheme;
+
+        (async () => {
+            await openDB();
+        })();
 
         resetValues();
 
@@ -12745,6 +12631,118 @@
         lockConnectionButtons(true);
 
         renderLoadcells(loadCellNum);
+
+        bindCloseHandler();
+
+
+        settingsInputsLoad = allSettingsInputs.filter(el => !appSettingsWrapper.contains(el));
+        settingsInputsSys = allSettingsInputs.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
+
+        UI.Serial.addEventListener("click", async () => startSerial());
+        UI.WiFi.addEventListener("click", async () => startWIFI());
+        UI.Bluetooth.addEventListener("click", async () => startBluetooth());
+
+        // Event listener for the save button
+        $$(".saveDataBtns")?.forEach(btn => btn?.addEventListener("click", saveCSV));
+
+        // Attach live update toggle to button
+        UI.chartsLiveButton.addEventListener("click", async () => chartUpdate());
+
+        // Event listener for page visibility change
+        document.addEventListener("visibilitychange", async () => await handlePageVisibility());
+
+        // ------------ Auto-scroll ------------
+        UI.toggleScrollBtn.addEventListener('click', async () => {
+            isAutoScroll = !isAutoScroll;
+            UI.toggleScrollBtn.classList.toggle('active', isAutoScroll);
+            UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${isAutoScroll ? "ON" : "OFF"}`;
+            if (isAutoScroll) {
+                UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
+            }
+        });
+
+        // Detects manual scrolling by the user
+        UI.regularLogContainer.addEventListener('scroll', () => {
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                const atBottom = checkScrolledToBottom();
+                if (atBottom !== lastAutoScroll) {
+                    lastAutoScroll = atBottom;
+                    isAutoScroll = atBottom;
+                    UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${atBottom ? "ON" : "OFF"}`;
+                    UI.toggleScrollBtn.classList.toggle('active', atBottom);
+                }
+                rafId = null;
+            });
+        }, {passive: true}); // scroll je sice necancelovatelný, ale passive=hint
+
+        // ------------ Command Input Handling ------------
+        // Listens for the Enter key in the command input field and sends command
+        UI.commandInput.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                await sendCommandConsole(getElementValue(UI.commandInput));
+            }
+        });
+
+        // Sends command when clicking the send-button
+        UI.sendButton.addEventListener('click', async () => {
+            await sendCommandConsole(getElementValue(UI.commandInput));
+        });
+
+        // /////// Event Listeners for UI Buttons /////////
+        // These were commented out, but they could be used to attach click events
+        (() => {
+            const addControlContainer = (name) => {
+                const btn = $ID(name + "OpenBtn");
+                const el = $ID(name);
+                btn?.addEventListener('click', async () => controlContainer(btn, el));
+                window.addEventListener('resize', async () => controlContainerWidth(el));
+            };
+
+            addControlContainer("resultsContainer");
+            addControlContainer("settingsContainer");
+            addControlContainer("consoleContainer");
+
+            // window.dispatchEvent(new Event("resize", {bubbles: true}));
+        })();
+
+
+        bindCopyAdjustButtons();
+
+
+        // ===== Ovládací logika tlačítka =====
+        const btnLoadCSV = $ID("btnLoadSettings");
+        const inputLoadCSV = $ID("appFileInput");
+
+        inputLoadCSV.addEventListener("change", async (e) => {
+            if (isExperimentRunning) return;
+            const file = e.target.files?.[0];
+            if (!file) return;
+            await processFile(file);
+            inputLoadCSV.value = ""; // reset pro další výběr stejného souboru
+        });
+
+        btnLoadCSV.addEventListener("click", async () => {
+            if (isExperimentRunning) return;
+            if ("showOpenFilePicker" in window) {
+                try {
+                    const [handle] = await window.showOpenFilePicker({
+                        types: [{description: "CSV", accept: {"text/csv": [".csv"]}}],
+                        excludeAcceptAllOption: false,
+                        multiple: false
+                    });
+                    const file = await handle.getFile();
+                    await processFile(file);
+                    return;
+                } catch (e) {
+                    if (e?.name === "AbortError") return; // uživatel zrušil
+                    console.warn("showOpenFilePicker failed, falling back to <input type=file>:", e);
+                }
+            }
+            // fallback
+            inputLoadCSV.click();
+        });
 
         // #TODO do better disabling of elements //////////////////////////////////////////////////
         $$('.prohibited')?.forEach(element => {
@@ -12755,17 +12753,6 @@
             element.addEventListener("keydown", async (e) => e.preventDefault());
         })
 
-        console.info("Page loaded");
-        await openDB();
-        // await loadCommands();
-    };
-
-
-    // ===============================================
-    // -------------------- Init --------------------
-    // ===============================================
-
-    document.addEventListener("DOMContentLoaded", function () {
         if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
         // start at top of page
@@ -13310,11 +13297,14 @@
         loadInputsFromLocalStorage(settingsInputsLoad, storageKeyIdle);
         loadInputsFromLocalStorage(settingsInputsSys, storageKeySys);
 
-        pageLoaded = true;
 
-        setTimeout(() => window.dispatchEvent(new Event('resize', {bubbles: true})), 0);
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                notificationsAllowed = true;
+            }
+        });
 
-        onLoad();
+        window.dispatchEvent(new Event('resize', {bubbles: true}));
     });
 
 
@@ -13323,88 +13313,76 @@
     /////////////////////////////////////////////////////////////////
 
 
-    // /////// Checking for Existing Log Entries /////////
+    // /////// Page Initialization /////////
 
     /**
-     * Checks if there are existing log entries in IndexedDB.
-     * If logs exist, prompts the user to either save or delete them.
+     * Runs when the page loads.
+     * - Logs a message to the console.
+     * - Loads available commands from the JSON file.
      */
-    async function onLoad() {
-        pageLoadTimeout = 0;
-
-        const waitTime = 300;
-        while (!(pageLoaded && dataLoaded)) {
-            await sleep(waitTime);
-            pageLoadTimeout += waitTime;
-            if (pageLoadTimeout > 10_000) break;
-        }
-
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                notificationsAllowed = true;
-            }
-        });
+    window.onload = async () => {
+        // await loadCommands();
 
         const serialAllowed = await isSerialAvailable();
         const portsCount = (serialAllowed ? await availablePorts() : 0) || 0;
 
-        if (pageLoaded && dataLoaded) {
+        const preloadScreen = $ID("preloadScreen");
+        const autoConnectSetting = getInputValDef("inputAutoConnect", 'never')?.toLowerCase();
+
+        if (serialAllowed && portsCount === 1 &&
+            (autoConnectSetting === 'always' || autoConnectSetting === 'beginning')) await startSerial(false);
+        else await updateConnectionStatus("disconnected");
+
+        const anyDataLoaded = isNonEmptyArr(timeData);
+
+        if (anyDataLoaded) {
+            console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
             recomputeAll();
+            await logMessage("\nℹ️ Found previous unsaved logged data.\n");
+        } else {
+            console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
+            $ID("experimentName").value = "";
+            $ID("experimentDesc").value = "";
+            await clearCalculations();
+            await clearCharts();
+        }
 
-            const preloadScreen = $ID("preloadScreen");
-            const autoConnectSetting = getInputValDef("inputAutoConnect", 'never')?.toLowerCase();
+        if (anyDataLoaded) alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
 
-            if (serialAllowed && portsCount === 1 &&
-                (autoConnectSetting === 'always' || autoConnectSetting === 'beginning')) await startSerial(false);
-            else await updateConnectionStatus("disconnected");
+        await showPreloaderScreen(false);
 
-            if (timeData.length > 1) {
-                console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
-                await logMessage("\nℹ️ Found previous unsaved logged data.\n");
-                alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
-                await sleep(15);
-            } else {
-                console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
-                $ID("experimentName").value = "";
-                $ID("experimentDesc").value = "";
-                await clearCalculations();
-                await clearCharts();
+        preloadScreen?.addEventListener('transitionend', async () => {
+
+            if (serialAllowed && !isConnected) {
+                if (
+                    (portsCount >= 1 && autoConnectSetting === 'ask') ||
+                    (portsCount > 1 && (autoConnectSetting === 'always' || autoConnectSetting === 'beginning'))
+                ) {
+                    if (confirm(`${portsCount > 1 ? 'Multiple machines' : 'Machine'} found. Do you want to connect?`)) await startSerial(false);
+                }
             }
 
+            await sleep(500); // Let user see the app
+
+            if (!serialAllowed) {
+                await alert("⚠️ Please make sure to grant Serial Port permission for full functionality."); // {okOnly: true}
+                await sleep(1_000); // Let user read the alert
+                await grantSerialOnce();
+            }
+
+            if (!notificationsAllowed) {
+                await alert("⚠️ Please allow Notifications for full functionality."); // {okOnly: true}
+                await sleep(1_000); // Let user read the alert
+                await showNotification("Test", "This is test notification to check if notifications are working.");
+            }
+
+            console.info("\n✅ %cApplication fully loaded.", "color: #28a745; font-style: italic; font-weight: normal;");
+
+            await sleep(25);
             allLoaded = true;
 
-            await showPreloaderScreen(false);
+        }, {once: true});
 
-
-            preloadScreen?.addEventListener('transitionend', async () => {
-
-                if (serialAllowed && !isConnected) {
-                    if (
-                        (portsCount >= 1 && autoConnectSetting === 'ask') ||
-                        (portsCount > 1 && (autoConnectSetting === 'always' || autoConnectSetting === 'beginning'))
-                    ) {
-                        if (confirm(`${portsCount > 1 ? 'Multiple machines' : 'Machine'} found. Do you want to connect?`)) await startSerial(false);
-                    }
-                }
-
-                await sleep(500);
-
-                if (!serialAllowed) {
-                    await alert("⚠️ Please make sure to grant Serial Port permission for full functionality."); // {okOnly: true}
-                    await sleep(1_000);
-                    await grantSerialOnce();
-                }
-
-                if (!notificationsAllowed) {
-                    await alert("⚠️ Please allow Notifications for full functionality."); // {okOnly: true}
-                    await sleep(1_000);
-                    showNotification("Test", "This is test notification to check if notifications are working.");
-                }
-
-                console.info("\n✅ %cApplication fully loaded.", "color: #28a745; font-style: italic; font-weight: normal;");
-
-            }, {once: true});
-        }
     }
 
     /////////////////////////////////////////////////////////////////
