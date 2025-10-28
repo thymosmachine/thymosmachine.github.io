@@ -1579,18 +1579,6 @@
                 width: 100% !important;
             }
         }
-
-
-        .u-wrap {
-            /*    border: 1px solid rgba(0, 0, 0, 0.05);*/
-            /*    border-radius: var(--radius);*/
-            /*    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);*/
-            -webkit-user-select: none !important; /* Safari */
-            -moz-user-select: none !important; /* Firefox */
-            -ms-user-select: none !important; /* IE/Edge */
-            user-select: none !important;
-        }
-
     </style>
 
     <style>
@@ -1637,7 +1625,7 @@
             transform-box: fill-box; /* kvůli Firefoxu */
             will-change: transform; /* vytvoří vlastní vrstvu */
             /* transform: translateZ(0); */ /* alternativa, pokud by will-change nestačilo */
-            animation: spin .6s linear infinite;
+            animation: spin .8s linear infinite;
             transform-origin: center; /* pro jistotu */
         }
 
@@ -2136,7 +2124,7 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
-                        <label for="inputLoadingTime">Target loading time \( t \)<span class="units-text"></span>:
+                        <label for="inputLoadingTime">Target loading time \( t_{T} \)<span class="units-text"></span>:
                         </label>
                         <input type="number" id="inputLoadingTime" class="adjustableInput calcInput"
                                step="any" data-unit="s" data-essence="time">
@@ -2274,7 +2262,7 @@
                     </span>
                     <span class="data-eq" data-eq-type="HBr">
                         \[
-                        v = \frac{w_{T}}{t}
+                        v_{T} = \frac{\Delta w_{T}}{t_{T}}
                         \]
                     </span>
                 </article>
@@ -2363,7 +2351,7 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
-                        <label for="outputLoadingSpeed">Loading speed \( v \)<span class="units-text"></span>:
+                        <label for="outputLoadingSpeed">Loading speed \( v_{T} \)<span class="units-text"></span>:
                         </label>
                         <input type="text" id="outputLoadingSpeed" class="copyableInput calcInput" readonly
                                data-system="skip" data-unit="mm/s" data-essence="speed">
@@ -3050,7 +3038,6 @@
     const loadCellNumMax = 3; // maximal number of load cells supported
     const loadCellNum = loadCellNumMax; // TODO: for now constant, else (dynamic assignment based on machine capabilities)
 </script>
-
 
 <script>
 
@@ -4809,7 +4796,6 @@
     }
 </script>
 
-
 <script>
     // ===================================
     // ======= Calculation helpers =======
@@ -5057,7 +5043,6 @@
     }
 </script>
 
-
 <script>
 
     // -------------------- Global variables --------------------
@@ -5066,6 +5051,7 @@
     let connectionType = null; // 'serial' | 'bluetooth' | 'wifi' | null
 
     let allLoaded = false;
+    let pageLoaded = false;
 
     let lastTitle = document.title;
 
@@ -5372,7 +5358,7 @@
 
         if (isConnected) await setSerialSignals(serialPort, true, true);
 
-        if (isConnected) await sendCommandGeneral("MISC REBOOT");
+        if (isConnected) await rebootDevice();
 
         if (storageKeyLoad) localStorage.removeItem(storageKeyLoad);        // Remove the saved data
         // TODO: add other keys if needed
@@ -5569,7 +5555,6 @@
     }
 </script>
 
-
 <script>
     // /////// Log Control Functions /////////
 
@@ -5608,7 +5593,6 @@
     }
 
 </script>
-
 
 <script>
     // /////// Logging Messages /////////
@@ -5748,7 +5732,6 @@
 
 
 </script>
-
 
 <script>
     // /////// IndexedDB Database Configuration /////////
@@ -6733,7 +6716,6 @@
 
 </script>
 
-
 <script>
 
     async function sendMoveCommand(command, pauseMs = 1) {
@@ -6867,7 +6849,6 @@
 
 </script>
 
-
 <script>
     async function handleError(error, context = "Unknown") {
         // 📌 Connection Errors Handling Identifiers
@@ -6893,9 +6874,11 @@
                 document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
             }
 
-            console.warn("\n⚠️ Connection lost! Attempting to reconnect...");
-            isConnected = false;
-            await attemptReconnect(); // TODO: change reconnect handle
+            await disconnectSerial({override: true});
+
+            // console.warn("\n⚠️ Connection lost! Attempting to reconnect...");
+            // isConnected = false;
+            // await attemptReconnect(); // TODO: change reconnect handle
         } else {
             console.error(`❌ ${context} error:`, error);
             await logMessage(`❌ ${context} error: ${error}`);
@@ -6904,7 +6887,6 @@
     }
 
 </script>
-
 
 <script>
 
@@ -7360,7 +7342,6 @@
 
 </script>
 
-
 <script>
     // /////// Optimized Measurement Processing /////////
     let _msgQueue = Promise.resolve();
@@ -7415,7 +7396,6 @@
     }
 
 </script>
-
 
 <script>
     const getMeasurementPartsLength = (obj) =>
@@ -7484,7 +7464,6 @@
     }
 
 </script>
-
 
 <script>
     // /////// Experiment Configuration /////////
@@ -9061,6 +9040,48 @@
         }
     }
 
+    async function rebootDevice(delayMs = 1_000) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            if (debugging) logMessage(" 📢\tRebooting device...");
+
+            await sendCommandGeneral("MISC REBOOT");
+
+            console.info("\n\t♻️ Device is rebooting...");
+
+            await sleep(delayMs); // wait for device to reboot
+
+        } catch (error) {
+            console.error(error.message);
+            throw new Error(`Device reboot failed. ${error}`);
+        }
+    }
+
+    async function resetMemoryDevice(delayMs = 1_000) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            if (debugging) logMessage(" 📢\tResetting memory device...");
+
+            await sendCommandGeneral("MEMORY RESET");
+
+            console.info("\n\t🗑️ Memory device is resetting...");
+
+            await sleep(delayMs); // wait for device to reset
+
+        } catch (error) {
+            console.error(error.message);
+            throw new Error(`Memory device reset failed. ${error}`);
+        }
+    }
+
 </script>
 
 <script>
@@ -9529,7 +9550,6 @@
     /////////////////////////////////////////////////////////////////
 
 </script>
-
 
 <script>
     function renderLoadcells(n) {
@@ -10080,7 +10100,6 @@
     }
 
 </script>
-
 
 <script>
     // /////// Saving Log to File /////////
@@ -11266,7 +11285,6 @@
     }
 </script>
 
-
 <script>
 
     /**
@@ -11428,7 +11446,7 @@
             if (!serialComPort) throw new Error("No serial port available.");
 
 
-            await openPort(serialComPort);
+            await openSerial(serialComPort);
 
         } catch (error) {
 
@@ -11439,7 +11457,7 @@
         }
     }
 
-    async function openPort(comPort, retry = false) {
+    async function openSerial(comPort, retry = false) {
         try {
             activeWatchDog = false;
 
@@ -11448,7 +11466,6 @@
                 await logMessage("\n⚠️ No available port.");
                 return;
             }
-
 
             // TODO opravit funkci na odpojování viz níže + opravit reconnect/disconnect v návaznosti na restartování zařízení.
 
@@ -11459,112 +11476,9 @@
             }
             await closePort(comPort, {verbose: false});
 
-            const {usbVendorId, usbProductId} = comPort?.getInfo() ?? {};
-            fingerprint = `${Number(usbVendorId)?.toString(16) ?? 'N/A'}:${Number(usbProductId)?.toString(16) ?? 'N/A'}`;
-
-            console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
-
-            localStorage.setItem("lastFingerprint", fingerprint);
-
-            serialPort = comPort;
-
 
             console.info("🔌 Opening new port...");
-            await comPort.open({
-                baudRate: parseInt(getElementValue("inputNumBaudRate")) || 115200,
-                // dataBits: 8,
-                // stopBits: 1,
-                // parity: "none",
-                // bufferSize: 255,
-                // flowControl: "none"
-            });
-
-            serialWriter = comPort.writable.getWriter(); // 🔥  writer
-            serialReader = comPort.readable.getReader(); // 🔥  reader
-
-            isConnected = true;
-
-            await sendCommandGeneral("DATAC 0"); // Stop data collection
-
-            readSerial();
-
-            await checkSerialSignals(comPort);
-
-            await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
-
-            await logMessage("\n");
-
-            await sendCommandGeneral("MC STOP"); // Stop movement
-            await sendCommandGeneral("MC ENDSTOPS ENABLE");
-            await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
-            await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 1_000), (5 * 1_000 * 1_000))}`); // Stop data collection
-
-
-            await logMessage("\n");
-
-            await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
-            await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
-
-            await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
-            await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1_000))}`);
-
-            await logMessage("\n");
-
-
-            // TODO: put this to separate function 'HANDSHAKE()'
-            try {
-                machineName = (await getMachineName(5_000) || "")?.trim();
-            } catch (e) {
-                machineName = null;
-                console.error('Name error:', e);
-            }
-            try {
-                machineID = await getMachineID(5_000) || "";
-            } catch (e) {
-                machineID = null;
-                console.error('ID error:', e);
-            }
-            try {
-                machineFirmware = (await getFirmwareVersion(5_000) || "")?.toLowerCase().trim();
-            } catch (e) {
-                machineFirmware = null;
-                console.error('Firmware error:', e);
-            }
-
-            if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
-                if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
-                if (debugging) console.info(`\nFirmware:  ${machineFirmware} = ${isOk(machineFirmware)}\nName:  ${machineName} = ${isOk(machineName)}\nID:  ${machineID} = ${isOk(machineID)}\n`);
-
-                // start reconnect procedure
-                if (tryCount === 0) {
-                    tryCount++;
-                    alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
-                    await sendCommandGeneral("MISC REBOOT");
-                    await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
-                    await logMessage("   Rebooting via Command.\n");
-                    throw new Error("Device not responding");
-
-                } else if (tryCount === 1) {
-                    tryCount++;
-                    alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
-                    await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
-                    await logMessage("   Rebooting via DTR toggle.\n");
-                    await setSerialSignals(comPort, false, false, false); // Set DTR to false
-                    await sleep(250);
-                    await setSerialSignals(comPort, true, false, false); // Set DTR to true
-                    await sleep(2_500);
-                    throw new Error("Device not responding");
-
-                } else {
-                    console.error("Device not responding after multiple attempts.");
-                    await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
-                    alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
-                    // reconnectAttempts = 1_000; // TODO: or show error and block further retries
-                    await disconnectSerial({override: true});
-                    return;
-                }
-            }
-
+            await openComPort(comPort);
 
             await updateConnectionStatus("connected", "serial");
             await logMessage("\n✅ Connected to ESP via Serial\n");
@@ -11572,62 +11486,181 @@
             tryCount = 0;
             reconnectAttempts = 0;
 
-            // TODO: implement Name-based/ID-based (reconnection)
-            const machName = machineName?.toLowerCase();
-            if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
-                machineName = 'Thymos_Device-' + Math.random().toString(36).substring(2, 10);
-                await setMachineName(machineName);
-            }
-            if (machineID === 0) {
-                machineID = clamp(Math.ceil(Math.random() * 255), 1, 255) * -1;
-                await setMachineID(machineID, 1, {overRide: true});
-            }
-
-
-            if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
-
-            $ID("inputMachineName").value = machineName;
-            $ID("inputMachineID").value = machineID;
-
-            // ověření kalibrace
-            calibrationStatus = await getCalibrationStatus(2_000);
-
-            await unlockMachineControls();
-
-            if (calibrationStatus) await unlockMovement();
-            else await lockMovementExcept(UI.calibrateBtn);
-
-            const speed = (await getSpeed(2_000)) || 15;
-            const acceleration = (await getAcceleration(2_000)) || 150;
-
-            setSpeedAndAcceleration(speed, acceleration, true);
-
-            const saveSelected = getInputValDef("inputUseMachineSettings", null)
-
-            let userChoiceSave = null;
-            let userChoiceLoad = null;
-
-            if (saveSelected === 'ask' || saveSelected === 'none') {
-                userChoiceLoad = confirm("\n✅ Connected successfully!\n\nDo you want to LOAD previous settings for this device?\n\n   CLICK 'OK' TO LOAD SETTINGS\n   CLICK 'CANCEL' TO KEEP CURRENT SETTINGS");
-                userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to SAVE current settings to this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\n   CLICK 'CANCEL' TO NOT SAVE SETTINGS");
-            }
-
-            if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_Device_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
-            else storageKeyLoad = storageKeyIdle;
-
-            // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou
-            if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsInputsLoad, storageKeyLoad);
-            await saveAllInputsToLocalStorage(settingsInputsLoad, storageKeyLoad);
-
         } catch (error) {
             activeWatchDog = false;
             if (!(error.name === "InvalidStateError" && retry)) {
-                await disconnectSerial({override: true});
-                await handleError(error, "openPort");
+                await handleError(error, "openSerial");
             }
         }
     }
 
+    async function openComPort(comPort) {
+        serialPort = comPort;
+
+        await comPort.open({
+            baudRate: parseInt(getElementValue("inputNumBaudRate")) || 115200,
+            // dataBits: 8,
+            // stopBits: 1,
+            // parity: "none",
+            // bufferSize: 255,
+            // flowControl: "none"
+        });
+
+        serialWriter = comPort.writable.getWriter(); // 🔥  writer
+        serialReader = comPort.readable.getReader(); // 🔥  reader
+
+        isConnected = true;
+
+        await sendCommandGeneral("DATAC 0"); // Stop data collection
+
+        readSerial();
+
+        await checkSerialSignals(comPort);
+
+        await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
+
+        await logMessage("\n");
+
+        await sendCommandGeneral("MC STOP"); // Stop movement
+        await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), (5 * (60 * 1_000)))}`); // Stop data collection
+        await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+        await sendCommandGeneral("MC ENDSTOPS ENABLE");
+
+        await logMessage("\n");
+
+        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
+        await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
+
+        await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
+        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1_000))}`);
+
+        await logMessage("\n");
+
+        handShake();
+
+        getFingerprint(comPort);
+
+        setMovement();
+
+    }
+
+
+    async function handShake() {
+        try {
+            machineName = (await getMachineName(5_000) || "")?.trim();
+        } catch (e) {
+            machineName = null;
+            console.error('Name error:', e);
+        }
+        try {
+            machineID = await getMachineID(5_000) || "";
+        } catch (e) {
+            machineID = null;
+            console.error('ID error:', e);
+        }
+        try {
+            machineFirmware = (await getFirmwareVersion(5_000) || "")?.toLowerCase().trim();
+        } catch (e) {
+            machineFirmware = null;
+            console.error('Firmware error:', e);
+        }
+
+        if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
+            if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
+            if (debugging) console.info(`\nFirmware:  ${machineFirmware} = ${isOk(machineFirmware)}\nName:  ${machineName} = ${isOk(machineName)}\nID:  ${machineID} = ${isOk(machineID)}\n`);
+
+            // start reconnect procedure
+            if (tryCount === 0) {
+                tryCount++;
+                alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
+                await rebootDevice();
+                await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
+                await logMessage("   Rebooting via Command.\n");
+                throw new Error("Device not responding");
+
+            } else if (tryCount === 1) {
+                tryCount++;
+                alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
+                await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
+                await logMessage("   Rebooting via DTR toggle.\n");
+                await setSerialSignals(serialPort, false, false, false); // Set DTR to false
+                await sleep(250);
+                await setSerialSignals(serialPort, true, false, false); // Set DTR to true
+                await sleep(2_500);
+                throw new Error("Device not responding");
+
+            } else {
+                console.error("Device not responding after multiple attempts.");
+                await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
+                alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
+                // reconnectAttempts = 1_000; // TODO: or show error and block further retries
+                await disconnectSerial({override: true});
+                return;
+            }
+        }
+
+        // TODO: implement Name-based/ID-based (reconnection)
+        const machName = machineName?.toLowerCase();
+        if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
+            machineName = 'Thymos_Device-' + Math.random().toString(36).substring(2, 10);
+            await setMachineName(machineName);
+        }
+        if (machineID === 0) {
+            machineID = clamp(Math.ceil(Math.random() * 255), 1, 255) * -1;
+            await setMachineID(machineID, 1, {overRide: true});
+        }
+
+        if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
+
+        $ID("inputMachineName").value = machineName;
+        $ID("inputMachineID").value = machineID;
+
+
+        const saveSelected = getInputValDef("inputUseMachineSettings", null)
+
+        let userChoiceSave = null;
+        let userChoiceLoad = null;
+
+        if (saveSelected === 'ask' || saveSelected === 'none') {
+            userChoiceLoad = confirm("\n✅ Connected successfully!\n\nDo you want to LOAD previous settings for this device?\n\n   CLICK 'OK' TO LOAD SETTINGS\n   CLICK 'CANCEL' TO KEEP CURRENT SETTINGS");
+            userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to SAVE current settings to this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\n   CLICK 'CANCEL' TO NOT SAVE SETTINGS");
+        }
+
+        if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_Device_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
+        else storageKeyLoad = storageKeyIdle;
+
+        // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou
+        if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsInputsLoad, storageKeyLoad);
+        await saveAllInputsToLocalStorage(settingsInputsLoad, storageKeyLoad);
+    }
+
+    async function setMovement() {
+        // check Calibration status
+        calibrationStatus = await getCalibrationStatus(2_000);
+
+        await unlockMachineControls();
+
+        if (calibrationStatus) await unlockMovement();
+        else await lockMovementExcept(UI.calibrateBtn);
+
+        const speed = (await getSpeed(2_000)) || 15;
+        const acceleration = (await getAcceleration(2_000)) || 150;
+
+        setSpeedAndAcceleration(speed, acceleration, true);
+    }
+
+    async function getFingerprint({port = serialPort, save = true, storageKey = "lastFingerprint"} = {}) {
+        if (!port) return;
+
+        const {usbVendorId, usbProductId} = port?.getInfo() ?? {};
+        if (!usbVendorId || !usbProductId) return null;
+        fingerprint = `${Number(usbVendorId)?.toString(16) ?? 'N/A'}:${Number(usbProductId)?.toString(16) ?? 'N/A'}`;
+
+        console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
+
+        if (save) localStorage.setItem(storageKey, fingerprint);
+        return {usbVendorId, usbProductId};
+    }
 
     async function checkSerialSignals(port) {
         if (!port) return;
@@ -11895,7 +11928,7 @@
             return;
         }
 
-        // Tady už PŘEDPOKLÁDÁME, že serialReader existuje z openPort()
+        // Tady už PŘEDPOKLÁDÁME, že serialReader existuje z openSerial()
         if (!serialReader) {
             // fallback, kdyby přece jen nebyl
             serialReader = serialPort.readable.getReader();
@@ -11968,6 +12001,7 @@
     }
 
     async function attemptReconnect() {
+        // TODO: opravit logiku reconnectu a zmenšit pokusy na 3
         console.info("%c\n🔄 Attempting to reconnect...", "color: blue; font-weight: bold;");
 
         if (isConnected || isReconnecting) {
@@ -12011,7 +12045,7 @@
 
             if (port) {
                 serialPort = port; // Update the serialPort reference
-                await openPort(port, true);
+                await openSerial(port, true);
             }
 
 
@@ -12102,13 +12136,11 @@
 
     /////////////////////////////////////////////////////////////////
 
-</script>
-
-
-<script>
     // Web Serial API - connect event - auto connect to Thymos devices
     if ('serial' in navigator) {
         navigator.serial.addEventListener('connect', e => {
+            if (isConnected && serialPort) return;
+
             const port = e?.target;
             const portInfo = port?.getInfo()
 
@@ -12140,7 +12172,6 @@
 
 </script>
 
-
 <script>
 
     async function startBluetooth(userRequest = true) {
@@ -12168,7 +12199,6 @@
     }
 
 </script>
-
 
 <script>
 
@@ -12243,146 +12273,6 @@
     // }
 
 </script>
-
-
-<script type="text/plain">
-    // Setup "devicechange" pro seriové porty
-    function setupSerialDeviceChange({onChange} = {}) {
-        if (!('serial' in navigator)) throw new Error('Web Serial není podporován');
-
-        // aktuální povolené porty (po reloadu se vrátí ty, které už mají oprávnění)
-        let known = new Set();
-
-        // pomocná funkce pro stabilní ID portu
-        const portId = async (port) => {
-            // getInfo() vrací např. { usbVendorId, usbProductId } pro USB-CDC; BT apod. může být prázdné
-            const info = port.getInfo() || {};
-            // některé platformy mají jen měnící se COM jméno; jako fallback použijeme String(port)
-            return JSON.stringify({
-                usbVendorId: info.usbVendorId,
-                usbProductId: info.usbProductId,
-                fallback: String(port)
-            });
-        };
-
-        async function snapshotAndNotify() {
-            const ports = await navigator.serial.getPorts();
-            const next = new Set(await Promise.all(ports.map(portId)));
-
-            // diff
-            const added = [];
-            const removed = [];
-            for (const id of next) if (!known.has(id)) added.push(id);
-            for (const id of known) if (!next.has(id)) removed.push(id);
-
-            if ((added.length || removed.length) && typeof onChange === 'function') {
-                onChange({added, removed, ports});
-            }
-            known = next;
-        }
-
-        // počáteční snapshot
-        snapshotAndNotify();
-
-        // hotplug eventy (fungují i když port ještě nemá povolení; k otevření budeš stejně potřebovat requestPort)
-        navigator.serial.addEventListener('connect', snapshotAndNotify);
-        navigator.serial.addEventListener('disconnect', snapshotAndNotify);
-
-        // // volitelný polling jako záloha (někdy ovladač nepropaguje eventy spolehlivě)
-        // const interval = setInterval(snapshotAndNotify, 10_000);
-        //
-        // // vratí teardown
-        // return () => {
-        //     clearInterval(interval);
-        //     navigator.serial.removeEventListener('connect', snapshotAndNotify);
-        //     navigator.serial.removeEventListener('disconnect', snapshotAndNotify);
-        // };
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Příklad použití:
-
-    // po udělení oprávnění (stačí jednou v historii webu na daném původu)
-    grantSerialOnce(); // await grantSerialOnce();
-
-    // pak kdekoli:
-    // const stop = setupSerialDeviceChange({
-    //     onChange: ({added, removed, ports}) => {
-    //         console.info('Přidáno:', added, 'Odebráno:', removed);
-    //         // tady si můžeš aktualizovat UI; 'ports' je aktuální pole NavigatorSerialPort
-    //     }
-    // });
-    setupSerialDeviceChange({
-        onChange: ({added, removed, ports}) => {
-            console.info('\nPřidáno:\n', added, '\n\nOdebráno:\n', removed);
-            // tady si můžeš aktualizovat UI; 'ports' je aktuální pole NavigatorSerialPort
-        }
-    })
-
-    // až nebudeš chtít poslouchat:
-    // stop();
-    //     navigator.serial.removeEventListener('connect', snapshotAndNotify);
-    //     navigator.serial.removeEventListener('disconnect', snapshotAndNotify);
-
-</script>
-
-
-<script type="text/plain">
-    // Web Serial API - connect / disconnect eventy
-    if ('serial' in navigator) {
-        (async () => {
-            const ports = await navigator.serial.getPorts();
-            for (const port of ports) onConnect('serial', port);
-        })();
-
-        navigator.serial.addEventListener('connect', e => {
-            const port = e?.target;
-            console.info('%c\n\tSerial connect:', "color: red; font-size: 13px; font-style: italic; font-weight: bold;", port?.getInfo());
-            console.info(port);
-            console.info(e);
-            onConnect('serial', port);
-        });
-        navigator.serial.addEventListener('disconnect', e => {
-            const port = e?.target;
-            console.info('%c\n\tSerial disconnect:', "color: red; font-size: 13px; font-style: italic; font-weight: bold;", port?.getInfo());
-            console.info(port);
-            console.info(e);
-            onDisconnect('serial', port);
-        });
-    }
-
-    function onConnect(type, port) { /* … */
-        switch (type) {
-            case 'serial':
-                onSerialConnect(port);
-                break;
-        }
-    }
-
-    function onDisconnect(type, port) { /* … */
-        switch (type) {
-            case 'serial':
-                onSerialDisconnect(port);
-                break;
-        }
-    }
-
-    function onSerialConnect(port) { /* … */
-    }
-
-    function onSerialDisconnect(port) { /* … */
-    }
-
-    // TODO: implement automatic reconnect when the device is reconnected to the computer
-    const autoConnectSetting = $ID("inputAutoConnect")?.value || 'never';
-    if (autoConnectSetting === 'always' || autoConnectSetting === 'during') await startSerial(false);
-    else if (autoConnectSetting === 'ask') if (confirm("The device was connected. Do you want to connect?")) await startSerial(true);
-
-</script>
-
 
 <script>
 
@@ -12475,13 +12365,17 @@
 
         await isSerialConnected();
 
-        if (isConnected) await setSerialSignals(serialPort, true, true);
+        if (isConnected) {
+            await setSerialSignals(serialPort, true, true);
 
-        if (isConnected) await sendCommandGeneral("MISC REBOOT");
+            await resetMemoryDevice(500);
 
-        if (isConnected) await sleep(1_500);
+            await rebootDevice(1_000);
 
-        if (isConnected) await disconnectSerial();
+            await sleep(500);
+        }
+
+        await disconnectSerial({override: true, verbose: true});
 
 
         await resetValues();
@@ -12565,6 +12459,10 @@
     // ===============================================
 
     document.addEventListener("DOMContentLoaded", function () {
+        showPreloaderScreen(true);
+
+        openDB();
+
         UI = {
             regularLogContainer: $ID("regularLog"),// Reference to the log display container
             loadingLogContainer: $ID("loadingLog"),// Reference to the loading log display container
@@ -12608,6 +12506,14 @@
             accelerationLabel: $ID("labelAcceleration"), // Label for acceleration value
         };
 
+        resetValues();
+
+        // Load the saved theme from localStorage on initialization
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (exists('darkModeButton')) $ID('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
+        document.body.dataset.theme = savedTheme;
+
+        renderLoadcells(loadCellNum);
 
         movementElements = $$(".movementControlElement");
         controlElements = $$(".controlElement");
@@ -12615,28 +12521,14 @@
         allSettingsInputs = Array.from($$("input, select")).filter(el => !isSkippable(el));
         appSettingsWrapper = $ID('appSettingsSection');
 
-        // Load the saved theme from localStorage on initialization
-        const savedTheme = localStorage.getItem("theme") || "light";
-        if (exists('darkModeButton')) $ID('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
-        document.body.dataset.theme = savedTheme;
-
-        (async () => {
-            await openDB();
-        })();
-
-        resetValues();
+        settingsInputsLoad = allSettingsInputs.filter(el => !appSettingsWrapper.contains(el));
+        settingsInputsSys = allSettingsInputs.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
 
         lockMachineControls();
 
         lockConnectionButtons(true);
 
-        renderLoadcells(loadCellNum);
-
         bindCloseHandler();
-
-
-        settingsInputsLoad = allSettingsInputs.filter(el => !appSettingsWrapper.contains(el));
-        settingsInputsSys = allSettingsInputs.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
 
         UI.Serial.addEventListener("click", async () => startSerial());
         UI.WiFi.addEventListener("click", async () => startWIFI());
@@ -12994,7 +12886,7 @@
             window.location.href = 'espUpdate/update.html';
         });
 
-        $ID("rebootButton")?.addEventListener("click", async () => await sendCommandGeneral("MISC REBOOT"));
+        $ID("rebootButton")?.addEventListener("click", async () => await rebootDevice());
 
         $ID("clearStorageButton")?.addEventListener("click", async () => {
             if (confirm("⚠️ This will clear all settings and disconnect from the machine.\n\n     Are you sure?")) {
@@ -13304,7 +13196,9 @@
             }
         });
 
-        window.dispatchEvent(new Event('resize', {bubbles: true}));
+        setTimeout(() => window.dispatchEvent(new Event('resize', {bubbles: true})), 0);
+
+        pageLoaded = true;
     });
 
 
@@ -13321,6 +13215,9 @@
      * - Loads available commands from the JSON file.
      */
     window.onload = async () => {
+
+        while (!pageLoaded) await sleep(200);
+
         // await loadCommands();
 
         const serialAllowed = await isSerialAvailable();
@@ -13390,108 +13287,6 @@
     /////////////////////////////////////////////////////////////////
 
 
-</script>
-
-<script type="text/plain">
-    const overlay = $ID('preloadScreen');
-    window.addEventListener('load', () => {
-      overlay.style.opacity = '0';
-      overlay.addEventListener('transitionend', () => {
-        // až teď (nebo rovnou remove()):
-        overlay.style.pointerEvents = 'none';
-        overlay.remove(); // volitelné
-      }, { once: true });
-    });
-
-</script>
-
-
-<script type="text/plain">
-
-    const big = 1234567890123456789012345678901234567890n;
-    console.log(big);                                   // 1234567890123456789012345678901234567890n
-    console.log(big.toString());                        // "1234567890123456789012345678901234567890"
-    console.log(big + 1n);                              // 1234567890123456789012345678901234567891n
-    console.log(big * 2n);                              // 2469135780246913578024691357802469135780n
-    console.log(big.toLocaleString('en-US'));           // 12,345,678,…
-    console.log(big.toLocaleString('cs-CZ'));           // 12 345 678 …
-    console.log(Number.MAX_SAFE_INTEGER);               // 9007199254740991
-    console.log(Number.MIN_SAFE_INTEGER);               // -9007199254740991
-    console.log(9007199254740992 === 9007199254740993); // true 😱
-    console.log(Number.MAX_VALUE);                      // 1.7976931348623157e+308
-    console.log(Number.MIN_VALUE);                      // 5e-324
-    console.log(2**-1022);                              // 2.2250738585072014e-308 ≈ MIN_NORMAL
-    console.log(Number.EPSILON);                        // 2.220446049250313e-16
-    console.log(Math.PI);                               // 3.141592653589793
-    console.log(Math.E);                                // 2.718281828459045
-    console.log(Math.SQRT2);                            // 1.4142135623730951
-    console.log(Math.SQRT1_2);                          // 0.7071067811865476
-    console.log(Math.LN2);                              // 0.6931471805599453
-    console.log(Math.LN10);                             // 2.302585092994046
-    console.log(Math.LOG2E);                            // 1.4426950408889634
-    console.log(Math.LOG10E);                           // 0.4342944819032518
-    console.log(Math.cbrt(27));                         // 3 (cube root)
-    console.log(Math.hypot(3, 4));                      // 5 (sqrt(3² + 4²))
-    console.log(Math.clz32(16));                        // 28 (32bit leading zeros)
-    console.log(Math.imul(4294967295, 2));              // -2 (32bit overflow)
-    console.log(Math.fround(1.337));                     // 1.3370000123977661 (32bit float)
-
-    const x = 0.1 + 0.2;                                // 0.30000000000000004 (float64)
-    Math.fround(x);                                     // 0.30000001192092896 (closest float32)
-    new Float32Array([x])[0];                           // same as 'fround'
-
-    // min float32: min = 2⁻¹²⁶ = 1.1754943508222875e-38 ≈ 1.1754944 × 10^−38
-    new Float32Array([1e-38])[0];                       // => 1.1754943508222875e-38
-    new Float32Array([1e-45])[0];                       // => 1.401298464324817e-45
-    new Float32Array([1e-46])[0];                       // => 0 (underflow!)
-    // max float32: max = (2 − 2⁻²³) × 2¹²⁷ = 3.4028234663852886e+38 ≈ 3.4028235 × 10^38
-    new Float32Array([Infinity])[0];                    // => Infinity
-    new Float32Array([3.4028235e38])[0];                // => 3.4028234663852886e38
-    new Float32Array([3.5e38])[0];                      // => Infinity  (overflow!)
-</script>
-
-
-<script type="text/plain">
-
-    1) Pevná šířka (wrap-around modulo 2⁶⁴)
-
-    Hodí se, pokud chceš 64bit „otáčecí“ čítač (jako uint64):
-
-    const MOD64 = 1n << 64n;
-    let u64 = 0n;
-    function nextU64() {
-      const cur = u64;
-      u64 = (u64 + 1n) % MOD64;
-      return cur;               // v rozsahu 0..2^64-1
-    }
-
-
-
-
-
-    2) Sdílený a atomický counter (více workerů / vláken)
-
-    Atomics umí pracovat s BigInt64Array/BigUint64Array na SharedArrayBuffer.
-    To je ideální, pokud potřebuješ bezpečné inkrementy napříč workery.
-
-    // hlavní vláknо
-    const sab = new SharedArrayBuffer(8); // 8 bytů = 64 bitů
-    const view = new BigUint64Array(sab); // počáteční 0n
-
-    // Atomický fetch-add: vrátí starou hodnotu, pak přičte 1
-    function nextShared() {
-      return Atomics.add(view, 0, 1n); // BigInt
-    }
-
-    // předání sab do workerů (new Worker(..., { type: 'module' }))
-    worker.postMessage({ sab });
-
-    // ve workeru:
-    onmessage = ({ data: { sab } }) => {
-      const view = new BigUint64Array(sab);
-      const id = Atomics.add(view, 0, 1n);
-      // ... použij id (BigInt)
-    };
 </script>
 
 </body>
