@@ -1,0 +1,88 @@
+
+    1) Pevná šířka (wrap-around modulo 2⁶⁴)
+
+    Hodí se, pokud chceš 64bit „otáčecí“ čítač (jako uint64):
+
+    const MOD64 = 1n << 64n;
+    let u64 = 0n;
+    function nextU64() {
+      const cur = u64;
+      u64 = (u64 + 1n) % MOD64;
+      return cur;               // v rozsahu 0..2^64-1
+    }
+
+
+
+
+
+    2) Sdílený a atomický counter (více workerů / vláken)
+
+    Atomics umí pracovat s BigInt64Array/BigUint64Array na SharedArrayBuffer.
+    To je ideální, pokud potřebuješ bezpečné inkrementy napříč workery.
+
+    // hlavní vláknо
+    const sab = new SharedArrayBuffer(8); // 8 bytů = 64 bitů
+    const view = new BigUint64Array(sab); // počáteční 0n
+
+    // Atomický fetch-add: vrátí starou hodnotu, pak přičte 1
+    function nextShared() {
+      return Atomics.add(view, 0, 1n); // BigInt
+    }
+
+    // předání sab do workerů (new Worker(..., { type: 'module' }))
+    worker.postMessage({ sab });
+
+    // ve workeru:
+    onmessage = ({ data: { sab } }) => {
+      const view = new BigUint64Array(sab);
+      const id = Atomics.add(view, 0, 1n);
+      // ... použij id (BigInt)
+    };
+
+
+
+
+
+
+
+
+    const big = 1234567890123456789012345678901234567890n;
+    console.log(big);                                   // 1234567890123456789012345678901234567890n
+    console.log(big.toString());                        // "1234567890123456789012345678901234567890"
+    console.log(big + 1n);                              // 1234567890123456789012345678901234567891n
+    console.log(big * 2n);                              // 2469135780246913578024691357802469135780n
+    console.log(big.toLocaleString('en-US'));           // 12,345,678,…
+    console.log(big.toLocaleString('cs-CZ'));           // 12 345 678 …
+    console.log(Number.MAX_SAFE_INTEGER);               // 9007199254740991
+    console.log(Number.MIN_SAFE_INTEGER);               // -9007199254740991
+    console.log(9007199254740992 === 9007199254740993); // true 😱
+    console.log(Number.MAX_VALUE);                      // 1.7976931348623157e+308
+    console.log(Number.MIN_VALUE);                      // 5e-324
+    console.log(2**-1022);                              // 2.2250738585072014e-308 ≈ MIN_NORMAL
+    console.log(Number.EPSILON);                        // 2.220446049250313e-16
+    console.log(Math.PI);                               // 3.141592653589793
+    console.log(Math.E);                                // 2.718281828459045
+    console.log(Math.SQRT2);                            // 1.4142135623730951
+    console.log(Math.SQRT1_2);                          // 0.7071067811865476
+    console.log(Math.LN2);                              // 0.6931471805599453
+    console.log(Math.LN10);                             // 2.302585092994046
+    console.log(Math.LOG2E);                            // 1.4426950408889634
+    console.log(Math.LOG10E);                           // 0.4342944819032518
+    console.log(Math.cbrt(27));                         // 3 (cube root)
+    console.log(Math.hypot(3, 4));                      // 5 (sqrt(3² + 4²))
+    console.log(Math.clz32(16));                        // 28 (32bit leading zeros)
+    console.log(Math.imul(4294967295, 2));              // -2 (32bit overflow)
+    console.log(Math.fround(1.337));                     // 1.3370000123977661 (32bit float)
+
+    const x = 0.1 + 0.2;                                // 0.30000000000000004 (float64)
+    Math.fround(x);                                     // 0.30000001192092896 (closest float32)
+    new Float32Array([x])[0];                           // same as 'fround'
+
+    // min float32: min = 2⁻¹²⁶ = 1.1754943508222875e-38 ≈ 1.1754944 × 10^−38
+    new Float32Array([1e-38])[0];                       // => 1.1754943508222875e-38
+    new Float32Array([1e-45])[0];                       // => 1.401298464324817e-45
+    new Float32Array([1e-46])[0];                       // => 0 (underflow!)
+    // max float32: max = (2 − 2⁻²³) × 2¹²⁷ = 3.4028234663852886e+38 ≈ 3.4028235 × 10^38
+    new Float32Array([Infinity])[0];                    // => Infinity
+    new Float32Array([3.4028235e38])[0];                // => 3.4028234663852886e38
+    new Float32Array([3.5e38])[0];                      // => Infinity  (overflow!)

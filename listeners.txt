@@ -1,0 +1,142 @@
+🌐 1. online / offline
+
+Na čem: window
+Spouští se: když se změní stav připojení (podle browseru — nemusí přesně odrážet skutečný internet).
+
+window.addEventListener('online', () => {
+  console.log('✅ Jsme online!');
+});
+
+window.addEventListener('offline', () => {
+  console.log('❌ Jsme offline!');
+});
+
+// Můžeš zjistit aktuální stav:
+console.log(navigator.onLine); // true / false
+
+
+🔹 Typické využití: offline režim, upozornění, ukládání dat do IndexedDB a pozdější sync.
+⚠️ Není 100% spolehlivé (např. připojení k routeru bez netu = stále “online”).
+
+📱 2. deviceorientation
+
+Na čem: window
+Spouští se: při změně úhlu natočení zařízení (mobil, tablet).
+Potřebuje HTTPS a uživatelské povolení.
+
+window.addEventListener('deviceorientation', (e) => {
+  console.log('alpha', e.alpha); // rotace kolem Z (0–360)
+  console.log('beta', e.beta);   // naklonění dopředu/dozadu (-180–180)
+  console.log('gamma', e.gamma); // naklonění do stran (-90–90)
+});
+
+
+🔹 Použití: hry, kompas, orientace AR objektů.
+⚠️ Od iOS 13+ a Android Chrome vyžaduje oprávnění:
+
+if (DeviceOrientationEvent.requestPermission) {
+  DeviceOrientationEvent.requestPermission().then(granted => {
+    if (granted === 'granted') {
+      window.addEventListener('deviceorientation', handler);
+    }
+  });
+}
+
+📲 3. devicemotion
+
+Na čem: window
+Spouští se: při změně zrychlení (akcelerometru) zařízení.
+Zahrnuje:
+
+acceleration – bez gravitace,
+
+accelerationIncludingGravity – s gravitací,
+
+rotationRate – úhlová rychlost.
+
+window.addEventListener('devicemotion', (e) => {
+  console.log('x', e.acceleration.x);
+  console.log('rotation alpha', e.rotationRate.alpha);
+});
+
+
+🔹 Použití: gesta (třesení), AR, hry.
+⚠️ Stejně jako deviceorientation – HTTPS a user permission.
+
+🎬 4. animationstart / animationiteration / animationend
+
+Na čem: většinou DOM element, který má CSS animaci (@keyframes, animation-*).
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.box {
+  animation: spin 2s linear infinite;
+}
+
+const box = document.querySelector('.box');
+
+box.addEventListener('animationstart', e => console.log('Animation start:', e.animationName));
+box.addEventListener('animationiteration', e => console.log('Next loop'));
+box.addEventListener('animationend', e => console.log('Animation ended'));
+
+
+🔹 Použití: reagovat na začátek/konec animace, synchronizace JS a CSS, přechodové efekty.
+
+🎨 5. transitionrun / transitionstart / transitionend / transitioncancel
+
+Na čem: DOM element, který má CSS přechod (transition: ...).
+
+.box {
+  transition: transform 1s ease;
+}
+.box.move {
+  transform: translateX(100px);
+}
+
+const box = document.querySelector('.box');
+
+box.addEventListener('transitionrun', e => console.log('transition started planning'));
+box.addEventListener('transitionstart', e => console.log('transition really started'));
+box.addEventListener('transitionend', e => console.log('transition finished'));
+box.addEventListener('transitioncancel', e => console.log('transition canceled'));
+
+
+🔹 Rozdíly:
+
+transitionrun – jakmile browser ví, že přechod bude spuštěn.
+
+transitionstart – jakmile se přechod opravdu začne vykreslovat.
+
+transitionend – po dokončení.
+
+transitioncancel – když přechod zrušíš dřív (např. změnou stylu).
+
+🔎 Jak to testovat / zkoumat
+Chrome DevTools:
+
+V konzoli můžeš použít:
+
+monitorEvents(window, ['online', 'offline']);
+monitorEvents(window, ['deviceorientation', 'devicemotion']);
+monitorEvents(element, ['animationstart', 'animationend', 'transitionstart', 'transitionend']);
+
+
+→ začne logovat každou událost (vypneš unmonitorEvents(...)).
+
+Firefox:
+
+Panel Inspector → Events – ukáže aktivní listenery na elementu.
+
+
+
+
+
+
+🧩 Shrnutí tabulkou
+Událost	Cíl (target)	Spouští se kdy	Potřeba HTTPS / permission	Typické použití
+online / offline	window	Změna připojení	❌	Offline mód
+deviceorientation	window	Pohyb/otočení zařízení	✅ + Permission	Kompas, AR, hry
+devicemotion	window	Akcelerometrická změna	✅ + Permission	Třesení, fyzika
+animationstart/iteration/end	DOM element	CSS animace	❌	Sync JS ↔ CSS
+transitionrun/start/end/cancel	DOM element	CSS přechod	❌	Reakce na změny stylu
