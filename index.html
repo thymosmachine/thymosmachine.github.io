@@ -1741,19 +1741,19 @@
                         title="Connect to the Thymos machine by selecting USB port.">
                     🔌 Connect via<br>USB
                 </button>
-                <div class="inlineDiv connectElement" data-system-level="3">
+                <div class="inlineDiv connectElement" data-system-level="300">
                     <label for="inputNumBaudRate">Baud-Rate:</label>
                     <input data-input-type="intInput" type="number" id="inputNumBaudRate"
                            placeholder="Baud-Rate" value="921600" min="1" max="921600" step="100">
                 </div>
             </div>
-            <div class="inlineDiv" data-system-level="5">
+            <div class="inlineDiv" data-system-level="500">
                 <button id="connectBtnBluetooth" class="connectBtn" data-connection-type="bluetooth"
                         title="Connect to the Thymos machine via Bluetooth.">
                     📶 Connect via<br>Bluetooth
                 </button>
             </div>
-            <div class="inlineDiv" data-system-level="6">
+            <div class="inlineDiv" data-system-level="600">
                 <button id="connectBtnWiFi" class="connectBtn" data-connection-type="wifi"
                         title="Connect to the Thymos machine via Wi-Fi.">
                     🌐 Connect via<br>Wi-Fi
@@ -1813,7 +1813,7 @@
 
     <section class="graphContainer outsetShadow">
         <h3 class="sectionTitle">📈 Graphs:</h3>
-        <nav class="graphBtnWrapper" data-system-level="1">
+        <nav class="graphBtnWrapper" data-system-level="100">
             <button class="btnGraph" id="toggleLiveGraph"> ⏯️ Activate Charts</button>
             <button id="clearChartBtn" class="btnGraph">🧹 Clear Charts</button>
             <button id="reloadChartBtn" class="btnGraph">🔄 Reload Charts</button>
@@ -2224,10 +2224,10 @@
                     </article>
                 </div>
 
-                <hr data-system-level="1">
+                <hr data-system-level="100">
 
-                <h4 data-system-level="1">🔣 Equations:</h4>
-                <article class="inputsContainer" data-system-level="1"
+                <h4 data-system-level="100">🔣 Equations:</h4>
+                <article class="inputsContainer" data-system-level="100"
                          style="grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); padding-left: 50px; gap: 25px 10px;">
                     <span class="data-eq">
                         \[
@@ -2294,7 +2294,7 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
-                        <!-- TODO: zobrazuje se když nemá: data-system-level="1"   -->
+                        <!-- TODO: zobrazuje se když nemá: data-system-level="100"   -->
                         <label for="outputIy">Moment of Inertia \( I_{y} \)<span
                                 class="units-text"></span>: </label>
                         <input type="text" id="outputIy" class="copyableInput calcInput" readonly
@@ -2503,7 +2503,7 @@
                                    required>
                         </div>
 
-                        <div class="input-group" data-eq-type="HBr">
+                        <div class="input-group" data-eq-type="HBr" data-system-level="0-200">
                             <label id="inputResponseCoefPILabel" for="inputResponseCoefPI">Responsiveness coefficient
                                 [PI]<span
                                         class="units-text"></span>: </label>
@@ -2512,6 +2512,25 @@
                                    data-essence="coefficient, ratio"
                                    required>
                         </div>
+                        <div class="input-group" data-eq-type="HBr" data-system-level="200">
+                            <label id="inputResponseCoefKpLabel" for="inputResponseCoefKp">Responsiveness coefficient
+                                [Kp]<span
+                                        class="units-text"></span>: </label>
+                            <input data-input-type="floatInput" type="number" id="inputResponseCoefKp" class="expInput"
+                                   value="0.5" min="0" step="any" max="10" data-unit="-"
+                                   data-essence="coefficient, ratio"
+                                   required>
+                        </div>
+                        <div class="input-group" data-eq-type="HBr" data-system-level="200">
+                            <label id="inputResponseCoefKiLabel" for="inputResponseCoefKi">Responsiveness coefficient
+                                [Ki]<span
+                                        class="units-text"></span>: </label>
+                            <input data-input-type="floatInput" type="number" id="inputResponseCoefKi" class="expInput"
+                                   value="0.5" min="0" step="any" max="10" data-unit="-"
+                                   data-essence="coefficient, ratio"
+                                   required>
+                        </div>
+
 
                         <div class="input-group" data-eq-type="-Flx, -InB,-HBr">
                             <label for="inputDoCycles">Do cycles: </label>
@@ -2536,7 +2555,7 @@
                             <!-- Machine settings (LoadCells) will be dynamically inserted here -->
                         </div>
 
-                        <div class="input-group machineControlElement" data-system-level="1">
+                        <div class="input-group machineControlElement" data-system-level="100">
                             <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
                             <div style="display: flex; gap: 0;">
                                 <input data-input-type="intInput" type="text" id="inputMachineName"
@@ -2551,7 +2570,7 @@
                         </div>
 
 
-                        <div class="input-group machineControlElement" data-system-level="4">
+                        <div class="input-group machineControlElement" data-system-level="400">
                             <label for="inputMachineID" style="min-width: max-content;">Machine ID:</label>
                             <div style="display: flex; gap: 0;">
                                 <input data-input-type="intInput" type="text" id="inputMachineID"
@@ -2576,28 +2595,68 @@
                             <label for="systemLevelSelect">System Level: </label>
                             <select id="systemLevelSelect" class="appSelector" data-system="app" required>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                                <!--                            <option value="" hidden>&nbsp;🅿️&nbsp;Public</option>-->
-                                <!--                            <option value="" hidden>&nbsp;➿&nbsp;Guest</option>-->
-                                <!--                            <option value="" hidden>&nbsp;Ⓜ️&nbsp;Member</option>-->
-                                <!--                            <option value="" hidden>&nbsp;®️&nbsp;Registered</option>-->
-                                <!--                            <option value="" hidden>&nbsp;👽&nbsp;Remote</option>-->
-                                <!--                            <option value="" hidden>&nbsp;⬛&nbsp;Restricted</option>-->
-                                <!--                            <option value="" hidden>&nbsp;🔳&nbsp;Protected</option>-->
-                                <!--                            <option value="" hidden>&nbsp;🔲&nbsp;Limited</option>-->
-                                <!--                            <option value="" hidden>&nbsp;⏹️&nbsp;Minimal</option>-->
-                                <option value="basic" selected>&nbsp;🟦&nbsp;Basic</option>
-                                <option value="standard">&nbsp;🟩&nbsp;Standard</option>
-                                <option value="advanced">&nbsp;🟨&nbsp;Advanced</option>
-                                <option value="expert">&nbsp;🟧&nbsp;Expert</option>
-                                <option value="admin" disabled>&nbsp;🟥&nbsp;Administrator</option>
-                                <option value="operator" disabled>&nbsp;🅾️&nbsp;Operator</option>
-                                <option value="developer" disabled>&nbsp;🟪&nbsp;Developer</option>
-                                <option value="service" disabled>&nbsp;⚕️&nbsp;Service</option>
-                                <option value="god" disabled>&nbsp;♾️&nbsp;God Mode</option>
+                                <option value="remote" hidden>
+                                    &nbsp;👽&nbsp;Remote
+                                </option>
+                                <option value="disabled" hidden>
+                                    &nbsp;🅿️&nbsp;Public
+                                </option>
+                                <option value="disabled" hidden>
+                                    &nbsp;➿&nbsp;Guest
+                                </option>
+                                <option value="restricted" hidden>
+                                    &nbsp;⬛&nbsp;Restricted
+                                </option>
+                                <option value="protected" hidden>
+                                    &nbsp;🔳&nbsp;Protected
+                                </option>
+                                <option value="limited" hidden>
+                                    &nbsp;🔲&nbsp;Limited
+                                </option>
+                                <option value="minimal" disabled>
+                                    &nbsp;⏹️&nbsp;Minimal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🔜)
+                                </option>
+                                <option value="basic" selected> <!--TODO: implement-->
+                                    &nbsp;🟦&nbsp;Basic
+                                </option>
+                                <option value="standard">
+                                    &nbsp;🟩&nbsp;Standard
+                                </option>
+                                <option value="advanced">
+                                    &nbsp;🟨&nbsp;Advanced
+                                </option>
+                                <option value="expert">
+                                    &nbsp;🟧&nbsp;Expert
+                                </option>
+                                <option value="admin" disabled>
+                                    &nbsp;🟥&nbsp;Administrator&nbsp;(🗺️)
+                                </option>
+                                <option value="operator" disabled>
+                                    &nbsp;🅾️&nbsp;Operator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🗺️)
+                                </option>
+                                <option value="emergency" disabled>
+                                    &nbsp;🟪&nbsp;Emergency&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🛠️)
+                                </option>
+
+                                <option value="user" disabled> <!--TODO: implement-->
+                                    &nbsp;🆔&nbsp;Logged User&nbsp;&nbsp;&nbsp;(🚧)
+                                </option>
+                                <option value="support" disabled>
+                                    &nbsp;☯️&nbsp;Support&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🗺️)
+                                </option>
+                                <option value="service" disabled>
+                                    &nbsp;⚕️&nbsp;Service&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(⏳)
+                                </option>
+                                <option value="developer" disabled>
+                                    &nbsp;⚛️&nbsp;Developer
+                                </option>
+                                <option value="god" disabled>
+                                    &nbsp;♾️&nbsp;God Mode
+                                </option>
                             </select>
                         </div>
 
-                        <div class="input-group controlElement" data-system-level="4">
+                        <div class="input-group controlElement" data-system-level="400">
                             <label for="inputAppInterval" style="min-width: max-content;">Data Interval:</label>
                             <input data-input-type="intInput" type="number" id="inputAppInterval" data-system="app"
                                    value="50000" min="1" step="any" max="100000000" data-unit="µs" data-essence="time"
@@ -2624,7 +2683,7 @@
                             </select>
                         </div>
 
-                        <div class="input-group" data-system-level="1">
+                        <div class="input-group" data-system-level="100">
                             <label for="inputAutoConnect">Automatically connect to the machine: </label>
                             <select id="inputAutoConnect" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
@@ -2652,31 +2711,31 @@
                         </div>
 
                         <!-- TODO: add that this and some other settings are tight to the Different storage 'System'  -->
-                        <div class="input-group" data-system-level="2">
+                        <div class="input-group" data-system-level="200">
                             <label for="inputUseMachineSettings">
                                 Apply machine settings on connect:
                             </label>
                             <select id="inputUseMachineSettings" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                                 <option value="no_not" title="Keep current and don't save to machine">
-                                    &nbsp;❌&nbsp;No (keep)
+                                    &nbsp;❌&nbsp;No&nbsp;&nbsp;(keep)
                                 </option>
                                 <option value="no_save" title="Keep current and save to machine">
-                                    &nbsp;✖️&nbsp;No (keep & save)
+                                    &nbsp;✖️&nbsp;No&nbsp;&nbsp;(keep & save)
                                 </option>
                                 <option value="ask" title="Ask what to do">
                                     &nbsp;❔&nbsp;Ask
                                 </option>
                                 <option value="yes_save" title="Overwrite current and save to machine" selected>
-                                    &nbsp;✅&nbsp;Yes (load & save)
+                                    &nbsp;✅&nbsp;Yes&nbsp;(load & save)
                                 </option>
                                 <option value="yes_not" title="Overwrite current and don't save to machine">
-                                    &nbsp;☑️&nbsp;Yes (load & keep)
+                                    &nbsp;☑️&nbsp;Yes&nbsp;(load & keep)
                                 </option>
                             </select>
                         </div>
 
-                        <div class="input-group" data-system-level="2">
+                        <div class="input-group" data-system-level="200">
                             <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                             <select id="decimalSymbol" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
@@ -2685,7 +2744,7 @@
                             </select>
                         </div>
 
-                        <div class="input-group" data-system-level="2">
+                        <div class="input-group" data-system-level="200">
                             <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                             <select id="delimiterSymbol" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
@@ -2730,7 +2789,7 @@
                                    data-essence="switch" checked>
                         </div>
 
-                        <button id="clearCalculationsButton" class="controlBtn" data-system-level="1">
+                        <button id="clearCalculationsButton" class="controlBtn" data-system-level="100">
                             🧼 Clear calculations
                         </button>
 
@@ -2743,12 +2802,12 @@
                             🐞 Report bug
                         </button>
 
-                        <button id="clearAllButton" class="controlBtn controlElement" data-system-level="4"
+                        <button id="clearAllButton" class="controlBtn controlElement" data-system-level="400"
                                 style="color: var(--stopEpx-color);">
                             🗑️ Clear All Data
                         </button>
 
-                        <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="2">
+                        <div style="padding: 0; margin: 0; display: flex; gap: 0;" data-system-level="200">
                             <button id="exportSettingButton" class="controlBtn controlElement"
                                     style="width: 100px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;  color: var(--text-info-3-color); font-size: 12px;">
                                 ↗️ Export settings <!-- 📁📤 -->
@@ -2765,14 +2824,14 @@
                         </button>
 
                         <button id="updateMachButton" class="controlBtn controlElement machineControlElement"
-                                data-system-level="1"
+                                data-system-level="100"
                                 style="color: var(--text-info-3-color);">
                             ⬆️ Update device firmware
                         </button>
 
 
                         <button id="rebootButton" class="controlBtn controlElement machineControlElement"
-                                data-system-level="1"
+                                data-system-level="100"
                                 style="color: var(--text-info-3-color);">
                             🔂 Reboot device
                         </button>
@@ -2798,12 +2857,12 @@
                             <pre id="regularLog"></pre>
                         </div>
 
-                        <div style="display: flex; gap: var(--gap); flex-flow: column;" data-system-level="2">
-                            <button id="toggleScrollBtn" class="logBtn" data-system-level="2">
+                        <div style="display: flex; gap: var(--gap); flex-flow: column;" data-system-level="200">
+                            <button id="toggleScrollBtn" class="logBtn" data-system-level="200">
                                 📌 Auto-scroll: ON
                             </button>
 
-                            <button id="toggleLineLockBtn" class="logBtn prohibited" data-system-level="3">
+                            <button id="toggleLineLockBtn" class="logBtn prohibited" data-system-level="300">
                                 🔒 Fix Scroll: ON
                             </button>
                         </div>
@@ -2812,12 +2871,12 @@
                     <div class="logContainer">
                         <pre id="loadingLog"></pre>
 
-                        <button id="clearRegularLog" class="logBtn" data-system-level="1">
+                        <button id="clearRegularLog" class="logBtn" data-system-level="100">
                             🗑️ Clear Log
                         </button>
                     </div>
 
-                    <div class="logContainer machineControlElement controlElement" data-system-level="1">
+                    <div class="logContainer machineControlElement controlElement" data-system-level="100">
                         <div style="height: 40px; width: 100%">
                             <label for="commandInput"></label>
                             <textarea id="commandInput" placeholder="Enter command..."></textarea>
@@ -6000,7 +6059,7 @@
                 let capacities = [];
                 let outputs = [];
                 let present = Array(loadCellNum).fill(true);
-                if (systemLevel >= 2) {
+                if (systemLevel >= 200) {
                     for (let i = 0; i < loadCellNum; i++) {
                         const active = $ID(`activateLoadcell${i + 1}`).checked;
                         present[i] = active;
@@ -7754,21 +7813,22 @@
             totalErrRate = [];
 
 
-            const userLcSelectionLevel = 2;
-
-            if (systemLevel >= userLcSelectionLevel) {
+            const basicLCCapId = "inputLoadcellCapacity";
+            const basicLCOutId = "inputLoadcellCapacity";
+            const isLCComplex = isUnavailable($ID(basicLCCapId));
+            if (isLCComplex) {
                 for (let i = 0; i < loadcellCount; i++) {
                     const active = $ID(`activateLoadcell${i + 1}`).checked;
                     if (active === true) {
                         loadcellsInfo.loadcellsIDX.push(i)
                         loadcellsInfo.presentLoadcells[i] = true;
-                        loadcellsInfo.capacities[i] = getInputNumDefAbsInt(`inputLoadcellCapacity${i + 1}`, NaN);
-                        loadcellsInfo.outputs[i] = getInputNumDefAbsInt(`inputLoadcellOutput${i + 1}`, NaN);
+                        loadcellsInfo.capacities[i] = getInputNumDefAbsInt(`${basicLCCapId}${i + 1}`, NaN);
+                        loadcellsInfo.outputs[i] = getInputNumDefAbsInt(`${basicLCOutId}${i + 1}`, NaN);
                     }
                 }
             } else {
-                const loadcellCapacity = getInputNumDefAbsInt("inputLoadcellCapacity", NaN);
-                const loadcellOutput = getInputNumDefAbsFlt("inputLoadcellOutput", NaN);
+                const loadcellCapacity = getInputNumDefAbsInt(basicLCCapId, NaN);
+                const loadcellOutput = getInputNumDefAbsFlt(basicLCOutId, NaN);
 
                 loadcellsInfo.presentLoadcells = Array(loadcellCount).fill(true);
                 loadcellsInfo.loadcellsIDX = Array.from({length: loadcellCount}, (_, i) => i);
@@ -7782,7 +7842,7 @@
             experimentHoldConstantForce = false;
             stoppingForceLimit = Number.POSITIVE_INFINITY;
             holdForceTimeMs = null;
-            let responsiveness = 0;
+            const responsiveness = {Kp: NaN, Ki: NaN};
 
 
             const suffixes = ["-inb", "-hbr"]; // TODO: doplnit i pro Flex ("-flx") a "basic" mít jako default
@@ -7792,10 +7852,23 @@
                 experimentDoubleSpeed = true;
 
                 if (experimentType.endsWith("-hbr")) {
+
                     stoppingForceLimit = getInputNumDefAbsFlt("inputStopForce", NaN);
                     holdForceTimeMs = Math.round(getInputNumDefAbsFlt("inputEndDelay", NaN) * 1_000);
                     experimentHoldConstantForce = true;
-                    responsiveness = getInputNumDefAbsFlt("inputResponseCoefPI", NaN);
+
+                    const basicPIId = "inputResponseCoefPI";
+                    const isPIComplex = isUnavailable($ID(basicPIId));
+                    if (isPIComplex) {
+                        const respKp = getInputNumDefAbsFlt(basicPIId.replace('PI', 'Kp'), NaN);
+                        const respKi = getInputNumDefAbsFlt(basicPIId.replace('PI', 'Ki'), NaN);
+                        responsiveness.Kp = respKp;
+                        responsiveness.Ki = respKi;
+                    } else {
+                        const respCoef = getInputNumDefAbsFlt(basicPIId, NaN);
+                        responsiveness.Kp = respCoef;
+                        responsiveness.Ki = respCoef;
+                    }
                 }
             }
 
@@ -7967,11 +8040,24 @@
                     $ID("inputDataInterval").value = minDataIntervalHold;
                 }
 
-                if (!isNum(responsiveness) || responsiveness <= 0) {
-                    console.warn(`\n⚠️ Responsiveness coefficient must be equal or greater than 0.`);
-                    await logMessage(`⚠️ Responsiveness coefficient must be equal or greater than 0.`);
-                    alert(`⚠️ Responsiveness coefficient must be equal or greater than 0.`);
-                    throwInternalError("Responsiveness coefficient error");
+                if ((!isNum(responsiveness.Kp) && !isNum(responsiveness.Ki)) ||
+                    (responsiveness.Kp <= 0 && responsiveness.Ki <= 0)) {
+                    console.warn(`\n⚠️ Responsiveness coefficients must be equal or greater than 0.`);
+                    await logMessage(`⚠️ Responsiveness coefficients must be equal or greater than 0.`);
+                    alert(`⚠️ Responsiveness coefficients must be equal or greater than 0.`);
+                    throwInternalError("Responsiveness coefficients error");
+                }
+                if (!isNum(responsiveness.Kp) || responsiveness.Kp <= 0) {
+                    console.warn(`\n⚠️ Responsiveness coefficient Kp must be equal or greater than 0.`);
+                    await logMessage(`⚠️ Responsiveness coefficient Kp must be equal or greater than 0.`);
+                    alert(`⚠️ Responsiveness coefficient Kp must be equal or greater than 0.`);
+                    throwInternalError("Responsiveness coefficient Kp error");
+                }
+                if (!isNum(responsiveness.Ki) || responsiveness.Ki <= 0) {
+                    console.warn(`\n⚠️ Responsiveness coefficient Ki must be equal or greater than 0.`);
+                    await logMessage(`⚠️ Responsiveness coefficient Ki must be equal or greater than 0.`);
+                    alert(`⚠️ Responsiveness coefficient Ki must be equal or greater than 0.`);
+                    throwInternalError("Responsiveness coefficient Ki error");
                 }
             }
 
@@ -8180,7 +8266,7 @@
             // indexes of valid fields => present Loadcells indexes
             const presentLC = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
 
-            if (!(systemLevel >= userLcSelectionLevel)) {
+            if (!isLCComplex) {
                 loadcellsInfo.presentLoadcells = validFields;
                 loadcellsInfo.loadcellsIDX = presentLC;
             }
@@ -8188,7 +8274,7 @@
             // --- 5) Check for errors ---
             // If more one force is not eaqule to zero, than Stop and Alert
             if (!experimentType.endsWith("-basic")) {
-                if (validFields.length > 1 || (systemLevel >= userLcSelectionLevel && loadcellsInfo.loadcellsIDX.length > 1)) {
+                if (validFields.length > 1 || (isLCComplex && loadcellsInfo.loadcellsIDX.length > 1)) {
                     console.warn("\n⚠️ Multiple loadcells are connected.");
                     await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
@@ -8196,13 +8282,13 @@
 
                 }
             }
-            if (validFields.length === 0 || (systemLevel >= userLcSelectionLevel && loadcellsInfo.loadcellsIDX.length === 0)) {
+            if (validFields.length === 0 || (isLCComplex && loadcellsInfo.loadcellsIDX.length === 0)) {
                 console.warn("\n⚠️ No loadcell is connected.");
                 await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                 alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                 throwInternalError("No loadcell connected");
             }
-            if (systemLevel >= userLcSelectionLevel) {
+            if (isLCComplex) {
                 if (!loadcellsInfo.loadcellsIDX.every(lc => presentLC.includes(lc))) {
                     console.warn("\n⚠️ Activated Loadcell in the App does not match detected loadcells in Machine.");
                     await logMessage("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
@@ -8313,9 +8399,9 @@
                     //      Target force
                     setForceN: roundDecimalFast(stoppingForceLimit, precisionForce),
                     //      Proportional gain                           (default: 0.200)
-                    Kp: roundDecimalFast(0.200 * responsiveness, 6),
+                    Kp: roundDecimalFast(0.200 * responsiveness.Kp, 6),
                     //      Integral gain                               (default: 0.030)
-                    Ki: roundDecimalFast(0.030 * responsiveness, 6),
+                    Ki: roundDecimalFast(0.030 * responsiveness.Ki, 6),
                     //      Deadband set to 115% of total error rate
                     deadbandN: roundDecimalFast(err * 1.15, precisionForce),
                     //      Minimum speed during holding
@@ -9627,7 +9713,7 @@
         // --- úvodní (nečíslovaná) dvojice ---
         const baseCap = $MAKE('div');
         baseCap.className = 'input-group';
-        baseCap.dataset.systemLevel = '0-2';
+        baseCap.dataset.systemLevel = '0-200';
         baseCap.innerHTML = `
       <label for="inputLoadcellCapacity">
         Loadcell Capacity<span class="units-text"></span>:
@@ -9639,7 +9725,7 @@
 
         const baseOut = $MAKE('div');
         baseOut.className = 'input-group';
-        baseOut.dataset.systemLevel = '1-2';
+        baseOut.dataset.systemLevel = '100-200';
         baseOut.innerHTML = `
       <label for="inputLoadcellOutput">
         Loadcell Rated Output<span class="units-text"></span>:
@@ -9656,7 +9742,7 @@
         for (let i = 1; i <= n; i++) {
             const cap = $MAKE('div');
             cap.className = 'input-group';
-            cap.dataset.systemLevel = '2';
+            cap.dataset.systemLevel = '200';
             cap.innerHTML = `
         <div style="display: inline-flex; gap: var(--gap); min-width: var(--inputLabelWidth);
                     justify-content: flex-end; align-items: center;">
@@ -9675,7 +9761,7 @@
 
             const out = $MAKE('div');
             out.className = 'input-group';
-            out.dataset.systemLevel = '2';
+            out.dataset.systemLevel = '200';
             out.innerHTML = `
         <label for="inputLoadcellOutput${i}">
           <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
@@ -12775,32 +12861,38 @@
         $ID('systemLevelSelect').addEventListener('change', (event) => {
             const selectedLevel = event.target.value.toLowerCase().trim();
             switch (selectedLevel) {
-                case 'basic':
-                    systemLevel = 0;
-                    break;
-                case 'standard':
+                case 'minimal':
                     systemLevel = 1;
                     break;
+                case 'basic':
+                    systemLevel = 50;
+                    break;
+                case 'standard':
+                    systemLevel = 100;
+                    break;
                 case 'advanced':
-                    systemLevel = 2;
+                    systemLevel = 200;
                     break;
                 case 'expert':
-                    systemLevel = 3;
+                    systemLevel = 300;
+                    break;
+                case 'emergency':
+                    systemLevel = 400;
                     break;
                 case 'admin':
-                    systemLevel = 4;
+                    systemLevel = 600;
                     break;
                 case 'operator':
-                    systemLevel = 5;
+                    systemLevel = 700;
                     break;
                 case 'service':
-                    systemLevel = 6;
+                    systemLevel = 800;
                     break;
                 case 'developer':
-                    systemLevel = 7;
+                    systemLevel = 999;
                     break;
                 case 'god':
-                    systemLevel = 8;
+                    systemLevel = 1000;
                     break;
                 default:
                     systemLevel = 0;
