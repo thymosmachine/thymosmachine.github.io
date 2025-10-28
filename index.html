@@ -1586,6 +1586,8 @@
         #preloadScreen {
             position: fixed;
             inset: 0; /* top:0; right:0; bottom:0; left:0 */
+            top: -8px;
+            left: -8px;
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -1623,14 +1625,16 @@
             height: auto;
             aspect-ratio: 1/1;
 
-            animation: spin .6s linear infinite;
-            transform-origin: center;
             transform-box: fill-box; /* kvůli Firefoxu */
+            will-change: transform; /* vytvoří vlastní vrstvu */
+            /* transform: translateZ(0); */ /* alternativa, pokud by will-change nestačilo */
+            animation: spin .6s linear infinite;
+            transform-origin: center; /* pro jistotu */
         }
 
         @keyframes spin {
             to {
-                transform: rotate(360deg);
+                transform: rotate(1turn);
             }
         }
 
@@ -6547,62 +6551,128 @@
 
     }
 
-    function updateChartNEW(inputData) {
+    function updateChart(inputData) {
         if (!isObj(inputData)) return;
 
-        // check if all arrays in inputData are same length
-        inputData.time = checkArray(inputData.time);
-        inputData.position = checkArray(inputData.position);
-        inputData.force = checkArray(inputData.force);
-        inputData.force = inputData.force.map(arr => checkArray(arr));
-        if (isDef(inputData.photoIndex)) inputData.photoIndex = checkArray(inputData.photoIndex);
+        // --- Helpers ---
+        const isArr = Array.isArray;
+        const isNumSafe = v => typeof v === 'number' && Number.isFinite(v);
 
+        // Normalizuje scalar -> array o délce len (využito pro jednotné zpracování)
+        const normalizeSeries = (value, len, mapper = v => v) => {
+            if (isArr(value)) return value.map(mapper);
+            return [mapper(value)]; // když scalar, udělej jednoprvkové pole
+        };
 
-        const lengths = [
-            inputData.time.length,
-            inputData.position.length,
-            ...inputData.force.map(arr => arr.length),
-            isDef(inputData.photoIndex) ? inputData.photoIndex.length : null
-        ];
-        const allSameLength = lengths.every(len => isVoid(len) || len === lengths[0]);
-        if (!allSameLength) {
-            console.error("❌ Input data arrays are not of the same length:", lengths);
-            return;
+        // Vytvoř značky pro foto: číslo -> 0, jinak null
+        const toPhotoMarker = v => (isNumSafe(v) ? 0 : null);
+
+        // Po přidání batch dat drž maximální délku všech sérií
+        const trimToMax = () => {
+            while (timeDataChart?.length > maxDataPoints) {
+                timeDataChart.shift();
+                positionDataChart.shift();
+                forceDataChart.forEach(ds => ds?.shift());
+                photoDataChart.shift();
+            }
+        };
+
+        // --- 1) Normalizace vstupů na pole ---
+        // time a position mohou být number nebo array
+        const timeArr = normalizeSeries(inputData.time);
+        const positionArr = normalizeSeries(inputData.position);
+
+        // photoIndex může být number nebo array -> přemapujeme na markery (0/null)
+        const photoArr = normalizeSeries(inputData.photoIndex, undefined, toPhotoMarker);
+
+        // force je vždy array; může být [number, number, ...] nebo [[...],[...],...]
+        // Nejprve zjistíme, zda je "vnořená" forma
+        const forceInput = Array.isArray(inputData.force) ? inputData.force : [];
+        const forceIsNested = forceInput.some(v => Array.isArray(v));
+
+        // Pokud není vnořené, bereme to jako více kanálů po scalaru/array-i délky 1
+        // -> znormalizujeme na pole kanálů, kde každý kanál je pole o stejné délce jako time/position.
+        let forceChannels = [];
+
+        // --- 2) Ověření a sjednocení délek ---
+        // Vypočti cílovou délku batchu:
+        const lenTime = timeArr.length;
+        const lenPos = positionArr.length;
+        const lenPhoto = photoArr.length;
+
+        // Pokud některý ze vstupů chybí nebo není číslo/array s čísly, neaktualizuj
+        const allNumsOrNull = arr => arr.every(v => v == null || isNumSafe(v));
+        if (!lenTime || !lenPos || !lenPhoto) return;
+
+        // Všechny série musí mít stejnou délku
+        if (!(lenTime === lenPos && lenPos === lenPhoto)) return;
+
+        if (!allNumsOrNull(timeArr) || !allNumsOrNull(positionArr)) return;
+
+        if (forceIsNested) {
+            // force je [[...],[...],...]; ověř, že každý kanál má správnou délku
+            for (const ch of forceInput) {
+                if (!Array.isArray(ch) || ch.length !== lenTime) return;
+                // povolíme null/undefined, jinak čísla
+                if (!allNumsOrNull(ch)) return;
+            }
+            forceChannels = forceInput.map(ch => ch.slice());
+        } else {
+            // force je [scalar|array(1?), ...] – každý prvek je hodnota pro daný kanál na jeden časový krok
+            // Pokud je batch (lenTime > 1), očekáváme, že prvky jsou scalary opakované pro každý vzorek,
+            // nebo arraye délky lenTime. Sjednotíme to na pole kanálů s délkou lenTime.
+            for (const v of forceInput) {
+                if (Array.isArray(v)) {
+                    if (v.length !== lenTime || !allNumsOrNull(v)) return;
+                    forceChannels.push(v.slice());
+                } else {
+                    // scalar -> replikuj přes celý batch
+                    if (v != null && !isNumSafe(v)) return;
+                    forceChannels.push(Array(lenTime).fill(v));
+                }
+            }
         }
 
-        for (let i = 0; i < lengths[0]; i++) {
-
-
-            const validTime = isNum(inputData.time[i]);
-            const validPos = isNum(inputData.position[i]);
-
-            // Check if the data is valid
-            if ((!validTime || !validPos)) { // isExperimentRunning &&
-                //  || data.force.every(x => !isNum(x))   ///    || data.force.some(!isNum)
-                return;
-            }
-
-            // Add new data points
-            timeDataChart.push(inputData.time[i]);
-            positionDataChart.push(inputData.position[i]);
-            inputData.force.forEach((value, index) => forceDataChart[index].push(value[i]));
-            photoDataChart.push(isNum(inputData.photoIndex)[i] ? 0 : null); // Mark photo event
-
-
-            // Maintain max data points
-            if (timeDataChart?.length > maxDataPoints) {
-                timeDataChart?.shift();
-                positionDataChart?.shift();
-                forceDataChart?.forEach(dataset => dataset?.shift());
-                photoDataChart?.shift();
-            }
+        // --- 3) Zajisti, že existují odpovídající datasets ve forceDataChart ---
+        // forceDataChart je pole datasetů (po jednom na kanál)
+        // Pokud máme více kanálů než existuje datasetů, inicializuj je.
+        for (let i = 0; i < forceChannels.length; i++) {
+            if (!forceDataChart[i]) forceDataChart[i] = [];
         }
 
-        // Update charts
+        // Pokud máme v grafu více datasetů než aktuálně přichází kanálů, ty navíc ponecháme beze změny.
+
+        // --- 4) Push všech bodů (batch-safe) ---
+        for (let i = 0; i < lenTime; i++) {
+            const t = timeArr[i];
+            const p = positionArr[i];
+            const photo = photoArr[i];
+
+            // Ověř čísla u time/position (null pro photo je OK)
+            if (!isNumSafe(t) || !isNumSafe(p)) return;
+
+            timeDataChart?.push(t);
+            positionDataChart?.push(p);
+            photoDataChart?.push(photo);
+
+            // force kanály
+            for (let ch = 0; ch < forceChannels.length; ch++) {
+                const val = forceChannels[ch][i];
+                // povolíme null/undefined, jinak číslo
+                if (val != null && !isNumSafe(val)) return;
+                forceDataChart[ch]?.push(val);
+            }
+
+            // průběžné ořezávání, aby to nebouchlo u velkých batchů
+            trimToMax();
+        }
+
+        // --- 5) Aktualizace grafů ---
+        // Sestav datová pole: [hlavní série..., force..., photo]
         timeChart.setData([timeDataChart, ...forceDataChart, photoDataChart]);
         positionChart.setData([positionDataChart, ...forceDataChart, photoDataChart]);
-
     }
+
 
     async function reloadCharts() {
         await loadDataFromDBToChart(liveUpdate);  // Load data from DB to charts will wait for the data to be loaded
@@ -12624,7 +12694,7 @@
             return;
         }
 
-        preloadScreen?.getBoundingClientRect(); // force reflow
+        preloadScreen.getBoundingClientRect(); // force reflow
         preloadScreen.style.opacity = "0";
         document.body.style.overflowY = "auto";
 
