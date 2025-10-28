@@ -1734,10 +1734,10 @@
                         title="Connect to the Thymos machine by selecting USB port.">
                     🔌 Connect via<br>USB
                 </button>
-                <div class="inlineDiv" data-system-level="3">
+                <div class="inlineDiv connectElement" data-system-level="3">
                     <label for="inputNumBaudRate">Baud-Rate:</label>
-                    <input data-input-type="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
-                           value="921600" min="1" max="921600" step="100">
+                    <input data-input-type="intInput" type="number" id="inputNumBaudRate"
+                           placeholder="Baud-Rate" value="921600" min="1" max="921600" step="100">
                 </div>
             </div>
             <div class="inlineDiv" data-system-level="5">
@@ -2447,7 +2447,7 @@
                         <div class="input-group">
                             <label for="inputSpeedForward">Loading speed<span class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputSpeedForward" class="expInput"
-                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed"
+                                   value="0.5" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed"
                                    required>
                         </div>
 
@@ -5194,6 +5194,8 @@
         else exceptType = null;
         UI.connectBtns?.forEach(btn =>
             btn.classList.toggle('disabled', isNonEmptyStr(exceptType) ? (String(btn.dataset.connectionType)?.toLowerCase().trim() === exceptType ? false : lock) : lock));
+        UI.connectElement?.forEach(el =>
+            el.classList.toggle('disabled', lock));
     }
 
     function controlContainerWidth(container) {
@@ -5596,10 +5598,7 @@
 
 <script>
     // /////// Logging Messages /////////
-    const visibleLines = Math.floor(UI.loadingLogContainer.clientHeight / 16);
-    UI.loadingLogContainer.style.fontFamily = "monospace";
-    UI.loadingLogContainer.style.fontSize = "14px";
-    UI.loadingLogContainer.style.overflow = "hidden";
+    let visibleLines;
 
     // Global array for storing log messages in memory for display on the canvas
     // let logs = [];
@@ -6857,22 +6856,25 @@
             "The device was lost.",
             "The port is no longer available.",
             "Device not responding",
+            "openSerial",
+            "connectSerial",
+            "readserial",
         ];
 
         const reconnectTurnOff = true;
 
         if (reconnectTurnOff &&
-            (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError")) {
+            (connectionErrors.some(msg => error.message.includes(msg) || msg === context) || error.name === "NetworkError")) {
 
-            if (isExperimentRunning) {
-                await endMeasuring(0, {
-                    ednStatus: 'connection lost',
-                    endText: "❌ Experiment stopped due to connection loss.",
-                    immediateText: "Connection lost! Stopping experiment..."
-                });
-                UI.experimentStageLabel.textContent = `Error`;
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
-            }
+            // if (isExperimentRunning) {
+            //     await endMeasuring(0, {
+            //         ednStatus: 'connection lost',
+            //         endText: "❌ Experiment stopped due to connection loss.",
+            //         immediateText: "Connection lost! Stopping experiment..."
+            //     });
+            //     UI.experimentStageLabel.textContent = `Error`;
+            //     document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
+            // }
 
             await disconnectSerial({override: true});
 
@@ -6909,7 +6911,6 @@
 
         const endPosition = await measurePosition();
         if (!(isNum(tareValues.position) && isNum(endPosition))) {
-            endedMoving();
             return;
         }
 
@@ -6947,7 +6948,11 @@
 
     const lockMovement = () => lockElements(movementElements);
     const lockMovementExcept = (exceptEl) => lockElementsExcept(movementElements, exceptEl);
-    const unlockMovement = () => unlockElements(movementElements);
+    const unlockMovement = () => {
+        let exceptEl = null;
+        if (!tareValues.position) exceptEl = UI.returnBtn;
+        unlockElementsExcept(movementElements, exceptEl);
+    }
 
     const lockControls = () => lockElements(controlElements);
     const lockControlsExcept = (exceptEl) => lockElementsExcept(controlElements, exceptEl);
@@ -6991,6 +6996,19 @@
         elements?.forEach((el) => {
             el?.classList.remove("disabled");
             enableInputsAndLabelsIn(el);
+        });
+    }
+
+    function unlockElementsExcept(elements, exceptEl) {
+        elements?.forEach(el => {
+            const isExcept = el === exceptEl || el?.contains?.(exceptEl);
+            if (!isExcept) {
+                el?.classList?.remove?.("disabled");
+                enableInputsAndLabelsIn(el);
+            } else {
+                el?.classList?.add("disabled");
+                disableInputsAndLabelsIn(el);
+            }
         });
     }
 
@@ -7063,6 +7081,10 @@
         sendCommandGeneral(`MC SET SPEEDMM ${speed}`, timeOut);
 
         if (updateCurrent === true) currentSpeed = speed;
+        setSpeedUI(speed);
+    }
+
+    function setSpeedUI(speed) {
         UI.speedSlider.value = speed;
         UI.speedLabel.value = `${speed.toFixed(2)}`;
     }
@@ -7076,6 +7098,10 @@
         sendCommandGeneral(`MC SET ACCELMM ${acceleration}`, timeOut);
 
         if (updateCurrent === true) currentAcceleration = acceleration;
+        setAccelerationUI(acceleration);
+    }
+
+    function setAccelerationUI(acceleration) {
         UI.accelerationSlider.value = acceleration;
         UI.accelerationLabel.value = `${acceleration.toFixed(2)}`;
     }
@@ -7667,6 +7693,18 @@
         const minLoadCap = 5e-4;
         const minLoadOut = 5e-4;
 
+        let internalError = false;
+        const throwInternalError = (msg) => {
+            internalError = true;
+            throw new Error(msg);
+        };
+
+        const disableCharts = ({lcCount = loadCellNum, show = false} = {}) => {
+            for (let i = 1; i <= (lcCount + 1); i++) {
+                if (timeChart) timeChart.setSeries(i, {show: show});
+                if (positionChart) positionChart.setSeries(i, {show: show});
+            }
+        };
 
         try {
             UI.experimentStageLabel.textContent = `Preparing`;
@@ -7693,7 +7731,7 @@
             forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", Number.POSITIVE_INFINITY);
 
 
-            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNum(loadCellNum)) throwInternalError(`Total Loadcell count is not defined: ${loadCellNum}`);
 
             const loadcellCount = loadCellNum; // TODO: Change by user selection if needed
 
@@ -7773,7 +7811,7 @@
                 console.info("\n\t\t➡️ Experiment type: Position controlled");
                 await logMessage("\t\t➡️ Experiment type: Position controlled");
             } else {
-                throw new Error("Unknown Experiment type error");
+                throwInternalError("Unknown Experiment type error");
             }
 
             calibrationStatus = await getCalibrationStatus(2_000);
@@ -7786,7 +7824,7 @@
                     console.warn(`\n⚠️ Distance must be greater than ${minDistance} mm.`);
                     await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
                     alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
-                    throw new Error("Distance error");
+                    throwInternalError("Distance error");
                 }
             }
 
@@ -7794,55 +7832,55 @@
                 console.warn(`\n⚠️ Number of cycles must be a positive integer bigger than 0.`);
                 await logMessage(`⚠️ Number of cycles must be a positive integer bigger than 0.`);
                 alert(`⚠️ Number of cycles must be a positive integer bigger than 0.`);
-                throw new Error("Cycles count error");
+                throwInternalError("Cycles count error");
             }
 
             if (!isNum(speedForward_mmps) || speedForward_mmps < minFSpeed) {
                 console.warn(`\n⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 await logMessage(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
                 alert(`⚠️ Speed must be greater than ${minFSpeed} mm.`);
-                throw new Error("Speed error");
+                throwInternalError("Speed error");
             } else if (speedForward_mmps > maxFSpeed) {
                 console.warn(`\n⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 await logMessage(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
                 alert(`⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
-                throw new Error("Speed error");
+                throwInternalError("Speed error");
             }
 
             if (!isNum(dataInterval_us) || dataInterval_us < 1) {
                 console.warn(`\n⚠️ Data interval must be greater than 1 µs.`);
                 await logMessage(`⚠️ Data interval must be greater than 1 µs.`);
                 alert(`⚠️ Data interval must be greater than 1 µs.`);
-                throw new Error("Data interval error");
+                throwInternalError("Data interval error");
             }
 
             if (!isArr(loadcellsInfo.loadcellsIDX) || loadcellsInfo.loadcellsIDX.length === 0) {
                 console.warn(`\n⚠️ At least one loadcell must be activated.`);
                 await logMessage(`⚠️ At least one loadcell must be activated.`);
                 alert(`⚠️ At least one loadcell must be activated.`);
-                throw new Error("Loadcell activation error");
+                throwInternalError("Loadcell activation error");
             }
             if (!isArr(loadcellsInfo.capacities) || loadcellsInfo.capacities.every(cap => !isNum(cap))) {
                 console.warn(`\n⚠️ At least one loadcell must be activated with valid capacity.`);
                 await logMessage(`⚠️ At least one loadcell must be activated with valid capacity.`);
                 alert(`⚠️ At least one loadcell must be activated with valid capacity.`);
-                throw new Error("Loadcell activation error");
+                throwInternalError("Loadcell activation error");
             } else if (loadcellsInfo.capacities.some(cap => isNum(cap) && cap < minLoadCap)) {
                 console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
                 alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
-                throw new Error("Loadcell capacity error");
+                throwInternalError("Loadcell capacity error");
             }
             if (!isArr(loadcellsInfo.outputs) || loadcellsInfo.outputs.every(out => !isNum(out))) {
                 console.warn(`\n⚠️ At least one loadcell must be activated with valid output.`);
                 await logMessage(`⚠️ At least one loadcell must be activated with valid output.`);
                 alert(`⚠️ At least one loadcell must be activated with valid output.`);
-                throw new Error("Loadcell activation error");
+                throwInternalError("Loadcell activation error");
             } else if (loadcellsInfo.outputs.some(out => isNum(out) && out < minLoadOut)) {
                 console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
                 alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
-                throw new Error("Loadcell output error");
+                throwInternalError("Loadcell output error");
             }
 
             if (experimentDoubleSpeed === true) {
@@ -7850,17 +7888,17 @@
                     console.warn(`\n⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     await logMessage(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                     alert(`⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
-                    throw new Error("Initial speed error");
+                    throwInternalError("Initial speed error");
                 } else if (initialSpeed_mmps > maxFSpeed) {
                     console.warn(`\n⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                     await logMessage(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
                     alert(`⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
-                    throw new Error("Initial speed error");
+                    throwInternalError("Initial speed error");
                 } else if (!isValidInputNum(initialForceLim_N)) {
                     console.warn(`\n⚠️ Initial force load must be greater than 0 N.`);
                     await logMessage(`⚠️ Initial force load must be greater than 0 N.`);
                     alert(`⚠️ Initial force load must be greater than 0 N.`);
-                    throw new Error("Initial force load error");
+                    throwInternalError("Initial force load error");
                 }
             }
 
@@ -7869,7 +7907,7 @@
                     console.warn(`\n⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
                     await logMessage(`⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
                     alert(`⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
-                    throw new Error("Photo interval error");
+                    throwInternalError("Photo interval error");
                 }
                 if (photoInterval_ms * 1_000 < dataInterval_us) {
                     console.warn("\n⚠️ Photo interval must be bigger than data interval.");
@@ -7886,21 +7924,21 @@
                     console.warn(`\n⚠️ Stopping force must be greater than 0 N.`);
                     await logMessage(`⚠️ Stopping force must be greater than 0 N.`);
                     alert(`⚠️ Stopping force must be greater than 0 N.`);
-                    throw new Error("Stopping force error");
+                    throwInternalError("Stopping force error");
                 }
 
                 if (stoppingForceLimit <= initialForceLim_N) {
                     console.warn(`\n⚠️ Stopping force must be greater than initial force.`);
                     await logMessage(`⚠️ Stopping force must be greater than initial force.`);
                     alert(`⚠️ Stopping force must be greater than initial force.`);
-                    throw new Error("Stopping force error");
+                    throwInternalError("Stopping force error");
                 }
 
                 if (!isNum(holdForceTimeMs) || holdForceTimeMs < minInt || (holdForceTimeMs / 1_000) < 0) {
                     console.warn(`\n⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
                     await logMessage(`⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
                     alert(`⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
-                    throw new Error("Hold force time error");
+                    throwInternalError("Hold force time error");
                 }
 
                 const minDataInterval = 25_000;
@@ -7925,15 +7963,15 @@
                     console.warn(`\n⚠️ Responsiveness coefficient must be equal or greater than 0.`);
                     await logMessage(`⚠️ Responsiveness coefficient must be equal or greater than 0.`);
                     alert(`⚠️ Responsiveness coefficient must be equal or greater than 0.`);
-                    throw new Error("Responsiveness coefficient error");
+                    throwInternalError("Responsiveness coefficient error");
                 }
             }
 
 
-            if (isEmptyStr(expControl)) throw new Error("Experiment control is not set.");
-            if (isUndefined(experimentEndLimits[expControl])) throw new Error(`Experiment end limit for ${expControl} is not set.`);
-            if (isUndefined(parsedData[expControl])) throw new Error(`Parsed data for ${expControl} is not available.`);
-            if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throw new Error("Experiment end limits are not properly set.");
+            if (isEmptyStr(expControl)) throwInternalError("Experiment control is not set.");
+            if (isUndefined(experimentEndLimits[expControl])) throwInternalError(`Experiment end limit for ${expControl} is not set.`);
+            if (isUndefined(parsedData[expControl])) throwInternalError(`Parsed data for ${expControl} is not available.`);
+            if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throwInternalError("Experiment end limits are not properly set.");
 
 
             if (!calibrationStatus) {
@@ -7964,7 +8002,7 @@
                 //         if (!isConnected) {
                 //             console.warn("\n⚠️ Serial connection lost during calibration.");
                 //             await logMessage("⚠️ Serial connection lost during calibration.");
-                //             throw new Error("Serial connection lost during calibration.");
+                //             throwInternalError("Serial connection lost during calibration.");
                 //         }
                 //     }
 
@@ -7977,7 +8015,7 @@
                 console.error("❌ Calibration is required to start the experiment.");
                 alert("❌ Calibration is required to start the experiment.");
                 // }
-                throw new Error("Calibration is required to start the experiment.");
+                throwInternalError("Calibration is required to start the experiment.");
             }
             // =================================
             // =================================
@@ -7986,12 +8024,7 @@
             await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
             await console.info("🧪 Starting experiment...");
             UI.loadingLogContainer.style.background = "black";
-
-
-            for (let i = 1; i <= (loadcellCount + 1); i++) {
-                if (timeChart) timeChart.setSeries(i, {show: false});
-                if (positionChart) positionChart.setSeries(i, {show: false});
-            }
+            disableCharts({lcCount: loadcellCount});
 
 
             if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('before')) {
@@ -8003,7 +8036,7 @@
             await sleep(5);
             await clearDatabase();
             await clearCharts();
-            if (!liveUpdate) await chartUpdate();
+            if (liveUpdate) await chartUpdate();
 
 
             // === Progress Bar Setup ===
@@ -8026,7 +8059,7 @@
 
             timeData = [];
             positionData = [];
-            forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+            forceData = Array(catchVal(loadcellCount, 0, isNum)).fill(null).map(() => []);
             measureForces = Array(loadcellCount).fill(null).map(() => []);
             tareValues.force = Array(loadcellCount).fill(0);
 
@@ -8094,7 +8127,7 @@
 
             // === Prepare Data Collection ===
             tareValues.position = await measurePosition();
-            $ID("returnPositionExperimentBtn").textContent = `↩️ Return to start position: ${tareValues.position} mm`;
+            UI.returnBtn.textContent = `↩️ Return to start position: ${tareValues.position} mm`;
 
             loadSignCorrections = Array(loadcellCount).fill(displacementSignCorrection * -1);
             for (let i = 0; i < loadcellCount; i++) {
@@ -8104,11 +8137,12 @@
 
             UI.experimentStageLabel.textContent = `Tarring`;
 
-            await sendCommandGeneral('DATA SET INTERVAL 2000');
+            await sendCommandGeneral('DATA SET INTERVAL 5000');
 
             for (let i = 0; i < loadcellCount; i++) {
                 await sendCommandGeneral(`LC TARE ${i}`);
             }
+
             await sleep(1_500); // Wait for 1.5 second between taring loadcells
 
             // --- 1) Take measurements ---
@@ -8120,7 +8154,7 @@
             await sleep(1_500); // Wait
 
 
-            await sendCommandGeneral("DATAC 0");
+            await sendCommandGeneral("DATAC 0", 10);
             takeMeasurements = false;
 
 
@@ -8150,7 +8184,7 @@
                     console.warn("\n⚠️ Multiple loadcells are connected.");
                     await logMessage("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
                     alert("⚠️ Multiple loadcells are connected. Please check the loadcell connections and connect only one loadcell.");
-                    throw new Error("Multiple loadcells connected");
+                    throwInternalError("Multiple loadcells connected");
 
                 }
             }
@@ -8158,14 +8192,14 @@
                 console.warn("\n⚠️ No loadcell is connected.");
                 await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
                 alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
-                throw new Error("No loadcell connected");
+                throwInternalError("No loadcell connected");
             }
             if (systemLevel >= userLcSelectionLevel) {
                 if (!loadcellsInfo.loadcellsIDX.every(lc => presentLC.includes(lc))) {
                     console.warn("\n⚠️ Activated Loadcell in the App does not match detected loadcells in Machine.");
                     await logMessage("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
                     alert("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
-                    throw new Error("Not all selected loadcells are connected");
+                    throwInternalError("Not all selected loadcells are connected");
                 }
             }
 
@@ -8180,7 +8214,7 @@
             //         await logMessage("❌ No loadcells detected. Please check the connection.");
             //         console.error("❌ No loadcells detected. Please check the connection.");
             //         alert("❌ No loadcells detected. Please check the connection.");
-            //         throw new Error("No loadcells detected. Please check the connection.");
+            //         throwInternalError("No loadcells detected. Please check the connection.");
             //     }
             //     await sleep(500); // Wait before retrying
             // }
@@ -8278,10 +8312,10 @@
                     deadbandN: roundDecimalFast(err * 1.15, precisionForce),
                     //      Minimum speed during holding
                     vMin: roundDecimalFast(minFSpeed, 6),
-                    //      Limit max speed during holding
-                    vMax: roundDecimalFast(Math.max(minFSpeed * 3 / 2, speedForward_mmps * 2 / 3), 6),
+                    //      Limit max speed during holding e.g. to 250% of min speed or 80% of forward speed but not exceeding forward speed
+                    vMax: roundDecimalFast(Math.min(Math.max(minFSpeed * 5 / 2, speedForward_mmps * 4 / 5), speedForward_mmps), 6), // minFSpeed * 3 / 2, speedForward_mmps * 2 / 3)
                     //      Slew-rate limit to 5 mm/s² (null => no limit)
-                    accel: null,
+                    accel: 5,
                     //      Anti-windup clamp: readings in the last 25% of hold time
                     integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 125),
                 });
@@ -8308,6 +8342,9 @@
             forceDataChart = Array(loadcellCount).fill(null).map(() => []);
             photoDataChart = [];
             dataCount = 0;
+
+            await clearCharts();
+            if (!liveUpdate) await chartUpdate();
 
             UIupdate();
 
@@ -8465,12 +8502,30 @@
 
 
         } catch (error) {
+
+            if (internalError) {
+                await disableCharts();
+                await clearCharts();
+                if (liveUpdate) await chartUpdate();
+
+                timeData = [];
+                positionData = [];
+                forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+
+                timeDataChart = [];
+                positionDataChart = [];
+                forceDataChart = Array(loadCellNum).fill(null).map(() => []);
+                photoDataChart = [];
+                dataCount = 0;
+            }
+
+
             await handleError(error, "Experiment");
             await showNotification("Experiment Interrupted",
                 "An error occurred during the experiment. Please check the logs and machine.");
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
             UI.experimentStageLabel.textContent = `Error`;
-            endedBy = 'error';
+            endedBy = internalError ? 'wrong exp variables' : 'error';
             await alert(`Experiment Finished\n     ❌ Experiment failed. Please check the logs and machine.\n\n     Error: ${error.message || error}`);
 
         } finally {
@@ -8503,7 +8558,6 @@
 
             endedMoving();    // unlock UI and watchdog
             unlockMovement();
-            await setSpeedAndAcceleration(currentSpeed, currentAcceleration, true)
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
             await console.groupEnd();
@@ -9422,9 +9476,10 @@
                     const forceHoldTimeMs = (newData?.time - timer) * 1_000;
 
                     if (forceHoldTimeMs >= holdForceTimeMs) {
+                        const holdTime = roundDecimalFast(forceHoldTimeMs / 1_000, 3);
                         endMeasuring(0, {
-                            ednStatus: `hold force time limit [${forceHoldTimeMs / 1_000}s]`,
-                            endText: `⏹️ Experiment stopped due to hold force time limit (${stoppingForceLimit} N for ${forceHoldTimeMs / 1_000} s).`,
+                            ednStatus: `hold force time limit [${holdTime}s]`,
+                            endText: `⏹️ Experiment stopped due to hold force time limit (${stoppingForceLimit} N for ${holdTime} s).`,
                             command: "MC STOP"
                         });
 
@@ -9434,10 +9489,13 @@
                         // adjust speed according to PI controller to maintain constant force ...
                         if (isValidInputNum(v)) {
                             await setSpeed(v, false);
-                            sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
+                            await sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
                         }
                         // ... or stop if invalid, negative or zero
-                        else await sendCommandGeneral("MC STOP");
+                        else {
+                            await sendCommandGeneral("MC STOP");
+                            setSpeedUI(0);
+                        }
                     }
 
                 } else {
@@ -11391,6 +11449,7 @@
      */
     async function connectSerial(userRequest = true) {
         let serialComPort = null;
+        await lockConnectionButtons(true);
         await updateConnectionStatus("connecting", "serial");
         try {
             let ports = null;
@@ -11414,7 +11473,7 @@
                     // serialComPort = checkAllPorts();
 
                     for (let port of ports) {
-                        await closePort(port);
+                        if (port.connected) await closePort(port);
                     }
                     founds = true;
                 }
@@ -11451,8 +11510,6 @@
         } catch (error) {
 
             await handleError(error, "connectSerial");
-            isConnected = false;
-            activeWatchDog = false;
             await disconnectSerial({override: true});
         }
     }
@@ -11474,7 +11531,7 @@
             if (isNonEmptyObj(err)) {
                 console.error("⚠️ Error closing existing port before opening a new one:", err);
             }
-            await closePort(comPort, {verbose: false});
+            if (comPort.connected) await closePort(comPort, {verbose: false});
 
 
             console.info("🔌 Opening new port...");
@@ -11497,8 +11554,10 @@
     async function openComPort(comPort) {
         serialPort = comPort;
 
+        const baudRate = getInputNumDefAbsInt('inputNumBaudRate', 115200);
+
         await comPort.open({
-            baudRate: parseInt(getElementValue("inputNumBaudRate")) || 115200,
+            baudRate: baudRate,
             // dataBits: 8,
             // stopBits: 1,
             // parity: "none",
@@ -11696,7 +11755,14 @@
      * Disconnects from the ESP device via USB.
      */
     async function disconnectSerial({override = false, verbose = true} = {}) {
+        console.info("\n🚪 Disconnecting from Serial...");
+
         const wasConnected = isConnected;
+        isConnected = (serialPort?.connected && serialPort?.readable && serialPort?.writable);
+
+        const connectionLost = wasConnected && !isConnected;
+        if (connectionLost) console.warn("%c⭕️ Connection lost detected.", "color: darkred; font-weight: bold;");
+
         if (!override && !isConnected) {
             console.warn("⚠️ Port is not connected.");
             return;
@@ -11709,8 +11775,8 @@
             try {
                 if (isExperimentRunning) endMeasuring(0, {
                     overRide: true,
-                    ednStatus: 'disconnected',
-                    endText: "🚧 Experiment stopped due to disconnect"
+                    ednStatus: connectionLost ? 'lost connection' : 'disconnected',
+                    endText: connectionLost ? "🚧 Experiment stopped due to lost connection" : "🚧 Experiment stopped due to disconnect",
                 });
 
             } catch (error) {
@@ -11722,11 +11788,12 @@
             // Stop data reading before releasing the reader
             await closeComPort({override: override, verbose: verbose});
 
-            if (wasConnected && verbose) await logMessage("✖️ Disconnected from ESP\n\n");
+            if (!connectionLost && verbose) await logMessage("✖️ Disconnected from ESP\n\n");
+            if (connectionLost && verbose) await logMessage("⚠️ Connection from ESP lost\n\n");
 
             console.info("%c✅ Disconnected successfully.", "color: #28a745; font-weight: bold;");
         } catch (error) {
-            console.error("❌ disconnectSerial error:", error);
+            console.error("❌ DisconnectSerial error:", error);
         } finally {
             cancelAllPending();
             activeWatchDog = false;
@@ -11736,7 +11803,14 @@
             await flushDB();
             await resetValues();
             await updateConnectionStatus("disconnected");
+            connectionType = null;
             await lockMachineControls();
+            await lockConnectionButtons(false);
+
+            // const baudRateInput = $ID('inputNumBaudRate');
+            // const baudRateLabel = $(`label[for="inputNumBaudRate"]`);
+            // const baudRate = getInputNumDefAbsInt(baudRateInput, 115200);
+            // activate(baudRateInput, baudRateLabel, isActive);
         }
     }
 
@@ -11906,9 +11980,8 @@
             errors.port = error;
         } finally {
             serialPort = null;
+            isConnected = false;
         }
-
-        isConnected = false;
 
         return errors;
     }
@@ -12142,7 +12215,7 @@
             if (isConnected && serialPort) return;
 
             const port = e?.target;
-            const portInfo = port?.getInfo()
+            const portInfo = port?.getInfo();
 
             const THYMOS_USB_INFOS = [...thymosFingerprints.map(fp => {
                 const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
@@ -12157,6 +12230,8 @@
             }
 
             if (THYMOS_DEVICES.length === 0) return;
+
+            console.info(`%c\n👀 ${THYMOS_DEVICES.length > 1 ? THYMOS_DEVICES.length : 'A'} Thymos device${THYMOS_DEVICES.length > 1 ? 's' : ''} has been connected.`, "color: gray; font-weight: bold;");
 
             const autoConnectSetting = getInputValDef("inputAutoConnect", 'never')?.toLowerCase();
 
@@ -12301,6 +12376,7 @@
         measureForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
         tareValues.force = Array(catchVal(loadCellNum, 0, isNum)).fill(0);
         tareValues.position = null;
+        UI.returnBtn.classList.add('disabled'); // TODO: spárovat 'tareValues.position' s classlist tlačítka 'UI.returnBtn' přes REACT
         tareValues.time = null;
         lastAcceptedTime = null;
         aggregatedDataBetweenSteps = [];
@@ -12446,6 +12522,29 @@
 </script>
 
 <script>
+    const activate = (input, label, active) => {
+        if (active) {
+            // disable photo interval input
+            input.classList.remove("disabled");
+            input.readOnly = false;
+            input.tabIndex = 1;
+
+            // disable photo interval input label
+            label.classList.remove("disabled");
+        } else {
+            // disable photo interval input
+            input.classList.add("disabled");
+            input.readOnly = true;
+            input.tabIndex = -1;
+
+            // disable photo interval input label
+            label.classList.add("disabled");
+        }
+    }
+
+</script>
+
+<script>
 
     let allSettingsInputs;
     let appSettingsWrapper;
@@ -12474,6 +12573,7 @@
             chartsLiveButton: $ID('toggleLiveGraph'),// Input elements for command entry and settings
             connectionStatus: $ID("connectionStatus"), // Display for connection status
             connectBtns: $$(".connectBtn"), // Container for connection buttons
+            connectElement: $$(".connectElement"), // Container for connection buttons
             Serial: $ID("connectBtnSerial"), // Button to connect via Serial
             Bluetooth: $ID("connectBtnBluetooth"), // Button to connect via Bluetooth
             WiFi: $ID("connectBtnWiFi"), // Button to connect via WiFi
@@ -12493,6 +12593,8 @@
             moveDownBtn: $ID("moveMachineDOWN"), // Button to move the device down
             moveUp50Btn: $ID("moveUp50"), // Button to move the device up
             moveDown50Btn: $ID("moveDown50"), // Button to move the device down
+
+            returnBtn: $ID("returnPositionExperimentBtn"), // Button to return to the starting position
 
 
             moveToBtn: $ID("moveToBtn"), // Button to move to a specific position
@@ -12542,6 +12644,12 @@
 
         // Event listener for page visibility change
         document.addEventListener("visibilitychange", async () => await handlePageVisibility());
+
+        // /////// Logging Messages /////////
+        visibleLines = Math.floor(UI.loadingLogContainer.clientHeight / 16);
+        UI.loadingLogContainer.style.fontFamily = "monospace";
+        UI.loadingLogContainer.style.fontSize = "14px";
+        UI.loadingLogContainer.style.overflow = "hidden";
 
         // ------------ Auto-scroll ------------
         UI.toggleScrollBtn.addEventListener('click', async () => {
@@ -12806,26 +12914,6 @@
         });
 
 
-        const activate = (input, label, active) => {
-            if (active) {
-                // disable photo interval input
-                input.classList.remove("disabled");
-                input.readOnly = false;
-                input.tabIndex = 1;
-
-                // disable photo interval input label
-                label.classList.remove("disabled");
-            } else {
-                // disable photo interval input
-                input.classList.add("disabled");
-                input.readOnly = true;
-                input.tabIndex = -1;
-
-                // disable photo interval input label
-                label.classList.add("disabled");
-            }
-        }
-
         $ID("inputTakePhotos")?.addEventListener('change', async (event) => {
             const isActive = event.target.checked;
             const photosInput = $ID("inputPhotoInterval");
@@ -12991,7 +13079,8 @@
         attachHoldHandlers(UI.moveUpBtn, async () => sendMoveCommand("MC HOME")); // TODO: problém s rychlostmi na konci
         attachHoldHandlers(UI.moveDownBtn, async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
 
-        $ID("returnPositionExperimentBtn").addEventListener('click', async () => moveToOriginalPosition());
+
+        UI.returnBtn.addEventListener('click', async () => moveToOriginalPosition());
 
         UI.moveUp50Btn.addEventListener("click", async () => moveBy(-50));  // TODO: problém s rychlostmi na konci a zrychlením
         UI.moveDown50Btn.addEventListener("click", async () => moveBy(50));  // TODO: problém s rychlostmi na konci a zrychlením
