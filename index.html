@@ -142,6 +142,8 @@
                             option.disabled = false;
                         } else if (option.value === 'admin') {
                             option.disabled = false;
+                        } else if (option.value === 'service') {
+                            option.disabled = false;
                         } else if (option.value === 'developer') {
                             option.disabled = false;
                         } else if (option.value === 'god') {
@@ -163,7 +165,7 @@
                         try {
                             const data = JSON.parse(localStorage.getItem(key));
                             if (data && data[selectorId]) {
-                                const levels = ['operator', 'admin', 'developer', 'god'];
+                                const levels = ['operator', 'admin', 'service', 'developer', 'god'];
                                 if (levels.some(level => level === data[selectorId])) {
                                     const level = 'expert';
                                     data[selectorId] = level;
@@ -462,6 +464,11 @@
 
         body[data-system-level="developer"] {
             --logo-main: var(--purple-light-color);
+            --logo-second: var(--page-bg);
+        }
+
+        body[data-system-level="service"] {
+            --logo-main: var(--cyan-color);
             --logo-second: var(--page-bg);
         }
 
@@ -2585,6 +2592,7 @@
                                 <option value="admin" disabled>&nbsp;🟥&nbsp;Administrator</option>
                                 <option value="operator" disabled>&nbsp;🅾️&nbsp;Operator</option>
                                 <option value="developer" disabled>&nbsp;🟪&nbsp;Developer</option>
+                                <option value="service" disabled>&nbsp;⚕️&nbsp;Service</option>
                                 <option value="god" disabled>&nbsp;♾️&nbsp;God Mode</option>
                             </select>
                         </div>
@@ -5487,7 +5495,7 @@
                     const loadData = formData?.settingsLoad || {};
                     const sysData = formData?.settingsSys || {};
                     if (!debugging) {
-                        const levels = ['operator', 'admin', 'developer', 'god'];
+                        const levels = ['operator', 'admin', 'service', 'developer', 'god'];
                         if (levels.some(level => level === sysData?.systemLevelSelect)) {
                             const level = 'expert';
                             sysData.systemLevelSelect = level;
@@ -12785,11 +12793,14 @@
                 case 'operator':
                     systemLevel = 5;
                     break;
-                case 'developer':
+                case 'service':
                     systemLevel = 6;
                     break;
-                case 'god':
+                case 'developer':
                     systemLevel = 7;
+                    break;
+                case 'god':
+                    systemLevel = 8;
                     break;
                 default:
                     systemLevel = 0;
