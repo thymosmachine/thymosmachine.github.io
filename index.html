@@ -347,8 +347,8 @@
 
 
         html * {
-            transition: color 0.3s, background 0.3s, background-color 0.3s, border-color 0.3s, filter 0.2s;
-            will-change: color, background, background-color, border-color, transform, filter; /* Optimize effects */
+            transition: color 0.3s, background 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.2s;
+            will-change: color, background, background-color, border-color, box-shadow; /* Optimize effects */
             /*scroll-behavior: smooth;*/
         }
 
@@ -498,6 +498,7 @@
             color: var(--text-color);
             overflow-x: hidden;
             overflow-y: hidden;
+            margin: 10px;
         }
 
         *:disabled {
@@ -535,7 +536,8 @@
 
             box-shadow: inset 2px 2px 5px var(--highligth), inset -2px -2px 3px var(--shadow);
 
-            will-change: transform, filter; /* Optimize for hover/active effects */
+            will-change: filter, transform; /* Optimize for hover/active effects */
+            transition: filter 0.2s, transform 0.2s;
         }
 
         /* When the button is hovered */
@@ -649,15 +651,16 @@
             overflow: hidden;
             content-visibility: auto;
 
-            max-height: 0;
-            opacity: 0;
-            transition: max-height 0.5s ease, opacity 0.45s; /* Animation */
-
             display: block;
             width: 95%;
             padding: 5px 15px 20px 15px;
             justify-self: center;
             justify-content: center;
+
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.5s ease, opacity 0.45s; /* Animation */
+            will-change: display, max-height, opacity, visibility, content-visibility, overflow; /* Optimize for animations */
         }
 
         .input-group {
@@ -667,7 +670,7 @@
             padding-left: 20px;
             align-items: center;
             width: calc(var(--inputLabelWidth) + var(--inputMinWidth) + var(--gap)); /* Total width of the group */
-
+            will-change: display, visibility; /* Optimize for show/hide */
         }
 
         .input-group label {
@@ -816,6 +819,7 @@
             height: 50px;
             width: 180px;
             min-width: 160px;
+            will-change: display, visibility; /* Optimize for show/hide */
         }
 
         .btnGraph {
@@ -1014,7 +1018,7 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-
+            will-change: display, visibility; /* Optimize for show/hide */
         }
 
         #startExperiment {
@@ -1417,6 +1421,10 @@
             display: inline-flex;
             flex-grow: 1;
             max-width: 230px;
+            will-change: display, visibility, opacity; /* Optimize for show/hide */
+        }
+        .action-wrap {
+            will-change: box-shadow;
         }
 
         /* Base of pills (copy / set) */
@@ -1446,7 +1454,9 @@
 
             opacity: 0;
             pointer-events: none;
-            transition: opacity .15s ease, background .2s ease, transform .1s ease;
+
+            will-change: display, opacity, background, transform;
+            transition: opacity .15s ease, display .15s ease, background .2s ease, transform .1s ease;
         }
 
         .action-pill:hover {
@@ -1586,8 +1596,8 @@
         #preloadScreen {
             position: fixed;
             inset: 0; /* top:0; right:0; bottom:0; left:0 */
-            top: -8px;
-            left: -8px;
+            top: -10px;
+            left: -10px;
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -6743,6 +6753,7 @@
         if (debugging) console.info(`Preparing to send command:\n\t\t${command}`);
         if (!isConnected || !serialPort?.writable) {
             logMessage("\n⚠️ No device is connected or port is unavailable!");
+            console.error("⚠️", command);
             return false;
         }
 
@@ -13025,7 +13036,7 @@
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
 
-        $ID("inputAppInterval")?.addEventListener("change", async (event) => !isExperimentRunning ? await sendCommandGeneral(`DATA SET INTERVAL ${event.target.value}`) : null);
+        $ID("inputAppInterval")?.addEventListener("change", async (event) => (!isExperimentRunning && isConnected) ? await sendCommandGeneral(`DATA SET INTERVAL ${event.target.value}`) : null);
 
         machNameInput?.addEventListener("change", async (event) => {
             const val = event.target.value.trim();
