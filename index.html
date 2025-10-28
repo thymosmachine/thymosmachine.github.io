@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Moira controller</title>
 
     <!--
@@ -349,6 +348,7 @@
 
         html * {
             transition: color 0.3s, background 0.3s, background-color 0.3s, border-color 0.3s, filter 0.2s;
+            will-change: color, background, background-color, border-color, transform, filter; /* Optimize effects */
             /*scroll-behavior: smooth;*/
         }
 
@@ -531,10 +531,11 @@
             font-size: 14px;
             background: var(--button-color);
 
-            user-select: none; /* Disables text selection */
             color: color-mix(in srgb, var(--text-color) 10%, black);
 
             box-shadow: inset 2px 2px 5px var(--highligth), inset -2px -2px 3px var(--shadow);
+
+            will-change: transform, filter; /* Optimize for hover/active effects */
         }
 
         /* When the button is hovered */
@@ -622,10 +623,10 @@
         /* Disabled elements styling */
         .prohibited, .disabled, .prohibited *, .disabled * {
             cursor: not-allowed !important;
-            user-select: none !important; /* Disables text selection */
             -webkit-user-select: none !important; /* Safari */
             -moz-user-select: none !important; /* Firefox */
             -ms-user-select: none !important; /* IE/Edge */
+            user-select: none !important; /* Disables text selection */
             pointer-events: none !important; /* Prevents interaction */
             tab-index: -1 !important;
             outline: none !important;
@@ -1394,8 +1395,9 @@
 
         button {
             -webkit-touch-callout: none !important;
-            -webkit-user-select: none !important;
-            -ms-user-select: none !important;
+            -webkit-user-select: none !important; /* Safari */
+            -moz-user-select: none !important; /* Firefox */
+            -ms-user-select: none !important; /* IE/Edge */
             user-select: none !important;
         }
 
@@ -1568,12 +1570,76 @@
         }
 
 
-        /*.u-wrap {*/
-        /*    border: 1px solid rgba(0, 0, 0, 0.05);*/
-        /*    border-radius: var(--radius);*/
-        /*    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);*/
-        /*}*/
+        .u-wrap {
+            /*    border: 1px solid rgba(0, 0, 0, 0.05);*/
+            /*    border-radius: var(--radius);*/
+            /*    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);*/
+            -webkit-user-select: none !important; /* Safari */
+            -moz-user-select: none !important; /* Firefox */
+            -ms-user-select: none !important; /* IE/Edge */
+            user-select: none !important;
+        }
 
+    </style>
+
+    <style>
+        #preloadScreen {
+            position: fixed;
+            inset: 0; /* top:0; right:0; bottom:0; left:0 */
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-flow: column;
+            gap: 5%;
+            background: #181818;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            -webkit-user-select: none !important; /* Safari */
+            -moz-user-select: none !important; /* Firefox */
+            -ms-user-select: none !important; /* IE/Edge */
+            user-select: none !important; /* Disables text selection */
+            pointer-events: auto; /* Prevents interaction */
+            tab-index: -1 !important;
+            color: lightgray;
+            font-weight: bold;
+            text-align: center;
+            font-size: 2em;
+            content-visibility: auto;
+            opacity: 1;
+            will-change: display, opacity, visibility;
+            transition: opacity 0.5s;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 1.2rem;
+            font: 1.2em/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        }
+
+        .svg-spinner {
+            width: 1em;
+            height: auto;
+            aspect-ratio: 1/1;
+
+            animation: spin .6s linear infinite;
+            transform-origin: center;
+            transform-box: fill-box; /* kvůli Firefoxu */
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Respekt k omezení pohybu */
+        @media (prefers-reduced-motion: reduce) {
+            .svg-spinner {
+                animation: none;
+            }
+        }
     </style>
 
 </head>
@@ -1582,23 +1648,7 @@
 
 
 <div id="preloadScreen"
-     tabindex="-1"
-     style="position: fixed;
-            inset: 0;              /* top:0; right:0; bottom:0; left:0 */
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-flow: column; gap: 5%;
-            background: #181818; justify-content: center; align-items: center;  z-index: 999;
-            user-select: none !important; /* Disables text selection */
-            -webkit-user-select: none !important; /* Safari */
-            -moz-user-select: none !important; /* Firefox */
-            -ms-user-select: none !important; /* IE/Edge */
-            pointer-events: auto; /* Prevents interaction */
-            tab-index: -1 !important;
-            color: lightgray; font-weight: bold; text-align: center; font-size: 2em;
-            opacity: 1;
-            transition: opacity 0.5s;">
+     tabindex="-1">
     <noscript>
         <div style="color: red;">
             JavaScript is disabled in your browser. Please enable it to use this application.
@@ -1616,7 +1666,17 @@
             />
         </g>
     </svg>
-    <span>Loading...</span>
+
+    <!--  Rotating loading element   -->
+    <div class="loading" role="status" aria-live="polite" aria-label="Loading">
+        <svg class="svg-spinner" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" opacity=".25"/>
+            <path d="M22 12a10 10 0 0 1-10 10" fill="none" stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round"></path>
+        </svg>
+        <span class="label">Loading...</span>
+    </div>
+
 </div>
 
 <main id="app">
@@ -2440,7 +2500,7 @@
                                 [PI]<span
                                         class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputResponseCoefPI" class="expInput"
-                                   value="0.5" min="0" step="any" max="100" data-unit="-"
+                                   value="0.5" min="0" step="any" max="10" data-unit="-"
                                    data-essence="coefficient, ratio"
                                    required>
                         </div>
@@ -2558,10 +2618,12 @@
                             <label for="inputAutoConnect">Automatically connect to the machine: </label>
                             <select id="inputAutoConnect" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                                <option value="never" title="Don't connect to the device automatically">&nbsp;❌&nbsp;Never
+                                <option value="never" title="Don't connect to the device automatically">
+                                    &nbsp;❌&nbsp;Never
                                 </option>
                                 <option value="beginning"
-                                        title="Connect to the device automatically on the start-up of the app">&nbsp;🌟&nbsp;Beginning
+                                        title="Connect to the device automatically on the start-up of the app">
+                                    &nbsp;🌟&nbsp;Beginning
                                 </option>
                                 <option value="during"
                                         title="Connect to the device automatically at any point of time during the session">
@@ -2573,7 +2635,8 @@
                                 </option>
                                 <option value="always"
                                         title="Always connect to the device automatically at any point of time during the session"
-                                        selected>&nbsp;✅&nbsp;Always
+                                        selected>
+                                    &nbsp;✅&nbsp;Always
                                 </option>
                             </select>
                         </div>
@@ -2616,13 +2679,18 @@
                             <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                             <select id="delimiterSymbol" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                                <option value="Option-Semicolon" selected>&nbsp;Semicolon&nbsp;( ; )&nbsp;</option>
-                                <option value="Option-Comma">&nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;
+                                <option value="Option-Semicolon" selected>
+                                    &nbsp;Semicolon&nbsp;( ; )&nbsp;
                                 </option>
-                                <option value="Option-Space">&nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;
+                                <option value="Option-Comma">
+                                    &nbsp;Comma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( , )&nbsp;
                                 </option>
-                                <option value="Option-Tab">&nbsp;Tab&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( \t )&nbsp;
-                                </option> <!-- ↹, ⇥, ⮂ -->
+                                <option value="Option-Space">
+                                    &nbsp;Space&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( _ )&nbsp;
+                                </option>
+                                <option value="Option-Tab">
+                                    &nbsp;Tab&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( \t )&nbsp;
+                                </option>                                <!-- ↹, ⇥, ⮂ -->
                             </select>
                         </div>
 
@@ -2632,11 +2700,15 @@
                             </label>
                             <select id="inputAutoSave" class="appSelector" data-system="app">
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                                <option value="Option-Never" title="Save data only by 'save' buttons" selected>&nbsp;❌&nbsp;Never</option>
+                                <option value="Option-Never" title="Save data only by 'save' buttons" selected>
+                                    &nbsp;❌&nbsp;Never
+                                </option>
                                 <option value="Option-Before" title="Save data before the start of the next Experiment">
                                     &nbsp;⏮️&nbsp;Before
                                 </option>
-                                <option value="Option-After" title="Save data right at the end of the Experiment">&nbsp;⏭️&nbsp;After</option>
+                                <option value="Option-After" title="Save data right at the end of the Experiment">
+                                    &nbsp;⏭️&nbsp;After
+                                </option>
                             </select>
                         </div>
 
@@ -5341,22 +5413,50 @@
 
 <script>
 
+
+    async function isSerialConnected() {
+        if (!serialPort) {
+            isConnected = false;
+            return false;
+        }
+        try {
+            await serialPort.getSignals();
+            isConnected = true;
+            return true;
+        } catch (error) {
+            isConnected = false;
+            return false;
+        }
+    }
+</script>
+
+
+<script>
+
     // Function Clear `localStorage`
-    function clearLocalStorage() {
+    async function clearLocalStorage() {
         if (!storageKeyLoad) {
             console.error("Storage key is not defined.");
-            return;
         }
-        // setSerialSignals(serialPort, true, true);
 
-        sendCommandGeneral("MISC REBOOT");
+        await
 
-        disconnectSerial();
+            showPreloaderScreen(true);
+
+        if (isConnected) await setSerialSignals(serialPort, true, true);
+
+        if (isConnected) await sendCommandGeneral("MISC REBOOT");
 
         localStorage.removeItem(storageKeyDefaults);    // Remove the saved data
         localStorage.removeItem(storageKeyIdle);        // Remove the saved data
         localStorage.removeItem(storageKeyLoad);        // Remove the saved data
-        console.info("LocalStorage cleared.");
+        // TODO: add other keys if needed
+
+        console.info("\tLocalStorage cleared.");
+
+        if (isConnected) await sleep(1_500);
+
+        if (isConnected) await disconnectSerial();
 
         window.location.reload();
     }
@@ -7700,7 +7800,7 @@
             let responsiveness = 0;
 
 
-            const suffixes = ["-inb", "-hbr"]; // TODO: doplnit i pro Flex ("-flx")
+            const suffixes = ["-inb", "-hbr"]; // TODO: doplnit i pro Flex ("-flx") a "basic" mít jako default
             if (suffixes.some(suf => experimentType.endsWith(suf))) {
                 initialSpeed_mmps = getInputNumDefAbsFlt("inputInitialSpeed", NaN);
                 initialForceLim_N = getInputNumDefAbsFlt("inputInitialForce", NaN);
@@ -7882,7 +7982,7 @@
                     $ID("inputDataInterval").value = minDataIntervalHold;
                 }
 
-                if (!isNum(responsiveness) || responsiveness < 0) {
+                if (!isNum(responsiveness) || responsiveness <= 0) {
                     console.warn(`\n⚠️ Responsiveness coefficient must be equal or greater than 0.`);
                     await logMessage(`⚠️ Responsiveness coefficient must be equal or greater than 0.`);
                     alert(`⚠️ Responsiveness coefficient must be equal or greater than 0.`);
@@ -8416,11 +8516,19 @@
             UI.experimentStageLabel.textContent = `Finalizing`;
 
             await console.info("\n☑️ Experiment finished.");
-            await showNotification("Experiment Finished", "The experiment has been completed successfully.");
+            if (isDef(endedBy) && (endedBy === 'end position' || endedBy === 'cycles completed')) {
+                await showNotification("Experiment Finished",
+                    "The experiment has been completed successfully.");
+            } else {
+                await showNotification("Experiment Finished",
+                    `The experiment was stopped before completion. Status: ${endedBy || "unknown"}.`);
+            }
 
-        } catch
-            (error) {
+
+        } catch (error) {
             await handleError(error, "Experiment");
+            await showNotification("Experiment Interrupted",
+                "An error occurred during the experiment. Please check the logs and machine.");
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
             UI.experimentStageLabel.textContent = `Error`;
             endedBy = 'error';
@@ -11269,6 +11377,8 @@
             return;
         }
 
+        await isSerialConnected();
+
         if (isConnected) {
             console.info("\n🚀 Stopping application...", "Serial");
             await disconnectSerial();
@@ -11658,7 +11768,7 @@
 
             if (wasConnected && verbose) await logMessage("✖️ Disconnected from ESP\n\n");
 
-            console.info("✅ Disconnected successfully.");
+            console.info("%c✅ Disconnected successfully.", "color: #28a745; font-weight: bold;");
         } catch (error) {
             console.error("❌ disconnectSerial error:", error);
         } finally {
@@ -12457,29 +12567,40 @@
 </script>
 
 <script>
+    function showPreloaderScreen(show = false) {
+        const preloadScreen = $ID('preloadScreen');
+        if (!preloadScreen) return;
+        if (show) {
+            preloadScreen.style.display = 'flex';
+            preloadScreen.style.opacity = "1";
+            document.body.style.overflowY = "hidden";
+            if (debugging) console.info("%cPreloader screen shown.", "color: gray; font-style: italic;");
+            return;
+        }
 
-    resetValues();
+        preloadScreen?.getBoundingClientRect(); // force reflow
+        preloadScreen.style.opacity = "0";
+        document.body.style.overflowY = "auto";
 
-    lockMachineControls();
+        preloadScreen.addEventListener('transitionend', () => {
 
-    renderLoadcells(loadCellNum);
+            // preloadScreen?.remove();
+            preloadScreen.style.display = "none";
+
+            if (debugging) console.info("%cPreloader screen hidden.", "color: gray; font-style: italic;");
+        }, {once: true});
+    }
+
+
+</script>
+
+<script>
 
     const allSettingsInputs = Array.from($$("input, select")).filter(el => !isSkippable(el));
     const appSettingsWrapper = $ID('appSettingsSection');
 
     const settingsInputsLoad = allSettingsInputs.filter(el => !appSettingsWrapper.contains(el));
     const settingsInputsSys = allSettingsInputs.filter(el => appSettingsWrapper.contains(el));  // TODO: or use data-system="app"
-
-    lockConnectionButtons(true);
-
-    // #TODO do better disabling of elements //////////////////////////////////////////////////
-    $$('.prohibited')?.forEach(element => {
-        element.readOnly = true;
-
-        element.addEventListener("selectstart", async (e) => e.preventDefault());
-        element.addEventListener("mousedown", async (e) => e.preventDefault());
-        element.addEventListener("keydown", async (e) => e.preventDefault());
-    })
 
 
     // /////// Page Initialization /////////
@@ -12490,6 +12611,24 @@
      * - Loads available commands from the JSON file.
      */
     window.onload = async () => {
+
+        resetValues();
+
+        lockMachineControls();
+
+        lockConnectionButtons(true);
+
+        renderLoadcells(loadCellNum);
+
+        // #TODO do better disabling of elements //////////////////////////////////////////////////
+        $$('.prohibited')?.forEach(element => {
+            element.readOnly = true;
+
+            element.addEventListener("selectstart", async (e) => e.preventDefault());
+            element.addEventListener("mousedown", async (e) => e.preventDefault());
+            element.addEventListener("keydown", async (e) => e.preventDefault());
+        })
+
         console.info("Page loaded");
         await openDB();
         // await loadCommands();
@@ -12510,12 +12649,6 @@
         }
         window.scrollTo(0, 0);
         document.body.style.overflowY = "hidden";
-
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                notificationsAllowed = true;
-            }
-        });
 
         const levelElements = $$('[data-system-level]');
         $ID('systemLevelSelect').addEventListener('change', (event) => {
@@ -12740,6 +12873,8 @@
             // const preloadScreen = $ID("preloadScreen");
             // preloadScreen.style.display = "flex";
             // preloadScreen.style.opacity = "1";
+
+            // TODO: script communication => name, ID, port info, ...
 
             await disconnectSerial({override: true});
             await sleep(50);
@@ -13078,16 +13213,20 @@
             if (pageLoadTimeout > 10_000) break;
         }
 
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                notificationsAllowed = true;
+            }
+        });
 
         const serialAllowed = await isSerialAvailable();
+        const portsCount = (serialAllowed ? await availablePorts() : 0) || 0;
 
         if (pageLoaded && dataLoaded) {
             recomputeAll();
 
-
             const preloadScreen = $ID("preloadScreen");
             const autoConnectSetting = getInputValDef("inputAutoConnect", 'never')?.toLowerCase();
-            const portsCount = await availablePorts();
 
             if (serialAllowed && portsCount === 1 &&
                 (autoConnectSetting === 'always' || autoConnectSetting === 'beginning')) await startSerial(false);
@@ -13108,28 +13247,35 @@
 
             allLoaded = true;
 
-
-            preloadScreen?.getBoundingClientRect(); // force reflow
-            preloadScreen.style.opacity = "0";
-            document.body.style.overflowY = "auto";
+            await showPreloaderScreen(false);
 
 
             preloadScreen?.addEventListener('transitionend', async () => {
-
-                // preloadScreen?.remove();
-                preloadScreen.style.display = "none";
 
                 if (serialAllowed && !isConnected) {
                     if (
                         (portsCount >= 1 && autoConnectSetting === 'ask') ||
                         (portsCount > 1 && (autoConnectSetting === 'always' || autoConnectSetting === 'beginning'))
                     ) {
-                        if (confirm('Machine found. Do you want to connect?')) await startSerial(false);
+                        if (confirm(`${portsCount > 1 ? 'Multiple machines' : 'Machine'} found. Do you want to connect?`)) await startSerial(false);
                     }
                 }
 
-                await sleep(1_000);
-                if (!serialAllowed) await grantSerialOnce();
+                await sleep(500);
+
+                if (!serialAllowed) {
+                    await alert("⚠️ Please make sure to grant Serial Port permission for full functionality."); // {okOnly: true}
+                    await sleep(1_000);
+                    await grantSerialOnce();
+                }
+
+                if (!notificationsAllowed) {
+                    await alert("⚠️ Please allow Notifications for full functionality."); // {okOnly: true}
+                    await sleep(1_000);
+                    showNotification("Test", "This is test notification to check if notifications are working.");
+                }
+
+                console.log("\n✅ %cApplication fully loaded.", "color: #28a745; font-style: italic; font-weight: normal;");
 
             }, {once: true});
         }
