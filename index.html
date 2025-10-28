@@ -2963,7 +2963,7 @@
             const registrations = await navigator.serviceWorker.getRegistrations();
             for (let registration of registrations) {
                 await registration.unregister();
-                console.log('Service worker unregistered:', registration);
+                console.info('Service worker unregistered:', registration);
             }
         }
     }
@@ -5439,20 +5439,19 @@
             console.error("Storage key is not defined.");
         }
 
-        await
+        await showPreloaderScreen(true);
 
-            showPreloaderScreen(true);
+        await isSerialConnected();
 
         if (isConnected) await setSerialSignals(serialPort, true, true);
 
         if (isConnected) await sendCommandGeneral("MISC REBOOT");
 
-        localStorage.removeItem(storageKeyDefaults);    // Remove the saved data
-        localStorage.removeItem(storageKeyIdle);        // Remove the saved data
-        localStorage.removeItem(storageKeyLoad);        // Remove the saved data
+        if (storageKeyLoad) localStorage.removeItem(storageKeyLoad);        // Remove the saved data
         // TODO: add other keys if needed
 
-        console.info("\tLocalStorage cleared.");
+        if (storageKeyLoad) console.info("\tLocalStorage cleared.");
+        else console.info("\tLocalStorage key not defined; nothing cleared.");
 
         if (isConnected) await sleep(1_500);
 
@@ -6696,7 +6695,7 @@
      * @param timeOut
      * @param type
      */
-    async function sendCommand(command, type = "general", timeOut = 1) {
+    async function sendCommand(command, {type = "general", timeOut = 1} = {}) {
         switch (type) {
             case "console":
                 await sendCommandConsole(command);
@@ -6750,6 +6749,15 @@
                 await logMessage(`\n🔀 Toggled debugging: ${debugging ? "ON" : "OFF"}`);
                 return;
 
+            case "clear all":
+                if (isExperimentRunning) return;
+                if (confirm("\n🗑️ Are you sure you want to disconnect from the machine and delete all saved settings, profiles, and data with logs from the database?\n\n\n     This action cannot be undone!\n\nClick 'OK' to proceed or 'Cancel' to abort.")) {
+                    await clearAndResetAll();
+                } else {
+                    await logMessage("\n✖️ Clear all action cancelled by user.");
+                }
+                return;
+
             default:
                 await writeCommand(command);
         }
@@ -6773,7 +6781,7 @@
         await writeCommand(command);
 
         // User feedback in console
-        await logMessage("🕹️ User-Command sent: " + command);
+        await logMessage("🕹️ UI-Command sent: " + command);
     }
 
     async function sendCommandSilent(command) {
@@ -7309,6 +7317,18 @@
             document.documentElement.style.setProperty('--progressColor', String(endColor));
 
         }
+
+        endedMoving();
+    }
+
+    function stopMoving() {
+        if (isConnected) {
+            setAcceleration(200, false); // Set acceleration to 200 mm/s²
+            sendStopAllMeasuring();
+        }
+
+        sendCommandGeneral("MC STOP");
+        console.info("\t🛑 Movement stopped.");
 
         endedMoving();
     }
@@ -8590,7 +8610,9 @@
     } = {}) {
 
 
-        if (endMeasurement && !overRide) return;
+        if (!overRide) {
+            if (!isExperimentRunning || endMeasurement) return;
+        }
         endMeasurement = true;
 
         const delayFixMs = 5; // fix for setTimeout delays
@@ -12257,7 +12279,7 @@
         //     method: 'GET',
         //     headers: {'Content-Type': 'application/json'},
         // }).then(r => r.json())
-        //     .then(data => console.log('ESP response:', data))
+        //     .then(data => console.info('ESP response:', data))
         //     .catch(err => console.error('Connection error:', err));
     }
 
@@ -12301,7 +12323,7 @@
     //     let ws;
     //     const connect = () => {
     //         ws = new WebSocket(url);
-    //         ws.onopen = () => console.log('open');
+    //         ws.onopen = () => console.info('open');
     //         ws.onclose = () => setTimeout(connect, 2000); // reconnect za 2 s
     //     };
     //     connect();
@@ -12517,33 +12539,54 @@
     }
 
     async function clearAndResetAll() {
+        await showPreloaderScreen(true);
+
         console.clear();
+
+        if (isExperimentRunning) {
+            await endMeasuring(0, {overRide: true, ednStatus: 'reset', endText: "🚧 Experiment stopped due to reset"});
+            await sleep(2_000); // wait for proper ending
+        }
+        stopMachine();
         if (liveUpdate) await chartUpdate();
+        liveUpdate = false;
         await clearCharts();
-        await clearDatabase();
         await clearConsoleLog();
+        await clearDatabase();
+
+        await unregisterServiceWorkers();
 
 
         // Remove all other saved data from local storage
         Object.keys(localStorage).forEach(key => (key.startsWith(storageKeyBase)) ? localStorage.removeItem(key) : null);
 
 
-        if (serialPort) await setSerialSignals(serialPort, true, true);
-        await disconnectSerial();
+        await isSerialConnected();
+
+        if (isConnected) await setSerialSignals(serialPort, true, true);
+
+        if (isConnected) await sendCommandGeneral("MISC REBOOT");
+
+        if (isConnected) await sleep(1_500);
+
+        if (isConnected) await disconnectSerial();
+
+
+        await resetValues();
+        fingerprint = null;
+        tryCount = 0;
+        reconnectAttempts = 0;
 
 
         timeData = [];
         positionData = [];
         forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
 
-
         timeDataChart = [];
         positionDataChart = [];
         forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
         photoDataChart = [];
         dataCount = 0;
-
-        reconnectAttempts = 0;
 
         // Experiment parameters
         // --------------------------------
@@ -12562,11 +12605,14 @@
         timer = null;
         // --------------------------------
 
+
         window.location.reload();
     }
+
 </script>
 
 <script>
+
     function showPreloaderScreen(show = false) {
         const preloadScreen = $ID('preloadScreen');
         if (!preloadScreen) return;
@@ -12590,7 +12636,6 @@
             if (debugging) console.info("%cPreloader screen hidden.", "color: gray; font-style: italic;");
         }, {once: true});
     }
-
 
 </script>
 
@@ -12885,7 +12930,7 @@
 
         $ID("clearStorageButton")?.addEventListener("click", async () => {
             if (confirm("⚠️ This will clear all settings and disconnect from the machine.\n\n     Are you sure?")) {
-                clearLocalStorage();
+                await clearLocalStorage();
             }
         });
 
@@ -13275,7 +13320,7 @@
                     showNotification("Test", "This is test notification to check if notifications are working.");
                 }
 
-                console.log("\n✅ %cApplication fully loaded.", "color: #28a745; font-style: italic; font-weight: normal;");
+                console.info("\n✅ %cApplication fully loaded.", "color: #28a745; font-style: italic; font-weight: normal;");
 
             }, {once: true});
         }
