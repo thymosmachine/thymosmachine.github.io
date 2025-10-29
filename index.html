@@ -8214,7 +8214,7 @@
             const presentLC = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
 
             if (!isLCComplex) {
-                loadcellsInfo.presentLoadcells = validFields;
+                loadcellsInfo.presentLoadcells = forceAnalysis.map(r => !r.allInvalid);
                 loadcellsInfo.loadcellsIDX = presentLC;
             }
 
