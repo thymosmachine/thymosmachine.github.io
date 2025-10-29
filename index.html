@@ -12748,10 +12748,6 @@
 
         const isVisible = isType && isLevel;
 
-        console.log(selectedType, el.dataset.eqType, isType)
-        console.log(systemLevel, sysLevel, isLevel)
-
-
         el.classList.toggle(((isNonEmptyStr(sysLevel) && sysLevel.endsWith('v') && !isType) ? 'invisible' : 'undisplayed'), !isVisible);
 
         if (!isVisible && doBubbles) {
