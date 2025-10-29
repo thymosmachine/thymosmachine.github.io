@@ -596,9 +596,9 @@
         }
 
         pre {
-            white-space: pre-wrap;/* Preserves \n and multiple spaces, but allows wrapping */
-            overflow-wrap: break-word;/* Primarily breaks at spaces, long words only when necessary */
-            word-break: normal;/* Don't break words unnecessarily (let CJK behave normally) */
+            white-space: pre-wrap; /* Preserves \n and multiple spaces, but allows wrapping */
+            overflow-wrap: break-word; /* Primarily breaks at spaces, long words only when necessary */
+            word-break: normal; /* Don't break words unnecessarily (let CJK behave normally) */
             hyphens: auto; /* optional: adds hyphenation */
         }
 
@@ -13356,7 +13356,19 @@
                 const rule = parseEqRule(el.dataset.eqType);
                 const isType = matchesRule(rule, selectedType);
 
+
                 el.classList.toggle('undisplayed', !isType);
+
+                const elSysVal = el.getAttribute('data-system-level')?.toLowerCase().trim();
+
+                if (isNonEmptyStr(elSysVal)) {
+                    const elLevel = elSysVal.split('-');
+                    const valLevel = parseInt(elLevel[0]);
+                    const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNum);
+
+                    const visible = (elLevel[0] === 'all' || !(valLevel <= systemLevel && systemLevel < valLevelTop));
+                    if (isType) el.classList.toggle((elSysVal.endsWith('v') ? 'invisible' : 'undisplayed'), visible);
+                }
 
                 if (!isType) {
                     $$('input', el)?.forEach(input => {
