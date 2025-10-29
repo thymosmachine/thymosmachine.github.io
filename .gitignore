@@ -1,0 +1,33 @@
+# Ignorovat PDF soubory
+*.pdf
+
+# Ignorovat Excel soubory (XLS, XLSX)
+*.xls
+*.xlsx
+
+# Ignorovat CSV soubory
+*.csv
+
+# Ignorovat EXE soubory
+*.exe
+
+# Ignorovat velké soubory (např. videa, archivy)
+*.mp4
+*.zip
+*.tar.gz
+*.iso
+
+
+*.png
+
+
+# Ignorovat moduly NODE.JS
+node_modules/
+.idea/
+*.xml
+*.pem
+debug.txt
+startServer_Ngorok.bat
+startServer_NPM-NODE.JS.bat
+startServer_NPX.bat
+startServer_PYTHON.bat
