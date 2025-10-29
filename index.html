@@ -10119,6 +10119,56 @@
         const settings = await parseSettingsFromCsv(csvText);
         if (!settings) return {ok: false, reason: 'parse-failed', settings: null, results: []};
         const res = await restoreExpSettingsToUI(settings, opts); // { ok, results, summary }
+
+
+        const outputsOpts = {
+            time: {key: 'time', unit: 's', precision: 12, columnLimit: 1},
+            position: {key: 'dist, disp, position', unit: 'mm', precision: 12, columnLimit: 1},
+            force1: {key: 'force 1, load 1, loadcell 1', unit: 'N', precision: 12, columnLimit: 1},
+            force2: {key: 'force 2, load 3, loadcell 2', unit: 'N', precision: 12, columnLimit: 1},
+            force3: {key: 'force 3, load 3, loadcell 3', unit: 'N', precision: 12, columnLimit: 1},
+        };
+        const csvData = {}; // await getCSVData(csvText, outputsOpts, "loadedCSVfile") ||
+
+        if (isNonEmptyObj(csvData)) {
+            const {
+                // preamble: preambleMetaData = {},
+                // fileType,
+                // fileOptions: fileOptionsUsed = {},
+                data: parsedData = {}
+            } = csvData;
+
+            if (parsedData.time) {
+                timeData = parsedData.time;
+                timeDataChart = parsedData.time;
+            }
+            if (parsedData.position) {
+                positionData = parsedData.position;
+                positionDataChart = parsedData.position;
+            }
+            if (parsedData.force1) {
+                forceData.push(parsedData.force1);
+                forceDataChart.push(parsedData.force1);
+            }
+            if (parsedData.force2) {
+                forceData.push(parsedData.force2);
+                forceDataChart.push(parsedData.force2);
+            }
+            if (parsedData.force3) {
+                forceData.push(parsedData.force3);
+                forceDataChart.push(parsedData.force3);
+            }
+            while (forceData.length !== loadCellNum) {
+                forceData.push(Array.from({length: timeDataChart.length}).fill(null));
+                forceDataChart.push(Array.from({length: timeDataChart.length}).fill(null));
+            }
+
+            photoDataChart = Array.from({length: timeDataChart.length}).fill(null); // reset photo data chart
+
+            if (timeChart) timeChart.setData([timeDataChart, ...forceDataChart, photoDataChart]);
+            if (positionChart) positionChart.setData([positionDataChart, ...forceDataChart, photoDataChart]);
+        }
+
         return {ok: !!res.ok, settings, ...res};
     }
 
@@ -10898,6 +10948,16 @@
 
     async function convertCSVtoXLSX_MATTES() {
         if (isExperimentRunning) return;
+
+        // 1) PICK FILES FIRST — BEFORE ANY await
+        const files = await pickCsvFiles(); // This returns after the user picks files
+        if (!files || !files.length) {
+            console.warn("❌ No files selected.");
+            alert("❌ No files were selected. Please select one or more CSV files and try again.");
+            return;
+        }
+
+        // 2) Now it's safe to await other work
         try {
             await waitForXLSX();
         } catch (e) {
@@ -10905,536 +10965,568 @@
             return;
         }
 
-        const input = $MAKE('input');
-
         const mattesMaxLines = 20_000; // Maximum number of lines in one file
 
-        input.type = 'file';
-        input.accept = '.csv';
-        input.multiple = true; // Allow multiple file selection
-        input.onchange = async function (event) {
-            let files = Array.from(event.target.files); // Convert FileList to Array
-            if (!files.length) {
-                console.warn("❌ No files selected.");
-                alert("❌ No files were selected. Please select one or more CSV files and try again.");
-                return;
-            } else {
-                files.sort((a, b) => {
-                    let nameA = a.name.toLowerCase();
-                    let nameB = b.name.toLowerCase();
+        if (!files.length) {
+            console.warn("❌ No files selected.");
+            alert("❌ No files were selected. Please select one or more CSV files and try again.");
+            return;
+        } else {
+            files.sort((a, b) => {
+                let nameA = a.name.toLowerCase();
+                let nameB = b.name.toLowerCase();
 
-                    // Regular expression to extract the base name and optional index
-                    let regex = /(.*?)(?:\s\((\d+)\))?\.csv$/;
+                // Regular expression to extract the base name and optional index
+                let regex = /(.*?)(?:\s\((\d+)\))?\.csv$/;
 
-                    let matchA = nameA.match(regex);
-                    let matchB = nameB.match(regex);
+                let matchA = nameA.match(regex);
+                let matchB = nameB.match(regex);
 
-                    if (!matchA || !matchB) return 0; // Skip if no match
+                if (!matchA || !matchB) return 0; // Skip if no match
 
-                    let baseA = matchA[1]; // Base name
-                    let indexA = matchA[2] ? parseInt(matchA[2]) : -1; // Index (if present) or -1
+                let baseA = matchA[1]; // Base name
+                let indexA = matchA[2] ? parseInt(matchA[2]) : -1; // Index (if present) or -1
 
-                    let baseB = matchB[1];
-                    let indexB = matchB[2] ? parseInt(matchB[2]) : -1;
+                let baseB = matchB[1];
+                let indexB = matchB[2] ? parseInt(matchB[2]) : -1;
 
-                    // Sort by base name first
-                    if (baseA !== baseB) return baseA.localeCompare(baseB);
+                // Sort by base name first
+                if (baseA !== baseB) return baseA.localeCompare(baseB);
 
-                    // Sort by index if base names are the same
-                    if (indexA === -1) return -1;
-                    if (indexB === -1) return 1;
+                // Sort by index if base names are the same
+                if (indexA === -1) return -1;
+                if (indexB === -1) return 1;
 
-                    // Sort by index
-                    return indexA - indexB;
-                });
+                // Sort by index
+                return indexA - indexB;
+            });
 
-                console.info("📂 Sorted files:", files.map(f => f.name)); // Log sorted file names
+            console.info("📂 Sorted files:", files.map(f => f.name)); // Log sorted file names
+        }
+
+        const measurementName = files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").replace(/^(.*)_(\d+)$/, "$1").trim(); // Measurement name
+        let wb = XLSX.utils.book_new(); // Create a new Excel workbook
+        let sheetName = ("P-" + measurementName).slice(0, (31 - 8)); // Sheet name
+
+        // ==================== FILES LIST ==================== //
+
+        // TODO: lepší název proměnné
+        const resultsHead = ["File Order", "File name", "Experiment type", "Material",
+            "b (mm)", "h (mm)", "L (mm)", "E (MPa)", "f_m (MPa)",
+            "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
+            "F_T (N)", "h_D (mm)", "H_BW (-)"];
+
+        const resultsData = [resultsHead]; // Third sheet data
+
+        // ================== LOADING DATA ================== //
+
+        const formattedData = []; // First sheet data  -   Array to store ALL formatted measurement data
+        let columnOffset = 0; // Column shift for each section
+
+
+        // ================== SAMPLES TABLE ================== //
+
+
+        const samplesTable = [
+            ["Code", "Method", "W", "Number", "Dimensions, weight, before drying", "", "", "", "Dimensions, weight, after drying", "", "", "", "lo \n(mm)"], // row 0
+            ["", "", "", "", "hw", "lw", "ww", "mw", "h0", "l0", "w0", "m0", ""], // row 1
+            ["", "", "", "", "height \n(mm)", "length \n(mm)", "width \n(mm)", "(g)", "height \n(mm)", "length \n(mm)", "width \n(mm)", "(g)", ""] // row 2
+        ];// Second sheet data
+
+        const outputsOpts = {
+            time: {key: 'time', unit: 's', precision: 12, columnLimit: 1},
+            position: {key: 'dist, disp, position', unit: 'mm', precision: 12, columnLimit: 1},
+            force: {key: 'force, load', unit: 'N', precision: 12, columnLimit: null},
+        };
+
+
+        const getMetaValue = (metaData, key, unit = null) => {
+            if (!isObj(metaData)) return "";
+
+            if (metaData.hasOwnProperty(key)) {
+                let value = metaData[key]?.value || "";
+                if (!hasValue(value)) return "";
+
+                const valUnit = metaData[key].unit || null;
+                if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) value = convertUnits(value, valUnit, unit);
+
+                return catchVal(value, "", not(isInvalidValue));
+            }
+            return "";
+        };
+
+        // šířky sloupců podle délky hlaviček
+        const PAD = 2;      // rezerva, ať to není nalepené
+        const MIN = 6;      // minimální šířka
+
+        function fitToCols(rows, {pad = 2, min = 6} = {}) {
+            const cols = rows[0]?.length ?? 0;
+            const out = Array.from({length: cols}, () => ({wch: min}));
+            for (let c = 0; c < cols; c++) {
+                let maxLen = 0;
+                for (let r = 0; r < rows.length; r++) {
+                    const v = rows[r][c];
+                    const s = isVoid(v) ? "" : String(v);
+                    if (s.length > maxLen) maxLen = s.length;
+                }
+                out[c].wch = Math.max(min, maxLen + pad);
+            }
+            return out;
+        }
+
+        function setNumFmt(colIndex, fmt, data, ws) {
+            for (let r = 1; r < data.length; r++) {
+                const addr = XLSX.utils.encode_cell({r, c: colIndex});
+                const cell = ws[addr];
+                if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
+            }
+        }
+
+
+        // ----------------- LOOPING THROW CSV FILES ----------------- //
+        let fileCount = 0;
+        for (let file of files) {
+            fileCount++;
+            const raw = await file.text();
+
+            const csvData = await getCSVData(raw, outputsOpts, file.name) || {};
+
+
+            if (!isNonEmptyObj(csvData)) {
+                logMessage(`❌ Failed to parse file: ${file.name}`);
+                console.warn("\n❌ Failed to parse file:", file.name);
+                fileCount--;
+                continue;
             }
 
-            const measurementName = files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").replace(/^(.*)_(\d+)$/, "$1").trim(); // Measurement name
-            let wb = XLSX.utils.book_new(); // Create a new Excel workbook
-            let sheetName = ("P-" + measurementName).slice(0, (31 - 8)); // Sheet name
+            const {
+                preamble: preambleMetaData = {},
+                fileType,
+                fileOptions: fileOptionsUsed = {},
+                data: parsedData = {}
+            } = csvData;
+
+
+            const samplesInfo = {
+                method: 3,  // Method (place 3)
+                W: 0,       // W (place 0)
+                hw: "",
+                lw: "",
+                ww: "",
+                mw: "",
+                h0: "",
+                l0: "",
+                w0: "",
+                m0: "",
+                lo: "",     // lo (empty)
+            }; // Sample information
+
+            const expResults = {
+                experimentType: "", // Experiment type
+                material: "",       // Material
+                b: "",              // b (mm)
+                h: "",              // h (mm)
+                L: "",              // L (mm)
+                E: "",              // E (MPa)
+                f_m: "",            // f_m (MPa)
+                F_max: "",          // F_max (N)
+                w_Fmax: "",         // w_Fmax (mm)
+                sigma_max: "",      // σ_max (MPa)
+                F_T: "",            // F_T (N)
+                h_D: "",            // h_D (mm)
+                H_BW: ""            // H_BW (-)
+            }; // Experiment results
+
+
+            switch (fileType) {
+                case "moira":
+                    const calcSettingsInputs = await preambleMetaData.calcSettings.inputs || {};
+
+                    const expInfoV = await preambleMetaData.expSettings?.version || 0;
+                    if (expInfoV >= 1) {
+                        expResults.experimentType = await preambleMetaData?.experimentLabel || "";
+                        expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName");
+                        expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
+                        expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
+                        expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
+                        expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
+                        expResults.f_m = getMetaValue(calcSettingsInputs, "outputFlexStrength", "MPa");
+                        expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
+                        expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
+                        expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
+                        expResults.F_T = getMetaValue(calcSettingsInputs, "inputTargetForce", "N");
+                        expResults.h_D = getMetaValue(calcSettingsInputs, "inputIndDepth", "mm");
+                        expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
+                    }
+
+                    const calcInfoV = await preambleMetaData.calcSettings?.version || 0;
+                    if (calcInfoV >= 1) {
+                        samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
+                        samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
+                        samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputWidth_BeforeDrying", "mm");
+                        samplesInfo.mx = getMetaValue(calcSettingsInputs, "inputWeight_BeforeDrying", "g");
+                        samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputHeight_AfterDrying", "mm");
+                        samplesInfo.l0 = getMetaValue(calcSettingsInputs, "inputLength_AfterDrying", "mm");
+                        samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputWidth_AfterDrying", "mm");
+                        samplesInfo.m0 = getMetaValue(calcSettingsInputs, "inputWeight_AfterDrying", "g");
+                    }
+
+                    break;
+
+                case "moira-legacy":
+                    break;
+
+                case "matlab":
+                    break;
+
+                case "unknown":
+                default:
+                    fileCount--;
+                    continue;
+            }
+
+            const dataLength = fileOptionsUsed.dataLength; // Number of rows in one file
+
+
+            if (dataLength === 0) {
+                logMessage(`❌ No data found in file: ${file.name}`);
+                console.warn("\n❌ No data found in file:", file.name);
+                fileCount--;
+                continue;
+            }
+
+
+            if (dataLength > mattesMaxLines) {
+                let step;
+                if (dataLength - (mattesMaxLines * 0.01) > mattesMaxLines) {
+                    Object.entries(parsedData).forEach(([key, arr]) => {
+                        parsedData[key] = arr.slice(0, mattesMaxLines);
+                    });
+                } else {
+                    // Data (rows) reduction
+                    step = Math.ceil(dataLength / mattesMaxLines);
+                    Object.entries(parsedData).forEach(([key, arr]) => {
+                        parsedData[key] = arr.filter((_, index) => index % step === 0);
+                    });
+                }
+                const newDataSize = parsedData[Object.keys(parsedData)[0]]?.length || 0;
+
+                logMessage(`❗ Too many lines in file: ${file.name} (${dataLength} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataLength} -> ${newDataSize} lines\n${step ? '\tData step:' + String(step) : ''}`);
+                console.info(`❗ Too many lines in file: ${file.name} (${dataLength} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataLength} -> ${newDataSize} lines\n${step ? '\tData step:' + String(step) : ''}`);
+            }
+
+            const dataSize = parsedData[Object.keys(parsedData)[0]]?.length || 0;
+
+
+            console.info(file.name, ": 📊 Rows in file:", dataLength, "📦 Rows to process:", dataSize);
+
 
             // ==================== FILES LIST ==================== //
 
-            // TODO: lepší název proměnné
-            const resultsHead = ["File Order", "File name", "Experiment type", "Material",
-                "b (mm)", "h (mm)", "L (mm)", "E (MPa)", "f_m (MPa)",
-                "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
-                "F_T (N)", "h_D (mm)", "H_BW (-)"];
-
-            const resultsData = [resultsHead]; // Third sheet data
-
-            // ================== LOADING DATA ================== //
-
-            const formattedData = []; // First sheet data  -   Array to store ALL formatted measurement data
-            let columnOffset = 0; // Column shift for each section
+            resultsData.push([
+                fileCount,
+                file.name.replace(/\.csv$/i, ""),
+                expResults.experimentType,
+                expResults.material,
+                expResults.b,
+                expResults.h,
+                expResults.L,
+                expResults.E,
+                expResults.f_m,
+                expResults.F_max,
+                expResults.w_Fmax,
+                expResults.sigma_max,
+                expResults.F_T,
+                expResults.h_D,
+                expResults.H_BW,
+            ]);
 
 
             // ================== SAMPLES TABLE ================== //
 
-
-            const samplesTable = [
-                ["Code", "Method", "W", "Number", "Dimensions, weight, before drying", "", "", "", "Dimensions, weight, after drying", "", "", "", "lo \n(mm)"], // row 0
-                ["", "", "", "", "hw", "lw", "ww", "mw", "h0", "l0", "w0", "m0", ""], // row 1
-                ["", "", "", "", "height \n(mm)", "length \n(mm)", "width \n(mm)", "(g)", "height \n(mm)", "length \n(mm)", "width \n(mm)", "(g)", ""] // row 2
-            ];// Second sheet data
-
-            const outputsOpts = {
-                time: {key: 'time', unit: 's', precision: 12, columnLimit: 1},
-                position: {key: 'dist, disp, position', unit: 'mm', precision: 12, columnLimit: 1},
-                force: {key: 'force, load', unit: 'N', precision: 12, columnLimit: null},
-            };
-
-
-            const getMetaValue = (metaData, key, unit = null) => {
-                if (!isObj(metaData)) return "";
-
-                if (metaData.hasOwnProperty(key)) {
-                    let value = metaData[key]?.value || "";
-                    if (!hasValue(value)) return "";
-
-                    const valUnit = metaData[key].unit || null;
-                    if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) value = convertUnits(value, valUnit, unit);
-
-                    return catchVal(value, "", not(isInvalidValue));
-                }
-                return "";
-            };
-
-            // šířky sloupců podle délky hlaviček
-            const PAD = 2;      // rezerva, ať to není nalepené
-            const MIN = 6;      // minimální šířka
-
-            function fitToCols(rows, {pad = 2, min = 6} = {}) {
-                const cols = rows[0]?.length ?? 0;
-                const out = Array.from({length: cols}, () => ({wch: min}));
-                for (let c = 0; c < cols; c++) {
-                    let maxLen = 0;
-                    for (let r = 0; r < rows.length; r++) {
-                        const v = rows[r][c];
-                        const s = isVoid(v) ? "" : String(v);
-                        if (s.length > maxLen) maxLen = s.length;
-                    }
-                    out[c].wch = Math.max(min, maxLen + pad);
-                }
-                return out;
-            }
-
-            function setNumFmt(colIndex, fmt, data, ws) {
-                for (let r = 1; r < data.length; r++) {
-                    const addr = XLSX.utils.encode_cell({r, c: colIndex});
-                    const cell = ws[addr];
-                    if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
-                }
-            }
-
-
-            // ----------------- LOOPING THROW CSV FILES ----------------- //
-            let fileCount = 0;
-            for (let file of files) {
-                fileCount++;
-                const raw = await file.text();
-
-                const csvData = await getCSVData(raw, outputsOpts, file.name) || {};
-
-
-                if (!isNonEmptyObj(csvData)) {
-                    logMessage(`❌ Failed to parse file: ${file.name}`);
-                    console.warn("\n❌ Failed to parse file:", file.name);
-                    fileCount--;
-                    continue;
-                }
-
-                const {
-                    preamble: preambleMetaData = {},
-                    fileType,
-                    fileOptions: fileOptionsUsed = {},
-                    data: parsedData = {}
-                } = csvData;
-
-
-                const samplesInfo = {
-                    method: 3,  // Method (place 3)
-                    W: 0,       // W (place 0)
-                    hw: "",
-                    lw: "",
-                    ww: "",
-                    mw: "",
-                    h0: "",
-                    l0: "",
-                    w0: "",
-                    m0: "",
-                    lo: "",     // lo (empty)
-                }; // Sample information
-
-                const expResults = {
-                    experimentType: "", // Experiment type
-                    material: "",       // Material
-                    b: "",              // b (mm)
-                    h: "",              // h (mm)
-                    L: "",              // L (mm)
-                    E: "",              // E (MPa)
-                    f_m: "",            // f_m (MPa)
-                    F_max: "",          // F_max (N)
-                    w_Fmax: "",         // w_Fmax (mm)
-                    sigma_max: "",      // σ_max (MPa)
-                    F_T: "",            // F_T (N)
-                    h_D: "",            // h_D (mm)
-                    H_BW: ""            // H_BW (-)
-                }; // Experiment results
-
-
-                switch (fileType) {
-                    case "moira":
-                        const calcSettingsInputs = await preambleMetaData.calcSettings.inputs || {};
-
-                        const expInfoV = await preambleMetaData.expSettings?.version || 0;
-                        if (expInfoV >= 1) {
-                            expResults.experimentType = await preambleMetaData?.experimentLabel || "";
-                            expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName");
-                            expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
-                            expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
-                            expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
-                            expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
-                            expResults.f_m = getMetaValue(calcSettingsInputs, "outputFlexStrength", "MPa");
-                            expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
-                            expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
-                            expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
-                            expResults.F_T = getMetaValue(calcSettingsInputs, "inputTargetForce", "N");
-                            expResults.h_D = getMetaValue(calcSettingsInputs, "inputIndDepth", "mm");
-                            expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
-                        }
-
-                        const calcInfoV = await preambleMetaData.calcSettings?.version || 0;
-                        if (calcInfoV >= 1) {
-                            samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
-                            samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
-                            samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputWidth_BeforeDrying", "mm");
-                            samplesInfo.mx = getMetaValue(calcSettingsInputs, "inputWeight_BeforeDrying", "g");
-                            samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputHeight_AfterDrying", "mm");
-                            samplesInfo.l0 = getMetaValue(calcSettingsInputs, "inputLength_AfterDrying", "mm");
-                            samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputWidth_AfterDrying", "mm");
-                            samplesInfo.m0 = getMetaValue(calcSettingsInputs, "inputWeight_AfterDrying", "g");
-                        }
-
-                        break;
-
-                    case "moira-legacy":
-                        break;
-
-                    case "matlab":
-                        break;
-
-                    case "unknown":
-                    default:
-                        fileCount--;
-                        continue;
-                }
-
-                const dataLength = fileOptionsUsed.dataLength; // Number of rows in one file
-
-
-                if (dataLength === 0) {
-                    logMessage(`❌ No data found in file: ${file.name}`);
-                    console.warn("\n❌ No data found in file:", file.name);
-                    fileCount--;
-                    continue;
-                }
-
-
-                if (dataLength > mattesMaxLines) {
-                    let step;
-                    if (dataLength - (mattesMaxLines * 0.01) > mattesMaxLines) {
-                        Object.entries(parsedData).forEach(([key, arr]) => {
-                            parsedData[key] = arr.slice(0, mattesMaxLines);
-                        });
-                    } else {
-                        // Data (rows) reduction
-                        step = Math.ceil(dataLength / mattesMaxLines);
-                        Object.entries(parsedData).forEach(([key, arr]) => {
-                            parsedData[key] = arr.filter((_, index) => index % step === 0);
-                        });
-                    }
-                    const newDataSize = parsedData[Object.keys(parsedData)[0]]?.length || 0;
-
-                    logMessage(`❗ Too many lines in file: ${file.name} (${dataLength} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataLength} -> ${newDataSize} lines\n${step ? '\tData step:' + String(step) : ''}`);
-                    console.info(`❗ Too many lines in file: ${file.name} (${dataLength} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataLength} -> ${newDataSize} lines\n${step ? '\tData step:' + String(step) : ''}`);
-                }
-
-                const dataSize = parsedData[Object.keys(parsedData)[0]]?.length || 0;
-
-
-                console.info(file.name, ": 📊 Rows in file:", dataLength, "📦 Rows to process:", dataSize);
-
-
-                // ==================== FILES LIST ==================== //
-
-                resultsData.push([
-                    fileCount,
-                    file.name.replace(/\.csv$/i, ""),
-                    expResults.experimentType,
-                    expResults.material,
-                    expResults.b,
-                    expResults.h,
-                    expResults.L,
-                    expResults.E,
-                    expResults.f_m,
-                    expResults.F_max,
-                    expResults.w_Fmax,
-                    expResults.sigma_max,
-                    expResults.F_T,
-                    expResults.h_D,
-                    expResults.H_BW,
-                ]);
-
-
-                // ================== SAMPLES TABLE ================== //
-
-                samplesTable.push([
-                    file.name.replace(/\.csv$/i, ""),   // Code
-                    samplesInfo.method,                 // Method (place 3)
-                    samplesInfo.W,                      // W (place 0)
-                    fileCount,                          // Number (file count)
-                    samplesInfo.hw, samplesInfo.lw,     // hw, lw,
-                    samplesInfo.ww, samplesInfo.mx,     // ww, mw
-                    samplesInfo.h0, samplesInfo.l0,     // h0, l0,
-                    samplesInfo.w0, samplesInfo.m0,     // w0, m0
-                    samplesInfo.lo                      // lo (empty)
-                ]);
-
-
-                const getTime = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.time[idx]) : (isNum(i) ? parsedData.time[i] : null);
-                const getPosition = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.position[idx]) : (isNum(i) ? parsedData.position[i] : null);
-                const getForce = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.force[idx]) : (isNum(i) ? parsedData.force[i] : null);
-
-                // ================== LOADING DATA ================== //
-                // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
-                const firstTime = getTime(0); // First time value
-                const firstShift = getPosition(0); // First shift value
-                const firstForce = getForce(0); // First force value
-
-                // Define headers for this section
-                let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
-                sectionHeader1[columnOffset] = fileCount; // Section number
-                sectionHeader2[columnOffset] = "Measured values from testing machine";
-                sectionHeader3[columnOffset] = "Time";
-                sectionHeader3[columnOffset + 1] = "Total distance covered by loading pin";
-                sectionHeader3[columnOffset + 2] = "Force";
-                sectionHeader3[columnOffset + 3] = "Deformation from F > 1N";
-                sectionHeader4[columnOffset] = outputsOpts.time.unit;
-                sectionHeader4[columnOffset + 1] = outputsOpts.position.unit;
-                sectionHeader4[columnOffset + 2] = outputsOpts.force.unit;
-                sectionHeader4[columnOffset + 3] = outputsOpts.position.unit;
-
-                // Ensure headers are fully added for every section
-                if (formattedData.length === 0) {
-                    formattedData.push(sectionHeader1, sectionHeader2, sectionHeader3, sectionHeader4);
-                } else {
-                    formattedData[0][columnOffset] = sectionHeader1[columnOffset];
-                    formattedData[1][columnOffset] = sectionHeader2[columnOffset];
-                    formattedData[2][columnOffset] = sectionHeader3[columnOffset];
-                    formattedData[3][columnOffset] = sectionHeader4[columnOffset];
-
-                    // Ensure other section headers also extend fully in the new columns
-                    for (let i = 0; i < 4; i++) {
-                        for (let j = 1; j <= 3; j++) {
-                            formattedData[i][columnOffset + j] = [sectionHeader1, sectionHeader2, sectionHeader3, sectionHeader4][i][columnOffset + j];
-                        }
-                    }
-                }
-
-                // Add data to the section
-                for (let rowIndex = 0; rowIndex < dataSize; rowIndex++) {
-                    const dataRow = formattedData[rowIndex + 3] || [];
-
-                    const time = (getTime(rowIndex) - firstTime) || 0; // Time (s)
-
-                    const force = (getForce(rowIndex) - firstForce) || 0; // Force sum
-
-                    // if (isVoid(firstShiftAbove1) && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
-
-                    const shift = (getPosition(rowIndex) - firstShift) || 0; // Displacement (mm)
-
-                    // deformation = isVoid(firstShiftAbove1) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
-                    const deformation = shift; // Calculate deformation
-
-                    dataRow[columnOffset] = time;
-                    dataRow[columnOffset + 1] = shift;
-                    dataRow[columnOffset + 2] = force;
-                    dataRow[columnOffset + 3] = deformation;
-
-                    formattedData[rowIndex + 3] = dataRow;
-                }
-
-                columnOffset += 5; // Shift by 4 columns + 1 empty column
-            }
-
-
-            if (fileCount === 0 || !isNotEmpty(formattedData)) {
-                console.error("\n❌ No valid files were processed.");
-                alert("❌ No valid files were processed. Please check the file formats and try again.");
-                return;
-            }
-
-            // Create the first sheet with data
-            const wsMattes = await XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
-            wsMattes["!merges"] = (wsMattes['!merges'] || []);
-            // Create the second with file order index
-            const wsSamples = await XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
-            ensureRefFromAoa(wsSamples, samplesTable);
-            wsSamples["!merges"] = (wsSamples['!merges'] || []); // Merge cells
-            // Create the third sheet with file order index
-            const wsResults = await XLSX.utils.aoa_to_sheet(resultsData);  // Convert data to Excel sheet
-            ensureRefFromAoa(wsResults, resultsData);
-
-
-            // wsSamples rich-text
-            setRichBaseSub(wsSamples, 1, 4, "h", "w");
-            setRichBaseSub(wsSamples, 1, 5, "l", "w");
-            setRichBaseSub(wsSamples, 1, 6, "w", "w");
-            setRichBaseSub(wsSamples, 1, 7, "m", "w");
-            setRichBaseSub(wsSamples, 1, 8, "h", "0");
-            setRichBaseSub(wsSamples, 1, 9, "l", "0");
-            setRichBaseSub(wsSamples, 1, 10, "w", "0");
-            setRichBaseSub(wsSamples, 1, 11, "m", "0");
-            setRichBaseSub(wsSamples, 0, 12, "l", "o", "\n(mm)");
-
-
-            // wsResults rich-text (HEAD)
-            setRich(wsResults, 0, 8, [{text: "f"}, {text: "m", sub: true}, {text: " (MPa)"}]);
-            setRich(wsResults, 0, 9, [{text: "F"}, {text: "max", sub: true}, {text: " (N)"}]);
-            setRich(wsResults, 0, 10, [{text: "w"}, {text: "Fmax", sub: true}, {text: " (mm)"}]);
-            setRich(wsResults, 0, 11, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
-            setRich(wsResults, 0, 12, [{text: "F"}, {text: "T", sub: true}, {text: " (N)"}]);
-            setRich(wsResults, 0, 13, [{text: "h"}, {text: "D", sub: true}, {text: " (mm)"}]);
-            setRich(wsResults, 0, 14, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
-
-
-            // console.info('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
-
-
-            columnOffset = 0; // Column shift for each section
-            for (let f = 0; f < fileCount; f++) {
-                wsMattes["!merges"].push({
-                    s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
-                });
-                wsMattes["!merges"].push({
-                    s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
-                });
-                columnOffset += 5; // Shift by 4 columns + 1 empty column
-            }
-
-
-            wsSamples['!merges'].push(
-                {s: {r: 0, c: 0}, e: {r: 2, c: 0}}, // Code
-                {s: {r: 0, c: 1}, e: {r: 2, c: 1}}, // Method
-                {s: {r: 0, c: 2}, e: {r: 2, c: 2}}, // W
-                {s: {r: 0, c: 3}, e: {r: 2, c: 3}}, // Number
-                {s: {r: 0, c: 4}, e: {r: 0, c: 7}}, // Dimensions before drying
-                {s: {r: 0, c: 8}, e: {r: 0, c: 11}}, // Dimensions after drying
-                {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
-            );
-
-
-            const range = XLSX.utils.decode_range(wsSamples['!ref']); // Get table size
-
-            for (let R = range.s.r; R <= range.e.r; ++R) {
-                for (let C = range.s.c; C <= range.e.c; ++C) {
-                    const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
-                    const cell = wsSamples[cellAddress];
-                    if (!cell) continue; // Empty cells
-
-                    cell.s = cell.s || {};
-
-                    // Set cell style
-                    cell.s = {
-                        font: {
-                            bold: R <= 2 // First three line in Bold text (0,1,2)
-                        },
-                        border: {
-                            top: {style: "thin", color: {auto: 1}},
-                            bottom: {style: "thin", color: {auto: 1}},
-                            left: {style: "thin", color: {auto: 1}},
-                            right: {style: "thin", color: {auto: 1}}
-                        }
-                    };
-
-
-                    cell.s.alignment = {
-                        horizontal: "center",
-                        vertical: "center"
-                    };
-
-                    // Bold text for the first three lines if the cell is not empty
-                    if (R <= 2) {
-                        cell.s.font = {bold: true};
+            samplesTable.push([
+                file.name.replace(/\.csv$/i, ""),   // Code
+                samplesInfo.method,                 // Method (place 3)
+                samplesInfo.W,                      // W (place 0)
+                fileCount,                          // Number (file count)
+                samplesInfo.hw, samplesInfo.lw,     // hw, lw,
+                samplesInfo.ww, samplesInfo.mx,     // ww, mw
+                samplesInfo.h0, samplesInfo.l0,     // h0, l0,
+                samplesInfo.w0, samplesInfo.m0,     // w0, m0
+                samplesInfo.lo                      // lo (empty)
+            ]);
+
+
+            const getTime = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.time[idx]) : (isNum(i) ? parsedData.time[i] : null);
+            const getPosition = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.position[idx]) : (isNum(i) ? parsedData.position[i] : null);
+            const getForce = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.force[idx]) : (isNum(i) ? parsedData.force[i] : null);
+
+            // ================== LOADING DATA ================== //
+            // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
+            const firstTime = getTime(0); // First time value
+            const firstShift = getPosition(0); // First shift value
+            const firstForce = getForce(0); // First force value
+
+            // Define headers for this section
+            let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
+            sectionHeader1[columnOffset] = fileCount; // Section number
+            sectionHeader2[columnOffset] = "Measured values from testing machine";
+            sectionHeader3[columnOffset] = "Time";
+            sectionHeader3[columnOffset + 1] = "Total distance covered by loading pin";
+            sectionHeader3[columnOffset + 2] = "Force";
+            sectionHeader3[columnOffset + 3] = "Deformation from F > 1N";
+            sectionHeader4[columnOffset] = outputsOpts.time.unit;
+            sectionHeader4[columnOffset + 1] = outputsOpts.position.unit;
+            sectionHeader4[columnOffset + 2] = outputsOpts.force.unit;
+            sectionHeader4[columnOffset + 3] = outputsOpts.position.unit;
+
+            // Ensure headers are fully added for every section
+            if (formattedData.length === 0) {
+                formattedData.push(sectionHeader1, sectionHeader2, sectionHeader3, sectionHeader4);
+            } else {
+                formattedData[0][columnOffset] = sectionHeader1[columnOffset];
+                formattedData[1][columnOffset] = sectionHeader2[columnOffset];
+                formattedData[2][columnOffset] = sectionHeader3[columnOffset];
+                formattedData[3][columnOffset] = sectionHeader4[columnOffset];
+
+                // Ensure other section headers also extend fully in the new columns
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 1; j <= 3; j++) {
+                        formattedData[i][columnOffset + j] = [sectionHeader1, sectionHeader2, sectionHeader3, sectionHeader4][i][columnOffset + j];
                     }
                 }
             }
 
-            wsResults['!ref'] = XLSX.utils.encode_range(
-                {s: {r: 0, c: 0}, e: {r: resultsData.length - 1, c: resultsHead.length - 1}}
-            );
+            // Add data to the section
+            for (let rowIndex = 0; rowIndex < dataSize; rowIndex++) {
+                const dataRow = formattedData[rowIndex + 3] || [];
 
-            // autofilter přes hlavičku
-            // wsResults['!autofilter'] = {ref: XLSX.utils.encode_range(0, 0, resultsData.length - 1, HEAD.length - 1)};
+                const time = (getTime(rowIndex) - firstTime) || 0; // Time (s)
 
+                const force = (getForce(rowIndex) - firstForce) || 0; // Force sum
 
-            setMattesColumnWidths(wsMattes);
+                // if (isVoid(firstShiftAbove1) && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
 
-            columnOffset = 0; // Column shift for each section
-            for (let f = 0; f < fileCount; f++) {
-                setNumFmt(columnOffset, "0.000000", formattedData, wsMattes);       // time (s)
-                setNumFmt(columnOffset + 1, "0.0000", formattedData, wsMattes);       // position (mm)
-                setNumFmt(columnOffset + 2, "0.00", formattedData, wsMattes);         // force (N)
-                setNumFmt(columnOffset + 3, "0.0000", formattedData, wsMattes);       // deformation (mm)
+                const shift = (getPosition(rowIndex) - firstShift) || 0; // Displacement (mm)
 
-                columnOffset += 5; // Shift by 4 columns + 1 empty column
+                // deformation = isVoid(firstShiftAbove1) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                const deformation = shift; // Calculate deformation
+
+                dataRow[columnOffset] = time;
+                dataRow[columnOffset + 1] = shift;
+                dataRow[columnOffset + 2] = force;
+                dataRow[columnOffset + 3] = deformation;
+
+                formattedData[rowIndex + 3] = dataRow;
             }
 
-
-            setSamplesColumnWidths(wsSamples);
-
-            setNumFmt(4, "0.00", samplesTable, wsSamples);       // hw (mm)
-            setNumFmt(5, "0.0", samplesTable, wsSamples);        // lw (mm)
-            setNumFmt(6, "0.00", samplesTable, wsSamples);       // ww (mm)
-            setNumFmt(7, "0.000", samplesTable, wsSamples);      // mw (g)
-            setNumFmt(8, "0.00", samplesTable, wsSamples);       // h0 (mm)
-            setNumFmt(9, "0.0", samplesTable, wsSamples);        // l0 (mm)
-            setNumFmt(10, "0.00", samplesTable, wsSamples);      // w0 (mm)
-            setNumFmt(11, "0.000", samplesTable, wsSamples);     // m0 (g)
+            columnOffset += 5; // Shift by 4 columns + 1 empty column
+        }
 
 
-            wsResults['!cols'] = fitToCols(resultsData, {pad: PAD, min: MIN}); // wsResults['!cols'] = HEAD.map(h => ({wch: Math.max(MIN, h.length + PAD)}));
+        if (fileCount === 0 || !isNotEmpty(formattedData)) {
+            console.error("\n❌ No valid files were processed.");
+            alert("❌ No valid files were processed. Please check the file formats and try again.");
+            return;
+        }
+
+        // Create the first sheet with data
+        const wsMattes = await XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
+        wsMattes["!merges"] = (wsMattes['!merges'] || []);
+        // Create the second with file order index
+        const wsSamples = await XLSX.utils.aoa_to_sheet(samplesTable, {raw: true});  // Convert data to Excel sheet
+        ensureRefFromAoa(wsSamples, samplesTable);
+        wsSamples["!merges"] = (wsSamples['!merges'] || []); // Merge cells
+        // Create the third sheet with file order index
+        const wsResults = await XLSX.utils.aoa_to_sheet(resultsData);  // Convert data to Excel sheet
+        ensureRefFromAoa(wsResults, resultsData);
 
 
-            setNumFmt(4, "0.00", resultsData, wsResults);      // b (mm)
-            setNumFmt(5, "0.00", resultsData, wsResults);      // h (mm)
-            setNumFmt(6, "0.00", resultsData, wsResults);      // L (mm)
-            setNumFmt(7, "0.000", resultsData, wsResults);     // E (MPa)
-            setNumFmt(8, "0.000", resultsData, wsResults);     // f_m (MPa)
-            setNumFmt(9, "0.00", resultsData, wsResults);      // F_max (N)
-            setNumFmt(10, "0.00", resultsData, wsResults);      // w_Fmax (mm)
-            setNumFmt(11, "0.000", resultsData, wsResults);    // σ_max (MPa)
-            setNumFmt(12, "0.00", resultsData, wsResults);     // F_T (N)
-            setNumFmt(13, "0.00", resultsData, wsResults);     // h_D (mm)
-            setNumFmt(14, "0.000", resultsData, wsResults);    // H_BW (-)
+        // wsSamples rich-text
+        setRichBaseSub(wsSamples, 1, 4, "h", "w");
+        setRichBaseSub(wsSamples, 1, 5, "l", "w");
+        setRichBaseSub(wsSamples, 1, 6, "w", "w");
+        setRichBaseSub(wsSamples, 1, 7, "m", "w");
+        setRichBaseSub(wsSamples, 1, 8, "h", "0");
+        setRichBaseSub(wsSamples, 1, 9, "l", "0");
+        setRichBaseSub(wsSamples, 1, 10, "w", "0");
+        setRichBaseSub(wsSamples, 1, 11, "m", "0");
+        setRichBaseSub(wsSamples, 0, 12, "l", "o", "\n(mm)");
 
 
-            XLSX.utils.book_append_sheet(wb, wsMattes, sheetName); // Append a sheet to workbook
+        // wsResults rich-text (HEAD)
+        setRich(wsResults, 0, 8, [{text: "f"}, {text: "m", sub: true}, {text: " (MPa)"}]);
+        setRich(wsResults, 0, 9, [{text: "F"}, {text: "max", sub: true}, {text: " (N)"}]);
+        setRich(wsResults, 0, 10, [{text: "w"}, {text: "Fmax", sub: true}, {text: " (mm)"}]);
+        setRich(wsResults, 0, 11, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
+        setRich(wsResults, 0, 12, [{text: "F"}, {text: "T", sub: true}, {text: " (N)"}]);
+        setRich(wsResults, 0, 13, [{text: "h"}, {text: "D", sub: true}, {text: " (mm)"}]);
+        setRich(wsResults, 0, 14, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
 
-            XLSX.utils.book_append_sheet(wb, wsSamples, (sheetName + "-objects").slice(0, 31)); // Append a sheet to workbook
 
-            XLSX.utils.book_append_sheet(wb, wsResults, "File Order"); // Append a sheet to workbook
+        // console.info('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
 
-            // Save the file
-            XLSX.writeFile(wb, `${measurementName.slice(0, 31)}.xlsx`);
-            console.info("✅ Excel file created.");
-        };
 
-        input.click(); // Open the file selection dialog
+        columnOffset = 0; // Column shift for each section
+        for (let f = 0; f < fileCount; f++) {
+            wsMattes["!merges"].push({
+                s: {r: 0, c: columnOffset}, e: {r: 0, c: columnOffset + 3} // merge 'fileCount' over 4 columns in line 0
+            });
+            wsMattes["!merges"].push({
+                s: {r: 1, c: columnOffset}, e: {r: 1, c: columnOffset + 3} // merge "Measured values from testing machine" over 4 columns in line 1
+            });
+            columnOffset += 5; // Shift by 4 columns + 1 empty column
+        }
+
+
+        wsSamples['!merges'].push(
+            {s: {r: 0, c: 0}, e: {r: 2, c: 0}}, // Code
+            {s: {r: 0, c: 1}, e: {r: 2, c: 1}}, // Method
+            {s: {r: 0, c: 2}, e: {r: 2, c: 2}}, // W
+            {s: {r: 0, c: 3}, e: {r: 2, c: 3}}, // Number
+            {s: {r: 0, c: 4}, e: {r: 0, c: 7}}, // Dimensions before drying
+            {s: {r: 0, c: 8}, e: {r: 0, c: 11}}, // Dimensions after drying
+            {s: {r: 0, c: 12}, e: {r: 2, c: 12}} // lo (mm)
+        );
+
+
+        const range = XLSX.utils.decode_range(wsSamples['!ref']); // Get table size
+
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
+                const cell = wsSamples[cellAddress];
+                if (!cell) continue; // Empty cells
+
+                cell.s = cell.s || {};
+
+                // Set cell style
+                cell.s = {
+                    font: {
+                        bold: R <= 2 // First three line in Bold text (0,1,2)
+                    },
+                    border: {
+                        top: {style: "thin", color: {auto: 1}},
+                        bottom: {style: "thin", color: {auto: 1}},
+                        left: {style: "thin", color: {auto: 1}},
+                        right: {style: "thin", color: {auto: 1}}
+                    }
+                };
+
+
+                cell.s.alignment = {
+                    horizontal: "center",
+                    vertical: "center"
+                };
+
+                // Bold text for the first three lines if the cell is not empty
+                if (R <= 2) {
+                    cell.s.font = {bold: true};
+                }
+            }
+        }
+
+        wsResults['!ref'] = XLSX.utils.encode_range(
+            {s: {r: 0, c: 0}, e: {r: resultsData.length - 1, c: resultsHead.length - 1}}
+        );
+
+        // autofilter přes hlavičku
+        // wsResults['!autofilter'] = {ref: XLSX.utils.encode_range(0, 0, resultsData.length - 1, HEAD.length - 1)};
+
+
+        setMattesColumnWidths(wsMattes);
+
+        columnOffset = 0; // Column shift for each section
+        for (let f = 0; f < fileCount; f++) {
+            setNumFmt(columnOffset, "0.000000", formattedData, wsMattes);       // time (s)
+            setNumFmt(columnOffset + 1, "0.0000", formattedData, wsMattes);       // position (mm)
+            setNumFmt(columnOffset + 2, "0.00", formattedData, wsMattes);         // force (N)
+            setNumFmt(columnOffset + 3, "0.0000", formattedData, wsMattes);       // deformation (mm)
+
+            columnOffset += 5; // Shift by 4 columns + 1 empty column
+        }
+
+
+        setSamplesColumnWidths(wsSamples);
+
+        setNumFmt(4, "0.00", samplesTable, wsSamples);       // hw (mm)
+        setNumFmt(5, "0.0", samplesTable, wsSamples);        // lw (mm)
+        setNumFmt(6, "0.00", samplesTable, wsSamples);       // ww (mm)
+        setNumFmt(7, "0.000", samplesTable, wsSamples);      // mw (g)
+        setNumFmt(8, "0.00", samplesTable, wsSamples);       // h0 (mm)
+        setNumFmt(9, "0.0", samplesTable, wsSamples);        // l0 (mm)
+        setNumFmt(10, "0.00", samplesTable, wsSamples);      // w0 (mm)
+        setNumFmt(11, "0.000", samplesTable, wsSamples);     // m0 (g)
+
+
+        wsResults['!cols'] = fitToCols(resultsData, {pad: PAD, min: MIN}); // wsResults['!cols'] = HEAD.map(h => ({wch: Math.max(MIN, h.length + PAD)}));
+
+
+        setNumFmt(4, "0.00", resultsData, wsResults);      // b (mm)
+        setNumFmt(5, "0.00", resultsData, wsResults);      // h (mm)
+        setNumFmt(6, "0.00", resultsData, wsResults);      // L (mm)
+        setNumFmt(7, "0.000", resultsData, wsResults);     // E (MPa)
+        setNumFmt(8, "0.000", resultsData, wsResults);     // f_m (MPa)
+        setNumFmt(9, "0.00", resultsData, wsResults);      // F_max (N)
+        setNumFmt(10, "0.00", resultsData, wsResults);      // w_Fmax (mm)
+        setNumFmt(11, "0.000", resultsData, wsResults);    // σ_max (MPa)
+        setNumFmt(12, "0.00", resultsData, wsResults);     // F_T (N)
+        setNumFmt(13, "0.00", resultsData, wsResults);     // h_D (mm)
+        setNumFmt(14, "0.000", resultsData, wsResults);    // H_BW (-)
+
+
+        XLSX.utils.book_append_sheet(wb, wsMattes, sheetName); // Append a sheet to workbook
+
+        XLSX.utils.book_append_sheet(wb, wsSamples, (sheetName + "-objects").slice(0, 31)); // Append a sheet to workbook
+
+        XLSX.utils.book_append_sheet(wb, wsResults, "File Order"); // Append a sheet to workbook
+
+        // Save the file
+        XLSX.writeFile(wb, `${measurementName.slice(0, 31)}.xlsx`);
+        console.info("✅ Excel file created.");
     }
+
+    function pickCsvFiles() {
+  // Prefer showOpenFilePicker when available
+  if (window.showOpenFilePicker) {
+    // Must be called synchronously from the click; we are.
+    return window.showOpenFilePicker({
+      multiple: true,
+      types: [{
+        description: 'CSV files',
+        accept: { 'text/csv': ['.csv'] }
+      }]
+    }).then(async handles => {
+      const files = [];
+      for (const h of handles) files.push(await h.getFile());
+      return files;
+    }).catch(err => {
+      // User canceled or NotAllowedError—return empty to handle upstream
+      return [];
+    });
+  }
+
+  // Fallback: <input type="file">
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.multiple = true;
+
+    // Some browsers (Safari) are happier if it's in the DOM.
+    input.style.position = 'fixed';
+    input.style.left = '-9999px';
+    document.body.appendChild(input);
+
+    input.addEventListener('change', () => {
+      const files = Array.from(input.files || []);
+      document.body.removeChild(input);
+      resolve(files);
+    }, { once: true });
+
+    input.click(); // still within the user gesture
+  });
+}
 </script>
 
 <script>
@@ -13244,7 +13336,8 @@
                     slider.value = value;
                     event.target.value = value; // Update the input value to match the slider
                     slider.dispatchEvent(new Event("change", {bubbles: true})); // Trigger input event to update the slider
-                }x
+                }
+                x
             });
         });
 
