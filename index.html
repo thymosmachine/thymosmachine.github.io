@@ -157,28 +157,30 @@
                 debugWrapper?.remove();
                 document.querySelector('html').style.background = 'none';
 
-                // go through all localStorage that start with 'storageKeyBase', and change 'systemLevel' to 'expert' if it's higher
-                const selectorId = 'systemLevelSelect';
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith(storageKeyBase)) {
-                        try {
-                            const data = JSON.parse(localStorage.getItem(key));
-                            if (data && data[selectorId]) {
-                                const levels = ['operator', 'admin', 'service', 'developer', 'god'];
-                                if (levels.some(level => level === data[selectorId])) {
-                                    const level = 'expert';
-                                    data[selectorId] = level;
-                                    $ID(selectorId).value = level;
-                                    localStorage.setItem(key, JSON.stringify(data));
-                                    console.info(`%c\nSystem level downgraded to ' ${level}' in localStorage key: ${key}`, "color: orange; font-size: 12px;");
+                window.addEventListener('load', () => {
+                    // go through all localStorage that start with 'storageKeyBase', and change 'systemLevel' to 'expert' if it's higher
+                    const selectorId = 'systemLevelSelect';
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith(storageKeyBase)) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                if (data && data[selectorId]) {
+                                    const levels = ['operator', 'admin', 'service', 'developer', 'god'];
+                                    if (levels.some(level => level === data[selectorId])) {
+                                        const level = 'expert';
+                                        data[selectorId] = level;
+                                        $ID(selectorId).value = level;
+                                        localStorage.setItem(key, JSON.stringify(data));
+                                        console.info(`%c\nSystem level downgraded to ' ${level}' in localStorage key: ${key}`, "color: orange; font-size: 12px;");
+                                    }
                                 }
+                            } catch (e) {
+                                // ignore JSON parse errors
                             }
-                        } catch (e) {
-                            // ignore JSON parse errors
                         }
                     }
-                }
+                });
             }
         })();
 
@@ -5109,61 +5111,6 @@
 </script>
 
 <script>
-
-    // -------------------- Global variables --------------------
-    let systemLevel = 0;
-
-    let connectionType = null; // 'serial' | 'bluetooth' | 'wifi' | null
-
-    let allLoaded = false;
-    let pageLoaded = false;
-    let dataLoaded = false;
-
-    let lastTitle = document.title;
-
-
-    /////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////
-
-
-    let calibrationStatus = false;
-    let currentSpeed = null;
-    let currentAcceleration = null;
-
-    /////////////////////////////////////////////////////////////////
-
-
-    // Store dataset
-    let timeDataChart = [];
-    let positionDataChart = [];
-    let forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
-    let photoDataChart = []; // List of time markers
-    let dataCount = 0;
-
-    let timeData = [];
-    let positionData = [];
-    let forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
-
-    let notificationsAllowed = false;
-
-
-    /////////////////////////////////////////////////////////////////
-
-    // -------- Local Storage Keys ------ //
-    const storageKeyBase = "MoiraUIData";                    // Base-name of Key in localStorage
-    const storageKeyDefaults = `${storageKeyBase}_Defaults`; // System Defaults Key in localStorage (all)
-    const storageKeyIdle = `${storageKeyBase}_Idle`;         // User Defaults Key in localStorage (some)
-    const storageKeySys = `${storageKeyBase}_Sys`;           // User-System Defaults Key in localStorage (rest)
-    let storageKeyLoad = storageKeyIdle;                     // Current Key in localStorage
-
-    // -------- IndexedDB Setup -------- //
-    const DB_NAME = "MoiraMeasurementData";// Database name
-    const STORE_NAME = "LastLog";// Store name for saving log entries
-    let db;// Database instance
-
-</script>
-
-<script>
     function showNotification(title = "Notification", message = "This is a notification.") {
         if (!("Notification" in window)) {
             alert("Your browser does not support notifications.");
@@ -6046,7 +5993,7 @@
 
         liveUpdate = !liveUpdate;
 
-        if (!isExperimentRunning) {
+        if (!isExperimentRunning && isConnected) {
             if (liveUpdate) {
 
                 const dataAppInterval = getInputNumDefAbsInt("inputAppInterval", NaN);
@@ -11487,46 +11434,46 @@
     }
 
     function pickCsvFiles() {
-  // Prefer showOpenFilePicker when available
-  if (window.showOpenFilePicker) {
-    // Must be called synchronously from the click; we are.
-    return window.showOpenFilePicker({
-      multiple: true,
-      types: [{
-        description: 'CSV files',
-        accept: { 'text/csv': ['.csv'] }
-      }]
-    }).then(async handles => {
-      const files = [];
-      for (const h of handles) files.push(await h.getFile());
-      return files;
-    }).catch(err => {
-      // User canceled or NotAllowedError—return empty to handle upstream
-      return [];
-    });
-  }
+        // Prefer showOpenFilePicker when available
+        if (window.showOpenFilePicker) {
+            // Must be called synchronously from the click; we are.
+            return window.showOpenFilePicker({
+                multiple: true,
+                types: [{
+                    description: 'CSV files',
+                    accept: {'text/csv': ['.csv']}
+                }]
+            }).then(async handles => {
+                const files = [];
+                for (const h of handles) files.push(await h.getFile());
+                return files;
+            }).catch(err => {
+                // User canceled or NotAllowedError—return empty to handle upstream
+                return [];
+            });
+        }
 
-  // Fallback: <input type="file">
-  return new Promise(resolve => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.multiple = true;
+        // Fallback: <input type="file">
+        return new Promise(resolve => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.multiple = true;
 
-    // Some browsers (Safari) are happier if it's in the DOM.
-    input.style.position = 'fixed';
-    input.style.left = '-9999px';
-    document.body.appendChild(input);
+            // Some browsers (Safari) are happier if it's in the DOM.
+            input.style.position = 'fixed';
+            input.style.left = '-9999px';
+            document.body.appendChild(input);
 
-    input.addEventListener('change', () => {
-      const files = Array.from(input.files || []);
-      document.body.removeChild(input);
-      resolve(files);
-    }, { once: true });
+            input.addEventListener('change', () => {
+                const files = Array.from(input.files || []);
+                document.body.removeChild(input);
+                resolve(files);
+            }, {once: true});
 
-    input.click(); // still within the user gesture
-  });
-}
+            input.click(); // still within the user gesture
+        });
+    }
 </script>
 
 <script>
@@ -12406,8 +12353,8 @@
 
             const THYMOS_USB_INFOS = [...[...thymosFingerprints, lastFingerPrint].map(fp => {
                 if (!isNonEmptyStr(fp)) return null;
-                    const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
-                    return {usbVendorId: vendorId, usbProductId: productId};
+                const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                return {usbVendorId: vendorId, usbProductId: productId};
             })
             ];
 
@@ -12729,6 +12676,62 @@
             label.classList.add("disabled");
         }
     }
+
+</script>
+
+
+<script>
+
+    // -------------------- Global variables --------------------
+    let systemLevel = 0;
+
+    let connectionType = null; // 'serial' | 'bluetooth' | 'wifi' | null
+
+    let allLoaded = false;
+    let pageLoaded = false;
+    let dataLoaded = false;
+
+    let lastTitle = document.title;
+
+
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+
+    let calibrationStatus = false;
+    let currentSpeed = null;
+    let currentAcceleration = null;
+
+    /////////////////////////////////////////////////////////////////
+
+
+    // Store dataset
+    let timeDataChart = [];
+    let positionDataChart = [];
+    let forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+    let photoDataChart = []; // List of time markers
+    let dataCount = 0;
+
+    let timeData = [];
+    let positionData = [];
+    let forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+
+    let notificationsAllowed = false;
+
+
+    /////////////////////////////////////////////////////////////////
+
+    // -------- Local Storage Keys ------ //
+    const storageKeyBase = "MoiraUIData";                    // Base-name of Key in localStorage
+    const storageKeyDefaults = `${storageKeyBase}_Defaults`; // System Defaults Key in localStorage (all)
+    const storageKeyIdle = `${storageKeyBase}_Idle`;         // User Defaults Key in localStorage (some)
+    const storageKeySys = `${storageKeyBase}_Sys`;           // User-System Defaults Key in localStorage (rest)
+    let storageKeyLoad = storageKeyIdle;                     // Current Key in localStorage
+
+    // -------- IndexedDB Setup -------- //
+    const DB_NAME = "MoiraMeasurementData";// Database name
+    const STORE_NAME = "LastLog";// Store name for saving log entries
+    let db;// Database instance
 
 </script>
 
