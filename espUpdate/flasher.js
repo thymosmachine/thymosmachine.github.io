@@ -35,7 +35,7 @@ scriptVariables.alertFunction = scriptVariables.consoleMode ? console.log : logA
 
 export const scriptOptions = {
     useESPSignals: false,
-    useFilteredPort: true,
+    useFilteredPort: false, // TODO: Use port filtering based on Thymos fingerprints - disabled for now just to be sure
     thymosFingerprints: [
         "0x303a:0x1001", //  ≈ "12346:4097"
     ],

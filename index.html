@@ -11546,7 +11546,7 @@
         // "6790:29985",   // Thymos ESP32-C6
         "0x303a:0x1001",   // Thymos ESP32-S2   //  ≈ "12346:4097"
     ];
-    let useFilteredPort = true;
+    let useFilteredPort = false;  // TODO: Use port filtering based on Thymos fingerprints - disabled for now just to be sure
     let usePortAutoConnect = true;
 
     let tryCount = 0;
@@ -12398,20 +12398,22 @@
     // Web Serial API - connect event - auto connect to Thymos devices
     if ('serial' in navigator) {
         navigator.serial.addEventListener('connect', e => {
-            if (isConnected && serialPort) return;
+            if (isConnected) return;
 
             const port = e?.target;
-            const portInfo = port?.getInfo();
+            const portInfo = port?.getInfo(); // TODO: upravit, že jich může být více (teď kontrola posledního připojeného)
+            const lastFingerPrint = localStorage.getItem("lastFingerprint") || null;
 
-            const THYMOS_USB_INFOS = [...thymosFingerprints.map(fp => {
-                const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
-                return {usbVendorId: vendorId, usbProductId: productId};
+            const THYMOS_USB_INFOS = [...[...thymosFingerprints, lastFingerPrint].map(fp => {
+                if (!isNonEmptyStr(fp)) return null;
+                    const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                    return {usbVendorId: vendorId, usbProductId: productId};
             })
             ];
 
             const THYMOS_DEVICES = [];
 
-            if (THYMOS_USB_INFOS.some(info => info.usbVendorId === portInfo.usbVendorId && info.usbProductId === portInfo.usbProductId)) {
+            if (THYMOS_USB_INFOS.some(info => isNonEmptyObj(info) && info.usbVendorId === portInfo.usbVendorId && info.usbProductId === portInfo.usbProductId)) {
                 THYMOS_DEVICES.push(port);
             }
 
