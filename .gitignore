@@ -27,4 +27,5 @@ node_modules/
 *.xml
 *.pem
 debug.txt
+accessories.txt
 *.bat
