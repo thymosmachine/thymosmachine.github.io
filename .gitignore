@@ -22,6 +22,7 @@
 
 
 # Ignorovat moduly NODE.JS
+<<<<<<< HEAD
 node_modules/
 .idea/
 *.xml
@@ -31,3 +32,6 @@ startServer_Ngorok.bat
 startServer_NPM-NODE.JS.bat
 startServer_NPX.bat
 startServer_PYTHON.bat
+=======
+node_modules/
+>>>>>>> parent of fa58583 (Add debug.txt to .gitignore)
