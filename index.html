@@ -11493,7 +11493,7 @@
         // "6790:29985",   // Thymos ESP32-C6
         "0x303a:0x1001",   // Thymos ESP32-S2   //  ≈ "12346:4097"
     ];
-    let useFilteredPort = false;  // TODO: Use port filtering based on Thymos fingerprints - disabled for now just to be sure
+    let useFilteredPort = true;
     let usePortAutoConnect = true;
 
     let tryCount = 0; // TODO: opravit připojování
@@ -12682,6 +12682,90 @@
 
 <script>
 
+    // vytáhne typ ze suffixu hodnoty (oddělovače - _ / mezera)
+    const typeFrom = s =>
+        (String(s || '').toLowerCase().match(/(?:^|[-_\/\s])(inb|hbr|flx)$/)?.[1]) || '';
+
+    // rozparsuje data-eq-type na inkluze/exkluze; podporuje "HB,IB", "HB|IB", "HB IB", "HB/IB", "-HBR"
+    const parseEqRule = attr => {
+        const tokens = String(attr || '')
+            .split(/[,\s;|/]+/)
+            .map(t => t.trim().toLowerCase())
+            .filter(Boolean);
+
+        const includes = new Set();
+        const excludes = new Set();
+
+        for (const t of tokens) {
+            if (t.startsWith('-')) {
+                const x = t.slice(1).trim();
+                if (x) excludes.add(x);
+            } else {
+                includes.add(t);
+            }
+        }
+        return {includes, excludes};
+    };
+
+    // vyhodnotí shodu se zvoleným typem
+    const matchesRule = (rule, selType) => {
+        const hasIncl = rule.includes.size > 0;
+        const hasExcl = rule.excludes.size > 0;
+
+        if (hasIncl) {
+            return rule.includes.has(selType);
+        }
+        if (hasExcl) {
+            return !rule.excludes.has(selType);
+        }
+
+        return true; // Empty rule matches all
+    };
+
+    const matchLevel = (el) => {
+        const elSysVal = el.getAttribute('data-system-level')?.toLowerCase().trim();
+
+        if (isNonEmptyStr(elSysVal)) {
+            const elLevel = elSysVal.split('-');
+            const valLevel = parseInt(elLevel[0]);
+            const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNum);
+
+            const visible = (elLevel[0] === 'all' || (valLevel <= systemLevel && systemLevel < valLevelTop));
+
+            return {sys: elSysVal, visible: visible};
+        }
+        return {sys: null, visible: true};
+    };
+
+    function manageElementVisibility(el, doBubbles = false) {
+
+        const selectedValue = ($ID("experimentTypeDropdown").value || '').toLowerCase();
+        const selectedType = typeFrom(selectedValue); // "inb" | "hbr" | "flx" | ""
+
+        const rule = parseEqRule(el.dataset.eqType);
+        const isType = matchesRule(rule, selectedType);
+        const {sys: sysLevel, visible: isLevel} = matchLevel(el);
+
+        const isVisible = isType && isLevel;
+
+        console.log(selectedType, el.dataset.eqType, isType)
+        console.log(systemLevel, sysLevel, isLevel)
+
+
+        el.classList.toggle(((isNonEmptyStr(sysLevel) && sysLevel.endsWith('v') && !isType) ? 'invisible' : 'undisplayed'), !isVisible);
+
+        if (!isVisible && doBubbles) {
+            $$('input', el)?.forEach(input => {
+                // input.value = '';
+                input.dispatchEvent(new Event("change", {bubbles: true}));
+            });
+        }
+    }
+</script>
+
+
+<script>
+
     // -------------------- Global variables --------------------
     let systemLevel = 0;
 
@@ -12734,6 +12818,7 @@
     let db;// Database instance
 
 </script>
+
 
 <script>
 
@@ -12999,18 +13084,7 @@
             document.body.setAttribute('data-system-level', selectedLevel);
             console.info(`\n\t⚙️ Selected System-level: ${selectedLevel} (${systemLevel})`);
 
-            levelElements.forEach(el => {
-
-                const elVal = el.getAttribute('data-system-level')?.toLowerCase().trim();
-
-                const elLevel = elVal.split('-');
-                const valLevel = parseInt(elLevel[0]);
-                const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNum);
-
-                const visible = (elLevel[0] === 'all' || !(valLevel <= systemLevel && systemLevel < valLevelTop));
-
-                el.classList.toggle((elVal.endsWith('v') ? 'invisible' : 'undisplayed'), visible);
-            });
+            levelElements?.forEach(el => manageElementVisibility(el));
 
             window.dispatchEvent(new Event('resize'));
 
@@ -13408,75 +13482,8 @@
         // pouze ty .data-eq, které mají data-eq-type
         const experiment_result_elements = $$("[data-eq-type]");
         $ID("experimentTypeDropdown")?.addEventListener("change", async (event) => {
-            // vytáhne typ ze suffixu hodnoty (oddělovače - _ / mezera)
-            const typeFrom = s =>
-                (String(s || '').toLowerCase().match(/(?:^|[-_\/\s])(inb|hbr|flx)$/)?.[1]) || '';
 
-            // rozparsuje data-eq-type na inkluze/exkluze; podporuje "HB,IB", "HB|IB", "HB IB", "HB/IB", "-HBR"
-            const parseEqRule = attr => {
-                const tokens = String(attr || '')
-                    .split(/[,\s;|/]+/)
-                    .map(t => t.trim().toLowerCase())
-                    .filter(Boolean);
-
-                const includes = new Set();
-                const excludes = new Set();
-
-                for (const t of tokens) {
-                    if (t.startsWith('-')) {
-                        const x = t.slice(1).trim();
-                        if (x) excludes.add(x);
-                    } else {
-                        includes.add(t);
-                    }
-                }
-                return {includes, excludes};
-            };
-
-            // vyhodnotí shodu se zvoleným typem
-            const matchesRule = (rule, selType) => {
-                const hasIncl = rule.includes.size > 0;
-                const hasExcl = rule.excludes.size > 0;
-
-                if (hasIncl) {
-                    return rule.includes.has(selType);
-                }
-                if (hasExcl) {
-                    return !rule.excludes.has(selType);
-                }
-
-                return true; // Empty rule matches all
-            };
-
-            const selectedValue = (event.target.value || '').toLowerCase();
-            const selectedType = typeFrom(selectedValue); // "inb" | "hbr" | "flx" | ""
-
-
-            experiment_result_elements?.forEach(el => {
-                const rule = parseEqRule(el.dataset.eqType);
-                const isType = matchesRule(rule, selectedType);
-
-
-                el.classList.toggle('undisplayed', !isType);
-
-                const elSysVal = el.getAttribute('data-system-level')?.toLowerCase().trim();
-
-                if (isNonEmptyStr(elSysVal)) {
-                    const elLevel = elSysVal.split('-');
-                    const valLevel = parseInt(elLevel[0]);
-                    const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNum);
-
-                    const visible = (elLevel[0] === 'all' || !(valLevel <= systemLevel && systemLevel < valLevelTop));
-                    if (isType) el.classList.toggle((elSysVal.endsWith('v') ? 'invisible' : 'undisplayed'), visible);
-                }
-
-                if (!isType) {
-                    $$('input', el)?.forEach(input => {
-                        // input.value = '';
-                        input.dispatchEvent(new Event("change", {bubbles: true}));
-                    });
-                }
-            });
+            experiment_result_elements?.forEach(el => manageElementVisibility(el));
             // ------------------------------------------------------------------------
 
             requestAnimationFrame(() => {
