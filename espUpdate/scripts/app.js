@@ -19,7 +19,7 @@ import {
     validateInputFile,
     resetInputFile,
     initializeFlash
-} from './flasher.js';
+} from '../../packages/internal/flasher.js';
 
 
 // Set global variables
