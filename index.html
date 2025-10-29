@@ -596,10 +596,10 @@
         }
 
         pre {
-            white-space: pre-wrap; /* zachová \n a vícenásobné mezery, ale dovolí zalomení */
-            overflow-wrap: break-word; /* primárně láme na mezerách, dlouhá slova zlomí jen když musí */
-            word-break: normal; /* nemrskej slova zbytečně (CJK nech normálně) */
-            hyphens: auto; /* volitelné: přidá dělení slov (s hyfenací) */
+            white-space: pre-wrap;/* Preserves \n and multiple spaces, but allows wrapping */
+            overflow-wrap: break-word;/* Primarily breaks at spaces, long words only when necessary */
+            word-break: normal;/* Don't break words unnecessarily (let CJK behave normally) */
+            hyphens: auto; /* optional: adds hyphenation */
         }
 
         .textareaWrapper {
@@ -613,7 +613,7 @@
         }
 
         .textareaWrapper:not(:disabled):focus-within {
-            outline: 2px solid black; /* vlastní barva */
+            outline: 2px solid black;
             outline-offset: -2px;
             box-shadow: 0 0 0 1px var(--input-bg);
         }
@@ -921,13 +921,13 @@
         }
 
         #moveMachineUP {
-            padding-top: .2rem; /* menší nahoře */
-            padding-bottom: .8rem; /* větší dole -> text vypadá výš */
+            padding-top: .2rem; /* smaller in top */
+            padding-bottom: .8rem; /* larger at bottom */
         }
 
         #moveMachineDOWN {
-            padding-top: .6rem; /* větší nahoře */
-            padding-bottom: .4rem; /* menší dole -> text vypadá níž */
+            padding-top: .6rem; /* larger on top */
+            padding-bottom: .4rem; /* smaller at bottom */
         }
 
 
@@ -966,16 +966,17 @@
             transform: scale(0.9) translateX(calc((100px * (0.05 / 2)) + 5px));
         }
 
-        /* svislá čára vlevo od 10% do 90% výšky */
+
+        /* vertical line left from 10% to 90% height */
         .movementWrapper::before {
             content: "";
             position: absolute;
-            left: calc(100px - 1px / 2); /* přesně na levém kraji */
+            left: calc(100px - 1px / 2); /* exactly on the left edge */
             top: 15%;
-            bottom: 15%; /* => výška = 80 % */
-            width: 3px; /* tloušťka čáry */
-            background: var(--text-info-2-color); /* nebo např. #0ea5e9 */
-            border-radius: 2px; /* hezké zakončení */
+            bottom: 15%; /* => height = 70 % */
+            width: 3px; /* line width */
+            background: var(--text-info-2-color); /* or #0ea5e9 */
+            border-radius: 2px; /* nice ending */
             pointer-events: none;
             z-index: 6;
         }
@@ -1087,8 +1088,8 @@
         #experimentProgressLabel {
             font-size: 15px;
             display: inline-block;
-            min-width: 65px; /* nebo fixní width */
-            text-align: center; /* volitelné, zarovnání obsahu */
+            min-width: 65px; /* or fixed width */
+            text-align: center; /* optional */
         }
 
         #progressWrapper {
@@ -1561,7 +1562,7 @@
             transition: box-shadow .1s ease;
         }
 
-        /* Pomocná utilita, pokud ji už někde používáš */
+        /* Helper utility */
         .data-eq {
             display: inline-flex;
             align-items: center;
@@ -1627,11 +1628,10 @@
             height: auto;
             aspect-ratio: 1/1;
 
-            transform-box: fill-box; /* kvůli Firefoxu */
-            will-change: transform; /* vytvoří vlastní vrstvu */
-            /* transform: translateZ(0); */ /* alternativa, pokud by will-change nestačilo */
+            transform-box: fill-box; /* Firefoxu */
+            will-change: transform; /* optimize for animation, creates own layer */
             animation: spin .8s linear infinite;
-            transform-origin: center; /* pro jistotu */
+            transform-origin: center; /* rotate around center */
         }
 
         @keyframes spin {
@@ -1763,11 +1763,11 @@
 
     <section id="debuggingWrapper" style="display: none;     flex-wrap: wrap; width: 100%; gap: 20px; margin-top: 20px; justify-content: center; align-items: center;
                 border-radius: 1em; padding: 10px; background: lightpink; box-sizing: border-box;">
-        <button id="degubDeleteDisabled"
+        <button id="debugDeleteDisabled"
                 style="box-sizing: border-box; justify-self: center; width: 100px; height: 100px;">
             ✖️<br>Delete 'Disabled' Class
         </button>
-        <button id="degubDeleteProhibited"
+        <button id="debugDeleteProhibited"
                 style="box-sizing: border-box; justify-self: center; width: 100px; height: 100px;">
             ❌<br>Delete 'Prohibited' Class
         </button>
@@ -1787,11 +1787,11 @@
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #607d8b; color:white">
             ➡️<br>Move to 300 mm
         </button>
-        <button id="degubRunTestSequenceBtn"
+        <button id="debugRunTestSequenceBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #4CAF50; color:white">
             🧪<br>Run Test Sequence
         </button>
-        <button id="degubEndTestingBtn"
+        <button id="debugEndTestingBtn"
                 style="font-weight: bold; box-sizing: border-box; justify-self: center; width: 150px; height: 100px; background: #de364c; color:white">
             🛑<br>End Testing
         </button>
@@ -2896,22 +2896,22 @@
 
 
 <script>
-    // Zapnutí/ vypnutí varování
+    // On/Off warning on page close/reload/navigation
     let warnOnClose = false;
 
 
     function bindCloseHandler() {
 
-        // Prevent native reload/close dialog (zobrazení varování)
+        // Prevent native reload/close dialog (show warning)
         window.addEventListener('beforeunload', (e) => {
             if (warnOnClose && !debugging) {
                 e.preventDefault();
-                // Standard: většina prohlížečů ignoruje vlastní text
+                // Standard: most browsers ignore custom text
                 e.returnValue = '';
             }
         });
 
-        // Zachycení kláves, které běžně reload/close/close-tab způsobují
+        // Capture keys that normally cause reload/close/close-tab
         window.addEventListener('keydown', (e) => {
             // F5 (116), Ctrl+R, Ctrl+F5, Ctrl+W, Ctrl+F4, Ctrl+Shift+R, Meta(Command)+R
             if ((warnOnClose && !debugging) &&
@@ -2923,46 +2923,46 @@
                     (e.ctrlKey && e.key === 'F4')
                 )) {
                 e.preventDefault();
-                // Místo reloadu můžeš ukázat vlastní upozornění
+                // en: Instead of reloading, you can show your own warning
 
                 if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
-                    // případně povolit navigaci
+                    // allow reload/close
                     window.location.reload();
                 }
             }
         });
 
-        // Zachytit kliky na odkazy, které mohly page opustit
+        // Capture clicks on links that could leave the page
         document.addEventListener('click', (e) => {
             if (warnOnClose && !debugging) {
                 const a = e.target.closest && e.target.closest('a[href]');
                 if (!a) return;
                 const href = a.getAttribute('href');
-                // interní kotvy povolit
+                // Ignore internal anchors and javascript links
                 if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                     e.preventDefault();
                     if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
-                        // případně povolit navigaci
+                        // allow navigation
                         window.location.href = href;
                     }
                 }
             }
         });
 
-        // Push state / back button trap (back-button). Pomůže zabránit "zpět" opuštění.
+        // Push state / back button trap (back-button). Helps to prevent accidental navigation away.
         history.pushState({page: 1}, '', '');
         window.addEventListener('popstate', (event) => {
-            // Znovu vložíme stav a ukážeme varování
+            // We push state again and show warning
             history.pushState({page: 1}, '', '');
             if (warnOnClose && !debugging) {
                 if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
-                    // případně povolit navigaci
+                    // optionally allow navigation
                     history.back();
                 }
             }
         });
 
-        // // Funkce pro dočasné vypnutí ochrany (konstruktivní UX)
+        // // Function to allow temporary disabling of the protection (constructive UX)
         // function allowCloseTemporarily(action) {
         //     warnOnClose = false;
         //     try {
@@ -2972,18 +2972,18 @@
         //     }
         // }
         //
-        // // Utility: bezpečné ukončení (např. tlačítko v UI)
+        // // Utility: "Safe Exit" button in UI (e.g. UI button)
         // async function safeExit() {
-        //     // dokonči flush / ulož stav
+        //     // finish flush / save state
         //     await saveStateToServerOrLocal();
         //     allowCloseTemporarily(() => window.close());
         // }
         //
         // async function saveStateToServerOrLocal() {
-        //     // Implementuj uložení stavu (localStorage / server call)
+        //     // Implement state storage (localStorage / server call)
         //     try {
         //         localStorage.setItem('myAppSavedAt', new Date().toISOString());
-        //         // nebo await fetch('/save', {method:'POST', body:...})
+        //         // or await fetch('/save', {method:'POST', body:...})
         //     } catch (e) {
         //         console.warn("Save failed", e);
         //     }
@@ -3086,7 +3086,7 @@
         "other": "Other",
     };
 
-    const maxPrecision = 16; // max počet platných desetinných míst u zaokrouhlování
+    const maxPrecision = 16; // maximal precision for numbers in rounding
     const precisionTime = 6;
     const precisionPosition = 4;
     const precisionPositionSystem = precisionPosition;
@@ -3097,8 +3097,8 @@
     const precisionAcceleration = 4;
     const precisionAccelerationSystem = 2;
 
-    const timeConversionDATAC = 1e-6;   // převod (mikrosekund) na sekundy
-    const timeConversionDSLR = 1e-3;    // převod (milisekund) na sekundy
+    const timeConversionDATAC = 1e-6;   // convert (microseconds) to seconds
+    const timeConversionDSLR = 1e-3;    // convert (milliseconds) to seconds
 
     const loadCellNumMax = 3; // maximal number of load cells supported
     const loadCellNum = loadCellNumMax; // TODO: for now constant, else (dynamic assignment based on machine capabilities)
@@ -3111,7 +3111,7 @@
     // =====================================================================
 
 
-    // -------------------- Pomocné DOM utilitky --------------------
+    // -------------------- Helper DOM utilities --------------------
     const $ = (sel, root = null) => (root || document).querySelector(String(sel));
     const $$ = (sel, root = null) => {
         root = root || document;
@@ -3132,7 +3132,7 @@
     const exists = (id) => !!$ID(id);
 
 
-    // 1) Základní typové kontroly
+    // 1) Basic type checks
     const isNumber = (x) => typeof x === 'number';
     const isBigInt = (x) => typeof x === 'bigint';
     const isArr = (x) => Array.isArray(x);
@@ -3250,10 +3250,10 @@
     const isFiniteInteger = (x, bigInt = true) =>
         (isNumber(x) && Number.isInteger(x)) || (isBigInt(x) && bigInt);
 
-    // 2) Parsování stringu na číslo (podpora čárky jako desetinné tečky)
+    // 2) Parsing string to number (support for comma as decimal point)
     const toNumber = (x, all = true) => {
         if (isNumber(x)) return x;
-        if (isBigInt(x)) return Number(x); // Number(x) pozor na přesnost u velkých hodnot
+        if (isBigInt(x)) return Number(x); // Number(x) for big Ints - watch precision
         return strToNumber(x, all); // if (isStr(x))
     };
     const toNumeric = (x, all = true) => {
@@ -3309,41 +3309,41 @@
         return NaN;
     };
 
-    // 3) „Je to numerické“ (včetně ±Infinity)
+    // 3) „Is it numeric“ (including ±Infinity)
     const isNumericOrInfinity = (x) => {
-        if (isNumberOrInfinity(x)) return true; // true i pro ±Infinity
+        if (isNumberOrInfinity(x)) return true; // true also for ±Infinity
         const n = toNumeric(x, true);
-        return !Number.isNaN(n); // true i pro ±Infinity
+        return !Number.isNaN(n); // true also for ±Infinity
     };
 
-    // 4) „Je to konečné numerické“ (bez NaN/±Infinity)
+    // 4) „Is it finite numeric“ (no NaN/±Infinity)
     const isFiniteNumeric = (x) => {
         if (isFiniteNumber(x, true)) return true;
         const n = toNumeric(x, true);
         return Number.isFinite(n);
     };
 
-    // (volitelné) „dá se to s rozumným výsledkem použít jako číslo“ – alias:
+    // (optional) "can be reasonably used as a number" – alias:
     const isAnyFiniteNumeric = (x) => {
         if (isFiniteNumber(x, true)) return true;
         const n = toNumeric(x, true);
-        if (isBigInt(n)) return true; // BigInt je OK
+        if (isBigInt(n)) return true; // BigInt is OK
         return Number.isFinite(n);
     };
 
-    // 5) „Má hodnotu“ – pokud potřebuješ zvlášť (0 projde, null/undef/"" ne)
+    // 5) „Has value“ – if you need it separately (0 passes, null/undef/"" do not)
     const hasValue = (x) => isDef(x) && (isNumberOrInfinity(x) || isNonEmptyStr(x));
 
-    // Varianta, která NEpovažuje false/true za „hodnotu“
+    // Variant that does NOT consider false/true as "having value"
     const hasValueButNotBoolean = (x) => hasValue(x) && !isBool(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
 
     const isNotEmpty = (x) => {
         if (isVoid(x)) return false;
-        if (isNumberOrInfinity(x)) return true; // 0 i ±Infinity projde,  0n i velké hodnoty projdou
+        if (isNumberOrInfinity(x)) return true; // 0 and ±Infinity passes,  0n and big values pass
         if (isStr(x)) return x.trim() !== '';
         if (isArr(x)) return x.length > 0;
         if (isObj(x)) return Object.keys(x).length > 0;
-        if (isBool(x)) return true; // false i true projde
+        if (isBool(x)) return true; // false and true passes
         if (isSymbol(x)) return true;
         if (isFunc(x)) return true;
         if (isElement(x)) return true;
@@ -3388,10 +3388,10 @@
 
         const norm = v => String(v || '')
             .normalize('NFKD')
-            .replace(/\p{Diacritic}/gu, '') // odstraní diakritiku
-            .replace(/[.,]/g, '')           // smaže čárky a tečky
-            .replace(/\\/g, '/')            // nahradí \ za /
-            .replace(/\s+/g, ' ')           // zjednoduší vícenásobné mezery
+            .replace(/\p{Diacritic}/gu, '') // remove diacritics
+            .replace(/[.,]/g, '')           // remove dots and commas
+            .replace(/\\/g, '/')            // replace \ for /
+            .replace(/\s+/g, ' ')           // normalize spaces (simple spaces only)
             .trim()
             .toLowerCase();
 
@@ -3440,7 +3440,7 @@
 
         if (!isNumericOrInfinity(x)) return def;
 
-        // 1) převedeme vstup na číslo (tvůj toNumber umí i čárku apod.)
+        // 1) Convert input to number (your toNumber supports comma etc.)
         let n = toNumeric(x, true);
 
         if (strOut && typeof isBigInt(n)) n = Number(n);
@@ -3450,17 +3450,17 @@
             return strOut ? String(n) : n;
         }
 
-        // 2) vyhodnotíme desetinná místa jen jednou
+        // 2) evaluate decimal places only once
         if (!isAnyFiniteNumeric(dec)) return def;
         const d = Math.min(Math.round(toNumber(dec, true)), maxPrecision);
 
         if (d < 0) return def; // neplatné dec -> vrať NaN/"N/A"
 
-        // 3) zaokrouhlení
+        // 3) round and return
         return strOut ? n.toFixed(d) : roundDecimalFast(n, d);
     };
 
-    // Bezpečná koerce na BigInt (přijme number/BigInt/string s číslem)
+    // Safe coercion to BigInt (accepts number/BigInt/string with number)
     const toBigInt = (x) => {
         if (isBigInt(x)) return x;
         let n = toNumber(x, true);
@@ -3473,9 +3473,9 @@
         }
     };
 
-    // Oříznutí na n bitů (např. 64bit bezznaménkové ID)
+    // Clip to n bits (e.g., 64-bit unsigned ID)
     const toUintN = (n, b) => BigInt.asUintN(n, toBigInt(b));
-    // a se znaménkem:
+    // Clip to n bits signed (e.g., 64-bit signed int)
     const toIntN = (n, b) => BigInt.asIntN(n, toBigInt(b));
 
     const decimalToHex = (num) => {
@@ -4592,7 +4592,7 @@
             btn.type = 'button';
             btn.className = 'action-pill copy-pill';
             btn.dataset.state = 'idle';
-            btn.setAttribute('aria-label', 'Zkopírovat hodnotu');
+            btn.setAttribute('aria-label', 'Copy value to clipboard');
             btn.title = 'Copy value';
             btn.innerHTML = `${iconCopy} ${iconOK} ${iconX}`;
             return btn;
@@ -4603,7 +4603,7 @@
             btn.type = 'button';
             btn.className = 'action-pill adjust-pill';
             btn.dataset.state = 'idle';
-            btn.setAttribute('aria-label', 'Automaticky nastavit hodnotu');
+            btn.setAttribute('aria-label', 'Automatically set value');
             btn.title = 'Set automatic value';
             btn.innerHTML = `${iconWand} ${iconOK} ${iconX}`;
             return btn;
@@ -5362,14 +5362,14 @@
     }
 
 
-    // --- převod jednotkové notace na HTML (povoleno jen <sub>/<sup>) ---
+    // --- Convert unit markup to HTML (only <sub>/<sup> allowed) ---
     function unitMarkupToHTML(str = '') {
-        // escape všeho…
+        // escape everything…
         let out = String(str).replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
 
-        // …a povol jen tyto formy zápisu sub/sup:
+        // …allow only these forms of sub/sup notation:
 
         // [sub]x[/sub], [sup]x[/sup]
         out = out.replace(/\[sub]([\s\S]*?)\[\/sub]/gi, '<sub>$1</sub>')
@@ -5378,7 +5378,7 @@
         // entity &lt;sub&gt;x&lt;/sub&gt; a &lt;sup&gt;…&lt;/sup&gt;
         out = out.replace(/&lt;(sub|sup)&gt;([\s\S]*?)&lt;\/\1&gt;/gi, '<$1>$2</$1>');
 
-        // podtržítko / stříška: _{...}, _x, ^{...}, ^x
+        // underline / caret: _{...}, _x, ^{...}, ^x
         out = out.replace(/_\{([^}]+)}/g, '<sub>$1</sub>')
             .replace(/_([A-Za-z0-9+\-−±]+)/g, '<sub>$1</sub>')
             .replace(/\^\{([^}]+)}/g, '<sup>$1</sup>')
@@ -5387,7 +5387,7 @@
         return out;
     }
 
-    // --- doplnění labelu ---
+    // --- fill label ---
     function renderUnitsLabel(input) {
         if (!input || !input.id) return;
         const unitRaw = (input.dataset.unit || '').trim();
@@ -5886,7 +5886,7 @@
      */
     function addDataToLog(data, id = undefined) {
         dbQueue.push({data, id});
-        if (!dbFlushTimer) dbFlushTimer = setTimeout(flushDB, 500); // flush ~2× za sekundu
+        if (!dbFlushTimer) dbFlushTimer = setTimeout(flushDB, 500); // flush ~2× in one second
     }
 
     function flushDB() {
@@ -5904,26 +5904,26 @@
 
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
-        const keyPath = store.keyPath || null; // může být i pole, zde předpokládáme single keyPath
+        const keyPath = store.keyPath || null; // can also be an array, here we assume single keyPath
 
-        // vyber vše z fronty (atomicky v jedné transakci)
+        // take all from the queue (atomically in one transaction)
         const items = dbQueue.splice(0);
 
         for (const {data, id} of items) {
-            // pozor: id může být 0 => kontrola na null/undefined
-            const hasId = isDef(id);
+            // id can be 0! => check for null/undefined/NaN
+            const hasId = isNum(id);
 
             if (hasId) {
-                // Upsert se zadaným klíčem
+                // Upsert with specified key
                 if (keyPath === 'id') {
                     const value = (data && typeof data === 'object')
                         ? {...data, id} : {id, value: data};
-                    store.put(value); // klíč je v objektu (keyPath)
+                    store.put(value); // key is in the object (keyPath)
                 } else {
-                    store.put(data, id); // klíč předán samostatně
+                    store.put(data, id); // key provided separately
                 }
             } else {
-                // čistý add => autoIncrement/autoKey
+                // clean add => autoIncrement/autoKey
                 store.add(data);
             }
         }
@@ -5937,10 +5937,11 @@
         };
     }
 
+
     /**
-     * Update (merge) záznamu podle id. Vrací Promise<boolean> (true = zapsáno).
-     * - Pokud záznam neexistuje a upsert=true, vytvoří se.
-     * - patch se merguje přes stávající hodnotu.
+     * Update (merge) a record by id. Returns Promise<boolean> (true = written).
+     * - If the record does not exist and upsert=true, it will be created.
+     * - The patch is merged over the existing value.
      */
     function updateLogById(id, patch, {upsert = true} = {}) {
         if (isVoid(id)) return Promise.resolve(false);
@@ -5951,12 +5952,12 @@
             const keyPath = store.keyPath || null;
 
 
-            // 1) Zjisti, jestli vůbec existují nějaké logy
+            // 1) Check if there are any logs at all
             const countReq = store.count();
             countReq.onsuccess = () => {
                 const total = countReq.result || 0;
                 if (total > 1) {
-                    // 2) Pokračuj v update
+                    // 2) Continue only if there are more than 1 log entries
                     const getReq = store.get(id);
                     getReq.onsuccess = () => {
                         const current = getReq.result;
@@ -5965,7 +5966,7 @@
                             return;
                         }
 
-                        // slož updated záznam (zachovat klíč)
+                        // merge patch into current (keep key)
                         let updated;
                         if (keyPath === 'id') {
                             updated = {...(current || {}), ...(patch || {}), id};
@@ -5979,7 +5980,7 @@
 
                     getReq.onerror = (err) => reject(err);
                 } else {
-                    // nic není, nelze update
+                    // no update, nothing to log
                     resolve(false);
                 }
             };
@@ -6375,12 +6376,11 @@
                 stroke: index === 0 ? "000000" : ["#FF2730", "#2196F3", "#4CAF50", "#9C27B0", "#00BCD4", "#8BC34A", "#E91E63", "#3F51B5", "#009688", "#FF9800"][index - 1] || "#555555"
             })),
                 {
-                    label: "Photos",          // použijeme pro nalezení řádku legendy a skryjeme ho níže
-                    // points-only: nejefektivnější je vypnout cesty (žádná čára)
-                    // points-only: nejefektivnější je vypnout cesty (žádná čára)
-                    paths: () => null,      // ofiko doporučení pro „pouze body“
-                    points: {show: true, size: 8, width: 2.5}, // velikost a tloušťka bodů
-                    stroke: "#FF8C00", fill: "#FF8C00", // u bodů stačí points.show
+                    label: "Photos",                    // used to find the legend row and hide it below
+                                                        // points-only: most efficient to disable paths (no line)
+                    paths: () => null,                  // official recommendation for "points-only"
+                    points: {show: true, size: 8, width: 2.5}, // size and width of points
+                    stroke: "#FF8C00", fill: "#FF8C00", // color of points; for points, points.show is enough
                 },],
 
             // hooks: {
@@ -6468,23 +6468,23 @@
 
     }
 
-    function updateChartNEW(inputData) {
+    function updateChartNEW(inputData) { // TODO: test and use
         if (!isObj(inputData)) return;
 
         // --- Helpers ---
         const isArr = Array.isArray;
         const isNumSafe = v => typeof v === 'number' && Number.isFinite(v);
 
-        // Normalizuje scalar -> array o délce len (využito pro jednotné zpracování)
-        const normalizeSeries = (value, len, mapper = v => v) => {
+        // Normalizes scalar -> array of length len (used for uniform processing)
+        const normalizeSeries = (value, mapper = v => v) => {
             if (isArr(value)) return value.map(mapper);
-            return [mapper(value)]; // když scalar, udělej jednoprvkové pole
+            return [mapper(value)]; // when scalar, make a single-element array
         };
 
-        // Vytvoř značky pro foto: číslo -> 0, jinak null
+        // Create markers for photo: number -> 0, otherwise null
         const toPhotoMarker = v => (isNumSafe(v) ? 0 : null);
 
-        // Po přidání batch dat drž maximální délku všech sérií
+        // After adding batch data, maintain maximum length of all series
         const trimToMax = () => {
             while (timeDataChart?.length > maxDataPoints) {
                 timeDataChart.shift();
@@ -6500,7 +6500,7 @@
         const positionArr = normalizeSeries(inputData.position);
 
         // photoIndex může být number nebo array -> přemapujeme na markery (0/null)
-        const photoArr = normalizeSeries(inputData.photoIndex, undefined, toPhotoMarker);
+        const photoArr = normalizeSeries(inputData.photoIndex, toPhotoMarker);
 
         // force je vždy array; může být [number, number, ...] nebo [[...],[...],...]
         // Nejprve zjistíme, zda je "vnořená" forma
@@ -6783,7 +6783,7 @@
 <script>
 
     async function sendMoveCommand(command, pauseMs = 1) {
-        // ověření kalibrace
+        // check calibration status before moving
         calibrationStatus = await getCalibrationStatus(2_000);
 
         if (!calibrationStatus) {
@@ -6796,7 +6796,7 @@
             return;
         }
 
-        // Watchdog řeší beganMoving/endedMoving, tady jen pošli příkaz
+        // Watchdog handles beganMoving/endedMoving, just send the command here
         await sendCommandGeneral(command, pauseMs);
     }
 
@@ -7098,23 +7098,23 @@
         }, interval * 0.9); // 90% intervalu
     }
 
-    function stopWatchdog() {
+    function stopWatchdog(turnOff = true) {
         activeWatchDog = false;
         if (watchdogTimer) {
             clearInterval(watchdogTimer);
             watchdogTimer = null;
         }
-        // HW watchdog vypínat nemusíme — ale můžeme:
-        if (isConnected) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED 0`);
+        // HW watchdog turn off — optional:
+        if (isConnected && turnOff) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED 0`);
     }
 
-    // ------- Správa pohybu -------
+    // ------- Movement -------
     async function beganMoving(timeoutMs = null) {
-        if (machineOccupation) return; // už běží
+        if (machineOccupation) return; // is already moving
         lockConnectionButtons(true);
         lockControls();
 
-        // naplánuj automatické ukončení (volitelné)
+        // schedule automatic ending (optional)
         if (isValidInputNum(timeoutMs)) {
             machineOccupation = true;
             warnOnClose = true;
@@ -7203,8 +7203,8 @@
     function speedFromDistance(goal, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
         const d = Math.max(0, Math.abs(toNumber(goal)) || 0);
         const t = Math.min(1, d / dMax);              // 0..1
-        const v = sMin + (sMax - sMin) * t;           // lineárně 1..25
-        return roundDecimalFast(v, 2);                    // float f.2
+        const v = sMin + (sMax - sMin) * t;           // linear 1..25
+        return roundDecimalFast(v, 2);                // float f.2
     }
 
     async function moveBy(distance, {requiredSpeed = null, requiredAcceleration = null, overRide = false} = {}) {
@@ -7216,7 +7216,7 @@
         }
 
         try {
-            // ověření kalibrace
+            // check calibration
             calibrationStatus = await getCalibrationStatus(2_000);
 
             if (!calibrationStatus) {
@@ -7243,15 +7243,15 @@
             await setSpeedAndAcceleration(speed, acceleration, false, 10);
 
 
-            lockMovement();               // u běžných kroků zamkni celou pohybovou sekci
-            await beganMoving();          // bez timeoutu — dopočítáme a nastavíme níž
+            lockMovement();               // for normal moves, lock the entire movement section
+            await beganMoving();          // without timeout — we will calculate and set it below
 
 
             const movingTime =
                 Math.ceil((computeMotionTime(distance, speed, acceleration) * 1_000) + 150);
 
 
-            // nastav/obnov timeout ukončení pohybu
+            // set/reset moving timeout after ending of movement
             if (isDef(movingTimeout)) {
                 clearTimeout(movingTimeout);
                 movingTimeout = null;
@@ -7350,7 +7350,7 @@
     async function softStopMachine() {
         setAcceleration(200, false); // Set acceleration to 200 mm/s²
 
-        await rampSpeed(currentSpeed, 0.1);
+        await rampSpeed(currentSpeed ?? 15, 0.1);
 
         endedMoving();
 
@@ -7366,13 +7366,13 @@
     }
 
     /**
-     * Ramping rychlosti s pevnými rozestupy 20ms, max. ~300ms celkem.
-     * @param {number} currSpeed - aktuální rychlost (mm/s)
-     * @param {number} targetSpeed - cílová rychlost (mm/s), default 0.05
+     * Ramping of speed with fixed steps 20ms, max. ~300ms total.
+     * @param {number} currSpeed - current speed (mm/s)
+     * @param {number} targetSpeed - target speed (mm/s), default 0.05
      */
     async function rampSpeed(currSpeed, targetSpeed = 0.05) {
         const INTERVAL_MS = 8;
-        const MAX_INTERVALS = 9; // 15 * 20ms = 300ms mezi 1. a posledním sendem
+        const MAX_INTERVALS = 9;    // 15 * 20ms = 300ms between 1. and last SEND
         const PREFERRED_STEP = 1;   // mm/s
         const MIN_STEP = 0.5;       // mm/s
 
@@ -7383,33 +7383,33 @@
         const dir = Math.sign(delta);
         const absDelta = Math.abs(delta);
 
-        // Pokud už jsme na cíli (nebo velmi blízko), pošli rovnou přesný příkaz.
+        // If we're already at the target (or very close), send the exact command directly.
         if (absDelta < 1e-9) {
             return sendCommandSilent(`MC SET SPEEDMM ${targetSpeed.toFixed(3)}`);
         }
 
-        // Zvol krok: preferuj 1 mm/s; pokud by to nestihlo do 300 ms, krok zvětši.
-        // Max. počet SENDů je 16 (15 intervalů + finální příkaz).
+        //Choose step size: prefer 1 mm/s; if it wouldn't fit in 300 ms, increase the step.
+        // Max number of SENDs is 16 (15 intervals + final command).
         let step = PREFERRED_STEP;
         const neededWithPreferred = Math.ceil(absDelta / step);
-        // Počet intervalů je (počet_sendů - 1). Tj. max 16 sendů => 15 intervalů.
+        // Number of intervals is (num_sends - 1). I.e. max 16 sends => 15 intervals.
         if (neededWithPreferred - 1 > MAX_INTERVALS) {
-            step = Math.max(MIN_STEP, absDelta / MAX_INTERVALS); // může být >1, když je potřeba
+            step = Math.max(MIN_STEP, absDelta / MAX_INTERVALS); // may be >1 if needed
         }
 
-        // Kolik mezikroků stihneme s vybraným krokem v rámci 15 intervalů
+        // How many intermediate steps can we fit within the 15 intervals with the chosen step
         let intermediateSteps = Math.min(Math.floor(absDelta / step), MAX_INTERVALS);
 
-        // Pro jistotu zaokrouhluj výstup na 3 desetinná místa (0.001 mm/s)
+        // Round to 3 decimal places (0.001 mm/s)
         const fmt = (v) => Number(v).toFixed(3);
 
         let curr = currSpeed;
 
-        // Posílej mezikroky po 20 ms (každý krok má velikost >= 0.5 mm/s)
+        // Send intermediate steps every 20 ms (each step size >= 0.5 mm/s)
         for (let i = 0; i < intermediateSteps; i++) {
             curr += dir * step;
 
-            // Ošetři přestřelení
+            // Sanitize to avoid overshooting
             if ((dir > 0 && curr > targetSpeed) || (dir < 0 && curr < targetSpeed)) {
                 curr = targetSpeed;
             }
@@ -7417,14 +7417,14 @@
             await sleep(INTERVAL_MS);
             await sendCommandSilent(`MC SET SPEEDMM ${fmt(curr)}`);
 
-            // Když jsme už na cíli, skonči dřív
+            // If we're already at the target, exit early
             if (Math.abs(curr - targetSpeed) < 1e-9) {
                 return;
             }
         }
 
-        // Pokud ještě nejsme přesně na cíli, pošli finální přesný příkaz.
-        // Tohle je poslední SEND (celkem max 16), opět s odstupem 20ms od předchozího.
+        // If we're still not exactly at the target, send the final precise command.
+        // This is the last SEND (max 16 in total), again with a 20ms gap from the previous one.
         if (Math.abs(curr - targetSpeed) >= 1e-9) {
             await sleep(INTERVAL_MS);
             await sendCommandGeneral(`MC SET SPEEDMM ${fmt(targetSpeed)}`);
@@ -7475,7 +7475,7 @@
                 continue;             // If a message is consumed, skip further processing
             }
 
-            // ostatní logiky
+            // rest of the message logic
             // TODO: rozmyslet co používat:         split(":") // substring(measurementPrefix.length)
             const measurementPrefix = "DS"; // "S205:"
             if (msg.startsWith(measurementPrefix)) {
@@ -7491,13 +7491,13 @@
 <script>
     const getMeasurementPartsLength = (obj) =>
         Object.entries(obj).reduce((sum, [key, val]) => {
-            if (key === 'length' || key === 'lengths') return sum; // přeskoč speciální klíče
+            if (key === 'length' || key === 'lengths') return sum; // skip special keys
 
             const arr = isArr(val) ? val : (isNumber(val) ? [val] : []);
 
-            obj[key] = arr;                 // normalizace zpět do objektu
-            (obj.lengths ||= {})[key] = arr.length; // ulož délku části
-            return sum + arr.length;                     // akumuluj součet délek
+            obj[key] = arr;                 // normalize to array
+            (obj.lengths ||= {})[key] = arr.length; // save length
+            return sum + arr.length;                     // add lengths to total
         }, 0);
 
     function analyzeForces(fields) {
@@ -7527,13 +7527,13 @@
     function hasRequiredParsedKeys(experimentEndLimits, parsedData) {
         if (!isObj(experimentEndLimits) || !isObj(parsedData)) return false;
 
-        // klíče, které opravdu vyžadujeme (hodnota není null ani NaN)
+        // used keys (required for ending the experiment), check if invalid: null/NaN
         const required = Object.entries(experimentEndLimits).filter(([, v]) => !isNum(v));
 
-        // musí existovat aspoň jeden požadovaný klíč
+        // atleast one required key must exist
         if (required.length === 0) return false;
 
-        // všechny požadované klíče musí být v parsedData
+        // all keys must be in parsedData
         return required.every(([k]) => Object.prototype.hasOwnProperty.call(parsedData, k));
     }
 
@@ -7625,17 +7625,17 @@
         // Kp (mm/s)/N = mm/(N·s)
         // Ki (mm/s)/(N·s) = mm/N
         const cfg = {
-            // --- nastavení převzaté z tvé simulace (lze přepsat v userOpts) ---
-            setForceN: null,    // cílová síla [N]
-            deadbandN: 0.5,     // mrtvá zóna ± [N]
-            vMin: +0.00,        // min rychlost [mm/s]
-            vMax: 25.00,        // max rychlost [mm/s]
+            // --- set of parameters for PI controller ---
+            setForceN: null,    // target force [N]
+            deadbandN: 0.5,     // dead zone ± [N]
+            vMin: +0.00,        // min speed [mm/s]
+            vMax: 25.00,        // max speed [mm/s]
             Kp: 0.20,           // [mm/s · N⁻¹]
             Ki: 0.03,           // [mm/s · N⁻¹ · s⁻¹]
-            accel: null,        // omezení změny rychlosti [mm/s²]; null = bez omezení
+            accel: null,        // limitation of speed change [mm/s²]; null = no limit
             integLimit: 500,    // anti-windup clamp
-            roundDigits: 3,     // zaokrouhlení výstupu (0.001 mm/s)
-            unilateral: true,   // jen kladná rychlost (dolů)
+            roundDigits: 3,     // round ouput (0.001 mm/s)
+            unilateral: true,   // only positive output ( => down)
             ...userOpts,
         };
 
