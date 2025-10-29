@@ -1,0 +1,252 @@
+Rozumím — chceš zjistit, jestli nějaká hodnota (např. číslo v proměnné nebo textový vstup) je zapsaná v šestnáctkové (hexadecimální) nebo desítkové soustavě.
+
+Záleží, v čem to řešíš — ukážu to na JavaScriptu (protože jsi posílal webový kód):
+
+🔹 1️⃣ Detekce podle zápisu (string)
+
+Nejjednodušší metoda — šestnáctková čísla obvykle začínají 0x nebo 0X.
+
+function detectBase(value) {
+  if (typeof value !== 'string') value = String(value);
+
+  if (/^0x[0-9a-f]+$/i.test(value)) {
+    return 16; // hexadecimální
+  } else if (/^\d+$/.test(value)) {
+    return 10; // desítková
+  } else {
+    return null; // neplatný nebo nejednoznačný zápis
+  }
+}
+
+console.log(detectBase("0x1A")); // 16
+console.log(detectBase("123"));  // 10
+console.log(detectBase("1F"));   // null – bez 0x není jisté
+
+🔹 2️⃣ Pokud číslo už je typu number
+
+JavaScript čísla si nepamatují, z jaké soustavy byla převedena —
+takže pokud už máš let n = 0x1A;, po vypsání:
+
+console.log(n); // 26
+
+
+...není možné zpětně zjistit, že původně bylo hexadecimální.
+
+🔹 3️⃣ Pokud přijímáš textový vstup (např. z formuláře)
+
+Můžeš se rozhodnout podle regulárního výrazu nebo podle přítomnosti znaků A–F:
+
+function guessBase(value) {
+  if (typeof value !== 'string') return 10;
+  if (/^0x/i.test(value)) return 16;
+  if (/[a-f]/i.test(value)) return 16; // obsahuje hex písmena
+  return 10;
+}
+
+console.log(guessBase("0xFF"));  // 16
+console.log(guessBase("1A"));    // 16
+console.log(guessBase("123"));   // 10
+
+🔹 4️⃣ Převod podle zjištěné soustavy
+
+Jakmile zjistíš základ, můžeš číslo přepočítat:
+
+let input = "0xFF";
+let base = guessBase(input);
+let num = parseInt(input, base);
+console.log(num); // 255
+
+
+Chceš, abych ti to ukázal i v jiném jazyce (např. Python, C nebo Arduino)?
+
+
+
+Výborný příklad — "303a" je přesně ten hraniční případ, kde není na první pohled jasné, zda jde o číslo v desítkové nebo šestnáctkové soustavě.
+Podívejme se na to podrobně:
+
+🔹 1️⃣ Co říká zápis "303a"
+
+
+Obsahuje znak a, což není platná číslice v desítkové soustavě.
+
+
+V šestnáctkové soustavě (hexadecimální) jsou však povolené číslice 0–9 a písmena A–F.
+➡️ Takže "303a" je platný hexadecimální zápis.
+
+
+
+🔹 2️⃣ V JavaScriptu
+Můžeš to zjistit jednoduchou funkcí:
+function detectBase(value) {
+  value = String(value).trim();
+  if (/^0x[0-9a-f]+$/i.test(value)) return 16;
+  if (/^[0-9a-f]+$/i.test(value) && /[a-f]/i.test(value)) return 16;
+  if (/^\d+$/.test(value)) return 10;
+  return null;
+}
+
+console.log(detectBase("303a")); // 16
+console.log(detectBase("1234")); // 10
+
+
+🔹 3️⃣ Převod na číslo
+Pokud chceš převést "303a" na číslo, použij parseInt s odpovídající soustavou:
+parseInt("303a", 16); // → 12346 v desítkové soustavě
+
+
+🔹 4️⃣ Shrnutí
+ZápisPlatné jako 10?Platné jako 16?Desítková hodnota303a❌ (ne, obsahuje a)✅123461234✅✅ (ale obě znamenají totéž)1234
+
+Chceš, abych ti ukázal, jak podobné rozpoznání udělat přímo v kódu, který načítá CSV (např. automaticky rozpoznat a převést hodnoty typu hex → dec)?
+
+
+
+U „303“ je to nejednoznačné: obsahuje jen číslice 0–9, takže je to platné v desítkové i šestnáctkové soustavě. Bez kontextu nebo prefixu se nedá bezpečně poznat, co autor myslel.
+Rychlá fakta:
+
+
+303 v desítkové → 303
+
+
+303 v šestnáctkové → 3×16² + 0×16 + 3 = 771 (v desítkové)
+
+
+Jak to řešit v praxi (JavaScript)
+
+
+Vždy uveď radix při parsování:
+
+
+parseInt("303", 10); // 303
+parseInt("303", 16); // 771
+
+
+
+Dohodni si/požaduj prefix pro hex (nebo suffix), ať to není sporné:
+
+
+
+
+0x303 nebo 0X303 → hex
+
+
+případně 303h → hex (vlastní konvence)
+
+
+
+
+Detekce s vrácením „ambiguous“ (doporučeno):
+
+
+function detectBase(s) {
+  s = String(s).trim();
+  if (/^0x[0-9a-f]+$/i.test(s)) return 16;      // 0x-prefixed → hex
+  if (/^[0-9]+$/.test(s)) return 'ambiguous';   // jen číslice → 10 i 16
+  if (/^[0-9a-f]+$/i.test(s)) return 16;        // obsahuje A–F → hex
+  return null;                                   // neplatný zápis
+}
+
+console.log(detectBase("303"));   // 'ambiguous'
+console.log(detectBase("303a"));  // 16
+console.log(detectBase("0x303")); // 16
+
+
+
+Pokud chceš „uhodnout“ základ:
+
+
+
+
+když je v řetězci A–F, ber jako hex,
+
+
+jinak defaultuj na 10 (a loguj, že to bylo dvojznačné).
+
+
+Chceš, abych to napasoval do tvého CSV-procesoru (např. sloupec může být 303 nebo 0x303 a výsledek má být vždy číslo v desítkové)?ChatGPT řekl:U „303“ to samo o sobě nepoznáš – je to platné číslo jak v desítkové (10), tak v šestnáctkové (16) soustavě.
+Bez prefixu/suffixu nebo kontextu je to dvojznačné.
+
+
+Jako 10 → 303
+
+
+Jako 16 → 3·16² + 0·16 + 3 = 771 (v desítkové)
+
+
+Doporučený postup (JS)
+
+
+Při parsování vždy uveď radix:
+
+
+parseInt("303", 10); // 303
+parseInt("303", 16); // 771
+
+
+
+Zaveď jasný zápis:
+
+
+hex s prefixem 0x303 (nebo vlastní konvencí 303h)
+
+
+dec bez prefixu
+
+
+
+
+Detekce s označením „ambiguous“:
+
+
+function detectBase(s) {
+  s = String(s).trim();
+  if (/^0x[0-9a-f]+$/i.test(s)) return 16;      // 0x... → hex
+  if (/^[0-9]+$/.test(s)) return 'ambiguous';   // jen
+
+
+
+
+  Skvělé — ptáš se na port.getInfo(), což pochází z Web Serial API v JavaScriptu (používaného v prohlížečích jako Chrome nebo Edge).
+Podívejme se, co vrací a v jaké soustavě jsou hodnoty.
+
+🔹 Co dělá port.getInfo()
+Pokud máš připojené sériové zařízení (např. Arduino),
+volání:
+const info = port.getInfo();
+console.log(info);
+
+vrátí objekt s metadaty o daném portu.
+Typický výstup:
+{
+  usbVendorId: 9025,
+  usbProductId: 67
+}
+
+
+🔹 Jaká je soustava?
+Tyto hodnoty (usbVendorId, usbProductId) jsou číselné, takže v JavaScriptu jde o běžná desítková čísla (Number).
+Ale jsou to původně identifikátory USB zařízení, které se tradičně zapisují v šestnáctkové soustavě — např.:
+
+
+usbVendorId: 9025 → 0x2341
+
+
+usbProductId: 67 → 0x0043
+
+
+
+🔹 Jak převést na hex
+Pokud chceš hodnoty zobrazit jako v datasheetech (hexadecimálně):
+const info = await port.getInfo();
+console.log("Vendor:", "0x" + info.usbVendorId.toString(16));
+console.log("Product:", "0x" + info.usbProductId.toString(16));
+
+➡️ Výstup např.:
+Vendor: 0x2341
+Product: 0x43
+
+
+🔹 Shrnutí
+VlastnostTypPříklad (dec)Příklad (hex)PoznámkausbVendorIdčíslo90250x2341identifikuje výrobce (např. Arduino)usbProductIdčíslo670x0043konkrétní zařízení/model
+
+Chceš, abych ti ukázal, jak automaticky převést tyto ID do hex formátu a třeba je i rozpoznat podle databáze výrobců USB zařízení (např. „Arduino SA“)?
