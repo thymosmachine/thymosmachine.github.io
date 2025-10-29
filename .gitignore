@@ -23,3 +23,4 @@
 
 # Ignorovat moduly NODE.JS
 node_modules/
+/debug.txt
