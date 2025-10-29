@@ -8496,6 +8496,8 @@
             await logMessage("🎬 Measurements stopped.");
             await console.info("🎬 Measurements stopped.");
 
+            await updateLogById(0, {experimentProgress: experimentProgress, status: "collected"});
+
 
             if (experimentType.endsWith("-inb")) {
                 // // === Move Further ===
@@ -8581,7 +8583,7 @@
             await sleep(100);
 
             if (isDef(endedBy)) await updateLogById(0, {endStatus: endedBy});
-            await updateLogById(0, {experimentProgress: experimentProgress, status: "collected"});
+            await updateLogById(0, {experimentProgress: experimentProgress});
 
             document.title = initialTitle;
 
