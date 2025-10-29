@@ -40,22 +40,22 @@
 
     <!-- External libraries: -->
     <!-- uPlot -->
-    <link rel="stylesheet" href="packages/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
-    <script defer src="packages/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+    <link rel="stylesheet" href="packages/external/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
+    <script defer src="packages/external/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
 
     <!-- XLSX -->
-    <script async src="packages/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
+    <script async src="packages/external/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
     <!--    <script async src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>-->
 
     <!-- ZIP -->
-    <!--    <script async src="packages/zip/jszip.min.js"></script> &lt;!&ndash; Add JSZip JavaScript &ndash;&gt;-->
-    <script async src="packages/zip/pako.min.js"></script> <!-- Add Pako JavaScript (for DEFLATE) -->
+    <!--    <script async src="packages/external/zip/jszip.min.js"></script> &lt;!&ndash; Add JSZip JavaScript &ndash;&gt;-->
+    <script async src="packages/external/zip/pako.min.js"></script> <!-- Add Pako JavaScript (for DEFLATE) -->
 
     <!-- KaTeX -->
     <!-- source: "https://cdn.jsdelivr.net/npm/katex@0.16.9/" -->
-    <link rel="stylesheet" href="packages/katex/katex.min.css">
-    <script defer src="packages/katex/katex.min.js"></script>
-    <script defer src="packages/katex/auto-render.min.js"></script>
+    <link rel="stylesheet" href="packages/external/katex/katex.min.css">
+    <script defer src="packages/external/katex/katex.min.js"></script>
+    <script defer src="packages/external/katex/auto-render.min.js"></script>
     <script>
         // automatic rendering: inline \( … \) a $ … $, block \[ … \]
         document.addEventListener("DOMContentLoaded", function () {
@@ -226,6 +226,8 @@
         // }
 
         function compareVersions(versionA, versionB) {
+            if (versionA.startsWith('v')) versionA = versionA.slice(1);
+            if (versionB.startsWith('v')) versionB = versionB.slice(1);
             const a = versionA.trim().split('.').map(Number);
             const b = versionB.trim().split('.').map(Number);
             const maxLength = Math.max(a.length, b.length);
@@ -2086,25 +2088,25 @@
 
 
                     <div class="input-group data-eq" data-eq-type="Flx, InB">
-                        <label for="inputWidth">Cross-section width \( b \)<span class="units-text"></span>:
+                        <label for="inputCSWidth">Cross-section width \( b \)<span class="units-text"></span>:
                         </label>
-                        <input type="number" id="inputWidth" class="adjustableInput calcInput"
+                        <input type="number" id="inputCSWidth" class="adjustableInput calcInput"
                                value="" step="any" data-unit="mm"
                                data-essence="dimension, cross-section">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
-                        <label for="inputHeight">Cross-section height \( h \)<span class="units-text"></span>:
+                        <label for="inputCSHeight">Cross-section height \( h \)<span class="units-text"></span>:
                         </label>
-                        <input type="number" id="inputHeight" class="adjustableInput calcInput"
+                        <input type="number" id="inputCSHeight" class="adjustableInput calcInput"
                                value="" step="any" data-unit="mm"
                                data-essence="dimension, cross-section">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="InB">
-                        <label for="inputLength">Cross-section length \( l \)<span class="units-text"></span>:
+                        <label for="inputCSLength">Cross-section length \( l \)<span class="units-text"></span>:
                         </label>
-                        <input type="number" id="inputLength" class="adjustableInput calcInput"
+                        <input type="number" id="inputCSLength" class="adjustableInput calcInput"
                                value="" step="any" data-unit="mm"
                                data-essence="dimension, cross-section">
                     </div>
@@ -2113,13 +2115,6 @@
                         <label for="inputSpan">Span \( L \)<span class="units-text"></span>: </label>
                         <input type="number" id="inputSpan" class="adjustableInput calcInput"
                                value="" step="any" data-unit="mm" data-essence="dimension">
-                    </div>
-
-                    <div class="input-group data-eq" data-eq-type="HBr">
-                        <label for="inputIndDepth">Depth of indentation \( h_{D} \)<span class="units-text"></span>:
-                        </label>
-                        <input type="number" id="inputIndDepth" class="adjustableInput calcInput"
-                               value="" step="any" data-unit="mm" data-essence="position">
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
@@ -2155,18 +2150,18 @@
                     <article style="display: flex; flex-direction: column; gap: 10px;">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">☔ <a class="u"> Before drying</a>:</h4>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputWidth_BeforeDrying">Cross-section width \( b_{w} \)<span
+                            <label for="inputCSWidth_BeforeDrying">Cross-section width \( b_{w} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputWidth_BeforeDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputCSWidth_BeforeDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputHeight_BeforeDrying">Cross-section height \( h_{w} \)<span
+                            <label for="inputCSHeight_BeforeDrying">Cross-section height \( h_{w} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputHeight_BeforeDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputCSHeight_BeforeDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
@@ -2187,21 +2182,21 @@
                         </div>
 
                     </article>
-                    <article style="display: flex; flex-direction: column; gap: 10px;">
+                    <article style="display: flex; flex-direction: column; gap: 10px;" data-system-level="300">
                         <h4 data-eq-type="Flx" style="margin-left: 10%;">🌂 <a class="u"> After drying</a>:</h4>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputWidth_AfterDrying">Cross-section width \( b_{0} \)<span
+                            <label for="inputCSWidth_AfterDrying">Cross-section width \( b_{0} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputWidth_AfterDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputCSWidth_AfterDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
                         <div class="input-group data-eq" data-eq-type="Flx">
-                            <label for="inputHeight_AfterDrying">Cross-section height \( h_{0} \)<span
+                            <label for="inputCSHeight_AfterDrying">Cross-section height \( h_{0} \)<span
                                     class="units-text"></span>:
                             </label>
-                            <input type="number" id="inputHeight_AfterDrying" class="adjustableInput calcInput"
+                            <input type="number" id="inputCSHeight_AfterDrying" class="adjustableInput calcInput"
                                    value="" step="any" data-unit="mm"
                                    data-essence="dimension, cross-section">
                         </div>
@@ -2274,6 +2269,47 @@
                     </span>
                 </article>
 
+                <hr data-system-level="100">
+
+                <h4 data-system-level="100">📜 Interim results:</h4>
+                <article class="inputsContainer" data-system-level="100">
+
+                    <div class="input-group data-eq" data-eq-type="Flx">
+                        <label for="outputIy">Moment of Inertia \( I_{y} \)<span
+                                class="units-text"></span>: </label>
+                        <input type="text" id="outputIy" class="adjustableInput calcInput"
+                               data-input-type="floatInput, customNumber" data-system="skip" data-unit="mm^4"
+                               data-essence="dimension, cross-section, moment-of-inertia">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="InB">
+                        <label for="outputArea">Cross-section Area \( A \)<span
+                                class="units-text"></span>:
+                        </label>
+                        <input type="text" id="outputArea" class="adjustableInput calcInput"
+                               data-input-type="floatInput, customNumber" data-system="skip" data-unit="mm^2"
+                               data-essence="dimension, cross-section, area">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HBr">
+                        <label for="outputDepthInd">Depth of indentation \( h_{D} \)<span class="units-text"></span>:
+                        </label>
+                        <input type="text" id="outputDepthInd" class="adjustableInput calcInput"
+                               data-input-type="floatInput, customNumber" data-system="skip"
+                               data-essence="position">
+                    </div>
+
+                    <div class="input-group data-eq" data-eq-type="HBr">
+                        <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d \)<span
+                                class="units-text"></span>:
+                        </label>
+                        <input type="text" id="outputDiameterInd" class="adjustableInput calcInput"
+                               data-input-type="floatInput, customNumber" data-system="skip" data-unit="mm"
+                               data-essence="dimension">
+                    </div>
+
+                </article>
+
                 <hr>
 
                 <h4>📐 Calculated values:</h4>
@@ -2294,15 +2330,6 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="Flx">
-                        <!-- TODO: zobrazuje se když nemá: data-system-level="100"   -->
-                        <label for="outputIy">Moment of Inertia \( I_{y} \)<span
-                                class="units-text"></span>: </label>
-                        <input type="text" id="outputIy" class="copyableInput calcInput" readonly
-                               data-system="skip" data-unit="mm^4"
-                               data-essence="dimension, cross-section, moment-of-inertia">
-                    </div>
-
-                    <div class="input-group data-eq" data-eq-type="Flx">
                         <label for="outputModulus">Young's Module \( E \)<span class="units-text"></span>:
                         </label>
                         <input type="text" id="outputModulus" class="copyableInput calcInput" readonly
@@ -2318,28 +2345,11 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="InB">
-                        <label for="outputArea">Cross-section Area \( A \)<span
-                                class="units-text"></span>:
-                        </label>
-                        <input type="text" id="outputArea" class="copyableInput calcInput" readonly
-                               data-system="skip" data-unit="mm^2" data-essence="dimension, cross-section, area">
-                    </div>
-
-                    <div class="input-group data-eq" data-eq-type="InB">
                         <label for="outputMaxStress">Max Stress \( \sigma_{\mathrm{max}} \)<span
                                 class="units-text"></span>: </label>
                         <input type="text" id="outputMaxStress" class="copyableInput calcInput" readonly
                                data-system="skip" data-unit="MPa" data-essence="result, stress">
                     </div>
-
-                    <div class="input-group data-eq" data-eq-type="HBr">
-                        <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d \)<span
-                                class="units-text"></span>:
-                        </label>
-                        <input type="text" id="outputDiameterInd" class="copyableInput calcInput" readonly
-                               data-system="skip" data-unit="mm" data-essence="dimension">
-                    </div>
-
 
                     <div class="input-group data-eq" data-eq-type="HBr">
                         <label for="inputTargetDisp">Displacement \( w_{T} \) at Target force<span
@@ -2423,8 +2433,8 @@
                             <label for="inputLoadLimitDropPercent">Force drop limit<span class="units-text"></span>:
                             </label>
                             <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent"
-                                   class="expInput"
-                                   value="30" min="0" max="1000000" data-unit="%" data-essence="ratio" required>
+                                   class="expInput" value="30" min="0" max="1000000" data-unit="%"
+                                   data-essence="ratio" required>
                             <!-- % ‰ -->
                         </div>
 
@@ -2435,9 +2445,10 @@
                                    data-essence="switch">
                             <label id="inputPhotoIntervalLabel" class="innerInputLabel" for="inputPhotoInterval">Photo
                                 Interval<span class="units-text"></span>: </label>
-                            <input data-input-type="floatInput" type="number" id="inputPhotoInterval" required
+                            <input data-input-type="floatInput" type="number" id="inputPhotoInterval"
                                    class="expInput innerInput"
-                                   value="1" min="0" step="any" max="120000000" data-unit="s" data-essence="time">
+                                   value="1" min="0" step="any" max="120000000"
+                                   data-unit="s" data-essence="time" required>
                         </div>
 
 
@@ -2454,8 +2465,8 @@
                         <div class="input-group">
                             <label for="inputSpeedForward">Loading speed<span class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputSpeedForward" class="expInput"
-                                   value="0.5" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed"
-                                   required>
+                                   value="0.5" min="0.01" step="any" max="25" data-unit="mm/s"
+                                   data-essence="speed" required>
                         </div>
 
                         <div class="input-group">
@@ -2470,15 +2481,15 @@
                                     class="units-text"></span>:</label>
                             <input data-input-type="floatInput" type="number"
                                    id="inputInitialSpeed" class="expInput" style="max-width: 60px; min-width: 25px;"
-                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s" data-essence="speed"
-                                   required>
+                                   value="1" min="0.01" step="any" max="25" data-unit="mm/s"
+                                   data-essence="speed" required>
                             <label id="inputInitialForceLabel" for="inputInitialForce"
                                    style="min-width: max-content;">Force lim.
                                 <span class="units-text"></span>:</label>
                             <input data-input-type="floatInput" type="number"
                                    id="inputInitialForce" class="expInput" style="max-width: 50px; min-width: 25px;"
-                                   value="1" min="0" step="any" max="100000000" data-unit="N" data-essence="force"
-                                   required>
+                                   value="1" min="0" step="any" max="100000000" data-unit="N"
+                                   data-essence="force" required>
                         </div>
 
                         <div class="input-group" data-eq-type="HBr">
@@ -2499,49 +2510,45 @@
                             <label id="inputEndDelayLabel" for="inputEndDelay">End load delay<span
                                     class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputEndDelay" class="expInput"
-                                   value="25" min="0" step="any" max="120000000" data-unit="s" data-essence="time"
-                                   required>
+                                   value="25" min="0" step="any" max="120000000" data-unit="s"
+                                   data-essence="time" required>
                         </div>
 
                         <div class="input-group" data-eq-type="HBr" data-system-level="0-200">
                             <label id="inputResponseCoefPILabel" for="inputResponseCoefPI">Responsiveness coefficient
-                                [PI]<span
+                                \( [PI] \)<span
                                         class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputResponseCoefPI" class="expInput"
                                    value="0.5" min="0" step="any" max="10" data-unit="-"
-                                   data-essence="coefficient, ratio"
-                                   required>
+                                   data-essence="coefficient, ratio" required>
                         </div>
                         <div class="input-group" data-eq-type="HBr" data-system-level="200">
                             <label id="inputResponseCoefKpLabel" for="inputResponseCoefKp">Responsiveness coefficient
-                                [Kp]<span
+                                \( [K_{p}] \)<span
                                         class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputResponseCoefKp" class="expInput"
                                    value="0.5" min="0" step="any" max="10" data-unit="-"
-                                   data-essence="coefficient, ratio"
-                                   required>
+                                   data-essence="coefficient, ratio" required>
                         </div>
                         <div class="input-group" data-eq-type="HBr" data-system-level="200">
                             <label id="inputResponseCoefKiLabel" for="inputResponseCoefKi">Responsiveness coefficient
-                                [Ki]<span
+                                \( [K_{i}] \)<span
                                         class="units-text"></span>: </label>
                             <input data-input-type="floatInput" type="number" id="inputResponseCoefKi" class="expInput"
                                    value="0.5" min="0" step="any" max="10" data-unit="-"
-                                   data-essence="coefficient, ratio"
-                                   required>
+                                   data-essence="coefficient, ratio" required>
                         </div>
 
 
                         <div class="input-group" data-eq-type="-Flx, -InB,-HBr">
                             <label for="inputDoCycles">Do cycles: </label>
                             <input type="checkbox" id="inputDoCycles" class="expInput" value="doCycles"
-                                   data-essence="switch"
-                                   required>
+                                   data-essence="switch" required>
                             <label id="inputCyclesLabel" class="innerInputLabel" for="inputCycles">Cycles<span
                                     class="units-text"></span>: </label>
-                            <input data-input-type="intInput" type="text" id="inputCycles" class="expInput innerInput"
-                                   value="1" data-unit="-" data-essence="count"
-                                   required>
+                            <input type="text" id="inputCycles" class="expInput innerInput"
+                                   value="1" data-unit="-" data-input-type="intInput, customNumber"
+                                   data-essence="count" required>
                         </div>
                     </div>
                 </article>
@@ -2598,10 +2605,10 @@
                                 <option value="remote" hidden>
                                     &nbsp;👽&nbsp;Remote
                                 </option>
-                                <option value="disabled" hidden>
+                                <option value="publuc" hidden>
                                     &nbsp;🅿️&nbsp;Public
                                 </option>
-                                <option value="disabled" hidden>
+                                <option value="guest" hidden>
                                     &nbsp;➿&nbsp;Guest
                                 </option>
                                 <option value="restricted" hidden>
@@ -4924,14 +4931,14 @@
 
         if (!isB && !isIB && !isHB) return; // nic dalšího nepřepočítáme
 
-        const b = readNum("inputWidth", true);   // mm
-        const h = readNum("inputHeight", true);  // mm
+        const b = readNum("inputCSWidth", true);   // mm
+        const h = readNum("inputCSHeight", true);  // mm
 
 
         // -------------------- IB: průřez + napětí --------------------
         if (isIB) {
             // A = b*h
-            const l = readNum("inputLength", true);     // mm
+            const l = readNum("inputCSLength", true);     // mm
             const A = calc_area(b, l); // mm^2
             if (exists("outputArea")) writeOut("outputArea", A, 3);
 
@@ -4958,29 +4965,29 @@
             const f_m = calc_flex_strength(Fmax, L, b, h) // N/mm^2 = MPa
             if (exists("outputFlexStrength")) writeOut("outputFlexStrength", f_m, 3);
 
-            const b_dry = readNum("inputWidth_BeforeDrying", true);     // mm
-            applyAdjust('inputWidth', b_dry);
-            applyAdjust('inputWidth_BeforeDrying', b);
+            const b_dry = readNum("inputCSWidth_BeforeDrying", true);     // mm
+            applyAdjust('inputCSWidth', b_dry);
+            applyAdjust('inputCSWidth_BeforeDrying', b);
 
-            const h_dry = readNum("inputHeight_BeforeDrying", true);   // mm
-            applyAdjust('inputHeight', h_dry);
-            applyAdjust('inputHeight_BeforeDrying', h);
+            const h_dry = readNum("inputCSHeight_BeforeDrying", true);   // mm
+            applyAdjust('inputCSHeight', h_dry);
+            applyAdjust('inputCSHeight_BeforeDrying', h);
 
             // const L_dry = readNum("inputLength_BeforeDrying", true);       // mm
             // applyAdjust('inputSpan', L_dry);
             // applyAdjust('inputLength_BeforeDrying', L);
         } else {
-            adjustDel('inputWidth');
-            adjustDel('inputHeight');
-            adjustDel('inputWidth_BeforeDrying');
-            adjustDel('inputHeight_BeforeDrying');
+            adjustDel('inputCSWidth');
+            adjustDel('inputCSHeight');
+            adjustDel('inputCSWidth_BeforeDrying');
+            adjustDel('inputCSHeight_BeforeDrying');
             adjustDel('inputSpan');
         }
 
         // -------------------- HB: Brinell --------------------
         if (isHB) {
             const D = readNum("inputIndDiameter", true); // mm (⌀ indenteru)
-            const hD = readNum("inputIndDepth", true);    // mm (hloubka vtisku)
+            const hD = readNum("outputDepthInd", true);    // mm (hloubka vtisku)
 
             // d = 2 * sqrt( h * (2r - h) )  ;  2r = D  ; d = 2 * sqrt( h * (D - h) )
             const d = calc_indentation_diameter(hD, D);
@@ -5050,7 +5057,7 @@
 
 
             const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
-            applyAdjust('inputIndDepth', depthIndentation);
+            applyAdjust('outputDepthInd', depthIndentation);
 
 
             // Rychlost zatěžování: v = w_T / t
@@ -5470,7 +5477,7 @@
 
 
     function importSettings() {
-        if (!allLoaded) return;
+        if (!initialAllLoaded) return;
         if (isExperimentRunning) return;
 
         if (!storageKeyLoad) {
@@ -5540,7 +5547,7 @@
 
 
     function exportSettings() {
-        if (!allLoaded) return;
+        if (!initialAllLoaded) return;
 
         if (!storageKeyLoad) {
             console.error("Storage key is not defined.");
@@ -5816,6 +5823,7 @@
         const request = store.count();
 
         request.onsuccess = async function () {
+            if (!isExperimentRunning) maxDataPoints = maxDataPointsExpShow;
             await loadDataFromDBToChart(false);
 
             if (request.result > 0) {
@@ -5827,6 +5835,7 @@
 
                 // transaction = db.transaction(STORE_NAME, "readonly");
                 // store = transaction.objectStore(STORE_NAME);
+                // TODO: proč druhý request???
                 const request2 = store.getAll();
                 request2.onsuccess = async function () {
                     let dataEntries = request2.result;
@@ -5859,7 +5868,7 @@
                 // }
             }
         };
-        dataLoaded = true;
+        initialDataLoaded = true;
     }
 
     // /////// Adding Data to the Log /////////
@@ -6022,19 +6031,21 @@
 
     // Maximum number of data points displayed in the charts
     const maxDataPointsExp = 1e5;
+    const maxDataPointsExpShow = 1e10;
     const maxDataPointsIdle = 1_000 / 10; // 10x in 1 seconds (100 ms)
     let maxDataPoints = maxDataPointsIdle;
 
 
     // /////// Toggle Live Update /////////
     function chartUpdate() {
-        if (!liveUpdate && isExperimentRunning) loadDataFromDBToChart(!liveUpdate);
-
         liveUpdate = !liveUpdate;
+        UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "⏯️ Activate Charts";
+        $ID("chartsWrapper").style.background = liveUpdate ? "var(--charts-bg-active)" : "var(--charts-bg)";
+
+        if (isExperimentRunning && liveUpdate) loadDataFromDBToChart(liveUpdate);
 
         if (!isExperimentRunning && isConnected) {
             if (liveUpdate) {
-
                 const dataAppInterval = getInputNumDefAbsInt("inputAppInterval", NaN);
                 sendCommandGeneral(`DATA SET INTERVAL ${dataAppInterval}`)
                 const dataDuration = 10 * 1_000; // 10 seconds
@@ -6080,8 +6091,6 @@
 
             sendCommandGeneral(`DATAC ${liveUpdate ? 1 : 0}`);
         }
-        UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "⏯️ Activate Charts";
-        $ID("chartsWrapper").style.background = liveUpdate ? "var(--charts-bg-active)" : "var(--charts-bg)";
     }
 
 
@@ -6249,8 +6258,8 @@
                 return;
             }
 
-            // Clear IndexedDB after saving
-            if (dataEntries[0]?.status === 'saved') {
+            // Clear IndexedDB after saving (only in initial load)
+            if (initialDataLoaded === false && dataEntries[0]?.status === 'saved') {
                 await clearDatabase();
                 return;
             }
@@ -7073,8 +7082,8 @@
         const hwInterval = interval + Math.ceil(clamp(interval * 0.10, 100, 250)) + 50;
         // nezdržujeme — fire and forget
         sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${hwInterval}`);
-        sendCommandGeneral(`MISC SET WATCHDOG_ENABLED 1`);
-        console.info("🐕 Watchdog is active.");
+        sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${1}`);
+        if (debugging) console.info("\t🐕 Watchdog is active.");
 
         watchdogTimer = setInterval(() => {
             // posílej SYSWR pouze když je to smysluplné
@@ -7090,7 +7099,8 @@
             watchdogTimer = null;
         }
         // HW watchdog turn off — optional:
-        if (isConnected && turnOff) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED 0`);
+        if (isConnected && turnOff) if (debugging) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);// TODO: turned off by DEBUGGING!!!
+        if (debugging) console.info("\t🐶 Watchdog is inactive.");
     }
 
     // ------- Movement -------
@@ -7175,7 +7185,7 @@
 
         warnOnClose = false;
         machineOccupation = false;
-        stopWatchdog();
+        stopWatchdog(false); // TODO: check if disable movement of machine is good idea
 
         if (isConnected) setSpeedAndAcceleration(currentSpeed, currentAcceleration, true, 10);
 
@@ -8049,10 +8059,10 @@
 
 
             // === Progress Bar Setup ===
-            document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
-            UI.experimentStageLabel.textContent = `Starting`;
+            UI.experimentStageLabel.textContent = `Configuring`;
             UI.progressBar.value = 0;
             UI.progressLabel.textContent = `0%`;
+            document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
 
             // === Experiment Parameters ===
             if (await $ID('inputClearCalculations').checked) await clearCalculations();
@@ -8106,18 +8116,6 @@
                 measurement_limits.zero_speed.limit = calculateStep(dataInterval_us, 5_000, 2);
             }
 
-            checkSpeed = true; // TODO: reset if needed
-            timer = null;
-            endedBy = null;
-            pendingDSLR = null;
-            parsedData = {
-                time: 0,
-                position: 0,
-                speed: 0,
-                force: Array(loadcellCount).fill(0),
-                photoIndex: takePhotos ? 0 : null // Store DSLR photo order
-            };
-
             currentSpeed = (await getSpeed()) || 15;
             currentAcceleration = (await getAcceleration()) || 150;
 
@@ -8165,6 +8163,9 @@
 
             await sendCommandGeneral("DATAC 0", 10);
             takeMeasurements = false;
+
+
+            UI.experimentStageLabel.textContent = `Analyzing`;
 
 
             // --- 2) Mean forces ---
@@ -8217,6 +8218,101 @@
             // }
 
 
+            const setChart = (chart) => {
+                if (isVoid(chart)) return;
+                loadcellsInfo.presentLoadcells?.forEach((r, i) => chart.setSeries((i + 1), {show: r}));
+                chart.setSeries((loadcellCount + 1), {show: takePhotos});
+            };
+            setChart(timeChart);
+            setChart(positionChart);
+
+            // --- 6) Valid dispersion ---
+            const diffs = validFields.flatMap(({
+                                                   min, max
+                                               }) => (isNum(min) && isNum(max)) ? [max - min] : []);
+            console.info("\nValid dispersions:", diffs);
+
+            // --- 7) Error rates ---
+            for (let i = 0; i < loadcellCount; i++) {
+                measurementErrRate[i] = await roundDecimalFast(diffs[i], precisionForce);
+                console.info(`\n\t\tLC ${i}: 🎰 Measurement error rate:`, measurementErrRate[i], "N");
+
+
+                loadcellErrRate[i] = (loadcellsInfo.capacities[i] * 9.81) / 2_000; // 0.05% of the capacity
+                console.info(`\n\t\tLC ${i}: 🎰 Loadcell error rate:`, loadcellErrRate[i], "N");
+
+                // --- 8) Final error rate ---
+                const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
+                totalErrRate[i] = alpha * measurementErrRate[i] + (1 - alpha) * loadcellErrRate[i];
+                console.info(`\n\tLC ${i}: 🎲 Final error rate:`, totalErrRate[i], "N");
+                await logMessage(`\tLC ${i}: 🎲 Set error rate: ${totalErrRate[i]} N`);
+            }
+
+            const err = mean1D(totalErrRate); // TODO: dle sledovaných sil
+
+
+            UI.experimentStageLabel.textContent = `Starting`;
+
+            // === Create PI Controller ===
+            if (experimentType.endsWith("-hbr")) {
+                pi = createPIController({
+                    //      Target force
+                    setForceN: roundDecimalFast(stoppingForceLimit, precisionForce),
+                    //      Proportional gain                           (default: 0.200)
+                    Kp: roundDecimalFast(0.200 * responsiveness.Kp, 6),
+                    //      Integral gain                               (default: 0.030)
+                    Ki: roundDecimalFast(0.030 * responsiveness.Ki, 6),
+                    //      Deadband set to 115% of total error rate
+                    deadbandN: roundDecimalFast(err * 1.15, precisionForce),
+                    //      Minimum speed during holding
+                    vMin: roundDecimalFast(minFSpeed, 6),
+                    //      Limit max speed during holding e.g. to 250% of min speed or 80% of forward speed but not exceeding forward speed
+                    vMax: roundDecimalFast(Math.min(Math.max(minFSpeed * 5 / 2, speedForward_mmps * 4 / 5), speedForward_mmps), 6), // minFSpeed * 3 / 2, speedForward_mmps * 2 / 3)
+                    //      Slew-rate limit to 5 mm/s² (null => no limit)
+                    accel: 5,
+                    //      Anti-windup clamp: readings in the last 25% of hold time
+                    integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 125),
+                });
+            }
+
+
+            // ==================================
+            // === Reset Experiment Variables ===
+
+            checkSpeed = true; // TODO: reset if needed
+            timer = null;
+            endedBy = null;
+            pendingDSLR = null;
+            parsedData = {
+                time: 0,
+                position: 0,
+                speed: 0,
+                force: loadcellsInfo.presentLoadcells.map(value => value ? 0 : null),
+                photoIndex: takePhotos ? 0 : null // Store DSLR photo order
+            };
+
+            experimentProgress = 0
+            tareValues.time = null;
+            lastAcceptedTime = null;
+            isExperimentRunning = true;
+            endMeasurement = false;
+            clearTimeout(endMeasurementCounter)
+            endMeasurementCounter = null;
+
+            timeData = [];
+            positionData = [];
+            forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+            measureForces = Array(loadcellCount).fill(null).map(() => []);
+
+            timeDataChart = [];
+            positionDataChart = [];
+            forceDataChart = Array(loadcellCount).fill(null).map(() => []);
+            photoDataChart = [];
+            dataCount = 0;
+
+            await clearCharts();
+            if (!liveUpdate) await chartUpdate();
+
             const settings = await collectExpSettings(".expInput", "Moira-exp-settings") || {};
 
             const expInfoV = settings?.version;
@@ -8259,90 +8355,6 @@
             await addDataToLog(parsedData);
             await updateChart(parsedData);
 
-            UI.experimentStageLabel.textContent = `Running`;
-
-
-            const setChart = (chart) => {
-                if (isVoid(chart)) return;
-                loadcellsInfo.presentLoadcells?.forEach((r, i) => chart.setSeries((i + 1), {show: r}));
-                chart.setSeries((loadcellCount + 1), {show: takePhotos});
-            };
-            setChart(timeChart);
-            setChart(positionChart);
-
-            // --- 6) Valid dispersion ---
-            const diffs = validFields.flatMap(({
-                                                   min, max
-                                               }) => (isNum(min) && isNum(max)) ? [max - min] : []);
-            console.info("\nValid dispersions:", diffs);
-
-            // --- 7) Error rates ---
-            for (let i = 0; i < loadcellCount; i++) {
-                measurementErrRate[i] = await roundDecimalFast(diffs[i], precisionForce);
-                console.info(`\n\t\tLC ${i}: 🎰 Measurement error rate:`, measurementErrRate[i], "N");
-
-
-                loadcellErrRate[i] = (loadcellsInfo.capacities[i] * 9.81) / 2_000; // 0.05% of the capacity
-                console.info(`\n\t\tLC ${i}: 🎰 Loadcell error rate:`, loadcellErrRate[i], "N");
-
-                // --- 8) Final error rate ---
-                const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
-                totalErrRate[i] = alpha * measurementErrRate[i] + (1 - alpha) * loadcellErrRate[i];
-                console.info(`\n\tLC ${i}: 🎲 Final error rate:`, totalErrRate[i], "N");
-                await logMessage(`\tLC ${i}: 🎲 Set error rate: ${totalErrRate[i]} N`);
-            }
-
-            const err = mean1D(totalErrRate); // TODO: dle sledovaných sil
-
-            // --- 9) Clear force fields ---
-            measureForces = Array(loadcellCount).fill(null).map(() => []);
-
-            if (experimentType.endsWith("-hbr")) {
-                pi = createPIController({
-                    //      Target force
-                    setForceN: roundDecimalFast(stoppingForceLimit, precisionForce),
-                    //      Proportional gain                           (default: 0.200)
-                    Kp: roundDecimalFast(0.200 * responsiveness.Kp, 6),
-                    //      Integral gain                               (default: 0.030)
-                    Ki: roundDecimalFast(0.030 * responsiveness.Ki, 6),
-                    //      Deadband set to 115% of total error rate
-                    deadbandN: roundDecimalFast(err * 1.15, precisionForce),
-                    //      Minimum speed during holding
-                    vMin: roundDecimalFast(minFSpeed, 6),
-                    //      Limit max speed during holding e.g. to 250% of min speed or 80% of forward speed but not exceeding forward speed
-                    vMax: roundDecimalFast(Math.min(Math.max(minFSpeed * 5 / 2, speedForward_mmps * 4 / 5), speedForward_mmps), 6), // minFSpeed * 3 / 2, speedForward_mmps * 2 / 3)
-                    //      Slew-rate limit to 5 mm/s² (null => no limit)
-                    accel: 5,
-                    //      Anti-windup clamp: readings in the last 25% of hold time
-                    integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 125),
-                });
-            }
-
-
-            // ==================================
-            // === Reset Experiment Variables ===
-
-            experimentProgress = 0
-            tareValues.time = null;
-            lastAcceptedTime = null;
-            isExperimentRunning = true;
-            endMeasurement = false;
-            clearTimeout(endMeasurementCounter)
-            endMeasurementCounter = null;
-
-            timeData = [];
-            positionData = [];
-            forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
-
-            timeDataChart = [];
-            positionDataChart = [];
-            forceDataChart = Array(loadcellCount).fill(null).map(() => []);
-            photoDataChart = [];
-            dataCount = 0;
-
-            await clearCharts();
-            if (!liveUpdate) await chartUpdate();
-
             UIupdate();
 
             if (experimentDoubleSpeed === true) UI.experimentStageLabel.textContent = `Initial`;
@@ -8363,8 +8375,9 @@
             console.info("➡️ Moving forward...");
             await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
 
+            const oneBigInt = toBigInt(1);
             if (doCycles) {
-                let cycle = 1n;
+                let cycle = oneBigInt;
                 const isInfinite = isInfinity(cyclesCount);
                 const totCyclesLabel = isInfinite ? "∞" : cyclesCount;
                 const movementIntervalMs = computeMotionTime(distance_mm, speedForward_mmps, 200) + 5;
@@ -8426,7 +8439,7 @@
 
                     // u konečného režimu dekrementuj, u ∞ nesahej na cyclesCount
                     if (!isInfinite) cyclesCount--;
-                    cycle += 1n;
+                    cycle += oneBigInt;
 
                     // loguj po každém kroku jen u konečného režimu (∞ řeší minuteLogger)
                     if (!isInfinite) {
@@ -8479,12 +8492,6 @@
                     UI.experimentStageLabel.textContent = `Returning`;
                     await moveToOriginalPosition({overRide: true}); // TODO: neposune se: chyba (Machine is already busy. Please wait.) => add overRide
                 }
-            }
-
-            // === Save Data ===
-            if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
-                UI.experimentStageLabel.textContent = `Saving`;
-                await saveCSV();
             }
 
             UI.experimentStageLabel.textContent = `Finalizing`;
@@ -8542,10 +8549,7 @@
             await updateLogById(0, {experimentProgress: experimentProgress});
 
             document.title = initialTitle;
-
-            UI.experimentStageLabel.textContent = `Idle`;
-            maxDataPoints = maxDataPointsIdle;
-
+            maxDataPoints = maxDataPointsExpShow;
 
             await sleep(400);
 
@@ -8555,12 +8559,23 @@
 
             await recomputeAll();
 
+
+            // === Save Data ===
+            if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
+                UI.experimentStageLabel.textContent = `Saving`;
+                await saveCSV();
+            }
+
+            await reloadCharts();
+
             endedMoving();    // unlock UI and watchdog
             unlockMovement();
+
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
             await console.groupEnd();
 
+            UI.experimentStageLabel.textContent = `Idle`;
         }
     }
 
@@ -8647,11 +8662,6 @@
             endMeasurementCounter = null;
 
             if (ednStatus) endedBy = ednStatus;
-
-            await sleep(1_000); // Allow any final data processing
-
-            await reloadCharts();
-
         }, totDelayMs);
     }
 
@@ -9698,7 +9708,7 @@
      * @returns {boolean} true = spuštěno; false = ignorováno (už běželo a restart=false / chybí element)
      */
     async function blinkBorder(target, options = {}) {
-        if (!allLoaded) return;
+        if (!initialAllLoaded) return;
         const el = typeof target === 'string' ? $(target) : target;
         if (!el) return false;
 
@@ -10224,7 +10234,7 @@
         handFolderSelect = $ID("storagePath").checked || false;
 
         if (!experimentName) {
-            alert("Unable to save the data.\n    Please enter the experiment type.");
+            alert("Unable to save the data.\n    Please enter the Experiment name.");
             return;
         }
 
@@ -10851,38 +10861,39 @@
             console.warn("❌ No files selected.");
             alert("❌ No files were selected. Please select one or more CSV files and try again.");
             return;
-        } else {
-            files.sort((a, b) => {
-                let nameA = a.name.toLowerCase();
-                let nameB = b.name.toLowerCase();
-
-                // Regular expression to extract the base name and optional index
-                let regex = /(.*?)(?:\s\((\d+)\))?\.csv$/;
-
-                let matchA = nameA.match(regex);
-                let matchB = nameB.match(regex);
-
-                if (!matchA || !matchB) return 0; // Skip if no match
-
-                let baseA = matchA[1]; // Base name
-                let indexA = matchA[2] ? parseInt(matchA[2]) : -1; // Index (if present) or -1
-
-                let baseB = matchB[1];
-                let indexB = matchB[2] ? parseInt(matchB[2]) : -1;
-
-                // Sort by base name first
-                if (baseA !== baseB) return baseA.localeCompare(baseB);
-
-                // Sort by index if base names are the same
-                if (indexA === -1) return -1;
-                if (indexB === -1) return 1;
-
-                // Sort by index
-                return indexA - indexB;
-            });
-
-            console.info("📂 Sorted files:", files.map(f => f.name)); // Log sorted file names
         }
+
+        files.sort((a, b) => {
+            let nameA = a.name.toLowerCase();
+            let nameB = b.name.toLowerCase();
+
+            // Regular expression to extract the base name and optional index
+            let regex = /(.*?)(?:\s\((\d+)\))?\.csv$/;
+
+            let matchA = nameA.match(regex);
+            let matchB = nameB.match(regex);
+
+            if (!matchA || !matchB) return 0; // Skip if no match
+
+            let baseA = matchA[1]; // Base name
+            let indexA = matchA[2] ? parseInt(matchA[2]) : -1; // Index (if present) or -1
+
+            let baseB = matchB[1];
+            let indexB = matchB[2] ? parseInt(matchB[2]) : -1;
+
+            // Sort by base name first
+            if (baseA !== baseB) return baseA.localeCompare(baseB);
+
+            // Sort by index if base names are the same
+            if (indexA === -1) return -1;
+            if (indexB === -1) return 1;
+
+            // Sort by index
+            return indexA - indexB;
+        });
+
+        console.info("📂 Sorted files:", files.map(f => f.name)); // Log sorted file names
+
 
         const measurementName = files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").replace(/^(.*)_(\d+)$/, "$1").trim(); // Measurement name
         let wb = XLSX.utils.book_new(); // Create a new Excel workbook
@@ -10894,7 +10905,7 @@
         const resultsHead = ["File Order", "File name", "Experiment type", "Material",
             "b (mm)", "h (mm)", "L (mm)", "E (MPa)", "f_m (MPa)",
             "F_max (N)", "w_Fmax (mm)", "σ_max (MPa)",
-            "F_T (N)", "h_D (mm)", "H_BW (-)"];
+            "F_T (N)", "h_D (mm)", "d_D (mm)", "H_BW (-)"];
 
         const resultsData = [resultsHead]; // Third sheet data
 
@@ -10986,6 +10997,11 @@
             } = csvData;
 
 
+            if (file.name.toLowerCase().includes("tk_005")) {
+                console.log(preambleMetaData);
+            }
+
+
             const samplesInfo = {
                 method: 3,  // Method (place 3)
                 W: 0,       // W (place 0)
@@ -11013,6 +11029,7 @@
                 sigma_max: "",      // σ_max (MPa)
                 F_T: "",            // F_T (N)
                 h_D: "",            // h_D (mm)
+                d_D: "",            // d_D (mm)
                 H_BW: ""            // H_BW (-)
             }; // Experiment results
 
@@ -11025,28 +11042,29 @@
                     if (expInfoV >= 1) {
                         expResults.experimentType = await preambleMetaData?.experimentLabel || "";
                         expResults.material = getMetaValue(calcSettingsInputs, "inputMaterialName");
-                        expResults.b = getMetaValue(calcSettingsInputs, "inputWidth", "mm");
-                        expResults.h = getMetaValue(calcSettingsInputs, "inputHeight", "mm");
-                        expResults.L = getMetaValue(calcSettingsInputs, "inputLength", "mm");
+                        expResults.b = getMetaValue(calcSettingsInputs, "inputCSWidth", "mm");
+                        expResults.h = getMetaValue(calcSettingsInputs, "inputCSHeight", "mm");
+                        expResults.L = getMetaValue(calcSettingsInputs, "inputCSLength", "mm");
                         expResults.E = getMetaValue(calcSettingsInputs, "outputModulus", "MPa");
                         expResults.f_m = getMetaValue(calcSettingsInputs, "outputFlexStrength", "MPa");
                         expResults.F_max = getMetaValue(calcSettingsInputs, "outputForceMax", "N");
                         expResults.w_Fmax = getMetaValue(calcSettingsInputs, "outputDisp", "mm");
                         expResults.sigma_max = getMetaValue(calcSettingsInputs, "outputMaxStress", "MPa");
                         expResults.F_T = getMetaValue(calcSettingsInputs, "inputTargetForce", "N");
-                        expResults.h_D = getMetaValue(calcSettingsInputs, "inputIndDepth", "mm");
+                        expResults.h_D = getMetaValue(calcSettingsInputs, "outputDepthInd", "mm");
+                        expResults.d_D = getMetaValue(calcSettingsInputs, "outputDiameterInd", "mm");
                         expResults.H_BW = getMetaValue(calcSettingsInputs, "outputHardness");
                     }
 
                     const calcInfoV = await preambleMetaData.calcSettings?.version || 0;
                     if (calcInfoV >= 1) {
-                        samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputHeight_BeforeDrying", "mm");
+                        samplesInfo.hw = getMetaValue(calcSettingsInputs, "inputCSHeight_BeforeDrying", "mm");
                         samplesInfo.lw = getMetaValue(calcSettingsInputs, "inputLength_BeforeDrying", "mm");
-                        samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputWidth_BeforeDrying", "mm");
+                        samplesInfo.ww = getMetaValue(calcSettingsInputs, "inputCSWidth_BeforeDrying", "mm");
                         samplesInfo.mx = getMetaValue(calcSettingsInputs, "inputWeight_BeforeDrying", "g");
-                        samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputHeight_AfterDrying", "mm");
+                        samplesInfo.h0 = getMetaValue(calcSettingsInputs, "inputCSHeight_AfterDrying", "mm");
                         samplesInfo.l0 = getMetaValue(calcSettingsInputs, "inputLength_AfterDrying", "mm");
-                        samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputWidth_AfterDrying", "mm");
+                        samplesInfo.w0 = getMetaValue(calcSettingsInputs, "inputCSWidth_AfterDrying", "mm");
                         samplesInfo.m0 = getMetaValue(calcSettingsInputs, "inputWeight_AfterDrying", "g");
                     }
 
@@ -11115,6 +11133,7 @@
                 expResults.sigma_max,
                 expResults.F_T,
                 expResults.h_D,
+                expResults.d_D,
                 expResults.H_BW,
             ]);
 
@@ -11238,7 +11257,8 @@
         setRich(wsResults, 0, 11, [{text: "σ"}, {text: "max", sub: true}, {text: " (MPa)"}]);
         setRich(wsResults, 0, 12, [{text: "F"}, {text: "T", sub: true}, {text: " (N)"}]);
         setRich(wsResults, 0, 13, [{text: "h"}, {text: "D", sub: true}, {text: " (mm)"}]);
-        setRich(wsResults, 0, 14, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
+        setRich(wsResults, 0, 14, [{text: "d"}, {text: "D", sub: true}, {text: " (mm)"}]);
+        setRich(wsResults, 0, 15, [{text: "H"}, {text: "BW", sub: true}, {text: " (-)"}]);
 
 
         // console.info('WS Results J1 =', wsResults[XLSX.utils.encode_cell({r: 0, c: 9})]);
@@ -11349,7 +11369,8 @@
         setNumFmt(11, "0.000", resultsData, wsResults);    // σ_max (MPa)
         setNumFmt(12, "0.00", resultsData, wsResults);     // F_T (N)
         setNumFmt(13, "0.00", resultsData, wsResults);     // h_D (mm)
-        setNumFmt(14, "0.000", resultsData, wsResults);    // H_BW (-)
+        setNumFmt(14, "0.000", resultsData, wsResults);     // d_D (mm)
+        setNumFmt(15, "0.000", resultsData, wsResults);    // H_BW (-)
 
 
         XLSX.utils.book_append_sheet(wb, wsMattes, sheetName); // Append a sheet to workbook
@@ -11421,7 +11442,7 @@
         // "6790:29987",   // Thymos ESP32-S3
         // "6790:29986",   // Thymos ESP32-C3
         // "6790:29985",   // Thymos ESP32-C6
-        "0x303a:0x1001",   // Thymos ESP32-S2   //  ≈ "12346:4097"
+        "12346:4097",   // Thymos ESP32-S2   //  ≈ "0x303a:0x1001"
     ];
     let useFilteredPort = true;
     let usePortAutoConnect = true;
@@ -11470,7 +11491,7 @@
                     // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
                     filters: useFilteredPort ? [
                         ...thymosFingerprints.map(fp => {
-                            const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                            const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 10));
                             return {usbVendorId: vendorId, usbProductId: productId};
                         })
                     ] : []
@@ -11646,7 +11667,7 @@
 
         await logMessage("\n");
 
-        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
+        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${1}`);
         await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
 
         await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
@@ -11728,6 +11749,19 @@
             await setMachineID(machineID, 1, {overRide: true});
         }
 
+
+        const machineVersionStatus = compareVersions(machineFirmware, "1.2.7");
+
+        if (machineVersionStatus === 0) {
+            console.info("%c\n\t🔧\tFirmware is same as supported.", "color: gray; font-weight: bold;");
+        } else if (machineVersionStatus === 1) {
+            console.warn("%c\n\t🔧\tFirmware is newer than supported!", "color: red; font-weight: bold;");
+        } else {
+            console.info("%c\n\t🔧\tFirmware is older than supported.", "color: orange; font-weight: bold;");
+            alert("\n⚠️ Firmware is older than supported!\n\n   Please consider updating the device firmware to ensure compatibility and access to the latest features.\n");
+            // TODO: implement: confirm(.....) => automatic firmware update procedure
+        }
+
         if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
 
         $ID("inputMachineName").value = machineName;
@@ -11772,7 +11806,7 @@
 
         const {usbVendorId, usbProductId} = port?.getInfo() ?? {};
         if (!usbVendorId || !usbProductId) return null;
-        fingerprint = `${Number(usbVendorId)?.toString(16) ?? 'N/A'}:${Number(usbProductId)?.toString(16) ?? 'N/A'}`;
+        fingerprint = `${Number(usbVendorId)?.toString(10) ?? 'N/A'}:${Number(usbProductId)?.toString(10) ?? 'N/A'}`;
 
         console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
 
@@ -12277,7 +12311,7 @@
 
             const THYMOS_USB_INFOS = [...[...thymosFingerprints, lastFingerPrint].map(fp => {
                 if (!isNonEmptyStr(fp)) return null;
-                const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 16));
+                const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 10));
                 return {usbVendorId: vendorId, usbProductId: productId};
             })
             ];
@@ -12691,9 +12725,9 @@
 
     let connectionType = null; // 'serial' | 'bluetooth' | 'wifi' | null
 
-    let allLoaded = false;
-    let pageLoaded = false;
-    let dataLoaded = false;
+    let initialAllLoaded = false;
+    let initialPageLoaded = false;
+    let initialDataLoaded = false;
 
     let lastTitle = document.title;
 
@@ -13426,7 +13460,7 @@
 
         setTimeout(() => window.dispatchEvent(new Event('resize', {bubbles: true})), 0);
 
-        pageLoaded = true;
+        initialPageLoaded = true;
     });
 
 
@@ -13444,7 +13478,7 @@
      */
     window.onload = async () => {
 
-        while (!(pageLoaded && dataLoaded)) await sleep(200);
+        while (!(initialPageLoaded && initialDataLoaded)) await sleep(200);
 
         // await loadCommands();
 
@@ -13504,7 +13538,7 @@
             console.info("\n✅ %cApplication fully loaded.", "color: #28a745; font-style: italic; font-weight: normal;");
 
             await sleep(25);
-            allLoaded = true;
+            initialAllLoaded = true;
 
         }, {once: true});
 
