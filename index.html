@@ -2375,9 +2375,10 @@
                     </div>
                 </article>
 
-                <div id="saveCalcDataBtnWrapper" style="margin-top: 60px; justify-items: center;">
-                    <hr style="width: 85% ; margin: 0 auto 10px;">
-                    <button class="controlBtn saveDataBtns controlElement">💾 Save data (CSV)</button>
+                <hr style="width: 85% ; margin: 30px auto 15px;">
+                <div id="saveCalcDataBtnWrapper" style="display: flex; gap: calc(2 * var(--gap)); justify-content: center;">
+                    <button class="controlBtn saveDataBtns controlElement">💾 Save data<br>(CSV)</button>
+                    <button id="recomputeAllBtn" class="controlBtn controlElement">🧮 Recompute<br>All</button>
                 </div>
             </div>
         </section>
@@ -2547,8 +2548,8 @@
                             <label id="inputCyclesLabel" class="innerInputLabel" for="inputCycles">Cycles<span
                                     class="units-text"></span>: </label>
                             <input type="text" id="inputCycles" class="expInput innerInput"
-                                   value="1" data-unit="-" data-input-type="intInput, customNumber"
-                                   data-essence="count" required>
+                                   min="0" max="Infinity" value="1" data-unit="-"
+                                   data-input-type="intInput, customNumber" data-essence="count" required>
                         </div>
                     </div>
                 </article>
@@ -4908,7 +4909,7 @@
 
 
     // -------------------- Hlavní přepočet --------------------
-    function recomputeAll() {
+    function recomputeAllCalculations() {
         if (isExperimentRunning) return;
 
         fillComputableInputs();
@@ -5008,10 +5009,10 @@
         const inputs = $$('.data-eq input[type="number"]');
         inputs?.forEach((el) => {
             // "input" je plynulejší; "change" je až po opuštění pole. Dáme oboje.
-            el.addEventListener('input', async () => recomputeAll());
+            el.addEventListener('input', async () => recomputeAllCalculations());
         });
 
-        $ID('experimentTypeDropdown')?.addEventListener('change', async () => recomputeAll());
+        $ID('experimentTypeDropdown')?.addEventListener('change', async () => recomputeAllCalculations());
     }
 
     function fillComputableInputs() {
@@ -5113,7 +5114,7 @@
                 input.value = '';
             });
         });
-        recomputeAll();
+        recomputeAllCalculations();
     }
 </script>
 
@@ -7865,6 +7866,7 @@
             let doCycles = false;
             let cyclesCount = NaN;
 
+            // TODO: 'customNumber'
             if (experimentType.endsWith("-basic") && $ID("inputDoCycles").checked === true) {
                 doCycles = true;
                 const cyclesVal = getInputVal("inputCycles")?.toLowerCase().trim() || '';
@@ -8523,6 +8525,8 @@
                 forceDataChart = Array(loadCellNum).fill(null).map(() => []);
                 photoDataChart = [];
                 dataCount = 0;
+            } else {
+                await updateLogById(0, {status: "error"});
             }
 
 
@@ -8557,13 +8561,15 @@
             dbFlushTimer = null;
             await flushDB();
 
-            await recomputeAll();
+            await recomputeAllCalculations();
 
 
             // === Save Data ===
             if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
-                UI.experimentStageLabel.textContent = `Saving`;
-                await saveCSV();
+                if (!internalError) {
+                    UI.experimentStageLabel.textContent = `Saving`;
+                    await saveCSV();
+                }
             }
 
             await reloadCharts();
@@ -12680,7 +12686,7 @@
         return true; // Empty rule matches all
     };
 
-    const matchLevel = (el) => {
+    const matchLevel = (el, sysLevel = systemLevel) => {
         const elSysVal = el.getAttribute('data-system-level')?.toLowerCase().trim();
 
         if (isNonEmptyStr(elSysVal)) {
@@ -12688,27 +12694,64 @@
             const valLevel = parseInt(elLevel[0]);
             const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNum);
 
-            const visible = (elLevel[0] === 'all' || (valLevel <= systemLevel && systemLevel < valLevelTop));
+            const visible = (elLevel[0] === 'all' || (valLevel <= sysLevel && sysLevel < valLevelTop));
 
             return {sys: elSysVal, visible: visible};
         }
         return {sys: null, visible: true};
     };
 
-    function manageElementVisibility(el, doBubbles = false) {
+    function manageElementsVisibilities(elements, {
+        selectedValue = ($ID("experimentTypeDropdown").value || '').toLowerCase(),
+        setLevel = systemLevel,
+        doBubbles = true
+    } = {}) {
 
-        const selectedValue = ($ID("experimentTypeDropdown").value || '').toLowerCase();
+        if (!(isNonEmptyArr(elements) || isNonEmptyNodeList(elements))) {
+            console.warn("manageElementsVisibilities: 'elements' is not an array or NodeList.");
+            return;
+        }
+        if (!isNonEmptyStr(selectedValue)) {
+            console.warn("manageElementsVisibilities: 'selectedValue' is not a non-empty string.");
+            return;
+        }
+        if (!isNum(setLevel)) {
+            console.warn("manageElementsVisibilities: 'setLevel' is not a number.");
+            return;
+        }
+        if (!isBool(doBubbles)) {
+            console.warn("manageElementsVisibilities: 'doBubbles' is not a boolean.");
+            return;
+        }
+
+        elements.forEach(el => {
+            manageElementVisibility(el, {
+                selectedValue: selectedValue,
+                setLevel: setLevel,
+                doBubbles: doBubbles
+            });
+        });
+
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    function manageElementVisibility(el, {
+        selectedValue = ($ID("experimentTypeDropdown").value || '').toLowerCase(),
+        setLevel = systemLevel,
+        doBubbles = false
+    } = {}) {
+
         const selectedType = typeFrom(selectedValue); // "inb" | "hbr" | "flx" | ""
-
         const rule = parseEqRule(el.dataset.eqType);
+
         const isType = matchesRule(rule, selectedType);
-        const {sys: sysLevel, visible: isLevel} = matchLevel(el);
+        const {sys: elLevel, visible: isLevel} = matchLevel(el, setLevel);
 
         const isVisible = isType && isLevel;
 
-        el.classList.toggle(((isNonEmptyStr(sysLevel) && sysLevel.endsWith('v') && !isType) ? 'invisible' : 'undisplayed'), !isVisible);
+        el.classList.toggle(((isNonEmptyStr(elLevel) && elLevel.endsWith('v') && !isType) ? 'invisible' : 'undisplayed'), !isVisible);
 
-        if (!isVisible && doBubbles) {
+        if (!isVisible && doBubbles === true) {
             $$('input', el)?.forEach(input => {
                 // input.value = '';
                 input.dispatchEvent(new Event("change", {bubbles: true}));
@@ -12788,6 +12831,14 @@
     // ===============================================
 
     document.addEventListener("DOMContentLoaded", function () {
+        // start at top of page
+        try {
+            history.scrollRestoration = 'manual';
+        } catch {
+        }
+        window.scrollTo(0, 0);
+        document.body.style.overflowY = "hidden";
+
         showPreloaderScreen(true);
 
         openDB();
@@ -12985,14 +13036,6 @@
 
         if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
-        // start at top of page
-        try {
-            history.scrollRestoration = 'manual';
-        } catch {
-        }
-        window.scrollTo(0, 0);
-        document.body.style.overflowY = "hidden";
-
         const levelElements = $$('[data-system-level]');
         $ID('systemLevelSelect').addEventListener('change', (event) => {
             const selectedLevel = event.target.value.toLowerCase().trim();
@@ -13038,7 +13081,7 @@
             document.body.setAttribute('data-system-level', selectedLevel);
             console.info(`\n\t⚙️ Selected System-level: ${selectedLevel} (${systemLevel})`);
 
-            levelElements?.forEach(el => manageElementVisibility(el));
+            manageElementsVisibilities(levelElements);
 
             window.dispatchEvent(new Event('resize'));
 
@@ -13232,6 +13275,8 @@
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
 
         $ID("inputAppInterval")?.addEventListener("change", async (event) => (!isExperimentRunning && isConnected) ? await sendCommandGeneral(`DATA SET INTERVAL ${event.target.value}`) : null);
+
+        $ID("recomputeAllBtn")?.addEventListener("change", async (event) => recomputeAllCalculations());
 
         machNameInput?.addEventListener("change", async (event) => {
             const val = event.target.value.trim();
@@ -13436,7 +13481,7 @@
         const experiment_result_elements = $$("[data-eq-type]");
         $ID("experimentTypeDropdown")?.addEventListener("change", async (event) => {
 
-            experiment_result_elements?.forEach(el => manageElementVisibility(el));
+            manageElementsVisibilities(experiment_result_elements);
             // ------------------------------------------------------------------------
 
             requestAnimationFrame(() => {
@@ -13496,7 +13541,7 @@
 
         if (anyDataLoaded) {
             console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
-            recomputeAll();
+            recomputeAllCalculations();
             await logMessage("\nℹ️ Found previous unsaved logged data.\n");
         } else {
             console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
