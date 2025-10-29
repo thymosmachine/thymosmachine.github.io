@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MOIRA - Firmware Updater</title> <!-- Thymos - Moira Firmware Flasher (ESP32-S3) -->
+
+
+    <script>
+        // Clear console - Fresh start
+        console.clear();
+        console.info(`%c\n\nMoira Updater - Thymos\n`, "color: #007bff; font-size: 20px; font-weight: bold;");
+        console.info(`%c\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
+
+
+        fetch("../shared-header.html")
+            .then(res => res.text())
+            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px;
+        }
+
+        input[type="file"] {
+            margin: 5px 5px 5px 15px;
+            border: 3px solid gray;
+            padding: 4px;
+            width: 400px;
+        }
+
+        #form-group {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+        }
+
+        .fileInput {
+            margin-left: 30px;
+        }
+
+        #connectionStatus {
+            font-weight: bold;
+            color: gray;
+        }
+
+        #logOutput {
+            width: 95%;
+            height: 300px;
+            font-family: monospace;
+            font-size: 16px;
+            text-align: left;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            justify-self: center;
+
+
+        }
+
+        #connectButton {
+            font-weight: bold;
+            color: gray;
+            background-color: whitesmoke;
+        }
+
+        .disabled, .disabled * {
+            cursor: not-allowed; /* Změní kurzor na not-allowed */
+            -webkit-user-select: none; /* Pro starší verze prohlížečů */
+            user-select: none; /* Zabrání označování textu */
+            pointer-events: none; /* Zamezí klikání, hover efektům a interakci */
+            tab-index: -1;
+        }
+
+        .disabled {
+            opacity: 0.8; /* Ztmavení pro vizuální indikaci deaktivace */
+        }
+
+        .section {
+            margin-bottom: 4em;
+        }
+
+    </style>
+
+    <script defer src="../packages/zip/pako.min.js"></script> <!-- TODO: use default compression from browser API if available and have 'pako' as fallback -->
+
+</head>
+<body>
+
+<main>
+    <section class="section">
+        <h1>💽 MOIRA Firmware Updater - THYMOS devices</h1> <!--  (ESP32-S3) -->
+    </section>
+
+    <section class="section">
+        <h3>🖥️ Navigation:</h3>
+        <button id="returnButton" class="actionUI">🔙 Return back to Moira Control Panel</button>
+    </section>
+
+
+    <section class="section">
+        <h2>🔧 Connection:</h2>
+        <button id="connectButton" class="actionUI">🔑 Connect to ESP32-S3</button>
+        <br><br>
+        <label for="connectionStatus" class="fileInput">💡 Status:</label>
+        <span id="connectionStatus">🔒 Not connected</span>
+    </section>
+
+    <section class="section disabled">
+        <h2>🗃️ Files:</h2>
+        <button id="selectFolderButton" class="actionUI" disabled>📂 Select Folder with Firmware Files</button>
+        <button id="clearFilesBtn" class="actionUI" disabled>🧹 Clear All Files</button>
+
+
+        <div id="form-group" class="actionUI">
+            <label for="bootloaderFile" class="fileInput" disabled>🏷️ Bootloader:</label>
+            <input type="file" id="bootloaderFile" accept=".ino.bootloader.bin" disabled>
+
+            <label for="partitionsFile" class="fileInput" disabled>📚 Partitions:</label>
+            <input type="file" id="partitionsFile" accept=".ino.partitions.bin" disabled>
+
+            <label for="firmwareFile" class="fileInput" disabled>🛠️ Firmware:</label>
+            <input type="file" id="firmwareFile" accept=".ino.bin" disabled>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>🧰 Process:</h2>
+        <button id="flashButton" class="actionUI">⚡ Update Firmware</button>
+    </section>
+
+    <section class="section">
+        <h2>📝 Outputs:</h2>
+        <label class="fileInput">📑 Log:</label>
+        <pre id="logOutput"></pre>
+    </section>
+</main>
+
+
+<script type="module" src="app.js" defer></script>
+
+</body>
+</html>
