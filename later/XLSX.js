@@ -4,15 +4,15 @@
 //  isNonEmptyStr, convertUnits, atd.)
 // ==========================================================
 function getMetaValue(metaData, key, unit = null) {
-    if (!isObj(metaData)) return "";
+    if (!isDict(metaData)) return "";
     if (metaData.hasOwnProperty(key)) {
         const value = catchVal(metaData[key]?.value, "", isVal);
         if (!hasValue(value)) return "";
         const valUnit = metaData[key].unit || null;
         if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) {
-            return catchVal(convertUnits(value, valUnit, unit), "", isNum);
+            return catchVal(convertUnits(value, valUnit, unit), "", isNumSafe);
         }
-        return catchVal(value, "", isNum);
+        return catchVal(value, "", isNumSafe);
     }
     return "";
 }
@@ -46,10 +46,10 @@ async function getDataFromCsv(fileOrText, spec, opts = {}) {
         fileOpts.columns = preamble?.columns || 4;
 
         const precisions = preamble?.precisions || {};
-        if (isObj(spec) && isNotEmpty(precisions)) {
+        if (isDict(spec) && isNotEmpty(precisions)) {
             Object.keys(spec).forEach(k => {
                 const n = toRounds?.(precisions[k]);
-                if (isNum(n)) out[k].precision = clamp(Math.abs(n), 0, 12);
+                if (isNumSafe(n)) out[k].precision = clamp(Math.abs(n), 0, 12);
             });
         }
     } else if (fileType === "moira-legacy") {
@@ -132,9 +132,9 @@ async function getDataFromCsv(fileOrText, spec, opts = {}) {
         if (indexes.length) fromUnit = headerUnits[indexes[0]] || "";
 
         let conversion = prev.conversion;
-        if (!isNum(conversion)) {
+        if (!isNumSafe(conversion)) {
             if (targetUnit && fromUnit) {
-                try { conversion = catchVal(convertUnits(1, fromUnit, targetUnit), 1, isNum); }
+                try { conversion = catchVal(convertUnits(1, fromUnit, targetUnit), 1, isNumSafe); }
                 catch (_) { conversion = 1; }
             } else conversion = 1;
         }
@@ -463,7 +463,7 @@ async function convertCSVtoXLSX_MATTES() {
             };
 
             const pre = csvOut?.preambleData || null;
-            if (pre && isObj(pre)) {
+            if (pre && isDict(pre)) {
                 const calcInputs = pre?.calcSettings?.inputs || {};
                 const expInfoV   = pre?.expSettings?.version || 0;
                 const calcInfoV  = pre?.calcSettings?.version || 0;
