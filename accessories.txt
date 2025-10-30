@@ -122,3 +122,185 @@
 <!--                    // 🕓🕕️🕖🕗🕘🕙🕚🕛🌑🌒🌓🌔🌕🌖🌗🌘🌙☀️🌝🌞⭐🌟💫✨⚡🔥💥🌪️🌈☂️☔❄️☃️⛄💨💧💦🌊 -->
 
 <!-- ⡗⢺ ⢎⡱ ⡎ ⡯⡕ ⡮⢵ -->
+
+
+Equal Symbol	Equal Name	Decimal	Hex
+=	Equals Sign	&#61;	&#x003D;
+͇	Combining Equals Sign Below	&#839;	&#x0347;
+͌ 	Combining Almost Equal To Above	&#844;	&#x034C;
+⁼	Superscript Equals Sign	&#8316;	&#x207C;
+₌	Subscript Equals Sign	&#8332;	&#x208C;
+≃	Asymptotically Equal To	&#8771;	&#x2243;
+≄	Not Asymptotically Equal To	&#8772;	&#x2244;
+≅	Approximately Equal To	&#8773;	&#x2245;
+≆	Approximately But Not Actually Equal To	&#8774;	&#x2246;
+≇	Neither Approximately Nor Actually Equal To	&#8775;	&#x2247;
+≈	Almost Equal To	&#8776;	&#x2248;
+≉	Not Almost Equal To	&#8777;	&#x2249;
+≊	Almost Equal Or Equal To	&#8778;	&#x224A;
+≌	All Equal To	&#8780;	&#x224C;
+≑	Geometrically Equal To	&#8785;	&#x2251;
+≒	Approximately Equal To Or The Image Of	&#8786;	&#x2252;
+≓	Image Of Or Approximately Equal To	&#8787;	&#x2253;
+≔	Colon Equals	&#8788;	&#x2254;
+≕	Equals Colon	&#8789;	&#x2255;
+≖	Ring In Equal To	&#8790;	&#x2256;
+Equal Symbol	Equal Name	Decimal	Hex
+≗	Ring Equal To	&#8791;	&#x2257;
+≛	Star Equals	&#8795;	&#x225B;
+≜	Delta Equal To	&#8796;	&#x225C;
+≝	Equal To By Definition	&#8797;	&#x225D;
+≟	Questioned Equal To	&#8799;	&#x225F;
+≠	Not Equal To	&#8800;	&#x2260;
+≼	Precedes Or Equal To	&#8828;	&#x227C;
+≽	Succeeds Or Equal To	&#8829;	&#x227D;
+⊆	Subset Of Or Equal To	&#8838;	&#x2286;
+⊇	Superset Of Or Equal To	&#8839;	&#x2287;
+⊈	Neither A Subset Of Nor Equal To	&#8840;	&#x2288;
+⊉	Neither A Superset Of Nor Equal To	&#8841;	&#x2289;
+⊊	Subset Of With Not Equal To	&#8842;	&#x228A;
+⊋	Superset Of With Not Equal To	&#8843;	&#x228B;
+⊑	Square Image Of Or Equal To	&#8849;	&#x2291;
+⊒	Square Original Of Or Equal To	&#8850;	&#x2292;
+⊜	Circled Equals	&#8860;	&#x229C;
+⊴	Normal Subgroup Of Or Equal To	&#8884;	&#x22B4;
+⊵	Contains As Normal Subgroup Or Equal To	&#8885;	&#x22B5;
+⋍	Reversed Tilde Equals	&#8909;	&#x22CD;
+Equal Symbol	Equal Name	Decimal	Hex
+⋕	Equal And Parallel To	&#8917;	&#x22D5;
+⋞	Equal To Or Precedes	&#8926;	&#x22DE;
+⋟	Equal To Or Succeeds	&#8927;	&#x22DF;
+⋠	Does Not Precede Or Equal	&#8928;	&#x22E0;
+⋡	Does Not Succeed Or Equal	&#8929;	&#x22E1;
+⋢	Not Square Image Of Or Equal To	&#8930;	&#x22E2;
+⋣	Not Square Original Of Or Equal To	&#8931;	&#x22E3;
+⋤	Square Image Of Or Not Equal To	&#8932;	&#x22E4;
+⋥	Square Original Of Or Not Equal To	&#8933;	&#x22E5;
+⋬	Not Normal Subgroup Of Or Equal To	&#8940;	&#x22EC;
+⋭	Does Not Contain As Normal Subgroup Or Equal	&#8941;	&#x22ED;
+⌸	Apl Functional Symbol Quad Equal	&#9016;	&#x2338;
+⍯	Apl Functional Symbol Quad Not Equal	&#9071;	&#x236F;
+⥱	Equals Sign Above Rightwards Arrow	&#10609;	&#x2971;
+⥵	Rightwards Arrow Above Almost Equal To	&#10613;	&#x2975;
+⧣	Equals Sign And Slanted Parallel	&#10723;	&#x29E3;
+⧤	Equals Sign And Slanted Parallel With Tilde Above	&#10724;	&#x29E4;
+⩦	Equals Sign With Dot Below	&#10854;	&#x2A66;
+⩮	Equals With Asterisk	&#10862;	&#x2A6E;
+⩯	Almost Equal To With Circumflex Accent	&#10863;	&#x2A6F;
+Equal Symbol	Equal Name	Decimal	Hex
+⩰	Approximately Equal Or Equal To	&#10864;	&#x2A70;
+⩱	Equals Sign Above Plus Sign	&#10865;	&#x2A71;
+⩲	Plus Sign Above Equals Sign	&#10866;	&#x2A72;
+⩳	Equals Sign Above Tilde Operator	&#10867;	&#x2A73;
+⩴	Double Colon Equal	&#10868;	&#x2A74;
+⩵	Two Consecutive Equals Signs	&#10869;	&#x2A75;
+⩶	Three Consecutive Equals Signs	&#10870;	&#x2A76;
+⩷	Equals Sign With Two Dots Above And Two Dots Below	&#10871;	&#x2A77;
+⪬	Smaller Than Or Equal To	&#10924;	&#x2AAC;
+⪭	Larger Than Or Equal To	&#10925;	&#x2AAD;
+⪮	Equals Sign With Bumpy Above	&#10926;	&#x2AAE;
+⪯	Precedes Above Single-line Equals Sign	&#10927;	&#x2AAF;
+⪰	Succeeds Above Single-line Equals Sign	&#10928;	&#x2AB0;
+⪱	Precedes Above Single-line Not Equal To	&#10929;	&#x2AB1;
+⪲	Succeeds Above Single-line Not Equal To	&#10930;	&#x2AB2;
+⪳	Precedes Above Equals Sign	&#10931;	&#x2AB3;
+⪴	Succeeds Above Equals Sign	&#10932;	&#x2AB4;
+⪵	Precedes Above Not Equal To	&#10933;	&#x2AB5;
+⪶	Succeeds Above Not Equal To	&#10934;	&#x2AB6;
+⪷	Precedes Above Almost Equal To	&#10935;	&#x2AB7;
+Equal Symbol	Equal Name	Decimal	Hex
+⪸	Succeeds Above Almost Equal To	&#10936;	&#x2AB8;
+⪹	Precedes Above Not Almost Equal To	&#10937;	&#x2AB9;
+⪺	Succeeds Above Not Almost Equal To	&#10938;	&#x2ABA;
+⫃	Subset Of Or Equal To With Dot Above	&#10947;	&#x2AC3;
+⫄	Superset Of Or Equal To With Dot Above	&#10948;	&#x2AC4;
+⫅	Subset Of Above Equals Sign	&#10949;	&#x2AC5;
+⫆	Superset Of Above Equals Sign	&#10950;	&#x2AC6;
+⫉	Subset Of Above Almost Equal To	&#10953;	&#x2AC9;
+⫊	Superset Of Above Almost Equal To	&#10954;	&#x2ACA;
+⫋	Subset Of Above Not Equal To	&#10955;	&#x2ACB;
+⫌	Superset Of Above Not Equal To	&#10956;	&#x2ACC;
+⫑	Closed Subset Or Equal To	&#10961;	&#x2AD1;
+⫒	Closed Superset Or Equal To	&#10962;	&#x2AD2;
+⭀	Equals Sign Above Leftwards Arrow	&#11072;	&#x2B40;
+⭂	Leftwards Arrow Above Reverse Almost Equal To	&#11074;	&#x2B42;
+⭈	Rightwards Arrow Above Reverse Almost Equal To	&#11080;	&#x2B48;
+⭊	Leftwards Arrow Above Almost Equal To	&#11082;	&#x2B4A;
+꞊	Modifier Letter Short Equals Sign	&#42890;	&#xA78A;
+﹦	Small Equals Sign	&#65126;	&#xFE66;
+＝	Fullwidth Equals Sign	&#65309;	&#xFF1D;
+
+⇒	implies symbol
+⟹	long rightwards double arrow
+⟶	long rightwards arrow
+→	rightwards arrow
+⥶	rightwards arrow above almost equal to
+⥷	rightwards arrow above not almost equal to
+⥸	rightwards arrow above similar to
+⥹	rightwards arrow above not similar to
+⥺	rightwards arrow above tilde operator
+⥻	rightwards arrow above not tilde operator
+⥼	rightwards arrow above equals sign
+⥽	rightwards arrow above not equal to
+⥾	rightwards arrow above approximately equal to
+⥿	rightwards arrow above not approximately equal to
+⤍	rightwards arrow with double vertical stroke
+⤏	rightwards arrow with stroke
+⤒	rightwards arrow to bar
+⤔	rightwards arrow from bar
+⤖	rightwards arrow with tail
+⤘	rightwards arrow with hook
+⤚	rightwards arrow with loop
+⤜	rightwards arrow with double stroke
+⤞	rightwards arrow with dotted stem
+⤠	rightwards arrow with tail with double stroke
+⤢	rightwards arrow with hook with double stroke
+⤤	rightwards arrow with loop with double stroke
+⤶	rightwards two-headed arrow with vertical stroke
+⤸	rightwards two-headed arrow with double vertical stroke
+⤺	rightwards two-headed arrow with stroke
+⤼	rightwards two-headed arrow with tail
+⤾	rightwards two-headed arrow with hook
+⤿	rightwards two-headed arrow with loop
+⥀	rightwards two-headed arrow with double stroke
+⥁	rightwards two-headed arrow with dotted stem
+⥂	rightwards two-headed arrow with tail with double stroke
+⥃	rightwards two-headed arrow with hook with double stroke
+⥄	rightwards two-headed arrow with loop with double stroke
+⥇	rightwards arrow above rightwards arrow
+⥉	rightwards arrow through rightwards arrow
+⥊	rightwards arrow with plus below
+⥋	rightwards arrow with minus below
+⥌	rightwards arrow with times below
+⥍	rightwards arrow with division below
+⥎	rightwards arrow with dot below
+⥏	rightwards arrow with ring below
+⥐	rightwards arrow with circled plus below
+⥑	rightwards arrow with circled minus below
+⥒	rightwards arrow with circled times below
+⥓	rightwards arrow with circled division below
+⥔	rightwards arrow with leftwards arrow above
+⥕	rightwards arrow with rightwards arrow above
+⥖	rightwards arrow with downwards arrow above
+⥗	rightwards arrow with upwards arrow above
+⥙	rightwards arrow with horizontal stroke
+⥛	rightwards arrow with vertical stroke
+⥝	rightwards arrow with double vertical stroke
+⥟	rightwards arrow with stroke
+⥡	rightwards arrow with tail
+⥣	rightwards arrow with hook
+⥥	rightwards arrow with loop
+⥧	rightwards arrow with double stroke
+⥩	rightwards arrow with dotted stem
+⥫	rightwards arrow with tail with double stroke
+⥭	rightwards arrow with hook with double stroke
+⥯	rightwards arrow with loop with double stroke
+⥱	Equals Sign Above Rightwards Arrow	&#10609;	&#x2971;
+⥵	Rightwards Arrow Above Almost Equal To	&#10613;	&#x2975;
+⥿	rightwards arrow above not approximately equal to
+⤍	rightwards arrow with double vertical stroke
+⤏	rightwards arrow with stroke
+⤒	rightwards arrow to bar
+⤔	rightwards arrow from bar
+⤖	rightwards arrow with tail
+⤘	rightwards arrow with hook
