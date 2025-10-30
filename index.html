@@ -352,8 +352,8 @@
         }
 
 
-        html * {
-            transition: color 0.3s, background 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.2s;
+        html * { /* TODO: move to individual elements to not over-spam it */
+            transition: color 0.3s, background 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
             will-change: color, background, background-color, border-color, box-shadow; /* Optimize effects */
             /*scroll-behavior: smooth;*/
         }
@@ -395,6 +395,9 @@
             --stopEpx-color: var(--red-color);
             --returnEpx-bg: lightgray;
             --returnEpx-color: black;
+
+            --error-color: var(--red-color);
+            --warning-color: var(--darkorange-color);
 
             --logo-main: var(--blue-color);
             --logo-second: var(--page-bg);
@@ -453,6 +456,9 @@
             --stopEpx-color: lightpink;
             --returnEpx-bg: var(--gray-color);
             --returnEpx-color: #181818;
+
+            --error-color: var(--red-color);
+            --warning-color: var(--darkorange-color);
 
             --logo-main: var(--blue-light-color);
             --logo-second: var(--page-bg);
@@ -526,6 +532,14 @@
             text-decoration-skip-ink: auto; /* avoid descenders from letters */
         }
 
+        .err {
+            color: var(--error-color) !important;
+        }
+
+        .warn {
+            color: var(--warning-color) !important;
+        }
+
         .insetShadow {
             box-shadow: inset 2px 2px 3px rgba(0, 0, 0, 0.2), inset -2px -2px 5px rgba(0, 0, 0, 0.15);
         }
@@ -547,8 +561,8 @@
 
             box-shadow: inset 2px 2px 5px var(--highligth), inset -2px -2px 3px var(--shadow);
 
-            will-change: filter, transform; /* Optimize for hover/active effects */
-            transition: filter 0.2s, transform 0.2s;
+            will-change: filter, transform, background, color, box-shadow, border; /* Optimize for hover/active effects */
+            transition: filter 0.2s, transform 0.2s, background 0.3s, color 0.3s, box-shadow 0.3s, border 0.3s;
         }
 
         /* When the button is hovered */
@@ -2254,7 +2268,7 @@
                     </span>
                     <span class="data-eq" data-eq-type="HBr">
                         \[
-                        d = 2\cdot\sqrt{\,h_{D}\,(2D - h_{D})\,}
+                        d_{D} = 2\cdot\sqrt{\,h_{D}\,(2D - h_{D})\,}
                         \]
                     </span>
                     <span class="data-eq" data-eq-type="HBr">
@@ -2300,7 +2314,7 @@
                     </div>
 
                     <div class="input-group data-eq" data-eq-type="HBr">
-                        <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d \)<span
+                        <label for="outputDiameterInd">Diameter of indentation <b>⌀</b> \( d_{D} \)<span
                                 class="units-text"></span>:
                         </label>
                         <input type="text" id="outputDiameterInd" class="adjustableInput calcInput"
@@ -2376,9 +2390,17 @@
                 </article>
 
                 <hr style="width: 85% ; margin: 30px auto 15px;">
-                <div id="saveCalcDataBtnWrapper" style="display: flex; gap: calc(2 * var(--gap)); justify-content: center;">
-                    <button class="controlBtn saveDataBtns controlElement">💾 Save data<br>(CSV)</button>
-                    <button id="recomputeAllBtn" class="controlBtn controlElement">🧮 Recompute<br>All</button>
+                <div id="saveCalcDataBtnWrapper"
+                     style="display: flex; gap: calc(2 * var(--gap)); justify-content: center;">
+                    <button class="controlBtn saveDataBtns controlElement">
+                        💾 Save data<br>(CSV)
+                    </button>
+                    <button id="recomputeAllBtn" class="controlBtn" data-system-level="100">
+                        🧮 Recompute<br>All
+                    </button>
+                    <button id="clearCalculationsButton" class="controlBtn" data-system-level="100">
+                        🧼 Clear<br>calculations
+                    </button>
                 </div>
             </div>
         </section>
@@ -2797,10 +2819,6 @@
                                    data-essence="switch" checked>
                         </div>
 
-                        <button id="clearCalculationsButton" class="controlBtn" data-system-level="100">
-                            🧼 Clear calculations
-                        </button>
-
                         <button id="darkModeButton" class="controlBtn">
                             🌙 Dark mode
                         </button>
@@ -2901,6 +2919,55 @@
         </section>
 
     </section>
+
+    <div id="editor" contenteditable="true"
+         style="border:1px solid #ccc;padding:8px;min-height:90px;">
+        Napiš něco a klikni na „Lognout“.
+    </div>
+
+    <button id="lognout">Lognout editor.value</button>
+    <button id="nastavit">Nastavit editor.value</button>
+
+
+    <div>
+        <button onclick="color('#FF0000')">Červeně</button>
+        <button onclick="color('#2196F3')">Modře</button>
+        <button onclick="color(getComputedStyle(document.body).getPropertyValue('--text-color').trim())">
+            Výchozí barva
+        </button>
+        <button type="button" onclick="document.execCommand('removeFormat', false, null)">Bez formátu</button>
+        <button type="button" onclick="resetFormatting()">Reset</button>
+
+    </div>
+
+    <div id="editor2" contenteditable="true"
+         style="border:1px solid #ccc;padding:8px;min-height:80px;">
+        Označ část tohoto textu a klikni na barvu.
+    </div>
+
+    <script>
+        // Přidej do stránky (např. v <script>):
+        function resetFormatting() {
+            const el = document.getElementById('editor2');
+            if (!el) return;
+            const txt = el.textContent;               // získat čistý text
+            el.innerHTML = '';                        // odstranit všechno HTML
+            el.appendChild(document.createTextNode(txt)); // vložit jen text (zachová \n)
+            // vrátit fokus a kurzor na konec
+            el.focus();
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+
+        function color(c) {
+            document.execCommand('styleWithCSS', false, true);
+            document.execCommand('foreColor', false, c);
+        }
+    </script>
 
 </main>
 
@@ -3145,40 +3212,238 @@
     // 1) Basic type checks
     const isNumber = (x) => typeof x === 'number';
     const isBigInt = (x) => typeof x === 'bigint';
-    const isArr = (x) => Array.isArray(x);
-    const isEmptyArr = (x) => isArr(x) && x.length === 0;
-    const isNonEmptyArr = (x) => isArr(x) && x.length > 0;
+    const isBool = (x) => typeof x === 'boolean';
+    const isFunc = (x) => typeof x === 'function';
+
     const isStr = (x) => typeof x === 'string';
     const isEmptyStr = (x) => isStr(x) && x.trim() === '';
     const isNonEmptyStr = (x) => isStr(x) && x.trim() !== '';
-    const isBool = (x) => typeof x === 'boolean';
-    const isFunc = (x) => typeof x === 'function';
-    const isObj = (x) => isDef(x) && typeof x === 'object' && !isArr(x);
+    const joinStrs = (...strs) => {
+        let result = '';
+        strs.forEach(s => {
+            if (isStr(s)) {
+                result += s;
+            }
+        });
+        return result;
+    };
+
+    const isArr = (x) => Array.isArray(x);
+    const isEmptyArr = (x) => isArr(x) && x.length === 0;
+    const isNonEmptyArr = (x) => isArr(x) && x.length > 0;
+    const joinArrs = (...arrs) => {
+        const result = [];
+        arrs.forEach(arr => {
+            if (isArr(arr)) {
+                result.push(...arr);
+            }
+        });
+        return result;
+    };
+
+    const isDict = (x) => (
+        isObj(x) &&
+        (Object.getPrototypeOf(x) === Object.prototype ||
+            Object.getPrototypeOf(x) === null)
+    );
+    const isEmptyDict = (x) => isDict(x) && Object.keys(x).length === 0;
+    const isNonEmptyDict = (x) => isDict(x) && Object.keys(x).length > 0;
+    const joinDict = (...objs) => {
+        const result = {};
+        objs.forEach(o => {
+            if (isDict(o)) {
+                Object.assign(result, o);
+            }
+        });
+        return result;
+    };
+
+    const isObj = (x) => isDef(x) && typeof x === 'object';
     const isEmptyObj = (x) => isObj(x) && Object.keys(x).length === 0;
     const isNonEmptyObj = (x) => isObj(x) && Object.keys(x).length > 0;
+    const joinObjs = (...objs) => {
+        const result = {};
+        objs.forEach(o => {
+            if (isObj(o)) Object.assign(result, o);
+        });
+        return result;
+    };
+
+    const isDate = (x) => x instanceof Date && !Number.isNaN(x.getTime());
+    const isRegExp = (x) => x instanceof RegExp;
     const isSymbol = (x) => typeof x === 'symbol';
     const isUndefined = (x) => x === undefined || typeof x === 'undefined';
     const isNull = (x) => x === null;
     const isDef = (x) => !isUndefined(x) && !isNull(x);
     const isVoid = (x) => isUndefined(x) || isNull(x);
 
-    const isElement = (x) => x instanceof Element || x instanceof HTMLDocument;
-    const isNodeList = (x) => x instanceof NodeList;
+    const isMap = (x) => x instanceof Map;
+    const isWeakMap = (x) => x instanceof WeakMap;
+    const isMAP = (x) => isDef(x) && (isMap(x) || isWeakMap(x));
+    const isEmptyMAP = (x) => isMAP(x) && x.size === 0;
+    const isNonEmptyMAP = (x) => isMAP(x) && x.size > 0;
+    const joinMAPs = (...maps) => {
+        const result = new Map();
+        maps.forEach(m => {
+            if (isMap(m)) {
+                for (let [key, value] of m.entries()) {
+                    result.set(key, value);
+                }
+            }
+        });
+        return result;
+    };
+
+    const isSet = (x) => x instanceof Set;
+    const isWeakSet = (x) => x instanceof WeakSet;
+    const isSET = (x) => isDef(x) && (isSet(x) || isWeakSet(x));
+    const isEmptySET = (x) => isSET(x) && x.size === 0;
+    const isNonEmptySET = (x) => isSET(x) && x.size > 0;
+    const joinSETs = (...sets) => {
+        const result = new Set();
+        sets.forEach(s => {
+            if (isSet(s)) {
+                for (let value of s.values()) {
+                    result.add(value);
+                }
+            }
+        });
+        return result;
+    };
+
+    // === UZLY / DOKUMENTY ===
+    const isDocument = (x) =>
+        !isUndefined(Document) && x instanceof Document;
+
+    const isElement = (x) =>               // jakýkoli DOM element (vč. SVG/MathML)
+        !isUndefined(Element) && x instanceof Element;
+
+    const isHTMLElement = (x) =>           // pouze HTML elementy
+        !isUndefined(HTMLElement) && x instanceof HTMLElement;
+
+    // alternativně přes nodeType (funguje i cross-realm):
+    const isElementNode = (x) => x?.nodeType === Node.ELEMENT_NODE;     // Node.ELEMENT_NODE === 1
+    const isDocumentNode = (x) => x?.nodeType === Node.DOCUMENT_NODE;   // Node.DOCUMENT_NODE === 9
+
+    // Prázdnost elementu podle elementových dětí:
+    const isEmptyHTMLElement = (x) => isHTMLElement(x) && x.childElementCount === 0;
+    const isNonEmptyHTMLElement = (x) => isHTMLElement(x) && x.childElementCount > 0;
+
+    // Pokud chceš brát v potaz i textové uzly:
+    const hasAnyChildNodes = (x) => isElement(x) && x.hasChildNodes();
+
+
+    // === KOLEKCE ===
+    const isCollection = (x) =>
+        !isUndefined(HTMLCollection) && x instanceof HTMLCollection;
+
+    const isNodeList = (x) =>
+        !isUndefined(NodeList) && x instanceof NodeList;
+
+    // Obecná DOM kolekce (má .length a .item):
+    const isDomCollectionLike = (x) =>
+        isDef(x) && isNumber(x.length) && isFunc(x.item);
+
+    const isEmptyCollection = (x) => (isCollection(x) || isDomCollectionLike(x)) && x.length === 0;
+    const isNonEmptyCollection = (x) => (isCollection(x) || isDomCollectionLike(x)) && x.length > 0;
+
     const isEmptyNodeList = (x) => isNodeList(x) && x.length === 0;
     const isNonEmptyNodeList = (x) => isNodeList(x) && x.length > 0;
 
-    const isValid = (x) => isDef(x) && !Number.isNaN(x);
-    const isNum = (x) => isFiniteNumber(x, false); // only Finite numbers
-    const isVal = (x) => isNum(x) || !isEmptyStr(x); // only Finite numbers or non-empty strings
-    const isAny = (x) => isNotEmpty(x) && x !== false; // all except undefined, null and NaN + false
-    const isOk = (x) => isAny(x) && !isInvalidValue(x); // all except undefined, null, NaN and false + invalid values
+    // „Join“ helpery – konvertují do běžného pole
+    const joinElements = (...collections) => {
+        const result = [];
+        collections.forEach(col => {
+            if (isCollection(col) || isDomCollectionLike(col)) result.push(...Array.from(col));
+        });
+        return result;
+    };
+
+    const joinNodes = (...nodeLists) => {
+        const result = [];
+        nodeLists.forEach(nl => {
+            if (isNodeList(nl)) result.push(...Array.from(nl));
+        });
+        return result;
+    };
+
+    // element „prázdný“ jen pokud nemá žádné elementové dítě ani non-whitespace text
+    const isVisuallyEmptyElement = (el) => {
+        if (!isElement(el)) return false;
+        if (el.childElementCount > 0) return false;
+        // obsahuje jen whitespace?
+        const txt = el.textContent ?? '';
+        return txt.trim() === '';
+    };
+
+    const isIterable = (x) => isDef(x) && isFunc(x?.[Symbol.iterator]);
+
+    // --- SAME TYPE / INSTANCE / LENGTH ---
+
+    // stejné typeof (pozor: [] i null jsou 'object', ale null jsme vyřadili v isDef checku)
+    const checkAllSameType = (...xs) => {
+        if (xs.length === 0) return true;
+        const firstType = typeof xs[0];
+        return xs.every(v => typeof v === firstType);
+    };
+
+    // stejné „třídy“ (= shodný [[Prototype]])
+    const checkAllSameInstance = (...xs) => {
+        if (!xs.every(v => isObj(v))) return null; // trinary výsledek zůstává
+        const firstProto = Object.getPrototypeOf(xs[0]);
+        return xs.every(v => Object.getPrototypeOf(v) === firstProto);
+    };
+
+    // unifikovaná „délka“ napříč typy (array/string → length; Map/Set → size; plain object → keys)
+    const getLen = (v) => {
+        if (v == null) return undefined;
+        if (isStr(v) || isArr(v)) return v.length;
+        if (isMap(v) || isSet(v)) return v.size;
+        if (isWeakMap(v) || isWeakSet(v)) return undefined;
+        if (isDict(v)) return Object.keys(v).length;
+        if (v && isNumber(v.length)) return v.length; // NodeList, HTMLCollection apod.
+        return undefined;
+    };
+
+    const checkAllSameLength = (...xs) => {
+        if (xs.length === 0) return true;
+        const first = getLen(xs[0]);
+        if (isVoid(first)) return null; // „nemá délku“
+        return xs.every(v => getLen(v) === first);
+    };
+
+    const checkAllSameTypeAndLength = (...xs) => {
+        const sameType = checkAllSameType(...xs);
+        if (!sameType) return false;
+        return checkAllSameLength(...xs); // true/false/null
+    };
+
+    const checkAllSameInstanceAndLength = (...xs) => {
+        const sameInst = checkAllSameInstance(...xs);
+        if (sameInst !== true) return sameInst; // false nebo null
+        return checkAllSameLength(...xs);
+    };
+
+    // --- JOIN ---
+
+    // Sloučí pouze objekty; pokud nejsou stejného typeof (typicky „object“), vrátí null
+    const joinAny = (...xs) => {
+        if (!xs.every(isObj)) return null;
+        if (!checkAllSameType(...xs)) return null; // u objektů to bude 'object' (OK)
+        return joinObjs(...xs);
+    };
+
+    const isValid = (x) => isDef(x) && !Number.isNaN(x);    // all except undefined, null and NaN
+    const isNumSafe = (x) => isFiniteNumber(x, false);      // only Finite numbers
+    const isVal = (x) => isNumSafe(x) || !isEmptyStr(x);    // only Finite numbers or non-empty strings
+    const isAny = (x) => isNotEmpty(x) && x !== false;      // all except undefined, null and NaN + false
+    const isOk = (x) => isAny(x) && !isInvalidValue(x);     // all except undefined, null, NaN and false + invalid values
 
     const not = (fn) => {
         return function (...args) {
             return !fn.apply(this, args);
         }
     };
-
 
     const getElement = (id) => {
         return isElement(id) ? id : $ID(String(id));
@@ -3217,7 +3482,7 @@
         toNumber((isFiniteNumeric(id) ? id : getInputValDef(id, NaN)), true);
 
     const getInputNumDef = (id_x, d = NaN) =>
-        catchVal(getInputNum(id_x), d, isNum);
+        catchVal(getInputNum(id_x), d, isNumSafe);
 
     const getInputNumDefAbsFlt = (id_x, d = NaN) =>
         Math.abs(getInputNumDef(id_x, d));
@@ -3239,14 +3504,14 @@
         return v === Number.POSITIVE_INFINITY || v === Number.NEGATIVE_INFINITY;
     };
 
-    const isPositive = (x) => {
+    const isPositive = (x, includeZero = false) => {
         const v = toNumber(x);
-        return isNumberOrInfinity(v) && v > 0;
+        return isNumberOrInfinity(v) && (includeZero ? v >= 0 : v > 0);
     };
 
-    const isNegative = (x) => {
+    const isNegative = (x, includeZero = false) => {
         const v = toNumber(x);
-        return isNumberOrInfinity(v) && v < 0;
+        return isNumberOrInfinity(v) && (includeZero ? v <= 0 : v < 0);
     };
 
     const isZero = (x) => toNumber(x) === 0 || !isNotEmpty(x);
@@ -3305,15 +3570,10 @@
         if (isStr(x)) {
             const s = x.toLowerCase().trim();
             if (s === '') return NaN;
-            const n = s.replaceAll(',', '.').replaceAll('±', ' ');
-            if (n.includes('-inf') || n.includes('- inf') ||
-                n.includes('-∞') || n.includes('- ∞') ||
-                n.includes('-ꝏ') || n.includes('- ꝏ') ||
-                n.includes('-ထ') || n.includes('- ထ') ||
-                n.includes('-Ꝏ') || n.includes('- Ꝏ')) return Number.NEGATIVE_INFINITY;
+            const n = s.replaceAll(',', '.').replaceAll('±', ' ').replaceAll('+', ' ').replaceAll('- ', '-');
+            if (n.includes('-inf') || n.includes('-∞') || n.includes('-ꝏ') || n.includes('-ထ')) return Number.NEGATIVE_INFINITY;
+            if (n.includes('inf') || n.includes('∞') || n.includes('ꝏ') || n.includes('ထ')) return Number.POSITIVE_INFINITY;
 
-            if (n.includes('inf') || n.includes('∞')
-                || n.includes('ꝏ') || n.includes('ထ') || n.includes('Ꝏ')) return Number.POSITIVE_INFINITY;
             return all ? parseFloat(n) : Number(n);
         }
         return NaN;
@@ -3341,6 +3601,12 @@
         return Number.isFinite(n);
     };
 
+    const isTypedArray = (x) => !isUndefined(ArrayBuffer) && ArrayBuffer.isView?.(x) && !(x instanceof DataView);
+
+    const isArrayBuffer = (x) => !isUndefined(ArrayBuffer) && x instanceof ArrayBuffer;
+
+    const isDataView = (x) => !isUndefined(DataView) && x instanceof DataView;
+
     // 5) „Has value“ – if you need it separately (0 passes, null/undef/"" do not)
     const hasValue = (x) => isDef(x) && (isNumberOrInfinity(x) || isNonEmptyStr(x));
 
@@ -3348,16 +3614,50 @@
     const hasValueButNotBoolean = (x) => hasValue(x) && !isBool(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
 
     const isNotEmpty = (x) => {
+        // Null/undefined
         if (isVoid(x)) return false;
-        if (isNumberOrInfinity(x)) return true; // 0 and ±Infinity passes,  0n and big values pass
-        if (isStr(x)) return x.trim() !== '';
-        if (isArr(x)) return x.length > 0;
-        if (isObj(x)) return Object.keys(x).length > 0;
-        if (isBool(x)) return true; // false and true passes
-        if (isSymbol(x)) return true;
+
+        // Numbers and Bigints
+        if (isNumberOrInfinity(x)) return true;         // 0, ±Infinity passes, 0n and big values pass (not NaN)
+
+        // Primitives / functions
+        if (isStr(x)) return isNonEmptyStr(x);
+        if (isBool(x)) return true;                     // false and true passes
         if (isFunc(x)) return true;
+        if (isSymbol(x)) return true;
+
+        // Arrays
+        if (isArr(x)) return isNonEmptyArr(x);
+        // Plain objects (dict)
+        if (isDict(x)) return isNonEmptyDict(x);
+
+        // Map/Set
+        if (isMap(x) || isSet(x)) return x.size > 0;
+
+        // Weak collections - cannot be checked for emptiness
+        if (isWeakMap(x) || isWeakSet(x)) return null;  // null = unknown ≈ false; (or true/false according to the use-case)
+
+        // Binary / typed
+        if (isTypedArray(x)) return x.length > 0;
+        if (isArrayBuffer(x)) return x.byteLength > 0;
+        if (isDataView(x)) return x.byteLength > 0;
+
+        // Special objects
+        if (isDate(x)) return true;                     // valid Date = „has value“
+        if (isRegExp(x)) return true;
+
+        // DOM nodes
         if (isElement(x)) return true;
-        if (isNodeList(x)) return x.length > 0;
+        if (isDocument(x)) return true;                 // (now true) optionally could check for content
+
+        // DOM collections
+        if (isNodeList(x)) return isNonEmptyNodeList(x);
+        if (isCollection(x)) return isNonEmptyCollection(x);
+        if (isDomCollectionLike(x)) return x.length > 0;
+
+        // Other objects
+        if (isObj(x)) return isNonEmptyObj(x);
+
         return false;
     };
 
@@ -3424,7 +3724,7 @@
 
     const checkObject = (obj) => {
         if (!isNotEmpty(obj)) return null;
-        if (isObj(obj)) return obj;
+        if (isDict(obj)) return obj;
         if (isArr(obj)) {
             const res = {};
             for (let i = 0; i < obj.length; i++) {
@@ -3453,7 +3753,7 @@
         // 1) Convert input to number (your toNumber supports comma etc.)
         let n = toNumeric(x, true);
 
-        if (strOut && typeof isBigInt(n)) n = Number(n);
+        if (strOut && isBigInt(n)) n = Number(n);
 
         if (isVoid(dec) || dec === "none" || isBigInt(n)) {
             // žádné dec -> vrať n
@@ -3518,7 +3818,7 @@
         if (v === "N/A") return customError;
         let s = v;
         if (!(v === "Infinity" || v === "-Infinity")) s = decimalSymbol(v, decSym);
-        s = s.replace('Infinity', '∞').replace('Infinity', 'ꝏ').replace('Infinity', 'ထ').replace('Infinity', 'Ꝏ');
+        s = s.replace('Infinity', '∞');
         if (writeSign && !s.startsWith('-')) {
             if (roundDecimalFast(strToNumber(v), 12) === 0) {
                 s = '±' + s;
@@ -3552,7 +3852,7 @@
         if ((!obj && obj !== 0) || !func) return null;
         if (!isFunc(func)) return null;
         obj = checkObject(obj);
-        if (!isNonEmptyObj(obj)) return null;
+        if (!isNonEmptyDict(obj)) return null;
         args = checkArray(args);
         const res = {};
         for (const key in obj) {
@@ -3597,16 +3897,16 @@
     };
 
     /** Aplikační kostra: vezme 1D operátor a aplikuje ho po dimenzi (0/1/2) */
-    const aggregateND = (input, dim, op1D) => {
+    const aggregateND = (input, dim, op1D) => { // Dim = 0 -> global; 1 -> by cols; 2 -> by rows
         const rows = normalize2D(input);
 
-        if (dim === 0 || isVoid(dim)) {
+        if (dim === 0 || (isStr(dim) && dim.includes("glob")) || isVoid(dim)) {
             const flat = [];
             for (const r of rows) flat.push(...r);
             return op1D(flat);
         }
-        if (dim === 1) return rows.map(r => op1D(r));
-        if (dim === 2) {
+        if (dim === 1 || (isStr(dim) && dim.includes("col"))) return rows.map(r => op1D(r));
+        if (dim === 2 || (isStr(dim) && dim.includes("row"))) {
             const W = rowsMaxLen(rows);
             const out = new Array(W);
             for (let j = 0; j < W; j++) out[j] = op1D(getCol(rows, j));
@@ -3638,7 +3938,7 @@
 
     // ---------- 1D operátory ----------
     const sum1D = (list) => {
-        if (isNum(list)) return list;
+        if (isNumSafe(list)) return list;
         const v = valuesFinite(list);
         if (!v.length) return NaN;
         let s = 0;
@@ -3647,13 +3947,13 @@
     };
 
     const mean1D = (list) => {
-        if (isNum(list)) return list;
+        if (isNumSafe(list)) return list;
         const v = valuesFinite(list);
         return v.length ? sum1D(v) / v.length : NaN;
     };
 
     const median1D = (list) => {
-        if (isNum(list)) return list;
+        if (isNumSafe(list)) return list;
         const v = valuesFinite(list);
         if (!v.length) return NaN;
         v.sort((a, b) => a - b);
@@ -3663,7 +3963,7 @@
 
     /** Směrodatná odchylka; sample=true -> Bessel (N-1), jinak populace (N) */
     const std1D = (list, sample = false) => {
-        if (isNum(list)) return list;
+        if (isNumSafe(list)) return list;
         const v = valuesFinite(list);
         const n = v.length;
         if (!n || (sample && n < 2)) return NaN;
@@ -3840,9 +4140,20 @@
         return [linearInterpolation(arr_F[idx], arr_W[idx], arr_F[idx - 1], arr_W[idx - 1], target_F), idx];
     }
 
+    const is1D = (input) => {
+        const arr = checkArray(input);
+        if (!isNonEmptyArr(arr)) return false;
+        return arr.every(v => !isArr(v));
+        // for (const v of arr) {
+        //     if (isArr(v)) return false;
+        // }
+        // return true;
+    }
 
-    // ---------- ND operátory ----------
-    // Dim = 0 -> global; 1 -> by rows; 2 -> by cols
+
+    // ---------- ND oprators ----------
+    // TODO: opravit check 1D => 2 pak u 1D dělá global, výsledek je pole s jedním prvkem čili vstup
+    // Dim = 0 -> global; 1 -> by cols; 2 -> by rows
     const sumND = (input, dim = 0) => aggregateND(input, dim, sum1D);
     const meanND = (input, dim = 0) => aggregateND(input, dim, mean1D);
     const medianND = (input, dim = 0) => aggregateND(input, dim, median1D);
@@ -3955,7 +4266,7 @@
 
         // 1) Nativní disabled logika (včetně <fieldset disabled> a :disabled)
         //    :disabled funguje pro nativní ovládací prvky (button, input, select, textarea, option, optgroup, fieldset)
-        if (typeof el.matches === 'function' && el.matches(':disabled')) return true;
+        if (isFunc(el.matches) && el.matches(':disabled')) return true;
         if (el.hasAttribute('disabled')) return true; // pro jistotu i mimo :disabled
 
         // 2) ARIA a inert (dědí se přes předky)
@@ -4050,6 +4361,146 @@
         return roundDecimalFast(progress, 6);
     }
 
+</script>
+
+
+<script>
+    // TODO =============================================================================================
+    // Pomocné funkce pro bezpečné nastavení/čtení textu
+    function setPlainText(el, text) {
+        // zachová přesně dodaný text (včetně \n), bez HTML
+        el.innerHTML = '';
+        const lines = String(text).split('\n');
+        lines.forEach((line, i) => {
+            if (i) el.appendChild(document.createElement('div'));
+            // pro prázdný řádek vlož <br>, jinak textový uzel
+            if (line.length === 0) {
+                el.lastChild?.appendChild(document.createElement('br'));
+            } else {
+                (el.lastChild ?? el).appendChild(document.createTextNode(line));
+            }
+        });
+    }
+
+    function getPlainText(el) {
+        // Normalizuje Entery z <div>/<br> na \n
+        // textContent obvykle vrací rozumné \n, tohle je jen jistota:
+        const clone = el.cloneNode(true);
+        // Nahradíme <br> za "\n"
+        clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        // A blokové divy oddělíme \n, když mezi nimi není už newline
+        clone.querySelectorAll('div').forEach((d, i) => {
+            if (i > 0) d.prepend(document.createTextNode('\n'));
+        });
+        return clone.textContent.replace(/\r\n?/g, '\n');
+    }
+
+    // Hlavní wrapper: přidá na element vlastnost .value (text) a .html (HTML)
+    function wrapContentEditable(target, {exposeHtml = true} = {}) {
+        const el = isStr(target) ? document.querySelector(target) : target;
+        if (!el || el.getAttribute('contenteditable') !== 'true') {
+            throw new Error('wrapContentEditable: target musí být contenteditable element.');
+        }
+
+        // .value → čistý text
+        Object.defineProperty(el, 'value', {
+            configurable: true,
+            enumerable: false,
+            get() {
+                return getPlainText(el);
+            },
+            set(v) {
+                setPlainText(el, v);
+            },
+        });
+
+        // Volitelně zpřístupníme i .html (pohodlné pro rich-text případy)
+        if (exposeHtml) {
+            Object.defineProperty(el, 'html', {
+                configurable: true,
+                enumerable: false,
+                get() {
+                    return el.innerHTML;
+                },
+                set(v) {
+                    el.innerHTML = v;
+                },
+            });
+        }
+
+        // Ať funguje i s input událostí (volitelné – jen normalizace prázdných řádků)
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                // U většiny prohlížečů vzniká <div><br></div> — OK.
+                // Nic neděláme; jen tady ukázka, kde bys mohl přizpůsobit chování Enteru.
+            }
+        });
+
+        return el;
+    }
+
+    // Použití:
+    const editor = wrapContentEditable('#editor');
+
+    document.getElementById('lognout').addEventListener('click', () => {
+        console.log('editor.value (text):', editor.value);
+        // Případně: console.log('editor.html (HTML):', editor.html);
+    });
+
+    document.getElementById('nastavit').addEventListener('click', () => {
+        editor.value = 'První řádek\nDruhý řádek\n\nČtvrtý (po prázdném).';
+    });
+
+    /* TODO
+        //     // ---------- Tvoje selektory ($, $$, $ID) s fallbacky + CE wrap ----------
+        // const $ID = (id) => document.getElementById(String(id));
+        //
+        // const $ = (sel, root = null) => {
+        //   root = root || document;
+        //   sel = String(sel);
+        //
+        //   // 1) Přímý CSS selektor
+        //   let el = root.querySelector(sel);
+        //
+        //   // 2) Pokud nic a selektor nezačíná '.' ani '#', zkusíme class (.sel)
+        //   if (!el && !sel.startsWith('.') && !sel.startsWith('#')) {
+        //     el = root.querySelector('.' + sel);
+        //   }
+        //
+        //   // 3) Pokud nic a selektor nezačíná '#', zkusíme id (#sel / getElementById)
+        //   if (!el && !sel.startsWith('#')) {
+        //     el = $ID(sel) || root.querySelector('#' + sel);
+        //   }
+        //
+        //   // Automaticky obal CE elementy (aby měly .value/.html)
+        //   return wrapContentEditable(el);
+        // };
+        //
+        // const $$ = (sel, root = null) => {
+        //   root = root || document;
+        //   sel = String(sel);
+        //
+        //   // 1) Přímý CSS selektor (vrací NodeList)
+        //   let list = root.querySelectorAll(sel);
+        //
+        //   // 2) Když prázdné a sel nezačíná '.', zkus .class
+        //   if (list.length === 0 && !sel.startsWith('.')) {
+        //     list = root.querySelectorAll('.' + sel);
+        //   }
+        //
+        //   // 3) Když prázdné a sel nezačíná '#', zkus id
+        //   if (list.length === 0 && !sel.startsWith('#')) {
+        //     const byId = $ID(sel) || root.querySelector('#' + sel);
+        //     list = byId ? [byId] : [];
+        //   }
+        //
+        //   // Vrať pole a wrapni případné contenteditable prvky
+        //   return Array.from(list, wrapContentEditable);
+        // };
+     */
+
+
+        // TODO =============================================================================================
 </script>
 
 <script>
@@ -4647,23 +5098,23 @@
             const el = $ID(id);
             const val = toNumber(v);
 
-            if (!hasValue(el.value) && isNum(val)) blinkBorder(el, {
+            if (!hasValue(el.value) && isNumSafe(val)) blinkBorder(el, {
                 restart: true,
                 color: '#2196F3',
                 backgroundOn: '#a7e7ff',
                 blinks: 3,
             });
 
-            else if (isNum(val) && val === toNumber(el.value)) blinkBorder(el, {
+            else if (isNumSafe(val) && val === toNumber(el.value)) blinkBorder(el, {
                 restart: true,
                 color: '#4CAF50',
                 backgroundOn: '#a9ffa9',
                 blinks: 3,
             });
 
-            else if (isNum(val) && val !== adjustGet(id)) blinkBorder(el, {restart: true});
+            else if (isNumSafe(val) && val !== adjustGet(id)) blinkBorder(el, {restart: true});
 
-            else if (!isNum(val) && isNum(adjustGet(id))) blinkBorder(el, {
+            else if (!isNumSafe(val) && isNumSafe(adjustGet(id))) blinkBorder(el, {
                 restart: true,
                 color: '#DC143C',
                 backgroundOn: '#ffaeb9',
@@ -4910,7 +5361,8 @@
 
     // -------------------- Hlavní přepočet --------------------
     function recomputeAllCalculations() {
-        if (isExperimentRunning) return;
+        // TODO: handle recomputeAllCalculations spamming
+        if (isExperimentRunning || !(initialPageLoaded && initialDataLoaded)) return;
 
         fillComputableInputs();
 
@@ -5016,7 +5468,7 @@
     }
 
     function fillComputableInputs() {
-        const forces = sumND(forceData, 2); // součet sil ze všech kanálů
+        const forces = sumND(forceData, 2); // součet sil ze všech kanálů => zachovaný stejný počet řádků TODO: do by 'load' definitions
         const displacements = positionData;
 
         // const minimalForceID = minimumIdx(forces);
@@ -5069,7 +5521,7 @@
             const t_Finitial_raw = time[FinitialInd];                                               // s
             const t_set_raw = time[FtargetInd];                                                     // s
             const t_set = calc_val_tare(t_set_raw, t_Finitial_raw);                                 // s
-            const v_set = catchVal(speedForward_mmps, readNum("inputSpeedForward", true), isNum);   // mm/s
+            const v_set = catchVal(speedForward_mmps, readNum("inputSpeedForward", true), isNumSafe);   // mm/s
 
             const v1 = calc_speed(w_goal, t_goal);              // variant 1     mm/s
             const v2 = calc_load_speed(v_set, t_set, t_goal);   // variant 2     mm/s
@@ -5263,20 +5715,20 @@
         let newVal = val;
 
         // Validate input: if empty, set to a minimum or 0
-        if (!isNum(val)) {
-            if (isNum(min)) newVal = min;
-            else if (isNum(max)) newVal = max;
+        if (!isNumSafe(val)) {
+            if (isNumSafe(min)) newVal = min;
+            else if (isNumSafe(max)) newVal = max;
             else return;
-        } else if (typeof valueType === "string") {
+        } else if (isStr(valueType)) {
             if (valueType === "intInput") {
                 newVal = Math.floor(val)
             }
 
             // Enforce min/max constraints
-            if (isNum(min) && newVal < min) {
+            if (isNumSafe(min) && newVal < min) {
                 newVal = min;
             }
-            if (isNum(max) && newVal > max) {
+            if (isNumSafe(max) && newVal > max) {
                 newVal = max;
             }
 
@@ -5284,9 +5736,9 @@
 
                 decimalPlaces = toNumber(decimalPlaces);
                 let roundTo =
-                    isNum(decimalPlaces) ? decimalPlaces : parseFloat(valueType.replace('floatInput', ''));
+                    isNumSafe(decimalPlaces) ? decimalPlaces : parseFloat(valueType.replace('floatInput', ''));
 
-                if (!isNum(roundTo)) {
+                if (!isNumSafe(roundTo)) {
                     roundTo = maxPrecision;
                     const step = element?.step.trim();
 
@@ -5294,7 +5746,7 @@
                         const decimals = (step.replace(',', '.').split(".")[1] || "").length;
                         const stepVal = Math.abs(parseFloat(step));
 
-                        if (isNum(stepVal) && stepVal > 0) {
+                        if (isNumSafe(stepVal) && stepVal > 0) {
                             if (stepVal < 1 && decimals > 0) roundTo = decimals;
                             if (stepVal >= 1) roundTo = stepVal;
                         }
@@ -5304,7 +5756,7 @@
                 }
 
 
-                if (!isNum(roundTo)) roundTo = maxPrecision;
+                if (!isNumSafe(roundTo)) roundTo = maxPrecision;
 
                 roundTo = Math.abs(Math.min(Math.round(roundTo), maxPrecision));
 
@@ -5447,7 +5899,7 @@
 
         let formData = JSON.parse(localStorage.getItem(storage)) || {}; // Load the saved data
 
-        if (!isNonEmptyObj(formData)) {
+        if (!isNonEmptyDict(formData)) {
             console.warn(`No saved data found in localStorage under key: ${storage}. Saving current inputs (${elements.length}) as defaults.`);
             saveAllInputsToLocalStorage(elements, storage);
         }
@@ -5500,7 +5952,7 @@
                     const content = e.target.result || '';
                     const formData = JSON.parse(String(content));
 
-                    if (typeof formData !== 'object' || isVoid(formData)) {
+                    if (!isObj(formData)) {
                         console.error("Invalid settings file format.");
                         return;
                     }
@@ -5560,9 +6012,9 @@
         formData.settingsLoad = JSON.parse(localStorage.getItem(storageKeyLoad)) || {};
         formData.settingsSys = JSON.parse(localStorage.getItem(storageKeySys)) || {};
         formData.expName = getElementValue("experimentName") || "";
-        formData.expDesc = getElementValue("experimentDesc")?.replaceAll(/(\r\n|\n|\r)/gm, " ").trim() || "";
+        formData.expDesc = checkDescription() || "";
 
-        if (!isNonEmptyObj(formData)) {
+        if (!isNonEmptyDict(formData)) {
             console.warn("No settings found to export.");
             return;
         }
@@ -5693,7 +6145,7 @@
     // window.addEventListener("resize", () => adjustCanvasDPI(UI.loadingLogContainer));
 
     function logMeasurements(msg) {
-        if (!msg || typeof msg !== 'string') return;
+        if (!isNonEmptyStr(msg)) return;
 
         // Check if a message starts with "ds" and apply yellow color, else use white
         let formattedMsg = msg.toLowerCase().startsWith("ds")
@@ -5818,6 +6270,14 @@
         };
     }
 
+    function checkDescription({text = getElementValue("experimentDesc"), set = false} = {}) {
+        if (!isNonEmptyStr(String(text))) return "";
+        const cleanedDesc = String(text)?.replace(/(\r\n|\n|\r)/gm, " ").replace(/§.*§;/gm, "").trim() || "";
+        if (set) $ID("experimentDesc").value = cleanedDesc || "";
+        return cleanedDesc;
+    }
+
+
     function checkExistingLog() {
         const transaction = db.transaction(STORE_NAME, "readonly");
         const store = transaction.objectStore(STORE_NAME);
@@ -5825,7 +6285,8 @@
 
         request.onsuccess = async function () {
             if (!isExperimentRunning) maxDataPoints = maxDataPointsExpShow;
-            await loadDataFromDBToChart(false);
+            await updateChart(false);
+            await loadDataFromDBToChart();
 
             if (request.result > 0) {
                 // TODO: přemístit dotaz na 'stará data' až po načtení všeho a upravit dotaz, aby se ptal na smazání a chtěl to 2x potvrdit
@@ -5849,6 +6310,8 @@
                         const dateFormat = getLocaleOrder();
                         date = `${expDate} [${dateFormat.date} ${dateFormat.time}]`;
                         console.info(`\t\n🕒 %cLast log date: ${date}`, "color: #0078d7; font-style: italic; font-weight: normal;");
+                    } else {
+                        console.info("\t\n🕛 %cLast log found without date information.", "color: #0078d7; font-style: italic; font-weight: normal;");
                     }
 
                     const loadDirection = (experimentInfo.loadDirection === -1 ? "DOWN" : (experimentInfo.loadDirection === 1 ? "UP" : (experimentInfo.loadDirection === 0 ? "CYCLING" : "N/A")));
@@ -5860,16 +6323,20 @@
                     const expDescription = experimentInfo.experimentDescription || "";
 
                     // replace any original Basic Information in description - up new lines and §...§
-                    const description = expBasicInformation + ";  " + expDescription?.replace(/(\r\n|\n|\r)/gm, " ").replace(/§.*§;/gm, "").trim();
+                    const description = expBasicInformation + "   " + checkDescription({text: expDescription});
 
                     $ID("experimentCount").value = experimentInfo.experimentCounter || "1";
                     $ID("experimentName").value = experimentInfo.experimentName || "";
                     $ID("experimentDesc").value = description || "";
+                    initialDataLoaded = true;
                 };
                 // }
+            } else {
+                console.info("\t\n🕘 %cNo existing log found in IndexedDB.", "color: #0078d7; font-style: italic; font-weight: normal;");
+                initialDataLoaded = true;
             }
         };
-        initialDataLoaded = true;
+
     }
 
     // /////// Adding Data to the Log /////////
@@ -5909,12 +6376,12 @@
 
         for (const {data, id} of items) {
             // id can be 0! => check for null/undefined/NaN
-            const hasId = isNum(id);
+            const hasId = isNumSafe(id);
 
             if (hasId) {
                 // Upsert with specified key
                 if (keyPath === 'id') {
-                    const value = (data && typeof data === 'object')
+                    const value = isObj(data)
                         ? {...data, id} : {id, value: data};
                     store.put(value); // key is in the object (keyPath)
                 } else {
@@ -6038,12 +6505,17 @@
 
 
     // /////// Toggle Live Update /////////
-    function chartUpdate() {
-        liveUpdate = !liveUpdate;
+    function chartUpdate(setState = null) {
+        if (isBool(setState)) {
+            liveUpdate = setState;
+        } else {
+            liveUpdate = !liveUpdate;
+        }
+
         UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "⏯️ Activate Charts";
         $ID("chartsWrapper").style.background = liveUpdate ? "var(--charts-bg-active)" : "var(--charts-bg)";
 
-        if (isExperimentRunning && liveUpdate) loadDataFromDBToChart(liveUpdate);
+        if (isExperimentRunning && liveUpdate) loadDataFromDBToChart();
 
         if (!isExperimentRunning && isConnected) {
             if (liveUpdate) {
@@ -6051,7 +6523,7 @@
                 sendCommandGeneral(`DATA SET INTERVAL ${dataAppInterval}`)
                 const dataDuration = 10 * 1_000; // 10 seconds
 
-                maxDataPoints = (isNum(dataAppInterval) ?
+                maxDataPoints = (isNumSafe(dataAppInterval) ?
                     calculateStep(dataAppInterval, dataDuration, maxDataPointsIdle) :
                     maxDataPointsIdle);
 
@@ -6077,7 +6549,7 @@
 
 
                 for (let i = 0; i < loadCellNum; i++) {
-                    if (isNum(capacities[i]) && isNum(outputs[i])) {
+                    if (isNumSafe(capacities[i]) && isNumSafe(outputs[i])) {
                         sendCommandGeneral(`LC SET CAP ${i} ${capacities[i]}`);
                         sendCommandGeneral(`LC SET RO ${i} ${outputs[i]}`);
                         sendCommandGeneral(`LC TARE RESET ${i}`);
@@ -6120,8 +6592,8 @@
 
                     if (liveUpdate && !liveUpdatePaused) {
                         console.info("⏸️ Pause live update of charts.");
+                        updateChart(false);
                         liveUpdatePaused = true;
-                        liveUpdate = false;
                     }
                 }
             }, MIN_HIDE_TIME);
@@ -6136,17 +6608,17 @@
             console.info("\n📄 - 👓 Page is visible");
             if (liveUpdatePaused) {
                 console.info("🔄 Resuming live update of charts.");
-                await loadDataFromDBToChart(true);
+                await loadDataFromDBToChart();
+                await updateChart(true);
                 liveUpdatePaused = false;
-                liveUpdate = true;
             }
         }
     }
 
 
     function aggregateData(dataEntries, chunkSize, timeData, positionData, forceData, photoData, overflowData) {
-        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
-        if (!isNum(chunkSize)) chunkSize = 1;
+        if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+        if (!isNumSafe(chunkSize)) chunkSize = 1;
         chunkSize = Math.max(1, Math.round(chunkSize));
 
         // const photoValidStep = dataEntries.findIndex((entry, i) => isFiniteNumber(entry.photoIndex, false) && i > 0);
@@ -6162,7 +6634,7 @@
                 timeData[i] = entry.time;
                 positionData[i] = entry.position;
                 entry.force?.forEach((value, index) => forceData[index][i] = value);
-                photoData[i] = isNum(entry.photoIndex) ? 0 : null; // Mark photo event
+                photoData[i] = isNumSafe(entry.photoIndex) ? 0 : null; // Mark photo event
             }
             return;
         }
@@ -6190,7 +6662,7 @@
             entry.force?.forEach((value, index) => sumForce[index] += value);
             count++;
 
-            if (isNum(entry.photoIndex)) {
+            if (isNumSafe(entry.photoIndex)) {
                 // If a photo event is detected, add data immediately to the current chunk
                 // timeData[chunkIndex] = entry.time;
                 // positionData[chunkIndex] = entry.position;
@@ -6212,7 +6684,7 @@
                     forceData[index][chunkIndex] = value * invCount;
                     sumForce[index] = 0; // Reset for next chunk
                 });
-                photoData[chunkIndex] = isNum(entry.photoIndex) ? 0 : null; // Mark photo event
+                photoData[chunkIndex] = isNumSafe(entry.photoIndex) ? 0 : null; // Mark photo event
 
                 sumTime = sumPosition = 0;
                 count = 0;
@@ -6232,15 +6704,15 @@
         }
     }
 
-    async function loadDataFromDBToChart(stateAtEnd = false) {
+    async function loadDataFromDBToChart() {
         if (!db) {
             console.error("⚠️ IndexedDB is not available (not opened).");
             return;
         }
 
-        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+        if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
-        liveUpdate = false;
+        const stateAtEnd = liveUpdate;
 
         await clearCharts();
 
@@ -6260,13 +6732,14 @@
             }
 
             // Clear IndexedDB after saving (only in initial load)
+            console.log(initialDataLoaded === false, dataEntries[0]?.status === 'saved')
             if (initialDataLoaded === false && dataEntries[0]?.status === 'saved') {
                 await clearDatabase();
                 return;
             }
 
             // remove first element from entry
-            dataEntries.shift(); // <= experiment info object
+            await dataEntries.shift(); // <= experiment info object
 
             console.info("📉 Loaded", dataEntries.length, "data points");
 
@@ -6288,14 +6761,14 @@
             aggregateData(dataEntries, dataChartInterval, timeDataTemp, positionDataTemp, forceDataTemp, photoDataTemp, aggregatedDataBetweenStepsTemp);
 
 
-            const minTime = catchVal(minND(timeDataTemp), 0, isNum);
-            const maxTime = catchVal(maxND(timeDataTemp), 1e-10, isNum);
+            const minTime = catchVal(minND(timeDataTemp), 0, isNumSafe);
+            const maxTime = catchVal(maxND(timeDataTemp), 1e-10, isNumSafe);
             const timeRange = (maxTime - minTime) * 0.005;
-            const minDist = catchVal(minND(positionDataTemp), 0, isNum);
-            const maxDist = catchVal(maxND(positionDataTemp), 1e-10, isNum);
+            const minDist = catchVal(minND(positionDataTemp), 0, isNumSafe);
+            const maxDist = catchVal(maxND(positionDataTemp), 1e-10, isNumSafe);
             const distRange = (maxDist - minDist) * 0.005;
-            const forceMin = catchVal(minND(forceDataTemp), 0, isNum);
-            const forceMax = catchVal(maxND(forceDataTemp), 1e-10, isNum);
+            const forceMin = catchVal(minND(forceDataTemp), 0, isNumSafe);
+            const forceMax = catchVal(maxND(forceDataTemp), 1e-10, isNumSafe);
             const forceRange = (forceMax - forceMin) * 0.125;
 
 
@@ -6437,11 +6910,11 @@
      */
 
     function updateChart(inputData) {
-        if (!isObj(inputData)) return;
+        if (!isDict(inputData)) return;
 
 
         // Check if the data is valid
-        if (!isNum(inputData.time) || !isNum(inputData.position)) {
+        if (!isNumSafe(inputData.time) || !isNumSafe(inputData.position)) {
             return;
         }
 
@@ -6449,7 +6922,7 @@
         timeDataChart?.push(inputData?.time);
         positionDataChart?.push(inputData?.position);
         inputData.force?.forEach((value, index) => forceDataChart[index]?.push(value));
-        photoDataChart?.push(isNum(inputData.photoIndex) ? 0 : null); // Mark photo event
+        photoDataChart?.push(isNumSafe(inputData.photoIndex) ? 0 : null); // Mark photo event
 
 
         // Maintain max data points
@@ -6467,11 +6940,7 @@
     }
 
     function updateChartNEW(inputData) { // TODO: test and use
-        if (!isObj(inputData)) return;
-
-        // --- Helpers ---
-        const isArr = Array.isArray;
-        const isNumSafe = v => typeof v === 'number' && Number.isFinite(v);
+        if (!isDict(inputData)) return;
 
         // Normalizes scalar -> array of length len (used for uniform processing)
         const normalizeSeries = (value, mapper = v => v) => {
@@ -6590,14 +7059,14 @@
 
 
     async function reloadCharts() {
-        await loadDataFromDBToChart(liveUpdate);  // Load data from DB to charts will wait for the data to be loaded
+        await loadDataFromDBToChart();  // Load data from DB to charts will wait for the data to be loaded
         timeChart.redraw();
         positionChart.redraw();
         console.info("🔁 Charts refreshed.");
     }
 
     async function clearCharts() {
-        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+        if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
         // Reset axis X and Y
         await timeChart.setScale("x", {min: 0, max: 1e-10});
@@ -6705,7 +7174,7 @@
 
         writeCommand(command);
 
-        if (!isNum(timeOut)) timeOut = 1;
+        if (!isNumSafe(timeOut)) timeOut = 1;
         timeOut = Math.max(0, Math.round(timeOut));
 
         if (command.toLowerCase() !== "syswr" && command.toLowerCase() !== "misc watchdog_reset") {
@@ -6825,7 +7294,7 @@
     }
 
     async function setMachineID(id, pauseMs = 1, {overRide = false} = {}) {
-        if (!isNonEmptyStr(id) && !isNum(id)) {
+        if (!isNonEmptyStr(id) && !isNumSafe(id)) {
             console.warn("⚠️ Machine ID cannot be empty.");
             return;
         }
@@ -6834,7 +7303,7 @@
             return;
         }
         id = toInteger(id);
-        if (!isNum(id)) {
+        if (!isNumSafe(id)) {
             console.warn("⚠️ Machine ID is not a valid number.");
             return;
         }
@@ -6964,13 +7433,13 @@
     let machineElements;
 
 
-    async function moveToOriginalPosition({overRide = false} = {}) {
+    async function moveToOriginalPosition({getCurrent = true, overRide = false} = {}) {
         if (!isConnected) return;
         if (isExperimentRunning) return;
         if (!overRide && machineOccupation) return;
 
         const endPosition = await measurePosition();
-        if (!(isNum(tareValues.position) && isNum(endPosition))) {
+        if (!(isNumSafe(tareValues.position) && isNumSafe(endPosition))) {
             return;
         }
 
@@ -6982,7 +7451,7 @@
         }
 
         console.info("⬅️ Moving backward...");
-        await moveBy(distance, {overRide: overRide});
+        await moveBy(distance, {getCurrent, overRide});
         console.info("🚩 Returning to original position completed.");
     }
 
@@ -7100,7 +7569,7 @@
             watchdogTimer = null;
         }
         // HW watchdog turn off — optional:
-        if (isConnected && turnOff) if (debugging) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);// TODO: turned off by DEBUGGING!!!
+        if (isConnected && turnOff) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);// if (debugging) TODO: turned off by DEBUGGING!!!
         if (debugging) console.info("\t🐶 Watchdog is inactive.");
     }
 
@@ -7183,6 +7652,7 @@
         }
 
         if (isConnected) sendCommandGeneral("MC STOP");
+        machineOccupation = false;
 
         warnOnClose = false;
         machineOccupation = false;
@@ -7203,7 +7673,12 @@
         return roundDecimalFast(v, 2);                // float f.2
     }
 
-    async function moveBy(distance, {requiredSpeed = null, requiredAcceleration = null, overRide = false} = {}) {
+    async function moveBy(distance, {
+        getCurrent = true,
+        requiredSpeed = null,
+        requiredAcceleration = null,
+        overRide = false
+    } = {}) {
         if (!isConnected) return;
         if (isExperimentRunning) return;
         if (!overRide && machineOccupation) {
@@ -7223,8 +7698,10 @@
                 return;
             }
 
-            currentSpeed = (await getSpeed()) || 15;
-            currentAcceleration = (await getAcceleration()) || 150;
+            if (getCurrent) {
+                currentSpeed = (await getSpeed()) || 15;
+                currentAcceleration = (await getAcceleration()) || 150;
+            }
 
             const acceleration = requiredAcceleration || 100; // mm/s²
             const speed = requiredSpeed || await speedFromDistance(distance, acceleration, 0.5, 25); // mm/s
@@ -7372,7 +7849,7 @@
         const MIN_STEP = 0.5;       // mm/s
 
         if (!isConnected) return;
-        if (!isNum(currSpeed)) currSpeed = currentSpeed;
+        if (!isNumSafe(currSpeed)) currSpeed = currentSpeed;
 
         const delta = targetSpeed - currSpeed;
         const dir = Math.sign(delta);
@@ -7501,7 +7978,7 @@
             let min = Number.POSITIVE_INFINITY, max = Number.NEGATIVE_INFINITY;
 
             for (const v of arr) {
-                if (isNum(v)) {
+                if (isNumSafe(v)) {
                     found = true;
                     if (v < min) min = v;
                     if (v > max) max = v;
@@ -7520,10 +7997,10 @@
     }
 
     function hasRequiredParsedKeys(experimentEndLimits, parsedData) {
-        if (!isObj(experimentEndLimits) || !isObj(parsedData)) return false;
+        if (!isDict(experimentEndLimits) || !isDict(parsedData)) return false;
 
         // used keys (required for ending the experiment), check if invalid: null/NaN
-        const required = Object.entries(experimentEndLimits).filter(([, v]) => !isNum(v));
+        const required = Object.entries(experimentEndLimits).filter(([, v]) => !isNumSafe(v));
 
         // atleast one required key must exist
         if (required.length === 0) return false;
@@ -7562,18 +8039,18 @@
     let isExperimentRunning = false;
     let machineOccupation = false;
 
-    let maxForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null);
+    let maxForces = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null);
 
-    let measureForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+    let measureForces = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
     let takeMeasurements = false;
 
-    let tareValues = {time: null, position: null, force: Array(catchVal(loadCellNum, 0, isNum)).fill(0)};
+    let tareValues = {time: null, position: null, force: Array(catchVal(loadCellNum, 0, isNumSafe)).fill(0)};
 
     let parsedData = {
         time: null,
         position: null,
         speed: null,
-        force: Array(catchVal(loadCellNum, 0, isNum)).fill(null),
+        force: Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null),
         photoIndex: null
     }; // Last data log
 
@@ -7785,11 +8262,11 @@
             dataInterval_us = Math.max(getInputNumDefAbsInt("inputDataInterval", NaN), 100);
             takePhotos = $ID("inputTakePhotos").checked;
             const photoInterval_ms = Math.round(getInputNumDefAbsFlt("inputPhotoInterval", NaN) * 1_000);
-            forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), Number.POSITIVE_INFINITY, isNum);
+            forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), Number.POSITIVE_INFINITY, isNumSafe);
             forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", Number.POSITIVE_INFINITY);
 
 
-            if (!isNum(loadCellNum)) throwInternalError(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNumSafe(loadCellNum)) throwInternalError(`Total Loadcell count is not defined: ${loadCellNum}`);
 
             const loadcellCount = loadCellNum; // TODO: Change by user selection if needed
 
@@ -7870,8 +8347,7 @@
             if (experimentType.endsWith("-basic") && $ID("inputDoCycles").checked === true) {
                 doCycles = true;
                 const cyclesVal = getInputVal("inputCycles")?.toLowerCase().trim() || '';
-                if (cyclesVal.includes('inf') || cyclesVal.includes('∞') ||
-                    cyclesVal.includes('ꝏ') || cyclesVal.includes('ထ') || cyclesVal.includes('Ꝏ')) {
+                if (cyclesVal.includes('inf') || cyclesVal.includes('∞') || cyclesVal.includes('ꝏ') || cyclesVal.includes('ထ')) {
                     cyclesCount = Number.POSITIVE_INFINITY;
                 } else {
                     cyclesCount = getInputNumDefAbsInt("inputCycles", NaN);
@@ -7900,31 +8376,31 @@
                 throwInternalError("Cycles count error", `⚠️ Number of cycles must be a positive integer bigger than 0.`);
 
 
-            if (!isNum(speedForward_mmps) || speedForward_mmps < minFSpeed)
+            if (!isNumSafe(speedForward_mmps) || speedForward_mmps < minFSpeed)
                 throwInternalError("Speed error", `⚠️ Speed must be greater than ${minFSpeed} mm/s.`);
             else if (speedForward_mmps > maxFSpeed)
                 throwInternalError("Speed error", `⚠️ Speed must be less than ${maxFSpeed} mm/s.`);
 
 
-            if (!isNum(dataInterval_us) || dataInterval_us < 1)
+            if (!isNumSafe(dataInterval_us) || dataInterval_us < 1)
                 throwInternalError("Data interval error", `⚠️ Data interval must be greater than 1 µs.`);
 
 
             if (!isArr(loadcellsInfo.loadcellsIDX) || loadcellsInfo.loadcellsIDX.length === 0)
                 throwInternalError("Loadcell activation error", `⚠️ At least one loadcell must be activated.`);
 
-            if (!isArr(loadcellsInfo.capacities) || loadcellsInfo.capacities.every(cap => !isNum(cap)))
+            if (!isArr(loadcellsInfo.capacities) || loadcellsInfo.capacities.every(cap => !isNumSafe(cap)))
                 throwInternalError("Loadcell activation error", `⚠️ At least one loadcell must be activated with valid capacity.`);
-            else if (loadcellsInfo.capacities.some(cap => isNum(cap) && cap < minLoadCap))
+            else if (loadcellsInfo.capacities.some(cap => isNumSafe(cap) && cap < minLoadCap))
                 throwInternalError("Loadcell capacity error", `⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
 
-            if (!isArr(loadcellsInfo.outputs) || loadcellsInfo.outputs.every(out => !isNum(out)))
+            if (!isArr(loadcellsInfo.outputs) || loadcellsInfo.outputs.every(out => !isNumSafe(out)))
                 throwInternalError("Loadcell activation error", `⚠️ At least one loadcell must be activated with valid output.`);
-            else if (loadcellsInfo.outputs.some(out => isNum(out) && out < minLoadOut))
+            else if (loadcellsInfo.outputs.some(out => isNumSafe(out) && out < minLoadOut))
                 throwInternalError("Loadcell output error", `⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
 
             if (experimentDoubleSpeed === true) {
-                if (!isNum(initialSpeed_mmps) || initialSpeed_mmps < minFSpeed)
+                if (!isNumSafe(initialSpeed_mmps) || initialSpeed_mmps < minFSpeed)
                     throwInternalError("Initial speed error", `⚠️ Initial speed must be greater than ${minFSpeed} mm/s.`);
                 else if (initialSpeed_mmps > maxFSpeed)
                     throwInternalError("Initial speed error", `⚠️ Initial speed must be less than ${maxFSpeed} mm/s.`);
@@ -7933,7 +8409,7 @@
             }
 
             if (takePhotos) {
-                if (!isNum(photoInterval_ms) || photoInterval_ms <= minInt)
+                if (!isNumSafe(photoInterval_ms) || photoInterval_ms <= minInt)
                     throwInternalError("Photo interval error", `⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
 
                 if (photoInterval_ms * 1_000 < dataInterval_us) {
@@ -7954,7 +8430,7 @@
                     throwInternalError("Stopping force error", `⚠️ Stopping force must be greater than initial force.`);
 
 
-                if (!isNum(holdForceTimeMs) || holdForceTimeMs < minInt || (holdForceTimeMs / 1_000) < 0)
+                if (!isNumSafe(holdForceTimeMs) || holdForceTimeMs < minInt || (holdForceTimeMs / 1_000) < 0)
                     throwInternalError("Hold force time error", `⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
 
 
@@ -7974,14 +8450,14 @@
                     $ID("inputDataInterval").value = minDataIntervalHold;
                 }
 
-                if ((!isNum(responsiveness.Kp) && !isNum(responsiveness.Ki)) ||
+                if ((!isNumSafe(responsiveness.Kp) && !isNumSafe(responsiveness.Ki)) ||
                     (responsiveness.Kp <= 0 && responsiveness.Ki <= 0)) {
                     throwInternalError("Responsiveness coefficients error", `⚠️ Responsiveness coefficients must be equal or greater than 0.`);
 
-                    if (!isNum(responsiveness.Kp) || responsiveness.Kp <= 0)
+                    if (!isNumSafe(responsiveness.Kp) || responsiveness.Kp <= 0)
                         throwInternalError("Responsiveness coefficient Kp error", `⚠️ Responsiveness coefficient Kp must be equal or greater than 0.`);
 
-                    if (!isNum(responsiveness.Ki) || responsiveness.Ki <= 0)
+                    if (!isNumSafe(responsiveness.Ki) || responsiveness.Ki <= 0)
                         throwInternalError("Responsiveness coefficient Ki error", `⚠️ Responsiveness coefficient Ki must be equal or greater than 0.`);
 
                 }
@@ -8041,11 +8517,15 @@
             // =================================
             // =================================
 
+            currentSpeed = (await getSpeed()) || 15;
+            currentAcceleration = (await getAcceleration()) || 150;
+
 
             await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
             await console.info("🧪 Starting experiment...");
             UI.loadingLogContainer.style.background = "black";
             disableCharts({lcCount: loadcellCount});
+            await checkDescription({set: true});
 
 
             if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('before')) {
@@ -8057,7 +8537,8 @@
             await sleep(5);
             await clearDatabase();
             await clearCharts();
-            if (liveUpdate) await chartUpdate();
+            await chartUpdate(false);
+            if (await $ID('inputClearCalculations').checked) await clearCalculations();
 
 
             // === Progress Bar Setup ===
@@ -8067,7 +8548,6 @@
             document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
 
             // === Experiment Parameters ===
-            if (await $ID('inputClearCalculations').checked) await clearCalculations();
 
             maxDataPoints = maxDataPointsExp;
 
@@ -8080,7 +8560,7 @@
 
             timeData = [];
             positionData = [];
-            forceData = Array(catchVal(loadcellCount, 0, isNum)).fill(null).map(() => []);
+            forceData = Array(catchVal(loadcellCount, 0, isNumSafe)).fill(null).map(() => []);
             measureForces = Array(loadcellCount).fill(null).map(() => []);
             tareValues.force = Array(loadcellCount).fill(0);
 
@@ -8117,9 +8597,6 @@
                 experimentEndLimits = {position: null, force: null, time: null};
                 measurement_limits.zero_speed.limit = calculateStep(dataInterval_us, 5_000, 2);
             }
-
-            currentSpeed = (await getSpeed()) || 15;
-            currentAcceleration = (await getAcceleration()) || 150;
 
             // === LoadCell Configuration ===
             for (let i = 0; i < loadcellCount; i++) {
@@ -8231,7 +8708,7 @@
             // --- 6) Valid dispersion ---
             const diffs = validFields.flatMap(({
                                                    min, max
-                                               }) => (isNum(min) && isNum(max)) ? [max - min] : []);
+                                               }) => (isNumSafe(min) && isNumSafe(max)) ? [max - min] : []);
             console.info("\nValid dispersions:", diffs);
 
             // --- 7) Error rates ---
@@ -8303,7 +8780,7 @@
 
             timeData = [];
             positionData = [];
-            forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+            forceData = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
             measureForces = Array(loadcellCount).fill(null).map(() => []);
 
             timeDataChart = [];
@@ -8313,7 +8790,6 @@
             dataCount = 0;
 
             await clearCharts();
-            if (!liveUpdate) await chartUpdate();
 
             const settings = await collectExpSettings(".expInput", "Moira-exp-settings") || {};
 
@@ -8358,9 +8834,10 @@
             await updateChart(parsedData);
 
             UIupdate();
+            await chartUpdate(true);
 
             if (experimentDoubleSpeed === true) UI.experimentStageLabel.textContent = `Initial`;
-            else UI.experimentStageLabel.textContent = `Loading`;
+            else UI.experimentStageLabel.textContent = doCycles ? `Cycling` : `Loading`;
 
             // ==================================
             // ==================================
@@ -8377,18 +8854,23 @@
             console.info("➡️ Moving forward...");
             await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
 
-            const oneBigInt = toBigInt(1);
             if (doCycles) {
+                const oneBigInt = toBigInt(1);
+
                 let cycle = oneBigInt;
                 const isInfinite = isInfinity(cyclesCount);
                 const totCyclesLabel = isInfinite ? "∞" : cyclesCount;
-                const movementIntervalMs = computeMotionTime(distance_mm, speedForward_mmps, 200) + 5;
+                const movementIntervalMs = computeMotionTime(distance_mm, speedForward_mmps, 200) + 5; // TODO: modify with Performance.now() and not Intervals
+
+                const oneCycleSeconds = roundDecimalFast(distance_mm / speedForward_mmps, 2);
+
+                let cycleTextPending = false;
 
                 let movementTimer = null;
                 let minuteLogger = null;
                 let hourlyClear = null;
 
-                const stopAll = () => {
+                const stopAllCycles = () => {
                     if (movementTimer) {
                         clearInterval(movementTimer);
                         movementTimer = null;
@@ -8407,10 +8889,7 @@
                 if (isInfinite) {
                     // log každou minutu
                     minuteLogger = setInterval(async () => {
-                        console.info(
-                            `%c\n🔃 Running (∞). Current cycle: ${cycle.toString()} / ${totCyclesLabel}`,
-                            'color: blue; font-style: italic;'
-                        );
+                        cycleTextPending = true;
                     }, (60 * 1_000));
 
                     // čistit konzoli každou hodinu
@@ -8421,11 +8900,11 @@
                     // ukončovací podmínky
                     const noMoreFiniteCycles = !isInfinite && cyclesCount <= 0;
                     if (!isExperimentRunning || !doCycles || !isNumberOrInfinity(cyclesCount) || noMoreFiniteCycles) {
-                        stopAll();
+                        stopAllCycles();
 
                         endMeasuring(Math.max(Math.floor(delayMsAfterEndMeasurement / 3), 10),
                             {
-                                ednStatus: noMoreFiniteCycles ? 'cycles completed' : 'cycling interrupted',
+                                ednStatus: noMoreFiniteCycles ? `cycles completed (${totCyclesLabel})` : `cycling interrupted (${cycle.toString()}/${totCyclesLabel})`,
                                 endText: `⏹️ Experiment stopped after ${cycle.toString()} out of ${totCyclesLabel} cycles.`,
                                 immediateText: `Experiment cycling stopped.`,
                             });
@@ -8446,10 +8925,17 @@
                     // loguj po každém kroku jen u konečného režimu (∞ řeší minuteLogger)
                     if (!isInfinite) {
                         console.info(
-                            `%c\n🔃 Starting cycle [${cycle.toString()} / ${totCyclesLabel}].\n\tRemaining cycles: ${cyclesCount}`,
+                            `%c\n🔃 Starting cycle [${cycle.toString()} / ${totCyclesLabel}].\n\tRemaining cycles: ${cyclesCount}\n\t\tOne cycle time: ~${oneCycleSeconds} s.`,
                             'color: red; font-style: italic;'
                         );
+                    } else if (cycleTextPending) {
+                        console.info(
+                            `%c\n🔃 Running (∞). Current cycle: ${cycle.toString()} / ${totCyclesLabel}\n\t\tOne cycle time: ~${oneCycleSeconds} s.`,
+                            'color: blue; font-style: italic;'
+                        );
+                        cycleTextPending = false;
                     }
+
                 }, movementIntervalMs);
             }
 
@@ -8492,7 +8978,7 @@
                 // === Move Back ===
                 if (UI.autoReturnPosition.checked) {
                     UI.experimentStageLabel.textContent = `Returning`;
-                    await moveToOriginalPosition({overRide: true}); // TODO: neposune se: chyba (Machine is already busy. Please wait.) => add overRide
+                    await moveToOriginalPosition({getCurrent: false, overRide: true});
                 }
             }
 
@@ -8514,11 +9000,11 @@
             if (internalError) {
                 await disableCharts();
                 await clearCharts();
-                if (liveUpdate) await chartUpdate();
+                await chartUpdate(false);
 
                 timeData = [];
                 positionData = [];
-                forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+                forceData = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
 
                 timeDataChart = [];
                 positionDataChart = [];
@@ -8577,6 +9063,8 @@
             endedMoving();    // unlock UI and watchdog
             unlockMovement();
 
+            await chartUpdate();
+
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
             await console.groupEnd();
@@ -8615,7 +9103,7 @@
             endMeasurementCounter = null;
         }
 
-        if (!isNum(timeoutMs)) timeoutMs = 0;
+        if (!isNumSafe(timeoutMs)) timeoutMs = 0;
 
         if (isNonEmptyStr(command)) await sendCommandGeneral(command);
 
@@ -8682,7 +9170,7 @@
 
             let progressNumber, progressLabel, progressTitle;
 
-            if (!isNum(experimentProgress)) {
+            if (!isNumSafe(experimentProgress)) {
                 progressNumber = 0;
                 progressLabel = 'N/A';
                 progressTitle = 'Unknown';
@@ -8889,7 +9377,7 @@
             if (debugging) logMessage(" 📢\tGet machine ID...");
             const id = toNumber(await getPromisedValue("MISC GET MACHINE_ID", /Machine ID:\s*(.+)/, 1, timeOut), true);
 
-            if (!isNum(id)) {
+            if (!isNumSafe(id)) {
                 throw new Error(`ID is not a number: ${id}`);
             }
             console.info("\n\t🆔 Machine ID:", id);
@@ -8911,7 +9399,7 @@
             const position = toNumber(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut), true);
             // const position = parseFloat(await getPromisedValue("MC GET POS", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
 
-            if (!isNum(position)) {
+            if (!isNumSafe(position)) {
                 throw new Error(`Position is not a number: ${position}`);
             }
             console.info("\t📌 Current position:", position, "mm");
@@ -8932,12 +9420,12 @@
         try {
             if (debugging) logMessage(` 📢\tGet Loadcell ${ldID} reading...`);
 
-            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
-            if (!isNum(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
+            if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNumSafe(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
 
             const force = toNumber(await getPromisedValue(`LC READ ${ldID}`, /.../, 1, timeOut), true);
 
-            if (!isNum(force)) {
+            if (!isNumSafe(force)) {
                 throw new Error(`Load on Loadcell${ldID} is not a number: ${force}`);
             }
             return roundDecimalFast(force, precisionForce);
@@ -8956,7 +9444,7 @@
         try {
             if (debugging) logMessage(" 📢\tGet Loadcells readings...");
 
-            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             for (let i = 0; i < loadCellNum; i++) {
                 const force = await readLoadcell(i, timeOut);
                 forces.push(force);
@@ -8977,8 +9465,8 @@
             const ldID = toInteger(loadcellID);
             if (debugging) logMessage(` 📢\tCheck Loadcell ${ldID} presence...`);
 
-            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
-            if (!isNum(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
+            if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNumSafe(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
 
             const force = await getPromisedValue(`LC READ ${ldID}`, /.../, 1, timeOut);
 
@@ -9002,7 +9490,7 @@
         try {
             if (debugging) logMessage(" 📢\tCheck Loadcells presence...");
 
-            if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+            if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             for (let i = 0; i < loadCellNum; i++) {
                 const presence = await isLoadcellPresent(i, timeOut);
                 isPresent.push(presence);
@@ -9040,7 +9528,7 @@
 
             const speed = toNumber(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut), true);
             // const speed = parseFloat(await getPromisedValue("MC GET SPEED", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
-            if (!isNum(speed)) {
+            if (!isNumSafe(speed)) {
                 throw new Error(`Speed is not a number: ${speed}`);
             }
             console.info("\n\t🚅 Current speed:", speed, "mm/s");
@@ -9063,7 +9551,7 @@
 
             const acceleration = toNumber(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut), true);
             // const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
-            if (!isNum(acceleration)) {
+            if (!isNumSafe(acceleration)) {
                 throw new Error(`Acceleration is not a number: ${acceleration}`);
             }
             console.info("\n\t🚝 Current acceleration:", acceleration, "mm/s²");
@@ -9139,7 +9627,7 @@
     let lastAcceptedTime = null;
 
     function timeStepCheck(previous, current, stepSize, tolerance = null) {
-        if (!isNum(tolerance)) tolerance = (stepSize * 0.01); // set default tolerance to 2x 1% of step size
+        if (!isNumSafe(tolerance)) tolerance = (stepSize * 0.01); // set default tolerance to 2x 1% of step size
 
         // TODO: optimalizovat tolerance dle rychlosti zpracování dat
         tolerance = clamp(roundDecimalFast(Math.abs(tolerance), 9), 0.0011, 0.1);
@@ -9193,9 +9681,9 @@
 
             const interpForce = prevData.force.map((v1, i) => {
                 const v2 = nextData.force[i];
-                if (isNum(v1) && isNum(v2)) return roundDecimalFast(v1 + factor * (v2 - v1), precisionForce);
-                if (isNum(v1)) return v1;
-                if (isNum(v2)) return v2;
+                if (isNumSafe(v1) && isNumSafe(v2)) return roundDecimalFast(v1 + factor * (v2 - v1), precisionForce);
+                if (isNumSafe(v1)) return v1;
+                if (isNumSafe(v2)) return v2;
                 return null;
             });
 
@@ -9214,8 +9702,8 @@
             const midSpeed = roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeed);
             const midForce = prevData.force.map((v1, i) => {
                 const v2 = nextData.force[i];
-                if (isNum(v1) && isNum(v2)) return roundDecimalFast((v1 + v2) / 2, precisionForce);
-                return isNum(v1) ? v1 : (isNum(v2) ? v2 : null);
+                if (isNumSafe(v1) && isNumSafe(v2)) return roundDecimalFast((v1 + v2) / 2, precisionForce);
+                return isNumSafe(v1) ? v1 : (isNumSafe(v2) ? v2 : null);
             });
 
             interpolatedData = {
@@ -9260,9 +9748,9 @@
             const interpolatedSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeed);
             const interpolatedForce = prevData.force.map((f1, i) => {
                 const f2 = nextData.force[i];
-                if (isNum(f1) && isNum(f2)) return roundDecimalFast(f1 + factor * (f2 - f1), precisionForce);
-                if (isNum(f1)) return f1;
-                if (isNum(f2)) return f2;
+                if (isNumSafe(f1) && isNumSafe(f2)) return roundDecimalFast(f1 + factor * (f2 - f1), precisionForce);
+                if (isNumSafe(f1)) return f1;
+                if (isNumSafe(f2)) return f2;
                 return null;
             });
 
@@ -9318,12 +9806,12 @@
         if (totalEntries === 0) return {
             time: 0,
             position: 0,
-            force: Array(catchVal(loadCellNum, 0, isNum)).fill(0)
+            force: Array(catchVal(loadCellNum, 0, isNumSafe)).fill(0)
         }; // Return zero values if no data
 
         let sumTime = 0;
         let sumPosition = 0;
-        let sumForce = Array(catchVal(loadCellNum, 0, isNum)).fill(0); // Empty list of `force` values
+        let sumForce = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(0); // Empty list of `force` values
 
         parsedDataList?.forEach(data => {
             sumTime += data.time;
@@ -9362,14 +9850,14 @@
             const val = parts[idx];
             if (val === "0") return null;
             const num = parseFloat(val);
-            return catchVal(num, null, isNum);
+            return catchVal(num, null, isNumSafe);
         }); // LoadCell values
         // const photoIndexRaw = isDef(measurementParts?.photoIndex) ? parseInt(parts[measurementParts?.photoIndex]) : null; // DSLR photo index
 
         return {
-            time: catchVal(timeRaw, null, isNum),
-            position: catchVal(distRaw, null, isNum),
-            speed: catchVal(speedRaw, null, isNum),
+            time: catchVal(timeRaw, null, isNumSafe),
+            position: catchVal(distRaw, null, isNumSafe),
+            speed: catchVal(speedRaw, null, isNumSafe),
             force: catchVal(forceRaw, null, isNonEmptyArr),
             // photoIndex: catchVal(photoIndexRaw, null, Number.isInteger)
         };
@@ -9379,7 +9867,7 @@
         const newData = parseData(dataString);
 
         if (takeMeasurements) { // Handle takeMeasurements
-            newData?.force?.forEach((value, index) => (loadcellsInfo.presentLoadcells[index] && isNum(value)) ? measureForces[index].push(value) : null);  // Collect force data for calibration
+            newData?.force?.forEach((value, index) => (loadcellsInfo.presentLoadcells[index] && isNumSafe(value)) ? measureForces[index].push(value) : null);  // Collect force data for calibration
             return;
         }
 
@@ -9398,12 +9886,12 @@
         }
 
         // Handle regular data (not DSLR)
-        if (!isNum(tareValues.time)) {
+        if (!isNumSafe(tareValues.time)) {
             tareValues.time = newData?.time;
             newData.time = 0.000_000;
         } else {
             // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
-            const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), (newData?.time - tareValues.time), (dataInterval_us * timeConversionDATAC));
+            const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNumSafe), (newData?.time - tareValues.time), (dataInterval_us * timeConversionDATAC));
             newData.time = roundDecimalFast(corrected, precisionTime);
 
         }
@@ -9412,7 +9900,7 @@
         newData.position = roundDecimalFast((newData.position - tareValues.position) * displacementSignCorrection, precisionPosition);
         newData.speed = roundDecimalFast(newData.speed * displacementSignCorrection, precisionSpeed);
         newData.force = newData?.force?.map((value, index) =>
-            (loadcellsInfo.presentLoadcells[index] && isNum(value))
+            (loadcellsInfo.presentLoadcells[index] && isNumSafe(value))
                 ?
                 roundDecimalFast((value * loadSignCorrections[index]) - (tareValues.force[index] || 0), precisionForce)
                 :
@@ -9424,7 +9912,7 @@
             interpolateDSLRData(pendingDSLR, newData, clone);
         }
 
-        if (!isNum(newData?.time) || !isNum(newData?.position)) {
+        if (!isNumSafe(newData?.time) || !isNumSafe(newData?.position)) {
             measurement_limits.invalid_data.counter++;
 
             if (measurement_limits.invalid_data.counter > measurement_limits.invalid_data.limit) {
@@ -9444,17 +9932,18 @@
 
         parsedData = newData;
 
-        if (experimentDoubleSpeed === true && newData?.force?.some(value => isNum(value) && value >= initialForceLim_N)) {
+        if (experimentDoubleSpeed === true && newData?.force?.some(value => isNumSafe(value) && value >= initialForceLim_N)) {
             setSpeed(speedForward_mmps, false);
             experimentDoubleSpeed = false;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressSecondary-color)');
-            UI.experimentStageLabel.textContent = doCycles ? `Cycling` : `Loading`;
+            UI.experimentStageLabel.textContent = `Loading`;
         }
 
         // const sumForce = newData?.force?.reduce((acc, val) => acc + (isNum(val) ? val : 0), 0);
-        // const sumForce = sumND(newData?.force); // TODO: check and optimize the speed of sum calculation
+        // const sumForce = sumND(newData?.force); // TODO: check and optimize the speed of sum calculation: (reduce loop vs sum1D vs sumND)
+        // const sumForce = sum1D(newData?.force);
 
-        if ((newData?.force?.some(value => isNum(value) && value >= stoppingForceLimit)) || (measurement_limits.over_limitForce.limit < 0)) {
+        if ((newData?.force?.some(value => isNumSafe(value) && value >= stoppingForceLimit)) || (measurement_limits.over_limitForce.limit < 0)) {
             measurement_limits.over_limitForce.counter++;
 
             if (measurement_limits.over_limitForce.counter > measurement_limits.over_limitForce.limit) {
@@ -9462,7 +9951,7 @@
                     checkSpeed = false; // disable speed check
                     measurement_limits.over_limitForce.limit = Number.NEGATIVE_INFINITY;
 
-                    if (!isNum(timer)) {
+                    if (!isNumSafe(timer)) {
                         timer = newData?.time;
                         document.documentElement.style.setProperty('--progressColor', 'var(--progressOnHold-color)');
                         UI.experimentStageLabel.textContent = `Holding`;
@@ -9529,13 +10018,13 @@
 
 
         // Handle LoadCell limit checks
-        for (let i = 0; i < catchVal(loadCellNum, 0, isNum); i++) {
+        for (let i = 0; i < catchVal(loadCellNum, 0, isNumSafe); i++) {
             const currForce = newData?.force[i];
-            if (isNum(currForce)) {
-                if (isNum(maxForces[i])) {
+            if (isNumSafe(currForce)) {
+                if (isNumSafe(maxForces[i])) {
                     if ((maxForces[i] - currForce) > (Math.abs(maxForces[i]) * forceLimitDropPercent) && (maxForces[i] - currForce) > forceLimitDropValue) {
                         endMeasuring(50, {
-                            ednStatus: `loadCell[${i + 1}] drop`,
+                            ednStatus: `LoadCell[${i + 1}] drop`,
                             endText: `🛑 Experiment stopped due to LoadCell ${i + 1} drop:\n\tPercentage: ${(maxForces[i] - currForce)} > ${(Math.abs(maxForces[i]) * forceLimitDropPercent)} and Absolute: ${maxForces[i] - currForce} > ${forceLimitDropValue}.`,
                             command: "MC STOP",
                         });
@@ -9543,7 +10032,7 @@
                         break; // Stop checking other LoadCells if one fails
                     }
                 }
-                if (!isNum(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
+                if (!isNumSafe(maxForces[i]) || currForce > maxForces[i]) maxForces[i] = currForce;
             }
         }
 
@@ -9552,7 +10041,7 @@
         // Update Progress Bar
         const progressValue = progressCalculate(newData[expControl], experimentEndLimits[expControl]);
 
-        if (isNum(progressValue) && progressValue >= 100) {
+        if (isNumSafe(progressValue) && progressValue >= 100) {
             if (experimentProgress < 100) {
                 const delayMs = endMeasurement ? 0 : delayMsAfterEndMeasurement;
                 endMeasuring(delayMs, {
@@ -9715,7 +10204,7 @@
      */
     async function blinkBorder(target, options = {}) {
         if (!initialAllLoaded) return;
-        const el = typeof target === 'string' ? $(target) : target;
+        const el = isStr(target) ? $(target) : target;
         if (!el) return false;
 
         const {
@@ -9792,7 +10281,7 @@
 
     // Volitelně: ruční ukončení/obnova
     blinkBorder.stop = function (target) {
-        const el = typeof target === 'string' ? $(target) : target;
+        const el = isStr(target) ? $(target) : target;
         if (!el) return false;
         const running = _blinkLocks.get(el);
         if (!running) return false;
@@ -9923,7 +10412,7 @@
         }
         if (type === "number" || type === "range") {
             let v = val;
-            if (typeof v === "string" && v.includes(",")) v = v.replace(",", ".");
+            if (isStr(v) && v.includes(",")) v = v.replace(",", ".");
             if (!isNonEmptyStr(v)) el.value = "";
             else if (Number.isFinite(+v)) ("valueAsNumber" in el) ? el.valueAsNumber = +v : el.value = String(+v);
             else el.value = "";
@@ -10031,7 +10520,7 @@
         };
         const csvData = {}; // await getCSVData(csvText, outputsOpts, "loadedCSVfile") ||
 
-        if (isNonEmptyObj(csvData)) {
+        if (isNonEmptyDict(csvData)) {
             const {
                 // preamble: preambleMetaData = {},
                 // fileType,
@@ -10105,15 +10594,15 @@
     }
 
 
-    // --- gzip / gunzip (preferuj nativní streamy; fallback pako) ---
-    async function gzipBytes(u8) {
-        if (typeof CompressionStream !== "undefined") {
-            const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream("gzip"));
+    // --- gzip (preferuj nativní streamy; fallback pako) ---
+    async function gzipBytes(u8, {level = 6} = {}) { // level 6 is fast and decent compression choice
+        level = clamp(Math.round(level), 0, 9);
+        if (!isUndefined(CompressionStream)) {
+            const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream("gzip", {level: level}));
             const buf = await new Response(stream).arrayBuffer();
             return new Uint8Array(buf);
         } else if (self.pako?.gzip) {
-            // level 6 je rychlá a rozumně kompaktní volba
-            return self.pako.gzip(u8, {level: 6});
+            return self.pako.gzip(u8, {level: level});
         }
         throw new Error("No gzip available (CompressionStream/pako).");
     }
@@ -10122,11 +10611,11 @@
         return u8 && u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b;
     }
 
+    // --- gunzip (preferuj nativní streamy; fallback pako) ---
     async function gunzipBytes(u8) {
         if (!looksLikeGzip(u8)) throw new Error("Data do not look like gzip format.");
-        if (typeof DecompressionStream !== "undefined") {
-            const stream = new Blob([u8]).stream()
-                .pipeThrough(new DecompressionStream("gzip"));
+        if (!isUndefined(DecompressionStream)) {
+            const stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream("gzip"));
             const buf = await new Response(stream).arrayBuffer();
             return new Uint8Array(buf);
         } else if (self.pako?.ungzip) {
@@ -10235,7 +10724,7 @@
 
         const expNum = parseInt(getElementValue("experimentCount")) || 0;
         const experimentName = getElementValue("experimentName");
-        const experimentDesc = getElementValue("experimentDesc")?.replaceAll(/(\r\n|\n|\r)/gm, " ").trim();
+        const experimentDesc = checkDescription();
 
         handFolderSelect = $ID("storagePath").checked || false;
 
@@ -10397,7 +10886,7 @@
 
     async function getCSVData(csvData, fileOptions = {}, fileName = '') {
         if (!isNonEmptyStr(csvData)) return null; //  || isNonEmptyArr(csvData)
-        if (!isNonEmptyObj(fileOptions)) return null;
+        if (!isNonEmptyDict(fileOptions)) return null;
 
         function setupParsers(head, fileSet, outputs) {
             // --- sanity checks ---
@@ -10490,7 +10979,7 @@
 
                 // 2.4 Konverze (preferuj předvyplněnou)
                 let conversion = isDef(prev.conversion) ? toNumber(prev.conversion) : undefined;
-                if (isVoid(conversion) || !isNum(conversion)) {
+                if (isVoid(conversion) || !isNumSafe(conversion)) {
                     if (targetUnit && fromUnit) {
                         try {
                             conversion = convertUnits(1, fromUnit, targetUnit) || 1;
@@ -10618,7 +11107,7 @@
 
             preambleMetaData = await parseSettingsFromCsv(rows[0]) || {};
 
-            if (!isNonEmptyObj(preambleMetaData)) {
+            if (!isNonEmptyDict(preambleMetaData)) {
                 console.warn(`❌ Invalid or missing MOIRA meta data in file: ${fileName}`);
                 return null;
             }
@@ -10633,7 +11122,7 @@
             const precisions = preambleMetaData?.precisions || {};
             Object.keys(fileOptions)?.forEach(key => {
                 const n = toRounds(precisions[key]);
-                if (isDef(n) && isNum(n)) fileOptions[key].precision = clamp(Math.abs(n), 0, 12);
+                if (isDef(n) && isNumSafe(n)) fileOptions[key].precision = clamp(Math.abs(n), 0, 12);
             });
         } else if (dataRows[0].startsWith("date:")) {
 
@@ -10756,7 +11245,7 @@
 
         for (const key of Object.keys(fileOptions)) {
             OutputData.data[key] = data.map(cells => getters[key](cells));
-            if (!OutputData.data[key].some(val => isNum(val))) OutputData.data[key] = null; // If no numeric data found, set to empty array
+            if (!OutputData.data[key].some(val => isNumSafe(val))) OutputData.data[key] = null; // If no numeric data found, set to empty array
         }
 
 
@@ -10938,7 +11427,7 @@
 
 
         const getMetaValue = (metaData, key, unit = null) => {
-            if (!isObj(metaData)) return "";
+            if (!isDict(metaData)) return "";
 
             if (metaData.hasOwnProperty(key)) {
                 let value = metaData[key]?.value || "";
@@ -10975,7 +11464,7 @@
             for (let r = 1; r < data.length; r++) {
                 const addr = XLSX.utils.encode_cell({r, c: colIndex});
                 const cell = ws[addr];
-                if (cell && typeof cell.v === 'number') cell.z = fmt; // např. "0.00"
+                if (cell && isNumber(cell.v)) cell.z = fmt; // např. "0.00"
             }
         }
 
@@ -10989,7 +11478,7 @@
             const csvData = await getCSVData(raw, outputsOpts, file.name) || {};
 
 
-            if (!isNonEmptyObj(csvData)) {
+            if (!isNonEmptyDict(csvData)) {
                 logAndConsoleMessage(`❌ Failed to parse file: ${file.name}`, {consoleLevel: 'warn'});
                 fileCount--;
                 continue;
@@ -11159,9 +11648,9 @@
             ]);
 
 
-            const getTime = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.time[idx]) : (isNum(i) ? parsedData.time[i] : null);
-            const getPosition = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.position[idx]) : (isNum(i) ? parsedData.position[i] : null);
-            const getForce = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.force[idx]) : (isNum(i) ? parsedData.force[i] : null);
+            const getTime = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.time[idx]) : (isNumSafe(i) ? parsedData.time[i] : null);
+            const getPosition = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.position[idx]) : (isNumSafe(i) ? parsedData.position[i] : null);
+            const getForce = (i) => isNonEmptyArr(i) ? i.map(idx => parsedData.force[idx]) : (isNumSafe(i) ? parsedData.force[i] : null);
 
             // ================== LOADING DATA ================== //
             // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
@@ -11614,7 +12103,7 @@
 
             // Get the writer and reader for the port after opening
             const err = await closeComPort();
-            if (isNonEmptyObj(err)) {
+            if (isNonEmptyDict(err)) {
                 console.error("⚠️ Error closing existing port before opening a new one:", err);
             }
             if (comPort.connected) await closePort(comPort, {verbose: false});
@@ -11623,7 +12112,6 @@
             console.info("🔌 Opening new port...");
             await openComPort(comPort);
 
-            await updateConnectionStatus("connected", "serial");
             await logMessage("\n✅ Connected to ESP via Serial\n");
 
             tryCount = 0;
@@ -11673,7 +12161,7 @@
 
         await logMessage("\n");
 
-        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${1}`);
+        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
         await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
 
         await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
@@ -11681,30 +12169,68 @@
 
         await logMessage("\n");
 
-        handShake();
 
-        getFingerprint(comPort);
+        // try {
+        //     // 2) Počkat na všechny – když jedna chyba, vyhodí se catch
+        //     const [r1, r2, r3] = await Promise.all([handShake(), getFingerprint({port: comPort}), setMovement()]);
+        //     // 3) Hotovo – můžeš něco udělat s výsledky
+        //     await updateConnectionStatus("connected", "serial");
+        // } catch (err) {
+        //
+        // }
 
-        setMovement();
+        const signal = AbortSignal.timeout(10 * 1_000);
+        if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
+        signal.addEventListener('abort', (ev) => {
+            console.info('Canceled!', signal.reason);
+        }, {once: true});
+        // signal.onabort = (ev) => {
+        //     console.info('Canceled!', signal.aborted, signal.reason); // true, případně důvod
+        // };
 
+        try {
+            const [r1, r2, r3] = await Promise.all([
+                handShake({signal}),
+                getFingerprint({port: comPort, signal: signal}),
+                setMovement({signal})
+            ]);
+            if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
+
+            await updateConnectionStatus("connected", "serial");
+        } catch (e) {
+            if (e.name === 'AbortError') {
+                console.warn("Operation aborted:", e);
+            } else {
+                console.error("Error during operations:", e);
+            }
+            await disconnectSerial({override: true});
+        } finally {
+        }
     }
 
+    const abort = (s) => isVoid(s) ? null : (s?.throwIfAborted?.() ?? (s?.aborted && (() => {
+        throw new DOMException('Aborted', 'AbortError')
+    })()));
 
-    async function handShake() {
+    async function handShake({signal = null} = {}) {
+        abort(signal);
         try {
             machineName = (await getMachineName(5_000) || "")?.trim();
+            abort(signal);
         } catch (e) {
             machineName = null;
             console.error('Name error:', e);
         }
         try {
             machineID = await getMachineID(5_000) || "";
+            abort(signal);
         } catch (e) {
             machineID = null;
             console.error('ID error:', e);
         }
         try {
             machineFirmware = (await getFirmwareVersion(5_000) || "")?.toLowerCase().trim();
+            abort(signal);
         } catch (e) {
             machineFirmware = null;
             console.error('Firmware error:', e);
@@ -11716,14 +12242,18 @@
 
             // start reconnect procedure
             if (tryCount === 0) {
+                abort(signal);
                 tryCount++;
                 alert("\n⚠️ Device did not respond correctly.\n\n   FIRST TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
                 await rebootDevice();
                 await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
                 await logMessage("   Rebooting via Command.\n");
                 throw new Error("Device not responding");
+                // await disconnectSerial({override: true});
+                // return;
 
             } else if (tryCount === 1) {
+                abort(signal);
                 tryCount++;
                 alert("\n⚠️ Device did not respond correctly.\n\n   SECOND TRY: rebooting and retrying...\n\n   CLICK OK AND PLEASE WAIT...");
                 await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
@@ -11733,8 +12263,11 @@
                 await setSerialSignals(serialPort, true, false, false); // Set DTR to true
                 await sleep(2_500);
                 throw new Error("Device not responding");
+                // await disconnectSerial({override: true});
+                // return;
 
             } else {
+                abort(signal);
                 console.error("Device not responding after multiple attempts.");
                 await logMessage("\n❌ Failed to connect after multiple attempts. Please check the device.\n");
                 alert("\n❌ Failed to connect after multiple attempts.\n\n   PLEASE CHECK THE DEVICE.\n");
@@ -11744,6 +12277,7 @@
             }
         }
 
+        abort(signal);
         // TODO: implement Name-based/ID-based (reconnection)
         const machName = machineName?.toLowerCase();
         if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
@@ -11755,7 +12289,7 @@
             await setMachineID(machineID, 1, {overRide: true});
         }
 
-
+        abort(signal);
         const machineVersionStatus = compareVersions(machineFirmware, "1.2.7");
 
         if (machineVersionStatus === 0) {
@@ -11773,49 +12307,68 @@
         $ID("inputMachineName").value = machineName;
         $ID("inputMachineID").value = machineID;
 
-
+        abort(signal);
         const saveSelected = getInputValDef("inputUseMachineSettings", null)
 
         let userChoiceSave = null;
         let userChoiceLoad = null;
 
+        abort(signal);
         if (saveSelected === 'ask' || saveSelected === 'none') {
             userChoiceLoad = confirm("\n✅ Connected successfully!\n\nDo you want to LOAD previous settings for this device?\n\n   CLICK 'OK' TO LOAD SETTINGS\n   CLICK 'CANCEL' TO KEEP CURRENT SETTINGS");
             userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to SAVE current settings to this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\n   CLICK 'CANCEL' TO NOT SAVE SETTINGS");
         }
 
+        abort(signal);
         if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_Device_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
         else storageKeyLoad = storageKeyIdle;
 
         // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou
+        abort(signal);
         if (saveSelected === 'yes_save' || saveSelected === 'yes_not' || userChoiceLoad === true) await loadInputsFromLocalStorage(settingsInputsLoad, storageKeyLoad);
         await saveAllInputsToLocalStorage(settingsInputsLoad, storageKeyLoad);
+
+        return true;
     }
 
-    async function setMovement() {
+    async function setMovement({signal = null} = {}) {
+        abort(signal);
         // check Calibration status
         calibrationStatus = await getCalibrationStatus(2_000);
 
+        abort(signal);
         await unlockMachineControls();
 
         if (calibrationStatus) await unlockMovement();
         else await lockMovementExcept(UI.calibrateBtn);
 
+        abort(signal);
         const speed = (await getSpeed(2_000)) || 15;
         const acceleration = (await getAcceleration(2_000)) || 150;
 
+        abort(signal);
         setSpeedAndAcceleration(speed, acceleration, true);
+
+        return true;
     }
 
-    async function getFingerprint({port = serialPort, save = true, storageKey = "lastFingerprint"} = {}) {
-        if (!port) return;
+    async function getFingerprint({
+                                      signal = null,
+                                      port = serialPort,
+                                      save = true,
+                                      storageKey = "lastFingerprint"
+                                  } = {}) {
+        abort(signal);
+        if (!port) return null;
 
         const {usbVendorId, usbProductId} = port?.getInfo() ?? {};
         if (!usbVendorId || !usbProductId) return null;
         fingerprint = `${Number(usbVendorId)?.toString(10) ?? 'N/A'}:${Number(usbProductId)?.toString(10) ?? 'N/A'}`;
 
+        abort(signal);
         console.info("👣 Port Fingerprint:\n\t\tusbVendorId:", usbVendorId, "\n\t\tusbProductId:", usbProductId);
 
+        abort(signal);
         if (save) localStorage.setItem(storageKey, fingerprint);
         return {usbVendorId, usbProductId};
     }
@@ -12324,7 +12877,7 @@
 
             const THYMOS_DEVICES = [];
 
-            if (THYMOS_USB_INFOS.some(info => isNonEmptyObj(info) && info.usbVendorId === portInfo.usbVendorId && info.usbProductId === portInfo.usbProductId)) {
+            if (THYMOS_USB_INFOS.some(info => isNonEmptyDict(info) && info.usbVendorId === portInfo.usbVendorId && info.usbProductId === portInfo.usbProductId)) {
                 THYMOS_DEVICES.push(port);
             }
 
@@ -12455,11 +13008,11 @@
             time: null,
             position: null,
             speed: null,
-            force: Array(catchVal(loadCellNum, 0, isNum)).fill(null),
+            force: Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null),
             photoIndex: null
         };
         measurementParts = measurementPartDefault;
-        liveUpdate = false
+        chartUpdate(false);
 
         isExperimentRunning = false;
         machineOccupation = false;
@@ -12471,9 +13024,9 @@
         expControl = '';
         pendingDSLR = null;
         dataCount = null;
-        maxForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null);
-        measureForces = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
-        tareValues.force = Array(catchVal(loadCellNum, 0, isNum)).fill(0);
+        maxForces = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null);
+        measureForces = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
+        tareValues.force = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(0);
         tareValues.position = null;
         UI.returnBtn.classList.add('disabled'); // TODO: spárovat 'tareValues.position' s classlist tlačítka 'UI.returnBtn' přes REACT
         tareValues.time = null;
@@ -12490,7 +13043,7 @@
 
 
         displacementSignCorrection = 0;
-        loadSignCorrections = Array(catchVal(loadCellNum, 0, isNum)).fill(0);
+        loadSignCorrections = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(0);
 
         loadcellErrRate = [];
         measurementErrRate = [];
@@ -12525,8 +13078,7 @@
             await sleep(2_000); // wait for proper ending
         }
         stopMachine();
-        if (liveUpdate) await chartUpdate();
-        liveUpdate = false;
+        await chartUpdate(false);
         await clearCharts();
         await clearConsoleLog();
         await clearDatabase();
@@ -12561,11 +13113,11 @@
 
         timeData = [];
         positionData = [];
-        forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+        forceData = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
 
         timeDataChart = [];
         positionDataChart = [];
-        forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+        forceDataChart = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
         photoDataChart = [];
         dataCount = 0;
 
@@ -12692,7 +13244,7 @@
         if (isNonEmptyStr(elSysVal)) {
             const elLevel = elSysVal.split('-');
             const valLevel = parseInt(elLevel[0]);
-            const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNum);
+            const valLevelTop = catchVal(parseInt(elLevel[1]), Number.POSITIVE_INFINITY, isNumSafe);
 
             const visible = (elLevel[0] === 'all' || (valLevel <= sysLevel && sysLevel < valLevelTop));
 
@@ -12715,7 +13267,7 @@
             console.warn("manageElementsVisibilities: 'selectedValue' is not a non-empty string.");
             return;
         }
-        if (!isNum(setLevel)) {
+        if (!isNumSafe(setLevel)) {
             console.warn("manageElementsVisibilities: 'setLevel' is not a number.");
             return;
         }
@@ -12789,13 +13341,13 @@
     // Store dataset
     let timeDataChart = [];
     let positionDataChart = [];
-    let forceDataChart = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+    let forceDataChart = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
     let photoDataChart = []; // List of time markers
     let dataCount = 0;
 
     let timeData = [];
     let positionData = [];
-    let forceData = Array(catchVal(loadCellNum, 0, isNum)).fill(null).map(() => []);
+    let forceData = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
 
     let notificationsAllowed = false;
 
@@ -13034,7 +13586,7 @@
             element.addEventListener("keydown", async (e) => e.preventDefault());
         })
 
-        if (!isNum(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
+        if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
 
         const levelElements = $$('[data-system-level]');
         $ID('systemLevelSelect').addEventListener('change', (event) => {
@@ -13276,7 +13828,7 @@
 
         $ID("inputAppInterval")?.addEventListener("change", async (event) => (!isExperimentRunning && isConnected) ? await sendCommandGeneral(`DATA SET INTERVAL ${event.target.value}`) : null);
 
-        $ID("recomputeAllBtn")?.addEventListener("change", async (event) => recomputeAllCalculations());
+        $ID("recomputeAllBtn")?.addEventListener("click", async () => recomputeAllCalculations());
 
         machNameInput?.addEventListener("change", async (event) => {
             const val = event.target.value.trim();
@@ -13297,7 +13849,7 @@
                 return;
             }
             const num = clamp(toInteger(val), 1, 255);
-            if (isNum(num)) {
+            if (isNumSafe(num)) {
                 event.target.value = num;
                 await sleep(3_500);
                 if (isOk(machineID)) event.target.value = machineID;
@@ -13361,18 +13913,19 @@
 
         UI.calibrateBtn.addEventListener("click", async () => {
             calibrationStatus = false;
+            machineOccupation = true;
             await lockMovement();
             await lockConnectionButtons(true);
 
             await sendCommandGeneral('MC ENDSTOPS ENABLE');
-            await sendCommandGeneral('MISC SET WATCHDOG_ENABLED 0');
+            await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
             await sendCommandGeneral('MC CALIBRATE');
 
             let confirmCalibrationCount = 0;
             // maximal 1 minute
             const maxConfirmCalCount = 60 / 2.5;
 
-            while (!calibrationStatus) {
+            while (!calibrationStatus && isConnected && machineOccupation === true) {
                 await sleep(2_500);
                 calibrationStatus = await getCalibrationStatus(500);
                 if (!isConnected) {
@@ -13542,6 +14095,10 @@
         if (anyDataLoaded) {
             console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
             recomputeAllCalculations();
+            for (let i = 1; i <= (loadCellNum + 1); i++) { // TODO: udělat dle aktivních loadcell
+                if (timeChart) timeChart.setSeries(i, {show: true});
+                if (positionChart) positionChart.setSeries(i, {show: true});
+            }
             await logMessage("\nℹ️ Found previous unsaved logged data.\n");
         } else {
             console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
