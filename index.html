@@ -3121,67 +3121,6 @@
 </script>
 
 <script>
-    const expTypesLabels = {
-        "": "No selection",
-        "no_selection": "No selection",
-        "none": "No selection",
-        "move_up": "Move up",
-        "move_down": "Move down",
-        "load": "Load test",
-        "unload": "Unload test",
-        "hold": "Hold test",
-        "static": "Static test",
-        "dynamic": "Dynamic test",
-        "fatigue": "Fatigue test",
-        "creep": "Creep test",
-        "impact": "Impact test",
-        "tensile": "Tensile test",
-        "internal_bond": "Internal bond test",
-        "compression": "Compression test",
-        "pressure": "Compression test",
-        "flexural": "Flexural test",
-        "bending": "Flexural test",
-        "shear": "Shear test",
-        "adhesion": "Adhesion test",
-        "peel": "Peel test",
-        "lap_shear": "Lap shear test",
-        "punch_shear": "Punch shear test",
-        "tear": "Tear test",
-        "burst": "Burst test",
-        "puncture": "Puncture test",
-        "indentation": "Indentation test",
-        "hardness": "Hardness test",
-        "hardness_br": "Brinell hardness test",
-        "hardness_vh": "Vickers hardness test",
-        "hardness_hb": "Rockwell hardness test",
-        "hardness_hr": "Rockwell hardness test",
-        "hardness_hc": "Rockwell hardness test",
-        "hardness_hd": "Rockwell hardness test",
-        "hardness_hf": "Rockwell hardness test",
-        "hardness_ho": "Rockwell hardness test",
-        "hardness_hk": "Knoop hardness test",
-        "other": "Other",
-    };
-
-    const maxPrecision = 16; // maximal precision for numbers in rounding
-    const precisionTime = 6;
-    const precisionPosition = 4;
-    const precisionPositionSystem = precisionPosition;
-    const precisionForce = 2;
-    const precisionForceSystem = 4;
-    const precisionSpeed = 2;
-    const precisionSpeedSystem = 2;
-    const precisionAcceleration = 4;
-    const precisionAccelerationSystem = 2;
-
-    const timeConversionDATAC = 1e-6;   // convert (microseconds) to seconds
-    const timeConversionDSLR = 1e-3;    // convert (milliseconds) to seconds
-
-    const loadCellNumMax = 3; // maximal number of load cells supported
-    const loadCellNum = loadCellNumMax; // TODO: for now constant, else (dynamic assignment based on machine capabilities)
-</script>
-
-<script>
 
     // =====================================================================
     // ====================      HELPERS      ==============================
@@ -3433,11 +3372,11 @@
         return joinObjs(...xs);
     };
 
-    const isValid = (x) => isDef(x) && !Number.isNaN(x);    // all except undefined, null and NaN
-    const isNumSafe = (x) => isFiniteNumber(x, false);      // only Finite numbers
-    const isVal = (x) => isNumSafe(x) || !isEmptyStr(x);    // only Finite numbers or non-empty strings
-    const isAny = (x) => isNotEmpty(x) && x !== false;      // all except undefined, null and NaN + false
-    const isOk = (x) => isAny(x) && !isInvalidValue(x);     // all except undefined, null, NaN and false + invalid values
+    const isValid = (x) => isDef(x) && !Number.isNaN(x);                        // all except undefined, null and NaN
+    const isNumSafe = (x) => isFiniteNumber(x, false);                          // only Finite numbers
+    const isVal = (x) => isNumSafe(x) || !isEmptyStr(x);                        // only Finite numbers or non-empty strings
+    const isAny = (x) => isNotEmpty(x) && x !== false;                          // all except undefined, null and NaN + false
+    const isOk = (x) => isAny(x) && !isInvalidValue(x, {considerFalse: true});  // all except undefined, null, NaN and false + invalid values
 
     const not = (fn) => {
         return function (...args) {
@@ -3517,13 +3456,13 @@
     const isZero = (x) => toNumber(x) === 0 || !isNotEmpty(x);
 
     const isNumberOrInfinity = (x, bigInt = true) =>
-        (isNumber(x) && !Number.isNaN(x)) || (isBigInt(x) && bigInt); // true i pro ±Infinity
+        (isNumber(x) && !Number.isNaN(x)) || (bigInt && isBigInt(x)); // true i pro ±Infinity
 
     const isFiniteNumber = (x, bigInt = true) =>
-        (isNumber(x) && Number.isFinite(x)) || (isBigInt(x) && bigInt);
+        (isNumber(x) && Number.isFinite(x)) || (bigInt && isBigInt(x));
 
     const isFiniteInteger = (x, bigInt = true) =>
-        (isNumber(x) && Number.isInteger(x)) || (isBigInt(x) && bigInt);
+        (isNumber(x) && Number.isInteger(x)) || (bigInt && isBigInt(x));
 
     // 2) Parsing string to number (support for comma as decimal point)
     const toNumber = (x, all = true) => {
@@ -3539,6 +3478,8 @@
     const toRounds = (x, digits = 0, way = 'round') => {
         const n = toNumber(x, true);
         if (!isNumberOrInfinity(n)) return NaN; // NaN/±Infinity
+        if (!isNonEmptyStr(way)) way = 'round';         // default
+        way = way.toLowerCase().trim();
 
         if (way === 'round' || way === 'auto') {
 
@@ -3557,8 +3498,9 @@
 
     const toInteger = (x, way = 'drop', bigInt = false) => {
         if (isNumber(x) && Number.isInteger(x)) return x;
-        if (isBigInt(x) && bigInt) return x;
+        if (bigInt && isBigInt(x)) return x;
 
+        if (!isNonEmptyStr(way)) way = 'drop'; // default
         const n = toRounds(x, 0, way);
 
         if (Number.isInteger(n)) return n;
@@ -3570,7 +3512,7 @@
         if (isStr(x)) {
             const s = x.toLowerCase().trim();
             if (s === '') return NaN;
-            const n = s.replaceAll(',', '.').replaceAll('±', ' ').replaceAll('+', ' ').replaceAll('- ', '-');
+            const n = s.replaceAll(',', '.').replaceAll('±', ' ').replaceAll('+', ' ').replace(/[–—−]/g, '-').replaceAll('- ', '-');
             if (n.includes('-inf') || n.includes('-∞') || n.includes('-ꝏ') || n.includes('-ထ')) return Number.NEGATIVE_INFINITY;
             if (n.includes('inf') || n.includes('∞') || n.includes('ꝏ') || n.includes('ထ')) return Number.POSITIVE_INFINITY;
 
@@ -3607,11 +3549,11 @@
 
     const isDataView = (x) => !isUndefined(DataView) && x instanceof DataView;
 
-    // 5) „Has value“ – if you need it separately (0 passes, null/undef/"" do not)
-    const hasValue = (x) => isDef(x) && (isNumberOrInfinity(x) || isNonEmptyStr(x));
+    // 5) „Has value“ – if you need it separately (0 and 'false' passes, null/undef/"" do not)
+    const hasValue = (x) => isDef(x) && (isNumberOrInfinity(x) || isBool(x) || isNonEmptyStr(x));
 
     // Variant that does NOT consider false/true as "having value"
-    const hasValueButNotBoolean = (x) => hasValue(x) && !isBool(x) && x.toLowerCase().trim() !== 'false' && x.toLowerCase().trim() !== 'true';
+    const hasValueButNotBoolean = (x) => hasValue(x) && !isBool(x) && x?.toLowerCase().trim() !== 'false' && x?.toLowerCase().trim() !== 'true';
 
     const isNotEmpty = (x) => {
         // Null/undefined
@@ -3662,12 +3604,10 @@
     };
 
 
-    const isInvalidValue = (x, {additionSet = [], use_extended = false} = {}) => {
-        if (!hasValue(x)) return true;
-        if (isNumberOrInfinity(x)) return false;
+    const isInvalidValue = (x, {considerFalse = false, additionSet = [], use_extended = false} = {}) => {
+        if (!hasValue(x)) return true; // null/undef/empty => only Numbers, bools and non-empty strings pass
 
         const BAD_basic = new Set([
-            'false',
             'nil', 'null', 'nullable', 'nullptr',
             'errno', 'error', 'err', 'error 404',
             'none', 'no', 'n/o', 'not', 'nothing', 'never',
@@ -3707,6 +3647,7 @@
 
 
         if (use_extended) for (const v of BAD_extended) BAD_basic.add(norm(v));
+        if (considerFalse) BAD_basic.add('false');
 
         if (isNonEmptyArr(additionSet)) for (const v of additionSet) BAD_basic.add(norm(v));
 
@@ -4815,7 +4756,10 @@
     };
 
     // --- Veřejné API: konverze hodnoty mezi jednotkami ---
-    function convertUnits(value, fromUnit, toUnit) {
+    function convertUnits(value, fromUnit, toUnit, {precision = maxPrecision} = {}) {
+        const valNorm = toNumber(value);
+        if (!isFiniteNumber(valNorm)) return NaN;
+
         const fNorm = normalizeUnitsString(fromUnit);
         const tNorm = normalizeUnitsString(toUnit);
 
@@ -4827,7 +4771,7 @@
             if (!(fIsTemp && tIsTemp)) {
                 throw new Error(`Temperature units cannot be combined with other units: "${fromUnit}" → "${toUnit}"`);
             }
-            const k = toKelvin(value, fNorm);
+            const k = toKelvin(valNorm, fNorm);
             return fromKelvin(k, tNorm);
         }
 
@@ -4836,7 +4780,8 @@
         if (!sameDim(a.dim, b.dim)) {
             throw new Error(`Noncompatible units: "${fromUnit}" vs "${toUnit}"`);
         }
-        return roundDecimalFast(value * (a.factor / b.factor), maxPrecision);
+        const precisionInt = catchVal(toInteger(precision), maxPrecision, Number.isInteger);
+        return roundDecimalFast(valNorm * (a.factor / b.factor), precisionInt);
     }
 
     // ==========================
@@ -4926,6 +4871,69 @@
     //     convertUnits(1, 'W', 'kg*m^2/s^3');   // 1
     // }
 
+</script>
+
+
+<script>
+    const expTypesLabels = {
+        "": "No selection",
+        "no_selection": "No selection",
+        "none": "No selection",
+        "move_up": "Move up",
+        "move_down": "Move down",
+        "load": "Load test",
+        "unload": "Unload test",
+        "hold": "Hold test",
+        "static": "Static test",
+        "dynamic": "Dynamic test",
+        "fatigue": "Fatigue test",
+        "creep": "Creep test",
+        "impact": "Impact test",
+        "tensile": "Tensile test",
+        "internal_bond": "Internal bond test",
+        "compression": "Compression test",
+        "pressure": "Compression test",
+        "flexural": "Flexural test",
+        "bending": "Flexural test",
+        "shear": "Shear test",
+        "adhesion": "Adhesion test",
+        "peel": "Peel test",
+        "lap_shear": "Lap shear test",
+        "punch_shear": "Punch shear test",
+        "tear": "Tear test",
+        "burst": "Burst test",
+        "puncture": "Puncture test",
+        "indentation": "Indentation test",
+        "hardness": "Hardness test",
+        "hardness_br": "Brinell hardness test",
+        "hardness_vh": "Vickers hardness test",
+        "hardness_hb": "Rockwell hardness test",
+        "hardness_hr": "Rockwell hardness test",
+        "hardness_hc": "Rockwell hardness test",
+        "hardness_hd": "Rockwell hardness test",
+        "hardness_hf": "Rockwell hardness test",
+        "hardness_ho": "Rockwell hardness test",
+        "hardness_hk": "Knoop hardness test",
+        "other": "Other",
+    };
+
+    const maxPrecision = 16; // maximal precision for numbers in rounding
+    const precisionTime = 6;
+    const precisionPosition = 4;
+    const precisionPositionSystem = precisionPosition;
+    const precisionForce = 2;
+    const precisionForceSystem = 4;
+    const precisionSpeed = 2;
+    const precisionSpeedSystem = 2;
+    const precisionAcceleration = 4;
+    const precisionAccelerationSystem = 2;
+
+    const timeConversionDATAC = convertUnits(1, 'µs', 's');     // convert (microseconds) to seconds
+    const timeConversionDSLR = convertUnits(1, 'ms', 's');      // convert (milliseconds) to seconds
+    const timeConversionSToMs = convertUnits(1, 's', 'ms');     // convert (seconds) to milliseconds
+
+    const loadCellNumMax = 3; // maximal number of load cells supported
+    const loadCellNum = loadCellNumMax; // TODO: for now constant, else (dynamic assignment based on machine capabilities)
 </script>
 
 <script>
@@ -6500,7 +6508,7 @@
     // Maximum number of data points displayed in the charts
     const maxDataPointsExp = 1e5;
     const maxDataPointsExpShow = 1e10;
-    const maxDataPointsIdle = 1_000 / 10; // 10x in 1 seconds (100 ms)
+    const maxDataPointsIdle = convertUnits(1 / 10, 's', 'ms'); // 10x in 1 seconds (100 ms)
     let maxDataPoints = maxDataPointsIdle;
 
 
@@ -6520,8 +6528,8 @@
         if (!isExperimentRunning && isConnected) {
             if (liveUpdate) {
                 const dataAppInterval = getInputNumDefAbsInt("inputAppInterval", NaN);
-                sendCommandGeneral(`DATA SET INTERVAL ${dataAppInterval}`)
-                const dataDuration = 10 * 1_000; // 10 seconds
+                sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(dataAppInterval)}`)
+                const dataDuration = convertUnits(10, 's', 'ms'); // 10 seconds
 
                 maxDataPoints = (isNumSafe(dataAppInterval) ?
                     calculateStep(dataAppInterval, dataDuration, maxDataPointsIdle) :
@@ -6588,7 +6596,7 @@
             }
             hideTimeout = setTimeout(() => {
                 if (!isPageVisible) {
-                    console.info(`⏳ Page is hidden longer than ${roundDecimalFast(MIN_HIDE_TIME / 1_000, 2)}+ seconds.\n\tHiding...`);
+                    console.info(`⏳ Page is hidden longer than ${roundDecimalFast(convertUnits(MIN_HIDE_TIME, 'ms', 's'), 2)}+ seconds.\n\tHiding...`);
 
                     if (liveUpdate && !liveUpdatePaused) {
                         console.info("⏸️ Pause live update of charts.");
@@ -7270,7 +7278,7 @@
             console.warn("⚠️ Machine name cannot be empty.");
             return;
         }
-        if (isInvalidValue(name, {use_extended: true})) {
+        if (isInvalidValue(name, {use_extended: true, considerFalse: true})) {
             console.warn("⚠️ Machine name contains invalid value.");
             return;
         }
@@ -7298,7 +7306,7 @@
             console.warn("⚠️ Machine ID cannot be empty.");
             return;
         }
-        if (isInvalidValue(id, {use_extended: true})) {
+        if (isInvalidValue(id, {use_extended: true, considerFalse: true})) {
             console.warn("⚠️ Machine ID contains invalid value.");
             return;
         }
@@ -7543,7 +7551,7 @@
 
     // ------- Watchdog (běží jen při pohybu) -------
     function startWatchdog(intervalMs = WATCHDOG_INTERVAL_MS) {
-        const interval = Math.max(100, Number(intervalMs) || WATCHDOG_INTERVAL_MS);
+        const interval = Math.round(Math.max(100, Number(intervalMs) || WATCHDOG_INTERVAL_MS));
         if (watchdogTimer) return; // už běží
 
         activeWatchDog = true;
@@ -7720,8 +7728,7 @@
 
 
             const movingTime =
-                Math.ceil((computeMotionTime(distance, speed, acceleration) * 1_000) + 150);
-
+                Math.ceil(convertUnits(computeMotionTime(distance, speed, acceleration), 's', 'ms') + 150);
 
             // set/reset moving timeout after ending of movement
             if (isDef(movingTimeout)) {
@@ -8013,7 +8020,7 @@
         if (!isValidInputNum(frequencyMicroseconds)) return minimum;
         minimum = catchVal(minimum, 1, isValidInputNum);
         updateFrequencyMilliseconds = catchVal(updateFrequencyMilliseconds, 200, isValidInputNum);
-        return Math.max(1, minimum, Math.ceil((updateFrequencyMilliseconds * 1_000) / frequencyMicroseconds));
+        return Math.max(1, minimum, Math.ceil(convertUnits(updateFrequencyMilliseconds, 'ms', 'µs') / frequencyMicroseconds));
     }
 
     function computeFrenchingMs(frequencyMicroseconds, inSeconds = 1, minimum = 50) {
@@ -8021,7 +8028,7 @@
         minimum = catchVal(minimum, 50, isValidInputNum);
         inSeconds = catchVal(inSeconds, 1, isValidInputNum);
 
-        const samplesPerSecond = Math.floor((inSeconds * 1_000_000) / frequencyMicroseconds); // (Hz)
+        const samplesPerSecond = Math.floor(convertUnits(inSeconds, 's', 'µs') / frequencyMicroseconds); // (Hz)
 
         return Math.max(minimum, samplesPerSecond);
     }
@@ -8226,6 +8233,7 @@
         const minInt = 5e-6;
         const minLoadCap = 5e-4;
         const minLoadOut = 5e-4;
+        const minForce = 1e-3;
 
         let internalError = false;
         const throwInternalError = (msg, errMsg) => {
@@ -8261,10 +8269,11 @@
             speedForward_mmps = getInputNumDefAbsFlt("inputSpeedForward", NaN);
             dataInterval_us = Math.max(getInputNumDefAbsInt("inputDataInterval", NaN), 100);
             takePhotos = $ID("inputTakePhotos").checked;
-            const photoInterval_ms = Math.round(getInputNumDefAbsFlt("inputPhotoInterval", NaN) * 1_000);
-            forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), Number.POSITIVE_INFINITY, isNumSafe);
-            forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", Number.POSITIVE_INFINITY);
+            const photoInterval_ms = convertUnits(getInputNumDefAbsFlt("inputPhotoInterval", NaN), 's', 'ms', {precision: 0});
+            forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), NaN, isNumSafe);
+            forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", NaN);
 
+            const accelForward_mmps2 = 200;
 
             if (!isNumSafe(loadCellNum)) throwInternalError(`Total Loadcell count is not defined: ${loadCellNum}`);
 
@@ -8322,7 +8331,7 @@
                 if (experimentType.endsWith("-hbr")) {
 
                     stoppingForceLimit = getInputNumDefAbsFlt("inputStopForce", NaN);
-                    holdForceTimeMs = Math.round(getInputNumDefAbsFlt("inputEndDelay", NaN) * 1_000);
+                    holdForceTimeMs = convertUnits(getInputNumDefAbsFlt("inputEndDelay", NaN), 's', 'ms', {precision: 0});
                     experimentHoldConstantForce = true;
 
                     const basicPIId = "inputResponseCoefPI";
@@ -8375,6 +8384,10 @@
             if (doCycles && !(isNumberOrInfinity(cyclesCount) && cyclesCount > 0))
                 throwInternalError("Cycles count error", `⚠️ Number of cycles must be a positive integer bigger than 0.`);
 
+            if (!isNumberOrInfinity(forceLimitDropValue) || forceLimitDropValue <= minForce)
+                throwInternalError("Force limit drop value error", `⚠️ Force limit drop value must be a valid positive number.`);
+            if (!isNumberOrInfinity(forceLimitDropPercent) || forceLimitDropPercent <= (minForce / 1_000))
+                throwInternalError("Force limit drop percent error", `⚠️ Force limit drop percent must be a valid positive number.`);
 
             if (!isNumSafe(speedForward_mmps) || speedForward_mmps < minFSpeed)
                 throwInternalError("Speed error", `⚠️ Speed must be greater than ${minFSpeed} mm/s.`);
@@ -8410,11 +8423,11 @@
 
             if (takePhotos) {
                 if (!isNumSafe(photoInterval_ms) || photoInterval_ms <= minInt)
-                    throwInternalError("Photo interval error", `⚠️ Photo interval must be greater than ${minInt * 1_000} s.`);
+                    throwInternalError("Photo interval error", `⚠️ Photo interval must be greater than ${convertUnits(minInt, 'ms', 's')} s.`);
 
-                if (photoInterval_ms * 1_000 < dataInterval_us) {
+                if (convertUnits(photoInterval_ms, 'ms', 's') < dataInterval_us) {
                     logAndConsoleMessage("⚠️ Photo interval must be bigger than data interval.", {consoleLevel: 'warn'});
-                    const newDataInterval = photoInterval_ms * 1_000 * 0.9;
+                    const newDataInterval = convertUnits(photoInterval_ms, 'ms', 's') * 0.9;
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${newDataInterval} µs ❗`);
                     dataInterval_us = newDataInterval;
                     $ID("inputDataInterval").value = dataInterval_us;
@@ -8430,8 +8443,8 @@
                     throwInternalError("Stopping force error", `⚠️ Stopping force must be greater than initial force.`);
 
 
-                if (!isNumSafe(holdForceTimeMs) || holdForceTimeMs < minInt || (holdForceTimeMs / 1_000) < 0)
-                    throwInternalError("Hold force time error", `⚠️ Hold force time must be equal or greater than ${minInt * 1_000} s.`);
+                if (!isNumSafe(holdForceTimeMs) || holdForceTimeMs < minInt || convertUnits(holdForceTimeMs, 'ms', 's') < 0)
+                    throwInternalError("Hold force time error", `⚠️ Hold force time must be equal or greater than ${convertUnits(minInt, 'ms', 's')} s.`);
 
 
                 const minDataInterval = 25_000;
@@ -8442,9 +8455,9 @@
                     $ID("inputDataInterval").value = minDataInterval;
                 }
 
-                const minDataIntervalHold = holdForceTimeMs * 1_000 * 0.05;
+                const minDataIntervalHold = convertUnits(holdForceTimeMs, 'ms', 'µs') * 0.05;
                 if (minDataIntervalHold < dataInterval_us) {
-                    logAndConsoleMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${dataInterval_us / 1_000} ms.`, {consoleLevel: 'warn'});
+                    logAndConsoleMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${convertUnits(holdForceTimeMs, 'ms', 'µs')} ms.`, {consoleLevel: 'warn'});
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${minDataIntervalHold} µs ❗`);
                     dataInterval_us = minDataIntervalHold;
                     $ID("inputDataInterval").value = minDataIntervalHold;
@@ -8609,7 +8622,7 @@
             await sendStopAllMeasuring();
             if (takePhotos) await sendCommandGeneral('DSLR RESET COUNTERS');
 
-            await setSpeedAndAcceleration(initialSpeed_mmps, 200, false);
+            await setSpeedAndAcceleration(initialSpeed_mmps, accelForward_mmps2, false);
 
             // === Prepare Data Collection ===
             tareValues.position = await measurePosition();
@@ -8623,7 +8636,7 @@
 
             UI.experimentStageLabel.textContent = `Tarring`;
 
-            await sendCommandGeneral('DATA SET INTERVAL 5000');
+            await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(3000)}`);
 
             for (let i = 0; i < loadcellCount; i++) {
                 await sendCommandGeneral(`LC TARE ${i}`);
@@ -8846,7 +8859,7 @@
             if (takePhotos) await sendCommandGeneral('DSLR SHOOT', 250);
 
             // === Enable Data Streaming and DSLR Shooting ===
-            await sendCommandGeneral(`DATA SET INTERVAL ${dataInterval_us}`, 5);
+            await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(dataInterval_us)}`, 5);
             if (takePhotos) await sendCommandGeneral(`DSLR START CYCLIC ${photoInterval_ms}`);
             await sendCommandGeneral("DATAC 1");
 
@@ -8860,7 +8873,7 @@
                 let cycle = oneBigInt;
                 const isInfinite = isInfinity(cyclesCount);
                 const totCyclesLabel = isInfinite ? "∞" : cyclesCount;
-                const movementIntervalMs = computeMotionTime(distance_mm, speedForward_mmps, 200) + 5; // TODO: modify with Performance.now() and not Intervals
+                const movementIntervalMs = convertUnits(computeMotionTime(distance_mm, speedForward_mmps, accelForward_mmps2), 's', 'ms') + 5; // TODO: modify with Performance.now() and not Intervals
 
                 const oneCycleSeconds = roundDecimalFast(distance_mm / speedForward_mmps, 2);
 
@@ -8890,10 +8903,10 @@
                     // log každou minutu
                     minuteLogger = setInterval(async () => {
                         cycleTextPending = true;
-                    }, (60 * 1_000));
+                    }, convertUnits(1, 'min', 'ms'));
 
                     // čistit konzoli každou hodinu
-                    hourlyClear = setInterval(async () => console.clear(), (60 * 60 * 1_000));
+                    hourlyClear = setInterval(async () => console.clear(), convertUnits(1, 'h', 'ms'));
                 }
 
                 movementTimer = setInterval(async () => {
@@ -8968,7 +8981,7 @@
                 //     console.info(`➡️ Moving further to ${endPosition - shift} mm...`);
                 //
                 //     await sendCommandGeneral(`MC MOVEBY MACH -${shift}`);
-                //     await sleep(((computeMotionTime(shift, returningSpeed, returningAcceleration) * 1_000) + 500)); // Wait
+                //     await sleep(convertUnits(computeMotionTime(shift, returningSpeed, returningAcceleration), 's', 'ms') + 500); // Wait
                 //
                 //     endPosition = await measurePosition();
                 //
@@ -9957,10 +9970,10 @@
                         UI.experimentStageLabel.textContent = `Holding`;
                     }
 
-                    const forceHoldTimeMs = (newData?.time - timer) * 1_000;
+                    const forceHoldTimeMs = (newData?.time - timer) * timeConversionSToMs;
 
                     if (forceHoldTimeMs >= holdForceTimeMs) {
-                        const holdTime = roundDecimalFast(forceHoldTimeMs / 1_000, 3);
+                        const holdTime = convertUnits(forceHoldTimeMs, 'ms', 's', {precision: 3});
                         endMeasuring(0, {
                             ednStatus: `hold force time limit [${holdTime}s]`,
                             endText: `⏹️ Experiment stopped due to hold force time limit (${stoppingForceLimit} N for ${holdTime} s).`,
@@ -10301,23 +10314,25 @@
         const inputs = {};
 
         for (const el of nodes) {
-            const key = el.dataset.key || el.name || el.id; // preferuj data-key
+            const key = el.dataset.key || el.name || el.id; // prefer data-key
             if (!key) continue;
 
             let val;
             if (el.type === "checkbox") val = !!el.checked;
-            else if (el.type === "number") val = el.value === "" ? null : +el.value;
+            else if (el.type === "number") val = el.value === "" ? null : toNumber(el.value);
             else if (el.tagName === "SELECT") val = el.value;
             else val = el.value;
 
             const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
 
-
+            const value = isInvalidValue(val) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('ꝏ', "Inf").replace('ထ', "Inf").replace('Ꝏ', "Inf").replace('±', '').replace(/[–—−]/g, '-').trim() : val);
             inputs[key] = {
-                value: isInvalidValue(val) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('ꝏ', "Inf").replace('ထ', "Inf").replace('Ꝏ', "Inf").replace('±', '') : val), // null pro prázdné/invalidní hodnoty
-                type: el.type || el.tagName.toLowerCase(),         // např. "number", "checkbox", "text", "select"
-                label: el.dataset.label || el.placeholder || key,  // volitelně pro hezčí zobrazení
-                classes: el.className || null,                     // volitelně pro další filtrování
+                value: isNotEmpty(value) ? value : null,            // null pro prázdné/invalidní hodnoty
+                type: el.type || el.tagName.toLowerCase(),          // např. "number", "checkbox", "text", "select"
+                label: el.dataset.label || el.placeholder || key,   // volitelně pro hezčí zobrazení
+                classes: el.className || null,                      // volitelně pro další filtrování
+                name: el.name || null,                               // jméno elementu
+                id: el.id || null,                                   // id elementu
 
                 extra: {
                     unit: el.dataset.unit || null,  // jednotka
@@ -11142,7 +11157,7 @@
             fileOpts.delimiter = ";";
             fileOpts.skipRows = 1;  // (Header)
             fileOpts.columns = 5;
-            fileOpts['dataTypes']['time']['conversion'] = 1e-6; // Convert time from microseconds to seconds
+            fileOpts['dataTypes']['time']['conversion'] = convertUnits(1, 'µs', 's'); // Convert time from microseconds to seconds
         } else {
             // Unknown file type
             fileType = "unknown";
@@ -12155,17 +12170,17 @@
         await logMessage("\n");
 
         await sendCommandGeneral("MC STOP"); // Stop movement
-        await sendCommandGeneral(`DATA SET INTERVAL ${clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), (5 * (60 * 1_000)))}`); // Stop data collection
+        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', 'µs')))}`); // Stop data collection
         await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
         await sendCommandGeneral("MC ENDSTOPS ENABLE");
 
         await logMessage("\n");
 
         await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
-        await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${WATCHDOG_INTERVAL_MS}`);
+        await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${Math.ceil(WATCHDOG_INTERVAL_MS)}`); // TODO: check units
 
         await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
-        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, 1_000))}`);
+        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, convertUnits(1, 's', 'ms')))}`);
 
         await logMessage("\n");
 
@@ -12179,7 +12194,7 @@
         //
         // }
 
-        const signal = AbortSignal.timeout(10 * 1_000);
+        const signal = AbortSignal.timeout(convertUnits(10, 's', 'ms'));
         if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
         signal.addEventListener('abort', (ev) => {
             console.info('Canceled!', signal.reason);
@@ -13826,7 +13841,7 @@
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
 
-        $ID("inputAppInterval")?.addEventListener("change", async (event) => (!isExperimentRunning && isConnected) ? await sendCommandGeneral(`DATA SET INTERVAL ${event.target.value}`) : null);
+        $ID("inputAppInterval")?.addEventListener("change", async (event) => (!isExperimentRunning && isConnected) ? await sendCommandGeneral(`DATA SET INTERVAL ${getInputNumDefAbsInt(event.target.value, 5_000)}`) : null);
 
         $ID("recomputeAllBtn")?.addEventListener("click", async () => recomputeAllCalculations());
 
