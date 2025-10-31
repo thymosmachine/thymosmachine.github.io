@@ -112,9 +112,10 @@ export const colorMeanings = {
     completeProgress: colorMap.darkgray
 }
 
+const firmwareBuildFile = `latest`; //      'buildFW1'   /   'buildFW2'   or   'latest'
+const firmwareFileBaseFolder = `firmwareFiles`;
 
-const firmwareFileBaseFolder = './firmwareFiles/latest/';
-const firmwareFileBasename = '09_ESP32_LM_mainboard';
+const firmwareFileBasename = `09_ESP32_LM_mainboard`;
 
 
 export async function inputDefaultFirmwareFiles() {
@@ -122,7 +123,7 @@ export async function inputDefaultFirmwareFiles() {
     for (const fileName of fileNames) {
         let content = null;
         try {
-            const response = await fetch(`${firmwareFileBaseFolder}${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
+            const response = await fetch(`./${firmwareFileBaseFolder}/${firmwareBuildFile}/${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
             if (response.ok) {
                 content = await response.blob();
             } else {
