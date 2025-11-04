@@ -3622,7 +3622,7 @@
     };
 
 
-    const isInvalidValue = (x, {considerFalse = false, additionSet = [], use_extended = false} = {}) => {
+    const isInvalidValue = (x, {considerFalse = true, additionSet = [], use_extended = false} = {}) => {
         if (!hasValue(x)) return true; // null/undef/empty => only Numbers, bools and non-empty strings pass
 
         const BAD_basic = new Set([
@@ -5045,7 +5045,7 @@
             const btn = idToAdjustBtn.get(id);
             if (!btn) return;
             const val = adjustRegistryAPI.get(id);
-            const valid = !isInvalidValue(val);
+            const valid = !isInvalidValue(val, {considerFalse: false});
 
             const input = $ID(id);
             const wrap = input?.closest('.action-wrap');
@@ -5074,7 +5074,7 @@
                 try {
                     if (!hasValue(val)) throw new Error('Empty');
                     const testVal = normalize(val);
-                    if (!isInvalidValue(testVal)) {
+                    if (!isInvalidValue(testVal, {considerFalse: false})) {
                         await navigator.clipboard.writeText(val);
                         ok = true;
                     }
@@ -5142,7 +5142,7 @@
 
             const applyValue = () => {
                 const raw = adjustRegistryAPI.get(id);
-                const valid = !isInvalidValue(raw);
+                const valid = !isInvalidValue(raw, {considerFalse: false});
                 if (!valid) {
                     // ikona se nemá zobrazit ani nic vkládat
                     btn.classList.add('hidden');
@@ -5271,7 +5271,8 @@
         else el.value = getFormat(value, dec);
     };
 
-    const applyAdjust = (id, value) => (exists(id) && adjustGet(id) !== value) ? adjustSet(id, (!isInvalidValue(value) ? value : NaN)) : null;
+    const applyAdjust = (id, value) =>
+        (exists(id) && adjustGet(id) !== value) ? adjustSet(id, (!isInvalidValue(value) ? value : NaN)) : null;
 
     const fillComputableInputs = (id, value, dec = 3, lock = false) => {
         const el = getElement(id);
@@ -10391,7 +10392,7 @@
 
             const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
 
-            const value = isInvalidValue(val) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('ꝏ', "Inf").replace('ထ', "Inf").replace('Ꝏ', "Inf").replace('±', '').replace(/[–—−]/g, '-').trim() : val);
+            const value = isInvalidValue(val, {considerFalse: false}) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('ꝏ', "Inf").replace('ထ', "Inf").replace('Ꝏ', "Inf").replace('±', '').replace(/[–—−]/g, '-').trim() : val);
             inputs[key] = {
                 value: isNotEmpty(value) ? value : null,            // null pro prázdné/invalidní hodnoty
                 type: el.type || el.tagName.toLowerCase(),          // např. "number", "checkbox", "text", "select"
@@ -11524,7 +11525,8 @@
                 const valUnit = metaData[key].unit || null;
                 if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) value = convertUnits(value, valUnit, unit);
 
-                return catchVal(value, "", not(isInvalidValue));
+                const isNotInvalidValWrap = (val) => !isInvalidValue(val ,{considerFalse: false});
+                return catchVal(value, "", isNotInvalidValWrap);
             }
             return "";
         };
