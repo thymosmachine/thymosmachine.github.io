@@ -15,27 +15,6 @@ function clearClassDeclarations(selector) {
     }
 }
 
-
-document.getElementById('degubDeleteDisabled')?.addEventListener('click', () => clearClassDeclarations(".disabled"));
-
-document.getElementById('degubDeleteProhibited')?.addEventListener('click', () => clearClassDeclarations(".prohibited"));
-
-
-const endDebugBtn = document.getElementById('degubEndTestingBtn');
-const debugWrapper = document.getElementById('debuggingWrapper');
-
-
-const testBtn = document.getElementById('degubRunTestSequenceBtn');
-
-testBtn?.addEventListener('click', async () => testFce());
-
-
-endDebugBtn?.addEventListener('click', () => {
-    debugWrapper?.remove();
-    debugging = false;
-    document.querySelector('html').style.background = 'none';
-})
-
 async function testFce() {
     console.info("%cTest function running...", "color: orange; font-size: 16px; font-weight: bold;");
 
