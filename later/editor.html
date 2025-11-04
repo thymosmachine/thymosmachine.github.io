@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>$Title$</title>
+
+    <style>
+        /* % má nejvyšší prioritu */
+        #editor .pmark {
+            color: #9c27b0;
+        }
+
+        /* fialový obsah mezi %…% (needitovatelný) */
+        #editor .pdelim {
+            color: #6a1b9a;
+        }
+
+        /* tmavě fialové párové „%“ */
+        #editor .psig {
+            color: #9c27b0;
+        }
+
+        /* ostatní samostatné „%“ */
+
+        /* § má nižší prioritu než % */
+        #editor .mark {
+            color: greenyellow;
+        }
+
+        /* zelený obsah mezi §…§ */
+        #editor .delim {
+            color: green;
+        }
+
+        /* tmavě zelené párové „§“ */
+        #editor .sig {
+            color: #ff9800;
+        }
+
+        /* ostatní „§“ (oranžově) */
+
+        #editor {
+            border: 1px solid #ccc;
+            padding: 8px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* ruční barva (nejnižší priorita) – barva je inline style */
+        #editor [data-manual="1"] {
+        }
+
+        /* needitovatelný blok je kopírovatelný, ale ne přepisovatelný */
+        #editor .pmark[contenteditable="false"] {
+            user-select: text;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+
+
+<div id="editor" contenteditable="true">Napiš něco a klikni na „Lognout“.</div>
+<div style="margin-top:8px">
+    <button id="lognout">Lognout editor.value</button>
+    <button id="nastavit">Nastavit editor.value</button>
+
+    <button onclick="applyManualColor('#FF0000')">Červeně</button>
+    <button onclick="applyManualColor('#2196F3')">Modře</button>
+    <button onclick="applyManualColor(getComputedStyle(document.body).getPropertyValue('--text-color').trim() || '')">
+        Výchozí barva
+    </button>
+    <button type="button" onclick="removeManualFormatting()">Bez formátu</button>
+    <button type="button" onclick="resetFormatting()">Reset</button>
+</div>
+
+<script>
+    /* ---------- plánovač highlightu (debounce + idle) ---------- */
+    let _hlRAF = 0, _hlRIC = 0;
+
+    function cancelScheduledHighlight() {
+        if (_hlRAF) cancelAnimationFrame(_hlRAF), _hlRAF = 0;
+        if (_hlRIC && window.cancelIdleCallback) cancelIdleCallback(_hlRIC), _hlRIC = 0;
+    }
+
+    function scheduleHighlight(el, {bulk = false} = {}) {
+        cancelScheduledHighlight();
+        const run = () => {
+            highlightDelimiters(el);
+            ensureTrailingBR(el);
+        };
+        if (bulk && 'requestIdleCallback' in window) {
+            _hlRIC = requestIdleCallback(run, {timeout: 200});
+        } else {
+            _hlRAF = requestAnimationFrame(run);
+        }
+    }
+
+    /* ---------- utility: editor vždy končí <br> ---------- */
+    function ensureTrailingBR(el) {
+        if (!el) return;
+        while (el.lastChild && el.lastChild.nodeType === Node.TEXT_NODE && el.lastChild.nodeValue === '') {
+            if (el.lastChild.previousSibling && el.lastChild.previousSibling.nodeName === 'BR') break;
+            el.removeChild(el.lastChild);
+        }
+        if (!el.lastChild || el.lastChild.nodeName !== 'BR') {
+            el.appendChild(document.createElement('br'));
+        }
+    }
+
+    /* ---------- plain text helpery ---------- */
+    function setPlainText(el, text) {
+        el.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        const parts = String(text).replace(/\r\n?/g, '\n').split('\n');
+        parts.forEach((p, i) => {
+            if (i) {
+                const br = document.createElement('br');
+                frag.appendChild(br);
+                frag.appendChild(document.createTextNode('')); // caret pad
+            }
+            if (p) frag.appendChild(document.createTextNode(p));
+        });
+        el.appendChild(frag);
+        ensureTrailingBR(el);
+    }
+
+    function getPlainText(el) {
+        const clone = el.cloneNode(true);
+        while (clone.lastChild && clone.lastChild.nodeType === Node.TEXT_NODE && clone.lastChild.nodeValue === '') {
+            clone.removeChild(clone.lastChild);
+        }
+        if (clone.lastChild && clone.lastChild.nodeName === 'BR') {
+            clone.removeChild(clone.lastChild);
+        }
+        clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        return clone.textContent.replace(/\r\n?/g, '\n');
+    }
+
+    /* ---------- caret mapování ---------- */
+    function getCaretOffsetInPlainText(root) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || !root.contains(sel.anchorNode)) return null;
+        const range = sel.getRangeAt(0);
+        if (!range.collapsed) return null;
+        let offset = 0;
+        (function step(n) {
+            if (n.nodeType === Node.TEXT_NODE) {
+                if (n === range.startContainer) {
+                    offset += range.startOffset;
+                    return true;
+                }
+                offset += n.nodeValue.length;
+                return false;
+            }
+            if (n.nodeType === Node.ELEMENT_NODE && n.nodeName === 'BR') {
+                offset += 1;
+            }
+            for (let i = 0; i < n.childNodes.length; i++) if (step(n.childNodes[i])) return true;
+            return false;
+        })(root);
+        return offset;
+    }
+
+    function setCaretFromPlainOffset(root, targetOffset) {
+        if (targetOffset == null) return;
+        let rest = targetOffset;
+        const range = document.createRange(), sel = window.getSelection();
+        (function walk(n) {
+            if (n.nodeType === Node.TEXT_NODE) {
+                const len = n.nodeValue.length;
+                if (rest <= len) {
+                    range.setStart(n, rest);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    return true;
+                }
+                rest -= len;
+                return false;
+            }
+            if (n.nodeType === Node.ELEMENT_NODE && n.nodeName === 'BR') {
+                if (rest <= 1) {
+                    const after = n.nextSibling && n.nextSibling.nodeType === Node.TEXT_NODE ? n.nextSibling : null;
+                    if (after) range.setStart(after, 0);
+                    else range.setStartAfter(n);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    return true;
+                }
+                rest -= 1;
+                return false;
+            }
+            for (let i = 0; i < n.childNodes.length; i++) if (walk(n.childNodes[i])) return true;
+            return false;
+        })(root) || (function () {
+            range.selectNodeContents(root);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        })();
+    }
+
+    /* ---------- manuální barvy: helpery ---------- */
+    function unwrapSpan(sp) {
+        while (sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp);
+        sp.parentNode.removeChild(sp);
+    }
+
+    function mergeAdjacentManualSpansAround(node) {
+        const isManual = n => n && n.nodeType === 1 && n.getAttribute && n.getAttribute('data-manual') === '1';
+        const sameStyle = (a, b) => a && b && a.getAttribute('style') === b.getAttribute('style');
+        let prev = node.previousSibling;
+        if (isManual(node) && isManual(prev) && sameStyle(node, prev)) {
+            while (node.firstChild) prev.appendChild(node.firstChild);
+            node.remove();
+            node = prev;
+        }
+        let next = node.nextSibling;
+        while (isManual(node) && isManual(next) && sameStyle(node, next)) {
+            while (next.firstChild) node.appendChild(next.firstChild);
+            const rm = next;
+            next = next.nextSibling;
+            rm.remove();
+        }
+    }
+
+    /* ---------- „zákazové“ zóny pro ruční zásahy (OPRAVA: .mark = zakázat) ---------- */
+    function isForbiddenForManual(node) {
+        const el = node.nodeType === 1 ? node : node.parentElement;
+        if (!el) return false;
+        if (el.closest('.pmark')) return true;                      // %…%
+        if (el.closest('.mark')) return true;                       // §…§  ← NOVĚ ZAKÁZÁNO
+        if (el.closest('.delim, .sig, .pdelim, .psig')) return true; // samotné znaky
+        return false;
+    }
+
+    /* ---------- inline „loupání“ pro „Bez formátu“ ---------- */
+    function isInlineFormatElement(el) {
+        if (!el || el.nodeType !== 1) return false;
+        const name = el.nodeName;
+        if (el.classList && (el.classList.contains('pmark') || el.classList.contains('mark') ||
+            el.classList.contains('delim') || el.classList.contains('sig') ||
+            el.classList.contains('pdelim') || el.classList.contains('psig'))) return false;
+        if (el.getAttribute && el.getAttribute('contenteditable') === 'false') return false;
+        const inlineNames = ['SPAN', 'B', 'STRONG', 'I', 'EM', 'U', 'FONT'];
+        if (inlineNames.includes(name)) return true;
+        if (el.getAttribute && el.getAttribute('data-manual') === '1') return true;
+        return false;
+    }
+
+    function splitParentAroundChild(parent, child) {
+        const right = parent.cloneNode(false);
+        let sib = child.nextSibling;
+        while (sib) {
+            const next = sib.nextSibling;
+            right.appendChild(sib);
+            sib = next;
+        }
+        parent.parentNode.insertBefore(right, parent.nextSibling);
+        parent.parentNode.insertBefore(child, right);
+    }
+
+    function liftTextNodeOutOfInline(textNode) {
+        let n = textNode;
+        while (n.parentNode && isInlineFormatElement(n.parentNode)) {
+            splitParentAroundChild(n.parentNode, n);
+        }
+    }
+
+    /* ---------- výběrové segmenty, které lze měnit ---------- */
+    function getSelectedTextSegments(range) {
+        const root = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode(n) {
+                if (n.nodeValue.length === 0) return NodeFilter.FILTER_REJECT;
+                if (!range.intersectsNode(n)) return NodeFilter.FILTER_REJECT;
+                if (isForbiddenForManual(n)) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        const segs = [];
+        let n;
+        while ((n = walker.nextNode())) {
+            const len = n.nodeValue.length;
+            let s = 0, e = len;
+            if (range.startContainer === n) s = Math.max(0, range.startOffset);
+            if (range.endContainer === n) e = Math.min(len, range.endOffset);
+            if (s < e) segs.push({node: n, start: s, end: e});
+        }
+        segs.sort((a, b) => {
+            if (a.node === b.node) return b.start - a.start;
+            return a.node.compareDocumentPosition(b.node) & Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1;
+        });
+        return segs;
+    }
+
+    /* ---------- APPLY MANUAL COLOR (po segmentech) ---------- */
+    function applyManualColor(color) {
+        const el = document.getElementById('editor');
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        if (range.collapsed) return;
+        if (!color) {
+            removeManualFormatting();
+            return;
+        }
+        const segments = getSelectedTextSegments(range);
+        if (!segments.length) return;
+        segments.forEach(({node, start, end}) => {
+            const r = document.createRange();
+            r.setStart(node, start);
+            r.setEnd(node, end);
+            const frag = r.extractContents();
+            const span = document.createElement('span');
+            span.setAttribute('data-manual', '1');
+            span.style.color = color;
+            span.appendChild(frag);
+            r.insertNode(span);
+            mergeAdjacentManualSpansAround(span);
+        });
+        const after = document.createRange();
+        after.setStart(range.endContainer, range.endOffset);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+        ensureTrailingBR(el);
+    }
+
+    /* ---------- BEZ FORMÁTU (po segmentech) ---------- */
+    function removeManualFormatting() {
+        const el = document.getElementById('editor');
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        if (range.collapsed) return;
+        const segments = getSelectedTextSegments(range);
+        if (!segments.length) return;
+        segments.forEach(({node, start, end}) => {
+            const r = document.createRange();
+            r.setStart(node, start);
+            r.setEnd(node, end);
+            const frag = r.extractContents();
+            const tn = document.createTextNode(frag.textContent);
+            r.insertNode(tn);
+            liftTextNodeOutOfInline(tn);
+            const left = tn.previousSibling;
+            if (left && left.nodeType === 1 && left.getAttribute && left.getAttribute('data-manual') === '1') mergeAdjacentManualSpansAround(left);
+            const right = tn.nextSibling;
+            if (right && right.nodeType === 1 && right.getAttribute && right.getAttribute('data-manual') === '1') mergeAdjacentManualSpansAround(right);
+        });
+        const after = document.createRange();
+        after.setStart(range.endContainer, range.endOffset);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+        ensureTrailingBR(el);
+    }
+
+    /* ---------- ruční runs pro renderer (jen při textových změnách) ---------- */
+    function getManualColorRuns(root) {
+        let pos = 0;
+        const runs = [];
+        const stack = [];
+
+        function pushRun(len, color) {
+            if (len <= 0) return;
+            const from = pos, to = pos + len;
+            if (color) runs.push({from, to, color});
+            pos = to;
+        }
+
+        (function traverse(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.nodeValue.length;
+                const color = stack.length ? stack[stack.length - 1] : null;
+                pushRun(len, color);
+                return;
+            }
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.nodeName === 'BR') {
+                    pushRun(1, stack.length ? stack[stack.length - 1] : null);
+                    return;
+                }
+                const isOur = node.classList && (node.classList.contains('pmark') || node.classList.contains('pdelim') || node.classList.contains('psig') ||
+                    node.classList.contains('mark') || node.classList.contains('delim') || node.classList.contains('sig'));
+                if (node.classList && (node.classList.contains('pmark') || node.classList.contains('mark'))) {
+                    const clone = node.cloneNode(true);
+                    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+                    const t = clone.textContent.replace(/\r\n?/g, '\n');
+                    pushRun(t.length, null);
+                    return;
+                }
+                let added = false;
+                if (!isOur) {
+                    const manual = node.getAttribute && node.getAttribute('data-manual') === '1';
+                    const clr = manual ? (node.style && node.style.color ? node.style.color : null) : null;
+                    if (clr) {
+                        stack.push(clr);
+                        added = true;
+                    }
+                }
+                for (let i = 0; i < node.childNodes.length; i++) traverse(node.childNodes[i]);
+                if (added) stack.pop();
+            }
+        })(root);
+        return runs;
+    }
+
+    /* ---------- renderer: % > § > manuál (jen při textovém vstupu) ---------- */
+    function appendTextWithSinglesAndManual(target, text, plainStart, runs) {
+        if (text == null || text === '') return plainStart;
+        const lines = String(text).split('\n');
+        for (let li = 0; li < lines.length; li++) {
+            if (li) {
+                const br = document.createElement('br');
+                target.appendChild(br);
+                target.appendChild(document.createTextNode(''));
+                plainStart += 1;
+            }
+            const line = lines[li];
+            let idx = 0;
+            while (idx < line.length) {
+                const ch = line[idx];
+                if (ch === '§') {
+                    const sig = document.createElement('span');
+                    sig.className = 'sig';
+                    sig.textContent = '§';
+                    target.appendChild(sig);
+                    idx++;
+                    plainStart++;
+                } else if (ch === '%') {
+                    const ps = document.createElement('span');
+                    ps.className = 'psig';
+                    ps.textContent = '%';
+                    target.appendChild(ps);
+                    idx++;
+                    plainStart++;
+                } else {
+                    let end = idx;
+                    while (end < line.length && line[end] !== '§' && line[end] !== '%') end++;
+                    const slice = line.slice(idx, end);
+                    let offset = 0;
+                    while (offset < slice.length) {
+                        const abs = plainStart + offset;
+                        const run = runs.find(r => abs >= r.from && abs < r.to);
+                        if (run) {
+                            const segLen = Math.min(slice.length - offset, run.to - abs);
+                            const span = document.createElement('span');
+                            span.setAttribute('data-manual', '1');
+                            span.style.color = run.color;
+                            span.appendChild(document.createTextNode(slice.substr(offset, segLen)));
+                            target.appendChild(span);
+                            offset += segLen;
+                        } else {
+                            let k = offset + 1;
+                            while (k <= slice.length) {
+                                const nextAbs = plainStart + k;
+                                const nextRun = runs.find(r => nextAbs >= r.from && nextAbs < r.to);
+                                if (nextRun) break;
+                                k++;
+                            }
+                            target.appendChild(document.createTextNode(slice.substring(offset, k)));
+                            offset = k;
+                        }
+                    }
+                    plainStart += slice.length;
+                    idx = end;
+                }
+            }
+        }
+        return plainStart;
+    }
+
+    function highlightDelimiters(el) {
+        const text = getPlainText(el);
+        if (text.indexOf('§') === -1 && text.indexOf('%') === -1) {
+            ensureTrailingBR(el);
+            return;
+        }
+        const caretOffset = getCaretOffsetInPlainText(el);
+        const manualRuns = getManualColorRuns(el);
+
+        const frag = document.createDocumentFragment();
+        const rePct = /%([^%]*?)%/gs;
+        let last = 0, m;
+        let plainPos = 0;
+
+        function renderPercentPairContent(str) {
+            const d1 = document.createElement('span');
+            d1.className = 'pdelim';
+            d1.textContent = '%';
+            frag.appendChild(d1);
+            const pmark = document.createElement('span');
+            pmark.className = 'pmark';
+            pmark.setAttribute('contenteditable', 'false');
+            const parts = String(str).split('\n');
+            for (let i = 0; i < parts.length; i++) {
+                if (i) {
+                    pmark.appendChild(document.createElement('br'));
+                    pmark.appendChild(document.createTextNode(''));
+                }
+                if (parts[i]) pmark.appendChild(document.createTextNode(parts[i]));
+            }
+            frag.appendChild(pmark);
+            const d2 = document.createElement('span');
+            d2.className = 'pdelim';
+            d2.textContent = '%';
+            frag.appendChild(d2);
+        }
+
+        function renderOutsidePercent(str) {
+            const reSect = /§([^§]*?)§/gs;
+            let lastS = 0, s;
+            while ((s = reSect.exec(str)) !== null) {
+                plainPos = appendTextWithSinglesAndManual(frag, str.slice(lastS, s.index), plainPos, manualRuns);
+                const d1 = document.createElement('span');
+                d1.className = 'delim';
+                d1.textContent = '§';
+                frag.appendChild(d1);
+                plainPos += 1;
+                const mark = document.createElement('span');
+                mark.className = 'mark';
+                const inner = String(s[1]).split('\n');
+                for (let i = 0; i < inner.length; i++) {
+                    if (i) {
+                        mark.appendChild(document.createElement('br'));
+                        mark.appendChild(document.createTextNode(''));
+                    }
+                    if (inner[i]) mark.appendChild(document.createTextNode(inner[i]));
+                }
+                const markLen = s[1].length;
+                frag.appendChild(mark);
+                plainPos += markLen;
+                const d2 = document.createElement('span');
+                d2.className = 'delim';
+                d2.textContent = '§';
+                frag.appendChild(d2);
+                plainPos += 1;
+                lastS = reSect.lastIndex;
+            }
+            plainPos = appendTextWithSinglesAndManual(frag, str.slice(lastS), plainPos, manualRuns);
+        }
+
+        while ((m = rePct.exec(text)) !== null) {
+            renderOutsidePercent(text.slice(last, m.index));
+            renderPercentPairContent(m[1]);
+            plainPos += (m[0].length);
+            last = rePct.lastIndex;
+        }
+        renderOutsidePercent(text.slice(last));
+
+        const tmp = document.createElement('div');
+        tmp.appendChild(frag);
+        ensureTrailingBR(tmp);
+        el.innerHTML = '';
+        while (tmp.firstChild) el.appendChild(tmp.firstChild);
+        setCaretFromPlainOffset(el, caretOffset);
+        ensureTrailingBR(el);
+    }
+
+    /* ---------- RESET ---------- */
+    function resetFormatting() {
+        const el = document.getElementById('editor');
+        if (!el) return;
+        const txt = getPlainText(el);
+        setPlainText(el, txt);
+        el.focus();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ensureTrailingBR(el);
+    }
+
+    /* ---------- pomocné ---------- */
+    function selectionIsWholeEditor(el) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return false;
+        const r = sel.getRangeAt(0);
+        const all = document.createRange();
+        all.selectNodeContents(el);
+        return r.compareBoundaryPoints(Range.START_TO_START, all) <= 0 &&
+            r.compareBoundaryPoints(Range.END_TO_END, all) >= 0;
+    }
+
+    /* ---------- wrapper + eventy (rychlé operace, žádné limity) ---------- */
+    function wrapContentEditable(target, {exposeHtml = true} = {}) {
+        const el = typeof target === 'string' ? document.querySelector(target) : target;
+        if (!el || el.getAttribute('contenteditable') !== 'true') {
+            throw new Error('wrapContentEditable: target musí být contenteditable element.');
+        }
+
+        Object.defineProperty(el, 'value', {
+            configurable: true, enumerable: false, get() {
+                return getPlainText(el);
+            }, set(v) {
+                setPlainText(el, v);
+            }
+        });
+        if (exposeHtml) {
+            Object.defineProperty(el, 'html', {
+                configurable: true, enumerable: false, get() {
+                    return el.innerHTML;
+                }, set(v) {
+                    el.innerHTML = v;
+                    ensureTrailingBR(el);
+                }
+            });
+        }
+
+        // Keydown: rychlé přepsání/mazání velkých výběrů
+        el.addEventListener('keydown', (e) => {
+            const isPrintable = e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+            const isDel = e.key === 'Delete' || e.key === 'Backspace';
+            const isEnter = e.key === 'Enter' && !e.isComposing;
+            if (!(isPrintable || isDel || isEnter)) return;
+
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const range = sel.getRangeAt(0);
+
+            // Enter: stabilní vložení řádku
+            if (isEnter) {
+                e.preventDefault();
+                const br = document.createElement('br');
+                range.deleteContents();
+                range.insertNode(br);
+                const tn = document.createTextNode('');
+                if (br.nextSibling) br.parentNode.insertBefore(tn, br.nextSibling); else br.parentNode.appendChild(tn);
+                const newRange = document.createRange();
+                newRange.setStart(tn, 0);
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+                ensureTrailingBR(el);
+                if (el.textContent.indexOf('§') !== -1 || el.textContent.indexOf('%') !== -1) scheduleHighlight(el);
+                return;
+            }
+
+            // Přepis/mazání výběru
+            if (!range.collapsed) {
+                e.preventDefault();
+
+                if (selectionIsWholeEditor(el)) {
+                    setPlainText(el, isPrintable ? e.key : '');
+                    if ((isPrintable && (e.key === '%' || e.key === '§')) || (!isPrintable && (el.textContent.indexOf('§') !== -1 || el.textContent.indexOf('%') !== -1))) {
+                        scheduleHighlight(el, {bulk: true});
+                    }
+                    ensureTrailingBR(el);
+                    const r = document.createRange();
+                    r.selectNodeContents(el);
+                    r.collapse(isPrintable);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                    return;
+                }
+
+                // částečný výběr – čistá Range operace
+                range.deleteContents();
+                if (isPrintable) {
+                    const t = document.createTextNode(e.key);
+                    range.insertNode(t);
+                    const after = document.createRange();
+                    after.setStartAfter(t);
+                    after.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(after);
+                } else {
+                    const after = document.createRange();
+                    after.setStart(range.startContainer, range.startOffset);
+                    after.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(after);
+                }
+
+                ensureTrailingBR(el);
+                if (el.textContent.indexOf('§') !== -1 || el.textContent.indexOf('%') !== -1) scheduleHighlight(el);
+                return;
+            }
+        });
+
+        // Paste: pokud je vybrán celý editor → superrychlá náhrada; jinak nativní vložení plain textu
+        el.addEventListener('paste', (e) => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const range = sel.getRangeAt(0);
+            const cd = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
+            const text = cd ? (cd.getData('text/plain') || '') : '';
+
+            if (selectionIsWholeEditor(el)) {
+                e.preventDefault();
+                setPlainText(el, text);
+                if (text.includes('%') || text.includes('§')) scheduleHighlight(el, {bulk: true});
+                ensureTrailingBR(el);
+                const r = document.createRange();
+                r.selectNodeContents(el);
+                r.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(r);
+            } else {
+                e.preventDefault();
+                range.deleteContents();
+                const tn = document.createTextNode(text);
+                range.insertNode(tn);
+                const after = document.createRange();
+                after.setStartAfter(tn);
+                after.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(after);
+                ensureTrailingBR(el);
+                if (text.includes('%') || text.includes('§')) scheduleHighlight(el);
+            }
+        });
+
+        // běžný input → (debounce) zvýraznění jen pokud jsou značky
+        el.addEventListener('input', () => {
+            if (el.textContent.indexOf('§') !== -1 || el.textContent.indexOf('%') !== -1) {
+                scheduleHighlight(el);
+            } else {
+                ensureTrailingBR(el);
+            }
+        });
+
+        // zákaz psaní dovnitř %…% (pmark)
+        el.addEventListener('beforeinput', (e) => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const container = (sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement)) || null;
+            if (container && container.closest && container.closest('.pmark[contenteditable="false"]')) {
+                e.preventDefault();
+            }
+        });
+
+        ensureTrailingBR(el);
+        return el;
+    }
+
+    /* ---------- použití ---------- */
+    const editor = wrapContentEditable('#editor');
+
+    document.getElementById('lognout').addEventListener('click', () => {
+        console.log('editor.value (text):', editor.value);
+    });
+
+    document.getElementById('nastavit').addEventListener('click', () => {
+        editor.value = 'Mimo páry: § samostatně a % samostatně.\n%NELZE UPRAVIT% a pak §Zvýraznit mě§.\nHotovo.';
+        scheduleHighlight(editor, {bulk: true});
+        ensureTrailingBR(editor);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ensureTrailingBR(editor);
+        const txt = getPlainText(editor);
+        if (txt.includes('§') || txt.includes('%')) scheduleHighlight(editor, {bulk: true});
+        ensureTrailingBR(editor);
+    });
+</script>
+
+
+
+<!--    <div id="editor" contenteditable="true"-->
+<!--         style="border:1px solid #ccc;padding:8px;min-height:90px;">-->
+<!--        Napiš něco a klikni na „Lognout“.-->
+<!--    </div>-->
+<!--    <div>-->
+<!--        <button id="lognout">Lognout editor.value</button>-->
+<!--        <button id="nastavit">Nastavit editor.value</button>-->
+
+<!--        <button onclick="color('#FF0000')">Červeně</button>-->
+<!--        <button onclick="color('#2196F3')">Modře</button>-->
+<!--        <button onclick="color(getComputedStyle(document.body).getPropertyValue('&#45;&#45;text-color').trim())">-->
+<!--            Výchozí barva-->
+<!--        </button>-->
+<!--        <button type="button" onclick="document.execCommand('removeFormat', false, null)">Bez formátu</button>-->
+<!--        <button type="button" onclick="resetFormatting()">Reset</button>-->
+<!--    </div>-->
+
+
+
+
+<!--    <script>-->
+<!--        // Přidej do stránky (např. v <script>):-->
+<!--        function resetFormatting() {-->
+<!--            const el = document.getElementById('editor');-->
+<!--            if (!el) return;-->
+<!--            const txt = el.textContent;               // získat čistý text-->
+<!--            el.innerHTML = '';                        // odstranit všechno HTML-->
+<!--            el.appendChild(document.createTextNode(txt)); // vložit jen text (zachová \n)-->
+<!--            // vrátit fokus a kurzor na konec-->
+<!--            el.focus();-->
+<!--            const range = document.createRange();-->
+<!--            range.selectNodeContents(el);-->
+<!--            range.collapse(false);-->
+<!--            const sel = window.getSelection();-->
+<!--            sel.removeAllRanges();-->
+<!--            sel.addRange(range);-->
+<!--        }-->
+
+<!--        function color(c) {-->
+<!--            document.execCommand('styleWithCSS', false, true);-->
+<!--            document.execCommand('foreColor', false, c);-->
+<!--        }-->
+<!--    </script>-->
+
+<!--    <script>-->
+<!--        // TODO =============================================================================================-->
+<!--        // Pomocné funkce pro bezpečné nastavení/čtení textu-->
+<!--        function setPlainText(el, text) {-->
+<!--            // zachová přesně dodaný text (včetně \n), bez HTML-->
+<!--            el.innerHTML = '';-->
+<!--            const lines = String(text).split('\n');-->
+<!--            lines.forEach((line, i) => {-->
+<!--                if (i) el.appendChild(document.createElement('div'));-->
+<!--                // pro prázdný řádek vlož <br>, jinak textový uzel-->
+<!--                if (line.length === 0) {-->
+<!--                    el.lastChild?.appendChild(document.createElement('br'));-->
+<!--                } else {-->
+<!--                    (el.lastChild ?? el).appendChild(document.createTextNode(line));-->
+<!--                }-->
+<!--            });-->
+<!--        }-->
+
+<!--        function getPlainText(el) {-->
+<!--            // Normalizuje Entery z <div>/<br> na \n-->
+<!--            // textContent obvykle vrací rozumné \n, tohle je jen jistota:-->
+<!--            const clone = el.cloneNode(true);-->
+<!--            // Nahradíme <br> za "\n"-->
+<!--            clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));-->
+<!--            // A blokové divy oddělíme \n, když mezi nimi není už newline-->
+<!--            clone.querySelectorAll('div').forEach((d, i) => {-->
+<!--                if (i > 0) d.prepend(document.createTextNode('\n'));-->
+<!--            });-->
+<!--            return clone.textContent.replace(/\r\n?/g, '\n');-->
+<!--        }-->
+
+<!--        // Hlavní wrapper: přidá na element vlastnost .value (text) a .html (HTML)-->
+<!--        function wrapContentEditable(target, {exposeHtml = true} = {}) {-->
+<!--            const el = typeof target === 'string' ? document.querySelector(target) : target;-->
+<!--            if (!el || el.getAttribute('contenteditable') !== 'true') {-->
+<!--                throw new Error('wrapContentEditable: target musí být contenteditable element.');-->
+<!--            }-->
+
+<!--            // .value → čistý text-->
+<!--            Object.defineProperty(el, 'value', {-->
+<!--                configurable: true,-->
+<!--                enumerable: false,-->
+<!--                get() {-->
+<!--                    return getPlainText(el);-->
+<!--                },-->
+<!--                set(v) {-->
+<!--                    setPlainText(el, v);-->
+<!--                },-->
+<!--            });-->
+
+<!--            // Volitelně zpřístupníme i .html (pohodlné pro rich-text případy)-->
+<!--            if (exposeHtml) {-->
+<!--                Object.defineProperty(el, 'html', {-->
+<!--                    configurable: true,-->
+<!--                    enumerable: false,-->
+<!--                    get() {-->
+<!--                        return el.innerHTML;-->
+<!--                    },-->
+<!--                    set(v) {-->
+<!--                        el.innerHTML = v;-->
+<!--                    },-->
+<!--                });-->
+<!--            }-->
+
+<!--            // Ať funguje i s input událostí (volitelné – jen normalizace prázdných řádků)-->
+<!--            el.addEventListener('keydown', (e) => {-->
+<!--                if (e.key === 'Enter' && !e.shiftKey) {-->
+<!--                    // U většiny prohlížečů vzniká <div><br></div> — OK.-->
+<!--                    // Nic neděláme; jen tady ukázka, kde bys mohl přizpůsobit chování Enteru.-->
+<!--                }-->
+<!--            });-->
+
+<!--            return el;-->
+<!--        }-->
+
+<!--        // Použití:-->
+<!--        const editor = wrapContentEditable('#editor');-->
+
+<!--        document.getElementById('lognout').addEventListener('click', () => {-->
+<!--            console.log('editor.value (text):', editor.value);-->
+<!--            // Případně: console.log('editor.html (HTML):', editor.html);-->
+<!--        });-->
+
+<!--        document.getElementById('nastavit').addEventListener('click', () => {-->
+<!--            editor.value = 'První řádek\nDruhý řádek\n\nČtvrtý (po prázdném).';-->
+<!--        });-->
+
+<!--        /* TODO-->
+<!--            //     // &#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45; Tvoje selektory ($, $$, $ID) s fallbacky + CE wrap &#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-->
+<!--            // const $ID = (id) => document.getElementById(String(id));-->
+<!--            //-->
+<!--            // const $ = (sel, root = null) => {-->
+<!--            //   root = root || document;-->
+<!--            //   sel = String(sel);-->
+<!--            //-->
+<!--            //   // 1) Přímý CSS selektor-->
+<!--            //   let el = root.querySelector(sel);-->
+<!--            //-->
+<!--            //   // 2) Pokud nic a selektor nezačíná '.' ani '#', zkusíme class (.sel)-->
+<!--            //   if (!el && !sel.startsWith('.') && !sel.startsWith('#')) {-->
+<!--            //     el = root.querySelector('.' + sel);-->
+<!--            //   }-->
+<!--            //-->
+<!--            //   // 3) Pokud nic a selektor nezačíná '#', zkusíme id (#sel / getElementById)-->
+<!--            //   if (!el && !sel.startsWith('#')) {-->
+<!--            //     el = $ID(sel) || root.querySelector('#' + sel);-->
+<!--            //   }-->
+<!--            //-->
+<!--            //   // Automaticky obal CE elementy (aby měly .value/.html)-->
+<!--            //   return wrapContentEditable(el);-->
+<!--            // };-->
+<!--            //-->
+<!--            // const $$ = (sel, root = null) => {-->
+<!--            //   root = root || document;-->
+<!--            //   sel = String(sel);-->
+<!--            //-->
+<!--            //   // 1) Přímý CSS selektor (vrací NodeList)-->
+<!--            //   let list = root.querySelectorAll(sel);-->
+<!--            //-->
+<!--            //   // 2) Když prázdné a sel nezačíná '.', zkus .class-->
+<!--            //   if (list.length === 0 && !sel.startsWith('.')) {-->
+<!--            //     list = root.querySelectorAll('.' + sel);-->
+<!--            //   }-->
+<!--            //-->
+<!--            //   // 3) Když prázdné a sel nezačíná '#', zkus id-->
+<!--            //   if (list.length === 0 && !sel.startsWith('#')) {-->
+<!--            //     const byId = $ID(sel) || root.querySelector('#' + sel);-->
+<!--            //     list = byId ? [byId] : [];-->
+<!--            //   }-->
+<!--            //-->
+<!--            //   // Vrať pole a wrapni případné contenteditable prvky-->
+<!--            //   return Array.from(list, wrapContentEditable);-->
+<!--            // };-->
+<!--         */-->
+
+
+<!--        // TODO =============================================================================================-->
+<!--    </script>-->
+
+
+</body>
+</html>
