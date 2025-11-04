@@ -2878,6 +2878,14 @@
                                    data-system="skip" data-essence="switch">
                         </div>
 
+                        <div class="input-group" data-system-level="300">
+                            <label for="inputBrutalMode">
+                                Brutal-mode Experiment:
+                            </label>
+                            <input type="checkbox" id="inputBrutalMode" value="brutalMode"
+                                   data-system="skip" data-essence="switch">
+                        </div>
+
                         <button id="darkModeButton" class="controlBtn">
                             🌙 Dark mode
                         </button>
@@ -2887,7 +2895,7 @@
                             🐞 Report bug
                         </button>
 
-                        <button id="clearAllButton" class="controlBtn controlElement" data-system-level="400"
+                        <button id="clearAllButton" class="controlBtn controlElement" data-system-level="300"
                                 style="color: var(--stopEpx-color);">
                             🗑️ Clear All Data
                         </button>
@@ -8304,7 +8312,7 @@
             await console.info(`%c🕒 Experiment started at: ${new Date().toLocaleString()}`, "color: gray; font-size: 12px; font-style: italic;");
 
             // === Retrieve Parameters from Inputs ===
-            const distance_mm = getInputNumDefAbsFlt("inputDistance", NaN);
+            const distance_mm = roundDecimalFast(getInputNumDefAbsFlt("inputDistance", NaN), (precisionPosition + 2));
             const experimentType = getElementValue("experimentTypeDropdown")?.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = getInputNumDefAbsFlt("inputSpeedForward", NaN);
@@ -8535,7 +8543,7 @@
 
 
                 const minDataInterval = 25_000;
-                if (dataInterval_us < minDataInterval) {
+                if (dataInterval_us > minDataInterval) {
                     logAndConsoleMessage(`⚠️ Data interval must be at least 30000 µs for hold constant force mode.`, {consoleLevel: 'warn'});
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${minDataInterval} µs ❗`);
                     dataInterval_us = minDataInterval;
@@ -9169,7 +9177,7 @@
             endedMoving();    // unlock UI and watchdog
             unlockMovement();
 
-            await chartUpdate();
+            await chartUpdate(false);
 
             await console.info(`\n✅ Experiment completed.\n\t\tExperiment Status: ${endedBy || "completed"}\n`);
 
@@ -9970,6 +9978,7 @@
     }
 
     let lastMove = null;
+    let doBrutalMove = false;
 
     async function processMeasurements(dataString) {
         const newData = parseData(dataString);
@@ -10119,17 +10128,29 @@
 
 
         // Handle speed checks and experiment stopping
-        if (checkSpeed && (newData?.speed < (1 / 1e2) && newData?.time > 1)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - tareValues.time) > 1 second => handled in 'timeStepCheck'
-            measurement_limits.zero_speed.counter++;
-
-            if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
-                endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), {
-                    ednStatus: 'zero speed',
-                    endText: "🛑 Experiment stopped due to zero speed.",
+        if (checkSpeed && (newData?.speed < (1 / Math.pow(10, precisionSpeed)) && newData?.time > 0.5)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - tareValues.time) > 1 second => handled in 'timeStepCheck'
+            if (doBrutalMove) {
+                // await sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
+                const diff = roundDecimalFast((experimentEndLimits?.position - newData?.position), (precisionPosition + 2));
+                if (isValidInputNum(diff)) sendCommandGeneral(`MC MOVEBY MACH ${diff * displacementSignCorrection}`); // small move to trigger movement
+                else endMeasuring(Math.max(delayMsAfterEndMeasurement / 4, 10), {
+                    ednStatus: 'zero speed [brutal-mode]',
+                    endText: "🛑 Experiment stopped due to zero speed [brutal-mode].",
                     command: takePhotos ? "DSLR STOP CYCLIC" : '',
+                    immediateText: `⚠️ Invalid move distance calculated "${diff}", stopping experiment.`,
                 });
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
-                UI.experimentStageLabel.textContent = `Stopped`;
+            } else {
+                measurement_limits.zero_speed.counter++;
+
+                if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
+                    endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), {
+                        ednStatus: 'zero speed',
+                        endText: "🛑 Experiment stopped due to zero speed.",
+                        command: takePhotos ? "DSLR STOP CYCLIC" : '',
+                    });
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
+                }
             }
         } else {
             measurement_limits.zero_speed.counter = 0;
@@ -11564,7 +11585,7 @@
                 const valUnit = metaData[key].unit || null;
                 if (isNonEmptyStr(unit) && isNonEmptyStr(valUnit)) value = convertUnits(value, valUnit, unit);
 
-                const isNotInvalidValWrap = (val) => !isInvalidValue(val ,{considerFalse: false});
+                const isNotInvalidValWrap = (val) => !isInvalidValue(val, {considerFalse: false});
                 return catchVal(value, "", isNotInvalidValWrap);
             }
             return "";
@@ -13946,7 +13967,9 @@
             recomputeAllCalculations();
         });
 
-        $ID("inputRawConnection")?.addEventListener("change", async (event) => allowRawConnect = event.target.checked);
+        $ID("inputRawConnection")?.addEventListener("change", (event) => allowRawConnect = event.target.checked);
+
+        $ID("inputBrutalMode")?.addEventListener("change", (event) => doBrutalMove = event.target.checked);
 
         $ID("darkModeButton")?.addEventListener("click", async () => toggleDarkMode());
 
