@@ -57,6 +57,7 @@ export const scriptsStates = {
 
 const firmwareBuildFile = `latest`; //      'buildFW1'   /   'buildFW2'   or   'latest'
 const firmwareFileBaseFolder = `firmwareFiles`;
+const firmwareSubfolder = `esp32.esp32.esp32s3`;
 const firmwareFileBasename = `09_ESP32_LM_mainboard`;
 
 
@@ -173,7 +174,7 @@ export async function inputFirmwareFiles() {
     for (const fileName of fileNames) {
         let content = null;
         try {
-            const response = await fetch(`./${firmwareFileBaseFolder}/${folderName}/${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
+            const response = await fetch(`./${firmwareFileBaseFolder}/${folderName}/${firmwareSubfolder}/${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
             if (response.ok) {
                 loadedFilesHeaders[fileName] = response.headers;
                 content = await response.blob();
