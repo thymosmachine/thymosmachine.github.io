@@ -5816,7 +5816,7 @@
         });
 
         localStorage.setItem(storage, JSON.stringify(formData));
-        console.info(`All inputs (${elements.length}) saved to localStorage under key: ${storage}`);
+        console.info(`\t#️⃣ All inputs (${elements.length}) saved to localStorage under key: ${storage}`);
     }
 
     // Function to load inputs from localStorage
@@ -6283,8 +6283,9 @@
      * @param id
      */
     function addDataToLog(data, id = undefined) {
-        dbQueue.push({data, id});
-        if (!dbFlushTimer) dbFlushTimer = setTimeout(flushDB, 500); // flush ~2× in one second
+        addSingleDataToDBImmediate(data, id);
+        // dbQueue.push({data, id});
+        // if (!dbFlushTimer) dbFlushTimer = setTimeout(flushDB, 500); // flush ~2× in one second
     }
 
     function flushDB() {
@@ -6333,6 +6334,41 @@
             console.error('❌ flushDB error:', e?.target?.error || e);
             dbFlushTimer = null;
         };
+    }
+
+    function addSingleDataToDBImmediate(data, id = undefined) {
+        if (!db) {
+            console.warn("\n❌ IndexedDB not ready, cannot add data.");
+            return Promise.resolve(false);
+        }
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const keyPath = store.keyPath || null; // can also be an array, here we assume single keyPath
+
+            // id can be 0! => check for null/undefined/NaN
+            const hasId = isNumSafe(id);
+
+            if (hasId) {
+                // Upsert with specified key
+                if (keyPath === 'id') {
+                    const value = isObj(data)
+                        ? {...data, id} : {id, value: data};
+                    store.put(value); // key is in the object (keyPath)
+                } else {
+                    store.put(data, id); // key provided separately
+                }
+            } else {
+                // clean add => autoIncrement/autoKey
+                store.add(data);
+            }
+
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = (e) => {
+                console.error('❌ addDataImmediate error:', e?.target?.error || e);
+                reject(e);
+            };
+        });
     }
 
 
@@ -6500,11 +6536,14 @@
     }
 
 
+    const allowPageVisibilityHandling = false; // TODO: Enable or disable page visibility handling
+
     let isPageVisible = true; // Visibility status of the page
     let hideTimeout = null; // Timeout for hiding the page
     const MIN_HIDE_TIME = 20_000; // milliseconds
 
     async function handlePageVisibility() {
+        if (!allowPageVisibilityHandling) return;
         if (!isExperimentRunning) return;
         if (!liveUpdate && !liveUpdatePaused) return;
 
@@ -14233,7 +14272,7 @@
             }
             await logMessage("\nℹ️ Found previous unsaved logged data.\n");
         } else {
-            console.info("\t\n🆕 %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
+            console.info("\t\n*️⃣ %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
             $ID("experimentName").value = "";
             $ID("experimentDesc").value = "";
             await clearCalculations();
