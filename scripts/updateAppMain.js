@@ -9,7 +9,7 @@ import {
     inputFilesLabels,
     inputFiles,
     FirmwareVersions,
-    scriptsStates,
+    scriptsStates, // TODO: implement state management
     loadedFilesHeaders,
     openSerial,
     closeSerial,
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const versionNumber = FirmwareVersions.info[versionKey]?.version.replace(/v/g, '').replace(/_/g, '.').replace(/-/g, '.') || '';
             if (versionLabel) text += ` - ${versionLabel}`;
             if (versionNumber) text += ` (v${versionNumber})`;
-            text = text.charAt(0).toUpperCase() + text.slice(1);             // make first letter uppercase
+            text = text.charAt(0).toUpperCase() + text.slice(1); // make first letter uppercase
             option.text = text;
             firmwareSelect.appendChild(option);
         });
