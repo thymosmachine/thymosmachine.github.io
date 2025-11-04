@@ -1,18 +1,60 @@
 {
   "options": {
-    "latest": "buildFW1",
-    "prerelease": "buildFW2"
+    "current": "buildFW1",
+    "prerelease": "buildFW2",
+    "default": "buildFW1",
+    "last": "lastbuild"
   },
   "folders": [
     "buildFW1",
-    "buildFW2"
+    "buildFW2",
+    "build1",
+    "build2",
+    "build3",
+    "build4",
+    "build5",
+    "build6",
+    "build7",
+    "lastbuild"
   ],
   "buildFW1": {
-    "version": "1.0.0",
-    "label": "Stable Release"
+    "version": "0.1.0",
+    "label": "Alfa Release"
   },
   "buildFW2": {
-    "version": "1.1.0",
+    "version": "0.2.0",
     "label": "Beta Release"
-  }
+  },
+    "build1": {
+        "version": "0.0.1",
+        "label": "Test Build 1"
+    },
+    "build2": {
+        "version": "0.0.2",
+        "label": "Test Build 2"
+    },
+    "build3": {
+        "version": "0.0.3",
+        "label": "Test Build 3"
+    },
+    "build4": {
+        "version": "0.0.4",
+        "label": "Test Build 4"
+    },
+    "build5": {
+        "version": "0.0.5",
+        "label": "Test Build 5"
+    },
+    "build6": {
+        "version": "0.0.6",
+        "label": "Test Build 6"
+    },
+    "build7": {
+        "version": "0.0.7",
+        "label": "Test Build 7"
+    },
+    "lastbuild": {
+        "version": "0.3.0",
+        "label": "Last Test Build"
+    }
 }
