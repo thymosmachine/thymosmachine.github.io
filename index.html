@@ -156,7 +156,7 @@
          * - Content after trimming is "y", "yes", "true" (case-insensitive) -> true
          * - Else -> false
          */
-        async function checkDebugFlag(url = 'debug.txt', {timeoutMs = 5_000, bustCache = true} = {}) {
+        async function checkDebugFlag(url = './files/debug.txt', {timeoutMs = 5_000, bustCache = true} = {}) {
             // Timeout přes AbortController (protection against hanging requests)
             const controller = new AbortController();
             const t = setTimeout(() => controller.abort(), timeoutMs);
@@ -218,7 +218,7 @@
             const ctrl = new AbortController();
             const t = setTimeout(() => ctrl.abort(), timeout);
             try {
-                const res = await fetch(`/ping.txt?ts=${Date.now()}`, {
+                const res = await fetch(`./files/ping.txt?ts=${Date.now()}`, {
                     method: 'HEAD',
                     cache: 'no-store',
                     signal: ctrl.signal
@@ -267,7 +267,7 @@
 
             try {
                 // Try to load the latest version of the app from the latest.txt [server]
-                fetch(`/latest.txt?ts=${Date.now()}`, {
+                fetch(`./files/latest.txt?ts=${Date.now()}`, {
                     cache: "no-store"
                 })
                     .then(response => {
