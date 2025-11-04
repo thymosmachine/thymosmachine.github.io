@@ -50,7 +50,7 @@ window.addEventListener('load', fn2);
 S defer skripty (doporučeno u <script src> v <head>):
 defer zajistí, že script běží po parsování DOMu, takže často není potřeba čekat na DOMContentLoaded.
 
-<script src="/app.js" defer></script>
+<script src="/updateAppMain.js" defer></script>
 
 
 Chceš-li, pošli kousek kódu a řeknu, které z těch tří použít (a proč) přímo ve tvém případě.
