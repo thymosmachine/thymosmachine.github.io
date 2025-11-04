@@ -9925,6 +9925,8 @@
         };
     }
 
+    let lastMove = null;
+
     async function processMeasurements(dataString) {
         const newData = parseData(dataString);
 
@@ -10039,13 +10041,19 @@
                         const v = pi.step(newData?.time, newData?.position, sumF);
                         // adjust speed according to PI controller to maintain constant force ...
                         if (isValidInputNum(v)) {
-                            await setSpeed(v, false);
-                            await sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
+                            if (v !== lastMove) {
+                                lastMove = v;
+                                await setSpeed(v, false);
+                                await sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
+                            }
                         }
                         // ... or stop if invalid, negative or zero
                         else {
-                            await sendCommandGeneral("MC STOP");
-                            setSpeedUI(0);
+                            if (v !== lastMove) {
+                                lastMove = 0;
+                                await sendCommandGeneral("MC STOP");
+                                setSpeedUI(0);
+                            }
                         }
                     }
 
@@ -12233,7 +12241,9 @@
         await sendCommandGeneral("MC STOP"); // Stop movement
         await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', 'µs')))}`); // Stop data collection
         await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
+
         await sendCommandGeneral("MC ENDSTOPS ENABLE");
+        await sendCommandGeneral("MC SET ALARMS ENABLE");
 
         await logMessage("\n");
 
