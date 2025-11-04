@@ -41,6 +41,10 @@ export const scriptOptions = {
     ],
 };
 
+export const loadedFilesHeaders = {
+    bootloaderFile: null, partitionsFile: null, firmwareFile: null
+}
+
 scriptOptions.logFunction = scriptOptions.logMessages ? logConsole : () => null; // No-op if logging is disabled
 scriptOptions.alertFunction = scriptOptions.consoleMode ? console.log : logAlert; // No-op if console mode is disabled
 
@@ -156,6 +160,8 @@ export async function readFirmwareVersions() {
 
 export async function inputFirmwareFiles() {
     let folderName = firmwareBuildFile;
+    fileNames.forEach(id => loadedFilesHeaders[id] = null);
+
     if (!FirmwareVersions.use_Default) {
         if (FirmwareVersions.state !== 'loaded' || !FirmwareVersions.selected) {
             scriptOptions.alertFunction(`Firmware versions not loaded or no version selected.`);
@@ -169,6 +175,7 @@ export async function inputFirmwareFiles() {
         try {
             const response = await fetch(`./${firmwareFileBaseFolder}/${folderName}/${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
             if (response.ok) {
+                loadedFilesHeaders[fileName] = response.headers;
                 content = await response.blob();
             } else {
                 console.warn(`Failed to fetch ${fileName}, status: ${response.status}`);
@@ -218,6 +225,8 @@ export async function selectFolder() {
         }
         return false;
     }
+
+    fileNames.forEach(id => loadedFilesHeaders[id] = null);
 
     const files = await getFilesFromDirectory(handle);
 
@@ -274,16 +283,44 @@ export function resetInputFile(input) {
     inputFiles[input] = null;
 }
 
+const getH = (h, name) => (h && h.get(name)) || null;
 
 async function logFileDetails(label, file) {
     const hash = await calculateFileHash(file);
+    const header = loadedFilesHeaders[label + 'File'] || null;
+
+    const ct = getH(header, 'content-type') || null;
+    const clen = getH(header, 'content-length') || file.size || 'N/A';
+    const cd = getH(header, 'content-disposition') || null;
+    const dt = getH(header, 'date') || null;
+    const lm = getH(header, 'last-modified') || new Date(file.lastModified).toLocaleString() || 'N/A';
+    const etag = getH(header, 'etag') || null;
+    const enc = getH(header, 'content-encoding') || file.type || null;
+    const cc = getH(header, 'cache-control') || null;
+    const exp = getH(header, 'expires') || null;
+    const ar = getH(header, 'accept-ranges') || null;
+    const cr = getH(header, 'content-range') || null;
+    const loc = getH(header, 'location') || null;
+
+
     scriptOptions.logFunction(`📁 File loaded for ${label}: ${file.name}`, colorMeanings.regular);
-    scriptOptions.logFunction(`\t📐 Size: ${file.size} bytes`, colorMeanings.regular);
-    scriptOptions.logFunction(`\t🗂️ Last Modified: ${new Date(file.lastModified).toLocaleString()}`, colorMeanings.regular);
+    if (ct) scriptOptions.logFunction(`\t📝 Content-Type: ${ct}`, colorMeanings.regular);
+    if (enc) scriptOptions.logFunction(`\t🗜️ Content-Encoding: ${enc}`, colorMeanings.regular);
+    if (cc) scriptOptions.logFunction(`\t📜 Cache-Control: ${cc}`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t📐 Size: ${clen} bytes`, colorMeanings.regular);
+    if (dt) scriptOptions.logFunction(`\t📅 Created: ${dt}`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t🗂️ Last Modified: ${lm}`, colorMeanings.regular);
+    if (etag) scriptOptions.logFunction(`\t🆔 ETag: ${etag}`, colorMeanings.regular);
+    if (exp) scriptOptions.logFunction(`\t⏳ Expires: ${exp}`, colorMeanings.regular);
+    if (ar) scriptOptions.logFunction(`\t🔄 Accept-Ranges: ${ar}`, colorMeanings.regular);
+    if (cr) scriptOptions.logFunction(`\t📶 Content-Range: ${cr}`, colorMeanings.regular);
+    if (loc) scriptOptions.logFunction(`\t📍 Location: ${loc}`, colorMeanings.regular);
+    if (cd) scriptOptions.logFunction(`\t💼 Content-Disposition: ${cd}`, colorMeanings.regular);
     scriptOptions.logFunction(`\t📍  Flash Address: 0x${fileAddresses[label + 'File'].toString(16).padStart(8, '0')}`, colorMeanings.regular);
     scriptOptions.logFunction(`✅ ${label} file accepted.`, colorMeanings.success);
     scriptOptions.logFunction(`\t\t⚙️ SHA-256: ${hash}\n`, colorMeanings.completeProgress);
 }
+
 
 async function calculateFileHash(file) {
     const arrayBuffer = await file.arrayBuffer();

@@ -10,6 +10,7 @@ import {
     inputFiles,
     FirmwareVersions,
     scriptsStates,
+    loadedFilesHeaders,
     openSerial,
     closeSerial,
     selectFolder,
@@ -60,6 +61,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById('clearFilesBtn').addEventListener('click', clearAllFileInputs); // Clear all file inputs
 
+    fileNames.forEach(id => {
+        const input = document.getElementById(id);
+
+    });
+
 
     document.getElementById('returnButton').addEventListener('click', async () => {
         // disconnect if connected
@@ -90,8 +96,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Reset style on click
         input.addEventListener('click', () => resetFileInputStyle(input));
 
+        input.addEventListener('dblclick', clearAllFileInputs); // Clear all file inputs on double click
+
         // Validate file on change
         input.addEventListener('change', async (event) => {
+            loadedFilesHeaders[id] = null;
             if (event.target.files.length === 0) {
                 // No file selected or selection canceled by user
                 resetFileInputStyle(event.target);
@@ -110,7 +119,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Event listener for firmware version selection
     firmwareSelect.addEventListener('change', (event) => {
-        const selectedType = event.target.value;
+        const val = event.target.value;
+
+        if (!val) return;
+
+        FirmwareVersions.selected = null;
+        fileNames.forEach(id => {
+            loadedFilesHeaders[id] = null;
+            document.getElementById(id).disabled = val !== 'custom';
+        });
+        document.getElementById('selectFolderButton').disabled = val !== 'custom';
+        document.getElementById('clearFilesBtn').disabled = val !== 'custom';
+
+
+        if (val === 'custom') {
+            logMessage(`ℹ️ Custom firmware version selected. Please select files manually.`, colorMeanings.info);
+            clearAllFileInputs();
+            return; // Do nothing for custom option
+        }
+
+        const selectedType = val;
         const selectedVersion = FirmwareVersions.versions[selectedType] || selectedType;
         const versionName = selectedType.charAt(0).toUpperCase() + selectedType.slice(1); // Capitalize first letter
         FirmwareVersions.selected = selectedVersion;
@@ -141,6 +169,11 @@ document.addEventListener("DOMContentLoaded", () => {
             option.text = text;
             firmwareSelect.appendChild(option);
         });
+
+        const customOption = document.createElement('option');
+        customOption.value = 'custom';
+        customOption.text = 'Custom Firmware Version';
+        firmwareSelect.appendChild(customOption);
 
         // Set default selected version
         if (FirmwareVersions.selected) {
