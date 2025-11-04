@@ -1,0 +1,18 @@
+{
+  "options": {
+    "latest": "buildFW1",
+    "prerelease": "buildFW2"
+  },
+  "folders": [
+    "buildFW1",
+    "buildFW2"
+  ],
+  "buildFW1": {
+    "version": "1.0.0",
+    "label": "Stable Release"
+  },
+  "buildFW2": {
+    "version": "1.1.0",
+    "label": "Beta Release"
+  }
+}
