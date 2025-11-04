@@ -7856,10 +7856,13 @@
     async function processMessage(dataChunk) {
         if (!dataChunk || !dataChunk.length) return;
 
-        for (let raw of dataChunk) {
-            const msg = String(raw).trim();
+        if (isStr(dataChunk)) {
+            dataChunk = String(dataChunk).split("\n").map(line => line.trim()).filter(line => line.length > 0);
+        }
+        if (!isNonEmptyArr(dataChunk)) return;
+        else dataChunk = dataChunk.map(line => String(line).trim()).filter(line => isNonEmptyStr(line));
 
-
+        for (let msg of dataChunk) {
             if (msg === "S0:WR") continue; // ignore
 
             // If 'alarm' or 'alarmed' is in the message, log it and skip further processing
@@ -12767,7 +12770,8 @@
                 if (lastNewline !== -1) {
                     const dataChunk = buffer.slice(0, lastNewline).split("\n");
                     buffer = buffer.slice(lastNewline + 1);
-                    await handleIncomingChunkQueued(dataChunk);
+                    // await handleIncomingChunkQueued(dataChunk);
+                    await processMessage(dataChunk);
                 }
             }
         } catch (error) {
@@ -12779,7 +12783,8 @@
             if (tail) {
                 buffer += tail;
                 const lines = buffer.split("\n");
-                if (lines.length) await handleIncomingChunkQueued(lines);
+                // if (lines.length) await handleIncomingChunkQueued(lines);
+                if (lines.length) await processMessage(lines);
             }
 
             // Bezpečné ukončení readeru
