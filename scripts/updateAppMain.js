@@ -1,42 +1,43 @@
-// 🆗✅☑️✔️❌✖️⚠️⭕🗺️🧭💬📎
-
-
 let connectButton;
 let connectionStatus;
 
 import {
-    scriptVariables,
+    scriptOptions,
     colorMap,
     colorMeanings,
     fileNames,
     inputFilesLabels,
     inputFiles,
+    FirmwareVersions,
+    scriptsStates,
     openSerial,
     closeSerial,
     selectFolder,
-    inputDefaultFirmwareFiles,
+    inputFirmwareFiles,
     assignFileToMemory,
     validateInputFile,
     resetInputFile,
-    initializeFlash
-} from '../../packages/internal/flasher.js';
+    initializeFlash,
+    readFirmwareVersions,
+} from '../packages/internal/flasher.js';
 
 
 // Set global variables
-scriptVariables.logMessages = true; // Enable log messages
-scriptVariables.consoleMode = false // Enable console mode
-scriptVariables.logFunction = logMessage; // Set log function
-scriptVariables.alertFunction = alertFunction; // Set alert function
-scriptVariables.stateFunction = updateStateUI; // Set state function
+scriptOptions.logMessages = true; // Enable log messages
+scriptOptions.consoleMode = false // Enable console mode
+scriptOptions.logFunction = logMessage; // Set log function
+scriptOptions.alertFunction = alertFunction; // Set alert function
+scriptOptions.stateFunction = updateStateUI; // Set state function
 
 document.addEventListener("DOMContentLoaded", () => {
+
     connectButton = document.getElementById('connectButton');
     connectionStatus = document.getElementById('connectionStatus');
 
 
     // Connect/Disconnect port
     connectButton.addEventListener('click', () => {
-        if (scriptVariables.serialPort && scriptVariables.serialPort.readable) {
+        if (scriptOptions.serialPort && scriptOptions.serialPort.readable) {
             closeSerial().then();
             updateConnectionUI('🔑️ Connect to ESP32-S3', '🔒 Disconnected', colorMap.red, colorMap.lightpink);
         } else {
@@ -60,15 +61,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('clearFilesBtn').addEventListener('click', clearAllFileInputs); // Clear all file inputs
 
 
-    document.getElementById('returnButton').addEventListener('click', () => {
+    document.getElementById('returnButton').addEventListener('click', async () => {
         // disconnect if connected
-        if (scriptVariables.serialPort && scriptVariables.serialPort.readable) {
-            closeSerial().then();
+        if (scriptOptions.serialPort && scriptOptions.serialPort.readable) {
+            await closeSerial();
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
         }
         // Go back to index.html page (one folder up)
-        window.location.href = '../index.html';
+        window.location.href = './';
     });
-
 
 
     document.getElementById('flashButton').addEventListener('click', () => {
@@ -102,11 +103,63 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    inputDefaultFirmwareFiles().then(() => new Promise(resolve => setTimeout(resolve, 5)).then(() => checkDefaultFiles())); // Stop for 1 ms
+
+    // load Versions variants into the select element
+    const firmwareSelect = document.getElementById('firmwareVersionSelect');
+
+
+    // Event listener for firmware version selection
+    firmwareSelect.addEventListener('change', (event) => {
+        const selectedType = event.target.value;
+        const selectedVersion = FirmwareVersions.versions[selectedType] || selectedType;
+        const versionName = selectedType.charAt(0).toUpperCase() + selectedType.slice(1); // Capitalize first letter
+        FirmwareVersions.selected = selectedVersion;
+        logMessage(`ℹ️ Selected firmware: ${versionName} [version: ${selectedVersion}]`, colorMeanings.info);
+
+        // Load default files for the selected version
+        inputFirmwareFiles().then(() =>
+            new Promise(resolve => setTimeout(resolve, 5)).then(() =>
+                checkSelectedFiles().then(() => {
+                    logMessage(`\t🆗 Files for version ${selectedVersion} checked and loaded.`, colorMeanings.info);
+                })
+            )); // Stop for 5 ms
+    });
+
+
+    FirmwareVersions.use_Default = false; // Do not use default files at the beginning
+    readFirmwareVersions().then(_ => {
+
+        Object.keys(FirmwareVersions.versions).forEach(versionKey => {
+            const option = document.createElement('option');
+            option.value = versionKey;
+            let text = versionKey;
+            const versionLabel = FirmwareVersions.info[versionKey]?.label || '';
+            const versionNumber = FirmwareVersions.info[versionKey]?.version.replace(/v/g, '').replace(/_/g, '.').replace(/-/g, '.') || '';
+            if (versionLabel) text += ` - ${versionLabel}`;
+            if (versionNumber) text += ` (v${versionNumber})`;
+            text = text.charAt(0).toUpperCase() + text.slice(1);             // make first letter uppercase
+            option.text = text;
+            firmwareSelect.appendChild(option);
+        });
+
+        // Set default selected version
+        if (FirmwareVersions.selected) {
+            firmwareSelect.value = FirmwareVersions.selected;
+            scriptOptions.selectedFirmwareVersion = FirmwareVersions.selected;
+        } else if (Object.keys(FirmwareVersions.versions).length > 0) {
+            const firstVersion = Object.keys(FirmwareVersions.versions)[0];
+            firmwareSelect.value = firstVersion;
+            scriptOptions.selectedFirmwareVersion = firstVersion;
+        }
+
+        logMessage(`☑️ Available firmware versions loaded`, colorMeanings.info);
+
+        firmwareSelect.dispatchEvent(new Event('change'));
+    });
 })
 
 
-async function checkDefaultFiles() {
+async function checkSelectedFiles() {
     console.log('Checking default files...', inputFiles);
     fileNames.forEach(id => {
         assignFileHandleToInput(id, inputFiles[id] || null);
@@ -216,7 +269,7 @@ function updateConnectionUI(buttonText, statusText, statusColor, statusColorLigh
 }
 
 function logMessage(msg, color = colorMeanings.regular) {
-    if (!scriptVariables.logMessages) return;
+    if (!scriptOptions.logMessages) return;
 
     const log = document.getElementById('logOutput');
     const timestamp = new Date().toLocaleTimeString();

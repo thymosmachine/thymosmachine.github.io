@@ -18,8 +18,15 @@ export const inputFiles = {
     bootloaderFile: null, partitionsFile: null, firmwareFile: null
 }
 
+export const FirmwareVersions = {
+    use_Default: true,
+    versions: {},
+    state: 'not_loaded', // 'not_loaded', 'loaded', 'error'
+    info: null,
+    selected: null,
+};
 
-export const scriptVariables = {
+export const scriptOptions = {
     baudRate: 921600,
     serialPort: null,
     logMessages: true,
@@ -27,19 +34,26 @@ export const scriptVariables = {
     logFunction: () => null,
     alertFunction: () => null,
     stateFunction: () => null,
-};
-
-scriptVariables.logFunction = scriptVariables.logMessages ? logConsole : () => null; // No-op if logging is disabled
-scriptVariables.alertFunction = scriptVariables.consoleMode ? console.log : logAlert; // No-op if console mode is disabled
-
-
-export const scriptOptions = {
     useESPSignals: false,
     useFilteredPort: true,
     thymosFingerprints: [
         "12346:4097", //  ≈ "0x303a:0x1001"
     ],
 };
+
+scriptOptions.logFunction = scriptOptions.logMessages ? logConsole : () => null; // No-op if logging is disabled
+scriptOptions.alertFunction = scriptOptions.consoleMode ? console.log : logAlert; // No-op if console mode is disabled
+
+export const scriptsStates = {
+    versionsLoaded: {done: false, success: false},
+    portConnected: {done: false, success: false},
+    flashingInProgress: {done: false, success: false},
+};
+
+
+const firmwareBuildFile = `latest`; //      'buildFW1'   /   'buildFW2'   or   'latest'
+const firmwareFileBaseFolder = `firmwareFiles`;
+const firmwareFileBasename = `09_ESP32_LM_mainboard`;
 
 
 function logAlert(message) {
@@ -112,18 +126,48 @@ export const colorMeanings = {
     completeProgress: colorMap.darkgray
 }
 
-const firmwareBuildFile = `latest`; //      'buildFW1'   /   'buildFW2'   or   'latest'
-const firmwareFileBaseFolder = `firmwareFiles`;
 
-const firmwareFileBasename = `09_ESP32_LM_mainboard`;
+export async function readFirmwareVersions() {
+    try {
+        const response = await fetch(`./${firmwareFileBaseFolder}/firmwareVersions.json`, {method: 'GET'});
+        if (response.ok) {
+            const data = await response.json();
+            const options = data.options;
+            for (const folder of data["folders"]) {
+                options[folder] = folder;
+            }
+            Object.assign(FirmwareVersions.versions, options);
+            scriptOptions.logFunction(`✅ Firmware versions available: ${Object.keys(FirmwareVersions.versions).join("; ")}`, colorMeanings.success);
+            FirmwareVersions.state = 'loaded';
+            FirmwareVersions.info = data;
+            console.log('Firmware versions data:', data);
+        } else {
+            console.warn(`❌ Failed to fetch firmware versions, status: ${response.status}`);
+            FirmwareVersions.state = 'error';
+            FirmwareVersions.info = `Failed to fetch firmware versions, status: ${response.status}`;
+        }
+    } catch (e) {
+        console.error(`❌ Error loading firmware versions: ${e.message}`);
+        FirmwareVersions.state = 'error';
+        FirmwareVersions.info = `Error loading firmware versions: ${e.message}`;
+    }
+}
 
 
-export async function inputDefaultFirmwareFiles() {
-    await console.log('Default firmware files loading from:', firmwareFileBaseFolder);
+export async function inputFirmwareFiles() {
+    let folderName = firmwareBuildFile;
+    if (!FirmwareVersions.use_Default) {
+        if (FirmwareVersions.state !== 'loaded' || !FirmwareVersions.selected) {
+            scriptOptions.alertFunction(`Firmware versions not loaded or no version selected.`);
+            return;
+        }
+        folderName = FirmwareVersions.selected;
+    }
+    await console.log(`\t📂 Loading firmware files from folder: ${folderName}`);
     for (const fileName of fileNames) {
         let content = null;
         try {
-            const response = await fetch(`./${firmwareFileBaseFolder}/${firmwareBuildFile}/${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
+            const response = await fetch(`./${firmwareFileBaseFolder}/${folderName}/${firmwareFileBasename}${fileFilters[fileName]}`, {method: 'GET'});
             if (response.ok) {
                 content = await response.blob();
             } else {
@@ -146,13 +190,13 @@ export async function validateInputFile(input, showAlerts = false) {
     const file = inputFiles[input];
 
     if (!file) {
-        if (showAlerts) scriptVariables.alertFunction(`❌ No file selected for ${inputFilesLabels[input]}`);
+        if (showAlerts) scriptOptions.alertFunction(`❌ No file selected for ${inputFilesLabels[input]}`);
         return null;
     }
 
     const expectedExtension = fileFilters[input];
     if (!file.name.endsWith(expectedExtension)) {
-        if (showAlerts) scriptVariables.alertFunction(`❌ Wrong file format for ${inputFilesLabels[input]}.\n\tExpected: ${expectedExtension}`);
+        if (showAlerts) scriptOptions.alertFunction(`❌ Wrong file format for ${inputFilesLabels[input]}.\n\tExpected: ${expectedExtension}`);
         return false;
     }
 
@@ -168,9 +212,9 @@ export async function selectFolder() {
         handle = await window.showDirectoryPicker();
     } catch (error) {
         if (error.name === 'AbortError') {
-            scriptVariables.logFunction('\t⚠️ No folder selected.', colorMeanings.warning);
+            scriptOptions.logFunction('\t⚠️ No folder selected.', colorMeanings.warning);
         } else {
-            scriptVariables.logFunction(`❌ Error: ${error.message}`, colorMeanings.error);
+            scriptOptions.logFunction(`❌ Error: ${error.message}`, colorMeanings.error);
         }
         return false;
     }
@@ -178,10 +222,10 @@ export async function selectFolder() {
     const files = await getFilesFromDirectory(handle);
 
     if (!files) {
-        scriptVariables.logFunction('\t⚠️ No files found in selected folder.', colorMeanings.warning);
+        scriptOptions.logFunction('\t⚠️ No files found in selected folder.', colorMeanings.warning);
         return false
     } else {
-        scriptVariables.logFunction(`🗄️ Folder selected: ${handle.name}`, colorMeanings.regular);
+        scriptOptions.logFunction(`🗄️ Folder selected: ${handle.name}`, colorMeanings.regular);
     }
 
     const errors = [];
@@ -190,13 +234,13 @@ export async function selectFolder() {
         if (fileHandle) {
             await assignFileToMemory(fileName, fileHandle);
         } else {
-            scriptVariables.logFunction(`\t⚠️ File for ${fileName} not found in selected folder.`, colorMeanings.warning);
+            scriptOptions.logFunction(`\t⚠️ File for ${fileName} not found in selected folder.`, colorMeanings.warning);
             errors.push(`❌ ${inputFilesLabels[fileName]} file not found.`);
         }
     }
 
     if (errors.length > 0) {
-        scriptVariables.alertFunction(`⚠️ Some files are missing:\n${errors.join('\n')}`);
+        scriptOptions.alertFunction(`⚠️ Some files are missing:\n${errors.join('\n')}`);
         return false;
     }
 
@@ -233,12 +277,12 @@ export function resetInputFile(input) {
 
 async function logFileDetails(label, file) {
     const hash = await calculateFileHash(file);
-    scriptVariables.logFunction(`📁 File loaded for ${label}: ${file.name}`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t📐 Size: ${file.size} bytes`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t🗂️ Last Modified: ${new Date(file.lastModified).toLocaleString()}`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t📍  Flash Address: 0x${fileAddresses[label + 'File'].toString(16).padStart(8, '0')}`, colorMeanings.regular);
-    scriptVariables.logFunction(`✅ ${label} file accepted.`, colorMeanings.success);
-    scriptVariables.logFunction(`\t\t⚙️ SHA-256: ${hash}\n`, colorMeanings.completeProgress);
+    scriptOptions.logFunction(`📁 File loaded for ${label}: ${file.name}`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t📐 Size: ${file.size} bytes`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t🗂️ Last Modified: ${new Date(file.lastModified).toLocaleString()}`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t📍  Flash Address: 0x${fileAddresses[label + 'File'].toString(16).padStart(8, '0')}`, colorMeanings.regular);
+    scriptOptions.logFunction(`✅ ${label} file accepted.`, colorMeanings.success);
+    scriptOptions.logFunction(`\t\t⚙️ SHA-256: ${hash}\n`, colorMeanings.completeProgress);
 }
 
 async function calculateFileHash(file) {
@@ -295,7 +339,7 @@ async function getFileContent(inputId) {
         }
 
         if (!compressedData || compressedData.length === 0 || compressedData.length >= fileData.length) {
-            scriptVariables.logFunction(`⚠️ Compression failed or resulted in empty data for file: ${file.name}. Using original data.`, colorMeanings.warning, 'warn');
+            scriptOptions.logFunction(`⚠️ Compression failed or resulted in empty data for file: ${file.name}. Using original data.`, colorMeanings.warning, 'warn');
             compressedData = fileData;
         }
 
@@ -309,9 +353,9 @@ async function getFileContent(inputId) {
 
 // Flash
 export async function initializeFlash() {
-    if (!scriptVariables.serialPort || !scriptVariables.serialPort.readable) {
-        scriptVariables.logFunction('✖️ Cannot flash - port is not connected.', colorMeanings.failed);
-        scriptVariables.alertFunction('❌ Port is not connected!');
+    if (!scriptOptions.serialPort || !scriptOptions.serialPort.readable) {
+        scriptOptions.logFunction('✖️ Cannot flash - port is not connected.', colorMeanings.failed);
+        scriptOptions.alertFunction('❌ Port is not connected!');
         return;
     }
 
@@ -327,12 +371,12 @@ export async function initializeFlash() {
     if (firmwareResult.error) errors.push(firmwareResult.error);
 
     if (errors.length > 0) {
-        scriptVariables.logFunction(`❌ Cannot proceed with flashing. Issues detected:\n${errors.join('\n')}`, colorMeanings.error);
-        scriptVariables.alertFunction(`❌ Cannot proceed with flashing. Issues detected:\n${errors.join('\n')}`);
+        scriptOptions.logFunction(`❌ Cannot proceed with flashing. Issues detected:\n${errors.join('\n')}`, colorMeanings.error);
+        scriptOptions.alertFunction(`❌ Cannot proceed with flashing. Issues detected:\n${errors.join('\n')}`);
         return;
     }
 
-    await flashESP32S3(scriptVariables.serialPort, bootloaderResult.data, partitionsResult.data, firmwareResult.data, bootloaderResult.originalSize, partitionsResult.originalSize, firmwareResult.originalSize, bootloaderResult.file, partitionsResult.file, firmwareResult.file);
+    await flashESP32S3(scriptOptions.serialPort, bootloaderResult.data, partitionsResult.data, firmwareResult.data, bootloaderResult.originalSize, partitionsResult.originalSize, firmwareResult.originalSize, bootloaderResult.file, partitionsResult.file, firmwareResult.file);
 }
 
 
@@ -340,7 +384,7 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
 
     let writer = port.writable.getWriter();
     let reader = port.readable.getReader();
-    scriptVariables.logFunction('🚀 Starting flashing process...\n', colorMeanings.info);
+    scriptOptions.logFunction('🚀 Starting flashing process...\n', colorMeanings.info);
 
     // TODO: 1) get values before flashing (name, id, ...)
     // TODO:                                                'MISC get NAME' + 'MISC GET MACHINE_ID'
@@ -352,7 +396,7 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
     await writeFlashSection(writer, 'Firmware', firmware, fileAddresses.firmwareFile, firmwareOriginalSize, firmwareFile);
     writer.releaseLock();
     reader.releaseLock();
-    scriptVariables.logFunction('✔️ Flashing completed.\n', colorMeanings.success);
+    scriptOptions.logFunction('✔️ Flashing completed.\n', colorMeanings.success);
 
 
     scriptOptions.useESPSignals ? await resetSerialPortSignals() : await resetSerialPortBasic();
@@ -368,11 +412,11 @@ async function flashESP32S3(port, bootloader, partitions, firmware, bootloaderOr
 async function writeFlashSection(writer, label, data, address, originalSize, file) {
     const endAddress = address + data.length;
 
-    scriptVariables.logFunction(`🔖 Writing ${label} [${file.name}]:`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t🚩 Start Address: 0x${Number(address).toString(16).padStart(8, '0')}`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t🏁 End Address: 0x${Number(endAddress).toString(16).padStart(8, '0')}`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t💾 Original Size: ${originalSize} bytes`, colorMeanings.regular);
-    scriptVariables.logFunction(`\t📦 Compressed Size: ${data.length} bytes, (reduced to ${((data.length / originalSize) * 100).toFixed(2)}%)`, colorMeanings.regular);
+    scriptOptions.logFunction(`🔖 Writing ${label} [${file.name}]:`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t🚩 Start Address: 0x${Number(address).toString(16).padStart(8, '0')}`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t🏁 End Address: 0x${Number(endAddress).toString(16).padStart(8, '0')}`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t💾 Original Size: ${originalSize} bytes`, colorMeanings.regular);
+    scriptOptions.logFunction(`\t📦 Compressed Size: ${data.length} bytes, (reduced to ${((data.length / originalSize) * 100).toFixed(2)}%)`, colorMeanings.regular);
 
     const chunkSize = 0x400;
     let offset = 0;
@@ -394,27 +438,27 @@ async function writeFlashSection(writer, label, data, address, originalSize, fil
     const sizeInBits = data.length * 8;
     const speed = (sizeInBits / duration / 1000).toFixed(3);  // kBit/s
 
-    scriptVariables.logFunction(`\t📀 Firmware written upto 0x${Number(endAddress).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
+    scriptOptions.logFunction(`\t📀 Firmware written upto 0x${Number(endAddress).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
 
-    scriptVariables.logFunction(`\t⏱️️ Write speed: ${speed} kBit/s`, colorMeanings.info);
-    scriptVariables.logFunction(`✒️ ${label} written.\n`, colorMeanings.success);
+    scriptOptions.logFunction(`\t⏱️️ Write speed: ${speed} kBit/s`, colorMeanings.info);
+    scriptOptions.logFunction(`✒️ ${label} written.\n`, colorMeanings.success);
 }
 
 
 async function eraseFlash(writer) {
-    scriptVariables.logFunction('💣 Erasing flash...', colorMeanings.regular);
+    scriptOptions.logFunction('💣 Erasing flash...', colorMeanings.regular);
 
 
     if (scriptOptions.useESPSignals) {
         // Reset ESP32-S3 after erasing flash memory            TODO ////////////////////////      check it if works correctly
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait
-        await setSerialSignals(scriptVariables.serialPort, true, true);
+        await setSerialSignals(scriptOptions.serialPort, true, true);
 
         new Promise(resolve => setTimeout(resolve, 500)); // Wait (500 ms)
-        await setSerialSignals(scriptVariables.serialPort, false, true); // Hold reset ESP
+        await setSerialSignals(scriptOptions.serialPort, false, true); // Hold reset ESP
 
         new Promise(resolve => setTimeout(resolve, 200)); // Wait (200 ms)
-        await setSerialSignals(scriptVariables.serialPort, true, false); // Start ESP
+        await setSerialSignals(scriptOptions.serialPort, true, false); // Start ESP
 
         new Promise(resolve => setTimeout(resolve, 100)); // Wait (100 ms)
 
@@ -433,9 +477,9 @@ async function eraseFlash(writer) {
             // During erasing, address is the offset of the block
             lastReportedPercent = await logProgress(address, totalSize, 0x00000000, 10, lastReportedPercent, blockSize, '🚮 Erasing', colorMeanings.progress);
         }
-        scriptVariables.logFunction(`\t🗑️ Flash erased up to 0x${(totalSize).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
+        scriptOptions.logFunction(`\t🗑️ Flash erased up to 0x${(totalSize).toString(16).padStart(8, '0')} (100%)\n`, colorMeanings.completeProgress);
     }
-    scriptVariables.logFunction('💥 Flash erased.\n', colorMeanings.success);
+    scriptOptions.logFunction('💥 Flash erased.\n', colorMeanings.success);
 
 
 }
@@ -463,7 +507,7 @@ function logProgress(currentOffset, totalSize, baseAddress, stepPercent, lastRep
         const startAddress = baseAddress + currentOffset;
         const endAddress = startAddress + chunkSize - 1;
 
-        scriptVariables.logFunction(`\t${action} from 0x${Number(startAddress).toString(16).padStart(8, '0')} to 0x${endAddress.toString(16).padStart(8, '0')} (${percent}%)`, textColor);
+        scriptOptions.logFunction(`\t${action} from 0x${Number(startAddress).toString(16).padStart(8, '0')} to 0x${endAddress.toString(16).padStart(8, '0')} (${percent}%)`, textColor);
         return percent;  // Return "lastReportedPercent"
     }
     return lastReportedPercent;  // No new log => return last reported percent
@@ -500,29 +544,29 @@ async function setSerialSignals(port, dtrState, rtsState, brkState) {
 // Close port
 export async function closeSerial(hardClose = true) {
     try {
-        if (scriptVariables.serialPort) {
-            await scriptVariables.serialPort.close();
+        if (scriptOptions.serialPort) {
+            await scriptOptions.serialPort.close();
             if (hardClose) {
-                scriptVariables.serialPort = null;
-                scriptVariables.logFunction('\t🚪 Port disconnected.\n', colorMeanings.success);
+                scriptOptions.serialPort = null;
+                scriptOptions.logFunction('\t🚪 Port disconnected.\n', colorMeanings.success);
             } else {
-                scriptVariables.logFunction('\t↪️ Port closed.', colorMeanings.stateInfo);
+                scriptOptions.logFunction('\t↪️ Port closed.', colorMeanings.stateInfo);
             }
             await new Promise(resolve => setTimeout(resolve, 100)); // Stop for 100 ms
 
-            scriptVariables.logFunction('🆗 Port disconnected.\n', colorMeanings.stateInfo3);
-            await scriptVariables.stateFunction('disconnected');
+            scriptOptions.logFunction('🆗 Port disconnected.\n', colorMeanings.stateInfo3);
+            await scriptOptions.stateFunction('disconnected');
             return true;
         } else {
-            scriptVariables.logFunction('\t⚠️ No port to close.', colorMeanings.warning);
-            await scriptVariables.stateFunction('disconnected');
+            scriptOptions.logFunction('\t⚠️ No port to close.', colorMeanings.warning);
+            await scriptOptions.stateFunction('disconnected');
             return null;
         }
     } catch (error) {
-        scriptVariables.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
-        scriptVariables.serialPort = null;
-        scriptVariables.logFunction('✖️ Port disconnection failed.\n', colorMeanings.failed);
-        await scriptVariables.stateFunction('disconnected');
+        scriptOptions.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
+        scriptOptions.serialPort = null;
+        scriptOptions.logFunction('✖️ Port disconnection failed.\n', colorMeanings.failed);
+        await scriptOptions.stateFunction('disconnected');
         return false;
     }
 }
@@ -530,48 +574,48 @@ export async function closeSerial(hardClose = true) {
 // Connect/Disconnect port
 export async function openSerial(selectedPort = false, toggleRequest = false) {
     try {
-        scriptVariables.logFunction('🔏 Requesting access to serial port...', colorMeanings.regular);
+        scriptOptions.logFunction('🔏 Requesting access to serial port...', colorMeanings.regular);
 
-        if (!(!selectedPort && scriptVariables.serialPort)) {
+        if (!(!selectedPort && scriptOptions.serialPort)) {
             if (!toggleRequest) await closeSerial(true);
 
-            scriptVariables.serialPort = await navigator.serial?.requestPort({
+            scriptOptions.serialPort = await navigator.serial?.requestPort({
                 filters: scriptOptions.useFilteredPort ? [...scriptOptions.thymosFingerprints.map(fp => {
                     const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 10));
                     return {usbVendorId: vendorId, usbProductId: productId};
                 })] : []
             });
             await new Promise(resolve => setTimeout(resolve, 100)); // Stop for 100 ms
-            const {usbVendorId, usbProductId} = scriptVariables.serialPort?.getInfo();
-            scriptVariables.logFunction(`📋 Port selected - VID: ${Number(usbVendorId)?.toString(16) ?? 'N/A'}, PID: ${Number(usbProductId)?.toString(16) ?? 'N/A'}`, colorMeanings.regular);
+            const {usbVendorId, usbProductId} = scriptOptions.serialPort?.getInfo();
+            scriptOptions.logFunction(`📋 Port selected - VID: ${Number(usbVendorId)?.toString(16) ?? 'N/A'}, PID: ${Number(usbProductId)?.toString(16) ?? 'N/A'}`, colorMeanings.regular);
 
-            scriptVariables.logFunction(`⚡ Opening port at ${scriptVariables.baudRate} baud`, colorMeanings.regular);
-            await scriptVariables.serialPort.open({baudRate: scriptVariables.baudRate});
-            scriptVariables.logFunction('☑️ Port opened.\n', colorMeanings.info);
+            scriptOptions.logFunction(`⚡ Opening port at ${scriptOptions.baudRate} baud`, colorMeanings.regular);
+            await scriptOptions.serialPort.open({baudRate: scriptOptions.baudRate});
+            scriptOptions.logFunction('☑️ Port opened.\n', colorMeanings.info);
         } else {
-            await scriptVariables.serialPort.open({baudRate: scriptVariables.baudRate});
+            await scriptOptions.serialPort.open({baudRate: scriptOptions.baudRate});
             await new Promise(resolve => setTimeout(resolve, 1000)); // Stop for 1000 ms
-            scriptVariables.logFunction('\t🔄 Port reconnected.', colorMeanings.stateInfo);
+            scriptOptions.logFunction('\t🔄 Port reconnected.', colorMeanings.stateInfo);
 
         }
 
 
-        scriptOptions.useESPSignals ? await setSerialSignals(scriptVariables.serialPort, true, false) : await setSerialSignals(scriptVariables.serialPort, true, true);
+        scriptOptions.useESPSignals ? await setSerialSignals(scriptOptions.serialPort, true, false) : await setSerialSignals(scriptOptions.serialPort, true, true);
 
 
-        scriptVariables.logFunction('☑️ Serial port connected.\n', colorMeanings.stateInfo2);
-        await scriptVariables.stateFunction('connected');
+        scriptOptions.logFunction('☑️ Serial port connected.\n', colorMeanings.stateInfo2);
+        await scriptOptions.stateFunction('connected');
         return true;
 
     } catch (error) {
         if (error.name === "NotFoundError") {
-            scriptVariables.logFunction('\t⚠️ No port selected.', colorMeanings.warning);
+            scriptOptions.logFunction('\t⚠️ No port selected.', colorMeanings.warning);
         } else {
-            scriptVariables.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
+            scriptOptions.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
         }
-        scriptVariables.serialPort = null;
-        scriptVariables.logFunction('✖️ Serial port connection failed.\n', colorMeanings.failed);
-        await scriptVariables.stateFunction('disconnected');
+        scriptOptions.serialPort = null;
+        scriptOptions.logFunction('✖️ Serial port connection failed.\n', colorMeanings.failed);
+        await scriptOptions.stateFunction('disconnected');
         return false;
     }
 }
@@ -579,78 +623,78 @@ export async function openSerial(selectedPort = false, toggleRequest = false) {
 
 async function resetSerialPortSignals(timeOut = 200) {
     try {
-        await scriptVariables.logFunction('🛡️ Restarting ESP32-S3', colorMeanings.info);
+        await scriptOptions.logFunction('🛡️ Restarting ESP32-S3', colorMeanings.info);
 
 
-        await scriptVariables.stateFunction('reconnecting');
+        await scriptOptions.stateFunction('reconnecting');
 
-        await setSerialSignals(scriptVariables.serialPort, true, true);
+        await setSerialSignals(scriptOptions.serialPort, true, true);
         await new Promise(resolve => setTimeout(resolve, timeOut));
 
 
-        await setSerialSignals(scriptVariables.serialPort, false, false);
+        await setSerialSignals(scriptOptions.serialPort, false, false);
         await new Promise(resolve => setTimeout(resolve, timeOut));
-        await setSerialSignals(scriptVariables.serialPort, true, false);
+        await setSerialSignals(scriptOptions.serialPort, true, false);
 
 
-        await scriptVariables.stateFunction('connected');
-        await scriptVariables.logFunction('✅ Serial port reset completed.\n', colorMeanings.success);
+        await scriptOptions.stateFunction('connected');
+        await scriptOptions.logFunction('✅ Serial port reset completed.\n', colorMeanings.success);
         return true;
 
 
     } catch (error) {
-        await scriptVariables.stateFunction('disconnected');
-        await scriptVariables.logFunction('✖️ Serial port reset failed.', colorMeanings.failed);
-        await scriptVariables.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
+        await scriptOptions.stateFunction('disconnected');
+        await scriptOptions.logFunction('✖️ Serial port reset failed.', colorMeanings.failed);
+        await scriptOptions.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
     }
 }
 
 
 async function resetSerialPortBasic() {
     try {
-        await scriptVariables.logFunction('🛡️ Restarting ESP32-S3', colorMeanings.info);
+        await scriptOptions.logFunction('🛡️ Restarting ESP32-S3', colorMeanings.info);
 
-        await setSerialSignals(scriptVariables.serialPort, true, true);
+        await setSerialSignals(scriptOptions.serialPort, true, true);
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        await scriptVariables.stateFunction('reconnecting');
+        await scriptOptions.stateFunction('reconnecting');
 
         // Disconnect
-        await scriptVariables.logFunction('🔁 Starting a reboot #1\n', colorMeanings.completeProgress);
+        await scriptOptions.logFunction('🔁 Starting a reboot #1\n', colorMeanings.completeProgress);
         await closeSerial(false);
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1.0 second
 
         // Reconnect
         await openSerial(false).then(resolve => {
             if (!resolve) {
-                scriptVariables.logFunction('✖️ Serial port reset failed.\n', colorMeanings.failed);
-                scriptVariables.stateFunction('disconnected');
+                scriptOptions.logFunction('✖️ Serial port reset failed.\n', colorMeanings.failed);
+                scriptOptions.stateFunction('disconnected');
                 return false;
             }
         });
 
         // Disconnect
-        await scriptVariables.logFunction('🔁 Starting a reboot #2\n', colorMeanings.completeProgress);
+        await scriptOptions.logFunction('🔁 Starting a reboot #2\n', colorMeanings.completeProgress);
         await closeSerial(false);
         await new Promise(resolve => setTimeout(resolve, 500)); // Wait 0.5 seconds
 
         // Reconnect
         await openSerial(false).then(r => {
             if (r) {
-                scriptVariables.logFunction('✅ Serial port reset completed.\n', colorMeanings.success);
-                scriptVariables.stateFunction('connected');
+                scriptOptions.logFunction('✅ Serial port reset completed.\n', colorMeanings.success);
+                scriptOptions.stateFunction('connected');
             } else {
-                scriptVariables.logFunction('✖️ Serial port reset failed.\n', colorMeanings.failed);
-                scriptVariables.stateFunction('disconnected');
+                scriptOptions.logFunction('✖️ Serial port reset failed.\n', colorMeanings.failed);
+                scriptOptions.stateFunction('disconnected');
                 return false;
             }
         });
 
-        await setSerialSignals(scriptVariables.serialPort, true, false); // Set DTR to true and RTS to false
+        await setSerialSignals(scriptOptions.serialPort, true, false); // Set DTR to true and RTS to false
 
     } catch (error) {
-        await scriptVariables.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
-        scriptVariables.stateFunction('disconnected');
+        await scriptOptions.logFunction(`❌ Error: ${error.message}\n`, colorMeanings.error);
+        scriptOptions.stateFunction('disconnected');
     }
 }
 
