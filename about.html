@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <title>Moira controller - About</title>
 
+    <base href="./"/>
+
     <script>
-        fetch("shared-header.html")
+        fetch("./files/shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
@@ -126,7 +128,7 @@
 </div>
 
 <!-- Markdown parser -->
-<script src="./packages/markdown/marked.min.js"></script>
+<script src="./packages/external/markdown/marked.min.js"></script>
 <script>
     function showTab(tabId) {
         document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -136,7 +138,7 @@
     }
 
     // Load manual.md and render as HTML
-    fetch('manual.md')
+    fetch('./files/manual.md')
         .then(res => res.text())
         .then(md => {
             const html = marked.parse(md);
@@ -147,7 +149,7 @@
         });
 
     // Load changelog.json and render entries
-    fetch('changelog.json')
+    fetch('./files/changelog.json')
         .then(res => res.json())
         .then(data => {
             const container = document.getElementById('changelog-content');

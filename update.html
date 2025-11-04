@@ -13,7 +13,7 @@
         console.info(`%c\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
 
-        fetch("./shared-header.html")
+        fetch("./files/shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>

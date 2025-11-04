@@ -7,6 +7,7 @@
     <!--<meta name="site-root" content="/project/">-->
     <!--<html data-root="/projekt/">-->
     <!--<base href="/project/">-->
+    <base href="./"/>
 
     <!--
           __  __       _                          __ _
@@ -37,7 +38,7 @@
         console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
 
-        fetch("shared-header.html")
+        fetch("./files/shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
