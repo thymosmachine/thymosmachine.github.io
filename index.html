@@ -6712,7 +6712,6 @@
             }
 
             // Clear IndexedDB after saving (only in initial load)
-            console.log(initialDataLoaded === false, dataEntries[0]?.status === 'saved')
             if (initialDataLoaded === false && dataEntries[0]?.status === 'saved') {
                 await clearDatabase();
                 return;
@@ -11640,12 +11639,6 @@
                 fileOptions: fileOptionsUsed = {},
                 data: parsedData = {}
             } = csvData;
-
-
-            if (file.name.toLowerCase().includes("tk_005")) {
-                console.log(preambleMetaData);
-            }
-
 
             const samplesInfo = {
                 method: 3,  // Method (place 3)
