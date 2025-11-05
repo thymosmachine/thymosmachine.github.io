@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESP Firmware Updater (3 soubory)</title>
+    <style>
+      :root { --bg:#0b1020; --card:#121a33; --ink:#e6ebff; --muted:#9db0ffbb; --accent:#6ea8fe; --ok:#34d399; --warn:#f59e0b; --err:#ef4444; }
+      html,body{height:100%}
+      body{background:radial-gradient(1200px 800px at 85% -10%, #1b2350 0%, #0b1020 60%); color:var(--ink); margin:0; font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji"}
+      .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+      header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+      header h1{font-size:clamp(20px,3vw,28px);margin:0;letter-spacing:.3px}
+      header .tag{font-size:12px;color:var(--muted);border:1px solid #33407a;padding:2px 8px;border-radius:999px}
+      .card{background:color-mix(in srgb,var(--card) 92%, #000 8%);border:1px solid #1f2a54;border-radius:16px;box-shadow:0 12px 40px #00000066;overflow:clip}
+      .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+      .grid{display:grid;grid-template-columns:1fr;gap:12px}
+      .section{padding:16px;border-top:1px solid #1f2a54}
+      .section:first-child{border-top:0}
+      label{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
+      input[type="file"], input[type="text"], select{width:100%;background:#0e1530;color:var(--ink);border:1px solid #223062;border-radius:12px;padding:10px 12px}
+      input[type="text"]{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+      .address{width:140px}
+      .file-row{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px}
+      .file-row .slot{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;color:var(--muted)}
+      .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+      button{border:1px solid #2a3a78;background:linear-gradient(#1c2550,#15204a);color:var(--ink);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:600}
+      button[disabled]{opacity:.5;cursor:not-allowed}
+      .btn-primary{background:linear-gradient(#2962ff,#1a47cc);border-color:#2954e0}
+      .btn-danger{background:linear-gradient(#752424,#5a1c1c);border-color:#7a2a2a}
+      .hint{color:var(--muted);font-size:12px}
+      .status{font-size:13px;color:var(--muted)}
+      .pill{border:1px solid #33407a;padding:8px 10px;border-radius:12px;display:flex;gap:10px;align-items:center;background:#0e1530}
+      .progress{height:8px;background:#111935;border:1px solid #233269;border-radius:999px;overflow:hidden}
+      .progress>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#b6ccff);transition:width .2s linear}
+      .log{height:240px;overflow:auto;background:#060a18;border:1px solid #1b2655;border-radius:12px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;white-space:pre-wrap}
+      .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:#0e1530;border:1px solid #33407a;padding:2px 6px;border-radius:6px}
+      .muted{color:var(--muted)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>ESP Firmware Updater</h1>
+        <span class="tag">esptool-js v0.5.7 · Web Serial</span>
+      </header>
+
+      <div class="card">
+        <div class="section">
+          <div class="controls">
+            <button id="btnConnect">Připojit zařízení</button>
+            <button id="btnDisconnect" class="btn-danger" disabled>Odpojit</button>
+            <span class="pill">
+              <label for="baud" style="margin:0">Baud:</label>
+              <select id="baud">
+                <option>115200</option>
+                <option>230400</option>
+                <option>460800</option>
+                <option selected>921600</option>
+              </select>
+            </span>
+            <span id="chipInfo" class="status">Nepřipojeno</span>
+          </div>
+          <p class="hint" style="margin-top:8px;">Funguje v Chrome / Edge (ne Safari). Spusť přes <span class="kbd">https://</span> nebo <span class="kbd">http://localhost</span>.</p>
+        </div>
+
+        <div class="section grid">
+          <div class="row">
+            <div class="grid">
+              <div class="file-row">
+                <div class="slot">0x000000</div>
+                <div class="controls" style="flex-wrap:nowrap;gap:8px;">
+                  <input id="addr0" class="address" type="text" value="0x0" title="Offset" />
+                  <input id="file0" type="file" accept=".bin,application/octet-stream" />
+                </div>
+              </div>
+              <div class="file-row">
+                <div class="slot">0x008000</div>
+                <div class="controls" style="flex-wrap:nowrap;gap:8px;">
+                  <input id="addr1" class="address" type="text" value="0x8000" />
+                  <input id="file1" type="file" accept=".bin,application/octet-stream" />
+                </div>
+              </div>
+              <div class="file-row">
+                <div class="slot">0x010000</div>
+                <div class="controls" style="flex-wrap:nowrap;gap:8px;">
+                  <input id="addr2" class="address" type="text" value="0x10000" />
+                  <input id="file2" type="file" accept=".bin,application/octet-stream" />
+                </div>
+              </div>
+
+              <div class="controls" style="margin-top:6px;">
+                <label class="pill" style="gap:8px;">
+                  <input id="eraseAll" type="checkbox" /> Kompletní vymazání (erase-all)
+                </label>
+                <label class="pill" style="gap:8px;">
+                  <input id="compress" type="checkbox" checked /> Komprese při zápisu
+                </label>
+              </div>
+
+              <div class="grid" style="margin-top:8px;">
+                <div class="progress"><i id="p0"></i></div>
+                <div class="progress"><i id="p1"></i></div>
+                <div class="progress"><i id="p2"></i></div>
+              </div>
+
+              <div class="controls" style="margin-top:8px;">
+                <button id="btnFlash" class="btn-primary" disabled>Nahrát firmware (3 soubory)</button>
+                <button id="btnErase" disabled>Vymazat flash</button>
+                <button id="btnReset" disabled>Reset</button>
+              </div>
+            </div>
+
+            <div>
+              <label>Konzole</label>
+              <div id="log" class="log" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted" style="margin-top:12px;">Tip: běžné rozložení ESP-IDF je <span class="kbd">0x1000</span> bootloader, <span class="kbd">0x8000</span> partition table, <span class="kbd">0x10000</span> app — nebo sloučený obraz na <span class="kbd">0x0000</span>. Použij adresy dle své platformy.</p>
+    </div>
+
+    <script type="module">
+      import { ESPLoader, Transport /*, customReset */ } from "https://esm.sh/esptool-js@0.5.7?bundle";
+
+      const $ = (id) => document.getElementById(id);
+      const logEl = $("log");
+      const btnConnect = $("btnConnect");
+      const btnDisconnect = $("btnDisconnect");
+      const btnFlash = $("btnFlash");
+      const btnErase = $("btnErase");
+      const btnReset = $("btnReset");
+      const chipInfo = $("chipInfo");
+
+
+
+
+      const term = {
+        clean() { logEl.textContent = ""; },
+        writeLine(d) { log(d + "\\n"); },
+        write(d) { log(d); },
+      };
+      function log(s) {
+        logEl.textContent += s;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+      function hexToNumber(str) {
+        try {
+          if (typeof str === "number") return str;
+          const s = String(str).trim();
+          const n = s.startsWith("0x") ? parseInt(s, 16) : parseInt(s, 10);
+          return Number.isFinite(n) ? n : NaN;
+        } catch { return NaN; }
+      }
+      async function fileToBase64(file) {
+        // esptool-js očekává base64 string (dekóduje si ho interně)
+        const buf = await file.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          const sub = bytes.subarray(i, i + chunk);
+          binary += String.fromCharCode.apply(null, sub);
+        }
+        return btoa(binary);
+      }
+
+      function setUiState(state) {
+        if (state === "connected") {
+          btnConnect.disabled = true;
+          btnDisconnect.disabled = false;
+          btnFlash.disabled = false;
+          btnErase.disabled = false;
+          btnReset.disabled = false;
+        } else {
+          btnConnect.disabled = false;
+          btnDisconnect.disabled = true;
+          btnFlash.disabled = true;
+          btnErase.disabled = true;
+          btnReset.disabled = true;
+          chipInfo.textContent = "Nepřipojeno";
+        }
+      }
+
+      let transport = null;
+let loader = null;
+let deviceRef = null;
+let connected = false;
+let connecting = false; // <--- přidáno
+
+async function connect() {
+  if (!("serial" in navigator)) {
+    alert("Tento prohlížeč nepodporuje Web Serial API. Zkuste Chrome nebo Edge.");
+    return;
+  }
+  if (connecting) return;
+  connecting = true;
+  btnConnect.disabled = true;
+
+  try {
+    const baud = parseInt($("baud").value, 10) || 115200;
+
+    // cleanup starých stavů
+    try { if (loader?.transport) await loader.transport.disconnect(); } catch {}
+    loader = null;
+    try { if (transport) await transport.disconnect(); } catch {}
+    transport = null;
+    try { if (deviceRef) await deviceRef.close(); } catch {}
+    deviceRef = null;
+
+    // vyber port
+    const device = await navigator.serial.requestPort({ filters: [] });
+    deviceRef = device;
+
+    // pokud by byl „visící“, zavři
+    try { if (device.readable || device.writable) await device.close(); } catch {}
+
+    // vytvoř transport, ale NEotvírej ho – nech to na ESPLoaderu
+    transport = new Transport(device);
+    loader = new ESPLoader({ transport, baudrate: baud, terminal: term });
+
+    log("Připojuji…\n");
+
+    // tohle udělá open+reset+sync+detekci čipu
+    await loader.detectChip();
+
+    chipInfo.textContent = "Detekovaný čip: " + (loader?.chip?.CHIP_NAME || "neznámý");
+    connected = true;
+    setUiState("connected");
+    log("Hotovo.\n");
+  } catch (err) {
+    console.error(err);
+    log(`\n[ERR] ${err?.message || err}\n`);
+    await disconnect();
+  } finally {
+    connecting = false;
+    if (!connected) btnConnect.disabled = false;
+  }
+}
+
+
+async function disconnect() {
+  try { if (loader?.transport) await loader.transport.disconnect(); } catch {}
+  loader = null;
+  try { if (transport) await transport.disconnect(); } catch {}
+  transport = null;
+  try { if (deviceRef) await deviceRef.close(); } catch {}
+  deviceRef = null;
+
+  connected = false;
+  setUiState("disconnected");
+}
+
+      function clearProgress(){ ["p0","p1","p2"].forEach(id => $(id).style.width = "0%"); }
+
+      function validateSelectedFiles(entries){
+        for (const e of entries) {
+          const f = e.file;
+          if (!f) continue;
+          const name = f.name.toLowerCase();
+          if (!name.endsWith(".bin")) {
+            throw new Error(`Soubor "${f.name}" není .bin (nepoužívej .zip/.uf2/.hex).`);
+          }
+          if (name.includes("bootloader") && hexToNumber(e.addr) !== 0x1000) {
+            console.warn("Bootloader obvykle patří na 0x1000.");
+          }
+          if (name.includes("partition") && hexToNumber(e.addr) !== 0x8000) {
+            console.warn("Partition table obvykle patří na 0x8000.");
+          }
+        }
+      }
+
+      async function doFlash() {
+        if (!connected || !loader) return;
+        clearProgress();
+
+        const entries = [
+          { addr: $("addr0").value, file: $("file0").files?.[0], bar: $("p0") },
+          { addr: $("addr1").value, file: $("file1").files?.[0], bar: $("p1") },
+          { addr: $("addr2").value, file: $("file2").files?.[0], bar: $("p2") },
+        ].filter(e => e.file);
+
+        if (entries.length === 0) { alert("Vyber alespoň jeden .bin soubor."); return; }
+
+        try { validateSelectedFiles(entries); }
+        catch (e) { alert(e.message); return; }
+
+        const eraseAll = $("eraseAll").checked;
+        const compress = $("compress").checked;
+
+        const fileArray = [];
+        for (const [i, e] of entries.entries()) {
+          const addr = hexToNumber(e.addr);
+          if (!Number.isFinite(addr)) { alert("Neplatná adresa: " + e.addr); return; }
+          const data = await fileToBase64(e.file);
+          console.log(`Slot ${i}: addr=0x${addr.toString(16)} size=${e.file.size}B name=${e.file.name}`);
+          fileArray.push({ address: addr, data });
+        }
+
+        log(`\\nZačínám nahrávat ${fileArray.length} soubor(y)…\\n`);
+
+        const progressCb = (fileIndex, written, total) => {
+          const pct = total ? Math.round((written / total) * 100) : 0;
+          const bar = entries[fileIndex]?.bar;
+          if (bar) bar.style.width = pct + "%";
+        };
+
+        try {
+          await loader.writeFlash({
+            fileArray,
+            eraseAll,
+            compress,
+            flashMode: "keep",
+            flashFreq: "keep",
+            flashSize: "keep",    // lze změnit na "detect" pokud chceš zjišťovat dle SPI ID
+            reportProgress: progressCb,
+          });
+          log("\\n✔️ Nahrávání dokončeno.\\n");
+        } catch (err) {
+          console.error(err);
+          log(`\\n[ERR] ${err?.message || err}\\n`);
+        }
+      }
+
+      async function doErase() {
+        if (!connected || !loader) return;
+        clearProgress();
+        log("\\nMažu celou flash…\\n");
+        try {
+          await loader.eraseFlash();
+          log("Hotovo.\\n");
+        } catch (err) { log(`\\n[ERR] ${err?.message || err}\\n`); }
+      }
+
+      async function doReset() {
+        if (!transport) return;
+        try {
+          // Klasická auto-reset sekvence přes USB-UART (viz popisy signálů v API)
+          await transport.setDTR(false); // IO0=HIGH
+          await transport.setRTS(true);  // EN=LOW (reset)
+          await new Promise(r => setTimeout(r, 100));
+          await transport.setRTS(false); // EN=HIGH (run)
+          log("\\nZařízení restartováno.\\n");
+        } catch (err) { log(`\\n[ERR] ${err?.message || err}\\n`); }
+      }
+
+      btnConnect.addEventListener("click", connect);
+      btnDisconnect.addEventListener("click", disconnect);
+      btnFlash.addEventListener("click", doFlash);
+      btnErase.addEventListener("click", doErase);
+      btnReset.addEventListener("click", doReset);
+
+      window.addEventListener("beforeunload", async () => { try { await disconnect(); } catch {} });
+      setUiState("disconnected");
+    </script>
+  </body>
+</html>
