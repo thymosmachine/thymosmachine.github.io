@@ -6249,8 +6249,7 @@
 
         request.onsuccess = async function () {
             if (!isExperimentRunning) maxDataPoints = maxDataPointsExpShow;
-            await updateChart(false);
-            await loadDataFromDBToChart();
+            await reloadCharts();
 
             if (request.result > 0) {
                 // TODO: přemístit dotaz na 'stará data' až po načtení všeho a upravit dotaz, aby se ptal na smazání a chtěl to 2x potvrdit
@@ -6508,18 +6507,26 @@
     let maxDataPoints = maxDataPointsIdle;
 
     const setChartsStates = ({series = (loadCellNum + 1), show = false, states = []} = {}) => {
-        if (!isNumSafe(series) || series < 1) return;
         if (!isArr(states)) states = [];
         if (!isBool(show)) show = false;
 
         const isTC = isNonEmptyObj(timeChart);
         const isPC = isNonEmptyObj(positionChart);
+
         if (!isTC && !isPC) return;
+
+        const seriesCountTC = Math.max(isTC ? (timeChart?.series.length - 1) : 0, 0);
+        const seriesCountPC = Math.max(isPC ? (positionChart?.series.length - 1) : 0, 0);
+
+        const maxSeries = Math.max(seriesCountTC, seriesCountPC);
+
+        if (!isNumSafe(series) || series < 1)  series = maxSeries;
+        series = Math.min(series, maxSeries);
 
         for (let i = 1; i <= (series); i++) {
             const state = isBool(states[i - 1]) ? states[i - 1] : show
-            if (isTC) timeChart.setSeries(i, {show: state});
-            if (isPC) positionChart.setSeries(i, {show: state});
+            if (isTC && i <= seriesCountTC) timeChart.setSeries(i, {show: state});
+            if (isPC && i <= seriesCountPC) positionChart.setSeries(i, {show: state});
         }
     };
 
@@ -14409,10 +14416,7 @@
         if (anyDataLoaded) {
             console.info("\t\nℹ️ %cPrevious log loaded.", "color: #0078d7; font-style: italic; font-weight: normal;");
             recomputeAllCalculations();
-            for (let i = 1; i <= (loadCellNum + 1); i++) { // TODO: udělat dle aktivních loadcell
-                if (timeChart) timeChart.setSeries(i, {show: true});
-                if (positionChart) positionChart.setSeries(i, {show: true});
-            }
+            setChartsStates({show: true}); // TODO: udělat dle aktivních loadcell ve funkci "checkExistingLog"
             await logMessage("\nℹ️ Found previous unsaved logged data.\n");
         } else {
             console.info("\t\n*️⃣ %cNo previous log found.", "color: #0078d7; font-style: italic; font-weight: normal;");
@@ -14420,6 +14424,7 @@
             $ID("experimentDesc").value = "";
             await clearCalculations();
             await clearCharts();
+            setChartsStates({show: false});
 
             setSpeedUI(0);
             setAccelerationUI(0);
