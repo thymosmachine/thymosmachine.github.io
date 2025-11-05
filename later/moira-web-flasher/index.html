@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MOIRA – Firmware Updater (ESP32-S3)</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <!-- Espressif Web Tools (official web-component) -->
+  <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js?module"></script>
+</head>
+<body>
+  <main class="container">
+    <section>
+      <h1>💽 MOIRA Firmware Updater – THYMOS devices (ESP32-S3)</h1>
+      <p>Toto používá oficiální <em>Espressif Web Flasher</em>. Vybereš port, nástroj sám rozpozná čip a nahraje soubory dle <code>manifest.json</code>. Je-li v manifestu více buildů, zobrazí se jejich výběr automaticky.</p>
+    </section>
+
+    <section class="card">
+      <h2>🔌 Připojení a flash</h2>
+      <!-- Keep manifest static => relative paths resolve correctly -->
+      <esp-web-install-button manifest="./firmwareFiles/manifest.json"></esp-web-install-button>
+      <noscript>Pro flashování je potřeba mít povolený JavaScript a moderní prohlížeč s Web Serial API (Chrome, Edge, Opera).</noscript>
+      <div class="note"><p>⚠️ Běží pouze přes <strong>HTTPS</strong> nebo na <code>http://localhost</code>.</p></div>
+    </section>
+
+    <section class="card">
+      <h2>📝 Log</h2>
+      <pre id="logOutput" class="log"></pre>
+      <p class="note">Pozn.: Pokud v konzoli uvidíš hlášku „Improv Wi‑Fi Serial not detected“, je to neškodné – jen se detekovalo, že firmware nepodporuje Improv. Flash tím není ovlivněn.</p>
+    </section>
+  </main>
+  <script type="module" src="./scripts/updateAppMain.js"></script>
+</body>
+</html>

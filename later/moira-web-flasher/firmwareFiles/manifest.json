@@ -1,0 +1,26 @@
+{
+  "name": "MOIRA – THYMOS",
+  "version": "1.0.0",
+  "homepage": "https://example.com",
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "name": "Latest",
+      "version": "latest",
+      "parts": [
+        {
+          "path": "./latest/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        },
+        {
+          "path": "./latest/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "./latest/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}
