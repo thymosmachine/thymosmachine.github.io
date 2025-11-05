@@ -2880,7 +2880,7 @@
 
                         <div class="input-group" data-system-level="300">
                             <label for="inputBrutalMode">
-                                Brutal-mode Experiment:
+                                Experiment Brutal-mode:
                             </label>
                             <input type="checkbox" id="inputBrutalMode" value="brutalMode"
                                    data-system="skip" data-essence="switch">
@@ -4825,19 +4825,42 @@
     };
 
     const maxPrecision = 16; // maximal precision for numbers in rounding
-    const precisionTime = 6;
-    const precisionPosition = 4;
-    const precisionPositionSystem = precisionPosition;
-    const precisionForce = 2;
-    const precisionForceSystem = 4;
-    const precisionSpeed = 2;
-    const precisionSpeedSystem = 2;
-    const precisionAcceleration = 4;
-    const precisionAccelerationSystem = 2;
+    const precisionTimeMach = 6;
+    const precisionTimeSys = 6;
+    const precisionPositionMach = 4;
+    const precisionPositionSys = precisionPositionMach;
+    const precisionForceMach = 2;
+    const precisionForceSys = 4;
+    const precisionSpeedMach = 2;
+    const precisionSpeedSys = 2;
+    const precisionAccelMach = 4;
+    const precisionAccelSys = 2;
 
-    const timeConversionDATAC = convertUnits(1, 'µs', 's');     // convert (microseconds) to seconds
-    const timeConversionDSLR = convertUnits(1, 'ms', 's');      // convert (milliseconds) to seconds
-    const timeConversionSToMs = convertUnits(1, 's', 'ms');     // convert (seconds) to milliseconds
+    const timeUnitExp = 's';
+    const timeUnitMove = 's';
+    const timeUnitSys = 'ms';
+    const timeUnitMach = 'µs';
+    const timeUnitMachDSLR = 'ms';
+    const positionUnitExp = 'mm';
+    const positionUnitSys = 'mm';
+    const positionUnitMach = 'mm';
+    const speedUnitExp = 'mm/s';
+    const speedUnitSys = 'mm/s';
+    const speedUnitMach = 'mm/s';
+    const accelUnitExp = 'mm/s^2';
+    const accelUnitSys = 'mm/s^2';
+    const accelUnitMach = 'mm/s^2';
+    const forceUnitExp = 'N';
+    const forceUnitSys = 'N';
+    const forceUnitMach = 'N';
+
+    const timeConversionDATAC = convertUnits(1, timeUnitMach, timeUnitExp);             // convert (microseconds) to seconds
+    const timeConversionDSLR = convertUnits(1, timeUnitMachDSLR, timeUnitExp);          // convert (milliseconds) to seconds
+    const timeConversionSToMs = convertUnits(1, timeUnitExp, timeUnitSys);              // convert (seconds) to milliseconds
+    const positionConversionDATAC = convertUnits(1, positionUnitMach, positionUnitExp); // convert (machine position unit) to mm
+    const speedConversionDATAC = convertUnits(1, speedUnitMach, speedUnitExp);          // convert (machine speed unit) to mm/s
+    const accelConversionDATAC = convertUnits(1, accelUnitMach, accelUnitExp);          // convert (machine acceleration unit) to mm/s²
+    const forceConversionDATAC = convertUnits(1, forceUnitMach, forceUnitExp);          // convert (machine force unit) to N
 
     const loadCellNumMax = 3; // maximal number of load cells supported
     const loadCellNum = loadCellNumMax; // TODO: for now constant, else (dynamic assignment based on machine capabilities)
@@ -5383,8 +5406,8 @@
             // d = 2 * sqrt( h * (2r - h) )  ;  2r = D  ; d = 2 * sqrt( h * (D - h) )
             const d = calc_indentation_diameter(hD, D);
 
-            const diameterInd = (hD > D / 2) ? NaN : roundDecimalFast(d, precisionPositionSystem);
-            fillComputableInputs("outputDiameterInd", diameterInd, precisionPositionSystem);
+            const diameterInd = (hD > D / 2) ? NaN : roundDecimalFast(d, precisionPositionSys);
+            fillComputableInputs("outputDiameterInd", diameterInd, precisionPositionSys);
 
             // HB = (2*F) / (π*D*(D - sqrt(D^2 - d^2)))
             const HBr = calc_hardness_brinell(F, D, d);
@@ -5427,31 +5450,31 @@
         const w_Fmax = calc_val_tare(w_Fmax_raw, w_tare);
 
         // Zapiš základní "max" (rozuměj aktuální zadané) hodnoty, pokud výstupy existují
-        writeOut("outputForceMax", Fmax, precisionForceSystem);
-        writeOut("outputDisp", w_Fmax, precisionPositionSystem);
+        writeOut("outputForceMax", Fmax, precisionForceSys);
+        writeOut("outputDisp", w_Fmax, precisionPositionSys);
 
         const Ftarget_goal = readNum("inputTargetForce"); // N
         const [w_Ftarget_raw, FtargetInd] = findTargetForce(forces, displacements, Ftarget_goal);
         const w_Ftarget = calc_val_tare(w_Ftarget_raw, w_tare);
-        writeOut('inputTargetDisp', w_Ftarget, precisionPositionSystem + 1);
+        writeOut('inputTargetDisp', w_Ftarget, precisionPositionSys + 1);
 
         const inputForce = readNum("inputForce");
         const foundForce = nearest(forces, inputForce);
         const foundForceInd = foundForce.indexes;
-        const isCloseForce = foundForceInd.length > 0 && (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForce / 2)))));
-        const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd[0]], precisionPositionSystem) : NaN; // mm
+        const isCloseForce = foundForceInd.length > 0 && (foundForce.distance < Math.max((inputForce * 0.02), (1 / Math.pow(10, Math.round(precisionForceMach / 2)))));
+        const w_inputForce = isCloseForce ? roundDecimalFast(displacements[foundForceInd[0]], precisionPositionSys) : NaN; // mm
         applyAdjust('inputDisp', w_inputForce);
 
 
         if ($ID("experimentTypeDropdown")?.value.toLowerCase().endsWith("-hbr")) {
             const lengthHolding = (forces.length - 1) - FtargetInd;
             const lengthAnalysis = clamp(Math.ceil(lengthHolding * 0.2), 100, lengthHolding); // use last 80% of holding phase for analysis
-            const finalForce = roundDecimalFast(mean1D(forces.slice(lengthAnalysis)), precisionForceSystem);
+            const finalForce = roundDecimalFast(mean1D(forces.slice(lengthAnalysis)), precisionForceSys);
             applyAdjust('inputForce', finalForce);
 
 
-            const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSystem);
-            fillComputableInputs("outputDepthInd", depthIndentation, precisionPositionSystem);
+            const depthIndentation = roundDecimalFast(displacements[displacements.length - 1] - displacements[FinitialInd], precisionPositionSys);
+            fillComputableInputs("outputDepthInd", depthIndentation, precisionPositionSys);
 
 
             // Rychlost zatěžování: v = w_T / t
@@ -5468,11 +5491,11 @@
             const v2 = calc_load_speed(v_set, t_set, t_goal);   // variant 2     mm/s
 
             console.log("\n",
-                "\n\tGuess 1:", roundDecimalFast(v1, precisionSpeedSystem + 2),
-                "\n\tGuess 2:", roundDecimalFast(v2, precisionSpeedSystem + 2));
+                "\n\tGuess 1:", roundDecimalFast(v1, precisionSpeedSys + 2),
+                "\n\tGuess 2:", roundDecimalFast(v2, precisionSpeedSys + 2));
             const v = v2;
 
-            writeOut("outputLoadingSpeed", v, precisionSpeedSystem + 2);
+            writeOut("outputLoadingSpeed", v, precisionSpeedSys + 2);
 
             // TODO: speed: 0.6825mm/s => time: 2.6s - 5.2s => target time: 15s => new speed: 0.2944mm/s
             // TODO: ΔT = 5.2 - 2.6 = 2.6s
@@ -5491,8 +5514,8 @@
             const inputDisp = readNum("inputDisp");
             const foundDisp = nearest(displacements, inputDisp);
             const foundDispInd = foundDisp.indexes;
-            const isCloseDisp = foundDispInd.length > 0 && (foundDisp.distance < Math.max((inputDisp * 0.02), (1 / Math.pow(10, Math.round(precisionPosition / 2)))));
-            const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd[0]], precisionForceSystem) : NaN; // N
+            const isCloseDisp = foundDispInd.length > 0 && (foundDisp.distance < Math.max((inputDisp * 0.02), (1 / Math.pow(10, Math.round(precisionPositionMach / 2)))));
+            const F_inputDisp = isCloseDisp ? roundDecimalFast(forces[foundDispInd[0]], precisionForceSys) : NaN; // N
             applyAdjust('inputForce', F_inputDisp);
         }
     }
@@ -6244,6 +6267,7 @@
                     let dataEntries = request2.result;
                     const experimentInfo = dataEntries[0];
 
+                    console.log(experimentInfo)
 
                     let date = "Unknown date";
                     const expDate = experimentInfo.experimentDate;
@@ -6298,6 +6322,7 @@
 
     function flushDB() {
         if (dbQueue.length === 0) {
+            clearTimeout(dbFlushTimer);
             dbFlushTimer = null;
             return;
         } else {
@@ -6336,10 +6361,12 @@
         }
 
         tx.oncomplete = () => {
+            clearTimeout(dbFlushTimer);
             dbFlushTimer = null;
         };
         tx.onerror = (e) => {
             console.error('❌ flushDB error:', e?.target?.error || e);
+            clearTimeout(dbFlushTimer);
             dbFlushTimer = null;
         };
     }
@@ -6477,8 +6504,24 @@
     // Maximum number of data points displayed in the charts
     const maxDataPointsExp = 1e5;
     const maxDataPointsExpShow = 1e10;
-    const maxDataPointsIdle = convertUnits(1 / 10, 's', 'ms'); // 10x in 1 seconds (100 ms)
+    const maxDataPointsIdle = convertUnits(1 / 10, 's', timeUnitSys); // 10x in 1 seconds (100 ms)
     let maxDataPoints = maxDataPointsIdle;
+
+    const setChartsStates = ({series = (loadCellNum + 1), show = false, states = []} = {}) => {
+        if (!isNumSafe(series) || series < 1) return;
+        if (!isArr(states)) states = [];
+        if (!isBool(show)) show = false;
+
+        const isTC = isNonEmptyObj(timeChart);
+        const isPC = isNonEmptyObj(positionChart);
+        if (!isTC && !isPC) return;
+
+        for (let i = 1; i <= (series); i++) {
+            const state = isBool(states[i - 1]) ? states[i - 1] : show
+            if (isTC) timeChart.setSeries(i, {show: state});
+            if (isPC) positionChart.setSeries(i, {show: state});
+        }
+    };
 
 
     // /////// Toggle Live Update /////////
@@ -6498,7 +6541,7 @@
             if (liveUpdate) {
                 const dataAppInterval = getInputNumDefAbsInt("inputAppInterval", NaN);
                 sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(dataAppInterval)}`)
-                const dataDuration = convertUnits(10, 's', 'ms'); // 10 seconds
+                const dataDuration = convertUnits(10, 's', timeUnitSys); // 10 seconds
 
                 maxDataPoints = (isNumSafe(dataAppInterval) ?
                     calculateStep(dataAppInterval, dataDuration, maxDataPointsIdle) :
@@ -6568,7 +6611,7 @@
             }
             hideTimeout = setTimeout(() => {
                 if (!isPageVisible) {
-                    console.info(`⏳ Page is hidden longer than ${roundDecimalFast(convertUnits(MIN_HIDE_TIME, 'ms', 's'), 2)}+ seconds.\n\tHiding...`);
+                    console.info(`⏳ Page is hidden longer than ${roundDecimalFast(convertUnits(MIN_HIDE_TIME, timeUnitSys, 's'), 2)}+ seconds.\n\tHiding...`);
 
                     if (liveUpdate && !liveUpdatePaused) {
                         console.info("⏸️ Pause live update of charts.");
@@ -7041,7 +7084,10 @@
         await loadDataFromDBToChart();  // Load data from DB to charts will wait for the data to be loaded
         timeChart.redraw();
         positionChart.redraw();
-        console.info("🔁 Charts refreshed.");
+
+        setChartsStates({series: loadCellNum + 1, show: true});
+
+        console.info("🔁 Charts reloaded.");
     }
 
     async function clearCharts() {
@@ -7177,11 +7223,18 @@
             case "toggle port raw":
                 allowRawConnect = !allowRawConnect;
                 await logMessage(`\n🔀 Toggled port raw-connections: ${allowRawConnect ? "ON" : "OFF"}`);
+                $ID("inputRawConnection").checked = allowRawConnect;
                 return;
 
             case "toggle debugging":
                 unblockDebugging(!debugging);
                 await logMessage(`\n🔀 Toggled debugging: ${debugging ? "ON" : "OFF"}`);
+                return;
+
+            case "toggle exp brutal":
+                doBrutalMove = !doBrutalMove;
+                await logMessage(`\n🔀 Toggled brutal experiment movement mode: ${doBrutalMove ? "ON" : "OFF"}`);
+                $ID("inputBrutalMode").checked = doBrutalMove;
                 return;
 
             case "clear all":
@@ -7702,7 +7755,7 @@
 
 
             const movingTime =
-                Math.ceil(convertUnits(computeMotionTime(distance, speed, acceleration), 's', 'ms') + 150);
+                Math.ceil(convertUnits(computeMotionTime(distance, speed, acceleration), timeUnitMove, timeUnitSys) + 150);
 
             // set/reset moving timeout after ending of movement
             if (isDef(movingTimeout)) {
@@ -7998,19 +8051,19 @@
         return required.every(([k]) => Object.prototype.hasOwnProperty.call(parsedData, k));
     }
 
-    function calculateStep(frequencyMicroseconds, updateFrequencyMilliseconds = 200, minimum = 1) {
-        if (!isValidInputNum(frequencyMicroseconds)) return minimum;
+    function calculateStep(updateFrequencyMachine, updateFrequencyApp = 200, minimum = 1) {
+        if (!isValidInputNum(updateFrequencyMachine)) return minimum;
         minimum = catchVal(minimum, 1, isValidInputNum);
-        updateFrequencyMilliseconds = catchVal(updateFrequencyMilliseconds, 200, isValidInputNum);
-        return Math.max(1, minimum, Math.ceil(convertUnits(updateFrequencyMilliseconds, 'ms', 'µs') / frequencyMicroseconds));
+        updateFrequencyApp = catchVal(updateFrequencyApp, 200, isValidInputNum);
+        return Math.max(1, minimum, Math.ceil(convertUnits(updateFrequencyApp, timeUnitSys, timeUnitMach) / updateFrequencyMachine));
     }
 
-    function computeFrenchingMs(frequencyMicroseconds, inSeconds = 1, minimum = 50) {
-        if (!isValidInputNum(frequencyMicroseconds)) return minimum;
+    function computeFrenchingMs(updateFrequencyMachine, durationMs = 1_000, minimum = 50) {
+        if (!isValidInputNum(updateFrequencyMachine)) return minimum;
         minimum = catchVal(minimum, 50, isValidInputNum);
-        inSeconds = catchVal(inSeconds, 1, isValidInputNum);
+        durationMs = catchVal(durationMs, 1_000, isValidInputNum);
 
-        const samplesPerSecond = Math.floor(convertUnits(inSeconds, 's', 'µs') / frequencyMicroseconds); // (Hz)
+        const samplesPerSecond = Math.floor(convertUnits(durationMs, timeUnitSys, timeUnitMach) / updateFrequencyMachine); // (Hz)
 
         return Math.max(minimum, samplesPerSecond);
     }
@@ -8283,18 +8336,13 @@
         const maxAccel = 200;
         const configuredJerk = 3_000; // TODO: make user-configurable if needed
 
+        const date = new Date();
+
         let internalError = false;
         const throwInternalError = (msg, errMsg) => {
             internalError = true;
             if (isNonEmptyStr(errMsg)) logAndConsoleMessage(errMsg, {consoleLevel: 'warn', showAlert: true});
             throw new Error(msg);
-        };
-
-        const disableCharts = ({lcCount = loadCellNum, show = false} = {}) => {
-            for (let i = 1; i <= (lcCount + 1); i++) {
-                if (timeChart) timeChart.setSeries(i, {show: show});
-                if (positionChart) positionChart.setSeries(i, {show: show});
-            }
         };
 
         try {
@@ -8308,16 +8356,17 @@
             if (!debugging) await clearConsoleLog();
             await console.info("%c\n\n\n──────────── NEW EXPERIMENT ────────────\n\n\n", "color: black; font-size: 14px; font-weight: bold;");
             await console.groupCollapsed("New Experiment Section");
-            await console.info(`%c🕒 Experiment started at: ${new Date().toLocaleString()}`, "color: gray; font-size: 12px; font-style: italic;");
+            await console.info(`%c🕒 Experiment started at: ${date.toLocaleString()}`, "color: gray; font-size: 12px; font-style: italic;");
 
             // === Retrieve Parameters from Inputs ===
-            const distance_mm = roundDecimalFast(getInputNumDefAbsFlt("inputDistance", NaN), (precisionPosition + 2));
+            const distance_mm = roundDecimalFast(getInputNumDefAbsFlt("inputDistance", NaN), (precisionPositionMach + 2));
             const experimentType = getElementValue("experimentTypeDropdown")?.toLowerCase();
             displacementSignCorrection = experimentType.includes("down") ? 1 : -1;
             speedForward_mmps = getInputNumDefAbsFlt("inputSpeedForward", NaN);
             dataInterval_us = Math.max(getInputNumDefAbsInt("inputDataInterval", NaN), 100);
             takePhotos = $ID("inputTakePhotos").checked;
-            const photoInterval_ms = convertUnits(getInputNumDefAbsFlt("inputPhotoInterval", NaN), 's', 'ms', {precision: 0});
+            const photoInterval_unit = getElement("inputPhotoInterval").dataset.unit;
+            const photoInterval_ms = convertUnits(getInputNumDefAbsFlt("inputPhotoInterval", NaN), photoInterval_unit, timeUnitSys, {precision: 0});
             forceLimitDropPercent = catchVal((getInputNum("inputLoadLimitDropPercent") / 100), NaN, isNumSafe);
             forceLimitDropValue = getInputNumDefAbsFlt("inputLoadLimitDropValue", NaN);
 
@@ -8367,6 +8416,7 @@
                 experimentHoldConstantForce = false;
             stoppingForceLimit = Number.POSITIVE_INFINITY;
             holdForceTimeMs = null;
+            let holdForceUnit = '';
             const responsiveness = {Kp: NaN, Ki: NaN, minSpeed: NaN, maxSpeed: NaN, accel: NaN};
 
 
@@ -8381,7 +8431,8 @@
                 if (experimentType.endsWith("-hbr")) {
 
                     stoppingForceLimit = getInputNumDefAbsFlt("inputStopForce", NaN);
-                    holdForceTimeMs = convertUnits(getInputNumDefAbsFlt("inputEndDelay", NaN), 's', 'ms', {precision: 0});
+                    holdForceUnit = getElement("inputEndDelay").dataset.unit;
+                    holdForceTimeMs = convertUnits(getInputNumDefAbsFlt("inputEndDelay", NaN), holdForceUnit, timeUnitSys, {precision: 0});
                     experimentHoldConstantForce = true;
 
                     const basicPICId = "inputResponseCoefPI";
@@ -8438,15 +8489,15 @@
                     logAndConsoleMessage(`⚠️ Warning: ${accelProfile.warning}`, {consoleLevel: 'warn'});
                 }
 
-                if (isNumSafe(accelProfile.t_total) && convertUnits(accelProfile.t_total, 's', 'ms') > 10) {
-                    initialAccelForward_mmps2 = roundDecimalFast(accelProfile.a_peak, precisionAcceleration);
+                if (isNumSafe(accelProfile.t_total) && convertUnits(accelProfile.t_total, timeUnitMove, timeUnitSys) > 10) {
+                    initialAccelForward_mmps2 = roundDecimalFast(accelProfile.a_peak, precisionAccelMach);
                     experimentEvents.doubleAccel.active = true;
                     experimentEvents.doubleAccel.limit = accelProfile.t_total * 0.975; // slightly less to be safe
                     experimentEvents.doubleAccel.value = maxAccel;
                     experimentEvents.doubleAccel.initValue = initialAccelForward_mmps2;
 
-                    if (convertUnits(accelProfile.t_total * 0.5, 's', 'ms') < convertUnits(dataInterval_us, 'µs', 'ms')) {
-                        dataInterval_us = Math.floor(convertUnits(accelProfile.t_total * 0.5, 's', 'µs'));
+                    if (convertUnits(accelProfile.t_total * 0.5, timeUnitMove, timeUnitSys) < convertUnits(dataInterval_us, timeUnitMach, timeUnitSys)) {
+                        dataInterval_us = Math.floor(convertUnits(accelProfile.t_total * 0.5, timeUnitMove, timeUnitMach));
                         logAndConsoleMessage(`⚠️ Warning: Data interval was adjusted to ${dataInterval_us} µs to accommodate acceleration profile.`, {consoleLevel: 'warn'});
                     }
                 }
@@ -8517,11 +8568,11 @@
 
             if (takePhotos) {
                 if (!isNumSafe(photoInterval_ms) || photoInterval_ms <= minInt)
-                    throwInternalError("Photo interval error", `⚠️ Photo interval must be greater than ${convertUnits(minInt, 'ms', 's')} s.`);
+                    throwInternalError("Photo interval error", `⚠️ Photo interval must be greater than ${convertUnits(minInt, timeUnitSys, photoInterval_unit)} s.`);
 
-                if (convertUnits(photoInterval_ms, 'ms', 's') < dataInterval_us) {
+                if (convertUnits(photoInterval_ms, timeUnitSys, timeUnitMach) < dataInterval_us) {
                     logAndConsoleMessage("⚠️ Photo interval must be bigger than data interval.", {consoleLevel: 'warn'});
-                    const newDataInterval = convertUnits(photoInterval_ms, 'ms', 's') * 0.9;
+                    const newDataInterval = convertUnits(photoInterval_ms, timeUnitSys, timeUnitMach) * 0.9;
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${newDataInterval} µs ❗`);
                     dataInterval_us = newDataInterval;
                     $ID("inputDataInterval").value = dataInterval_us;
@@ -8537,8 +8588,8 @@
                     throwInternalError("Stopping force error", `⚠️ Stopping force must be greater than initial force.`);
 
 
-                if (!isNumSafe(holdForceTimeMs) || holdForceTimeMs < minInt || convertUnits(holdForceTimeMs, 'ms', 's') < 0)
-                    throwInternalError("Hold force time error", `⚠️ Hold force time must be equal or greater than ${convertUnits(minInt, 'ms', 's')} s.`);
+                if (!isNumSafe(holdForceTimeMs) || holdForceTimeMs < minInt || convertUnits(holdForceTimeMs, timeUnitSys, holdForceUnit) < 0)
+                    throwInternalError("Hold force time error", `⚠️ Hold force time must be equal or greater than ${convertUnits(minInt, timeUnitSys, holdForceUnit)} s.`);
 
 
                 const minDataInterval = 25_000;
@@ -8549,9 +8600,9 @@
                     $ID("inputDataInterval").value = minDataInterval;
                 }
 
-                const minDataIntervalHold = convertUnits(holdForceTimeMs, 'ms', 'µs') * 0.05;
+                const minDataIntervalHold = convertUnits(holdForceTimeMs, timeUnitSys, timeUnitMach) * 0.05;
                 if (minDataIntervalHold < dataInterval_us) {
-                    logAndConsoleMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${convertUnits(holdForceTimeMs, 'ms', 'µs')} ms.`, {consoleLevel: 'warn'});
+                    logAndConsoleMessage(`⚠️ Hold force time must be at least 20 times bigger than data interval: holdForceTime=${holdForceTimeMs} ms, dataInterval=${convertUnits(holdForceTimeMs, timeUnitSys, timeUnitMach)} ms.`, {consoleLevel: 'warn'});
                     await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${minDataIntervalHold} µs ❗`);
                     dataInterval_us = minDataIntervalHold;
                     $ID("inputDataInterval").value = minDataIntervalHold;
@@ -8568,7 +8619,7 @@
                     throwInternalError("Responsiveness maximum speed error", `⚠️ Responsiveness maximum speed must be a valid number.`);
                 if (responsiveness.minSpeed >= responsiveness.maxSpeed)
                     throwInternalError("Responsiveness speed error", `⚠️ Responsiveness minimum speed must be less than maximum speed.`);
-                if (!isNumSafe(responsiveness.accel) || responsiveness.accel < 1)
+                if ((!isNumSafe(responsiveness.accel) || responsiveness.accel < 1) && !isNull(responsiveness.accel))
                     throwInternalError("Responsiveness acceleration error", `⚠️ Responsiveness acceleration must be equal or greater than 1.`);
             }
 
@@ -8632,7 +8683,7 @@
             await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
             await console.info("🧪 Starting experiment...");
             UI.loadingLogContainer.style.background = "black";
-            disableCharts({lcCount: loadcellCount});
+            setChartsStates({series: loadcellCount + 1});
             await checkDescription({set: true});
 
 
@@ -8760,7 +8811,7 @@
             console.table(forceAnalysis);
 
             // --- 3) Mean forces ---
-            tareValues.force = forceAnalysis.map(r => roundDecimalFast(r.mean, precisionForce));
+            tareValues.force = forceAnalysis.map(r => roundDecimalFast(r.mean, precisionForceMach));
 
             // --- 4) Valid fields ---
             const validFields = await forceAnalysis.filter(r => !r.allInvalid);
@@ -8820,7 +8871,7 @@
 
             // --- 7) Error rates ---
             for (let i = 0; i < loadcellCount; i++) {
-                measurementErrRate[i] = await roundDecimalFast(diffs[i], precisionForce);
+                measurementErrRate[i] = await roundDecimalFast(diffs[i], precisionForceMach);
                 console.info(`\n\t\tLC ${i}: 🎰 Measurement error rate:`, measurementErrRate[i], "N");
 
 
@@ -8843,13 +8894,13 @@
             if (experimentType.endsWith("-hbr")) {
                 pi = createPIController({
                     //      Target force
-                    setForceN: roundDecimalFast(stoppingForceLimit, precisionForce),
+                    setForceN: roundDecimalFast(stoppingForceLimit, precisionForceMach),
                     //      Proportional gain                           (default: 0.200)
                     Kp: roundDecimalFast(0.0200 * responsiveness.Kp, 6),
                     //      Integral gain                               (default: 0.030)
                     Ki: roundDecimalFast(0.0030 * responsiveness.Ki, 6),
                     //      Deadband set to 115% of total error rate
-                    deadbandN: roundDecimalFast(err * 1.15, precisionForce),
+                    deadbandN: roundDecimalFast(err * 1.15, precisionForceMach),
                     //      Minimum speed during holding
                     vMin: roundDecimalFast(responsiveness.minSpeed, 6),
                     //      Limit max speed during holding e.g. to 250% of min speed or 80% of forward speed but not exceeding forward speed
@@ -8859,7 +8910,7 @@
                     //      Anti-windup clamp: readings in the last 25% of hold time
                     integLimit: computeFrenchingMs(dataInterval_us, holdForceTimeMs * 0.25, 125),
                     //      Precision of calculations
-                    roundDigits: (precisionSpeedSystem + 2),
+                    roundDigits: (precisionSpeedSys + 2),
                 });
             }
 
@@ -8909,6 +8960,81 @@
             }
             const experimentLabel = catchVal(expTypesLabels[experimentKey], "", isOk);
 
+            /* TODO:
+                        await addDataToLog({
+                            preambleText: "Moira Experiment Log File",
+                            preambleVersion: 1,
+                            preambleDate: (new Date())?.getTime(),
+                            logStatus: "initialized",
+                            experimentInfo: {
+                                experimentName: getElementValue("experimentName"),
+                                experimentLabel: experimentLabel?.trim(),
+                                experimentCounter: getElementValue("experimentCount"),
+                                experimentDescription: getElementValue("experimentDesc"),
+                                experimentDate: date.toLocaleString()?.replaceAll(". ", "."),
+                                experimentLimits: structuredClone(experimentEndLimits),
+                                experimentEvents: structuredClone(experimentEvents),
+                                experimentControl: expControl,
+                                experimentProgress: experimentProgress,
+                                loadDirection: doCycles ? 0 : displacementSignCorrection,
+                                loadDistance: distance_mm,
+                                loadSpeed: speedForward_mmps,
+                                loadcellsInfo: structuredClone(loadcellsInfo),
+                                loadcellsAnalysis: forceAnalysis,
+                                loadcellType: 'Undefined',
+                                dataLength: 0,
+                                endStatus: endedBy,
+                                units: {
+                                    time: timeUnitExp,
+                                    position: positionUnitExp,
+                                    speed: speedUnitExp,
+                                    acceleration: accelUnitExp,
+                                    force: forceUnitExp,
+                                },
+                            },
+                            machineInfo: {
+                                machineFirmware: machineFirmware, // TODO: machineFirmwares: structuredClone(machineFirmwares),
+                                precisions: {
+                                    time: precisionTimeMach,
+                                    position: precisionPositionMach,
+                                    speed: precisionSpeedMach,
+                                    acceleration: precisionAccelMach,
+                                    force: precisionForceMach,
+                                },
+                                units: {
+                                    time: timeUnitMach,
+                                    position: positionUnitMach,
+                                    speed: speedUnitMach,
+                                    acceleration: accelUnitMach,
+                                    force: forceUnitMach,
+                                },
+                            },
+                            appInfo: {
+                                appSoftware: softwareVersion,
+                                machineName,
+                                machineID,
+                                precisions: {
+                                    time: precisionTimeSys,
+                                    position: precisionPositionSys,
+                                    speed: precisionSpeedSys,
+                                    acceleration: precisionAccelSys,
+                                    force: precisionForceSys,
+                                },
+                                units: {
+                                    time: timeUnitSys,
+                                    position: positionUnitSys,
+                                    speed: speedUnitSys,
+                                    acceleration: accelUnitSys,
+                                    force: forceUnitSys,
+                                },
+                            },
+                            UISettings: {
+                                expSettings: settings,
+                                calcSetting: {},
+                            },
+                        }, 0);
+             */
+
             await addDataToLog({
                 status: "initialized",
                 expSettings: settings,
@@ -8925,15 +9051,14 @@
                 loadcellType: 'Undefined',
                 appSoftWare: softwareVersion,
                 machineFirmware: machineFirmware,
-                // TODO: machineFirmwares: structuredClone(machineFirmwares),
                 endStatus: endedBy,
                 experimentProgress: experimentProgress,
                 precisions: {
-                    time: precisionTime,
-                    position: precisionPosition,
-                    speed: precisionSpeed,
-                    acceleration: precisionAcceleration,
-                    force: precisionForce,
+                    time: precisionTimeMach,
+                    position: precisionPositionMach,
+                    speed: precisionSpeedMach,
+                    acceleration: precisionAccelerationMach,
+                    force: precisionForceMach,
                 },
                 experimentLimits: structuredClone(experimentEndLimits),
                 experimentEvents: structuredClone(experimentEvents),
@@ -8956,7 +9081,7 @@
 
             if (takePhotos) await sendCommandGeneral('DSLR SHOOT', 500); // Initial photo
 
-            await updateLogById(0, {status: "collecting"});
+            await updateLogById(0, {logStatus: "collecting"});
 
             // === Enable Data Streaming and DSLR Shooting ===
             await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(dataInterval_us)}`, 5); // Set data interval
@@ -8973,7 +9098,7 @@
                 let cycle = oneBigInt;
                 const isInfinite = isInfinity(cyclesCount);
                 const totCyclesLabel = isInfinite ? "∞" : cyclesCount;
-                const movementIntervalMs = convertUnits(computeMotionTime(distance_mm, speedForward_mmps, initialAccelForward_mmps2), 's', 'ms') + 5; // TODO: modify with Performance.now() and not Intervals
+                const movementIntervalMs = convertUnits(computeMotionTime(distance_mm, speedForward_mmps, initialAccelForward_mmps2), timeUnitMove, timeUnitSys) + 5; // TODO: modify with Performance.now() and not Intervals
 
                 const oneCycleSeconds = roundDecimalFast(distance_mm / speedForward_mmps, 2);
 
@@ -9003,10 +9128,10 @@
                     // log každou minutu
                     minuteLogger = setInterval(async () => {
                         cycleTextPending = true;
-                    }, convertUnits(1, 'min', 'ms'));
+                    }, convertUnits(1, 'min', timeUnitSys));
 
                     // čistit konzoli každou hodinu
-                    hourlyClear = setInterval(async () => console.clear(), convertUnits(1, 'h', 'ms'));
+                    hourlyClear = setInterval(async () => console.clear(), convertUnits(1, 'h', timeUnitSys));
                 }
 
                 movementTimer = setInterval(async () => {
@@ -9065,7 +9190,7 @@
 
             await logAndConsoleMessage("🎬 Measurements stopped.");
 
-            await updateLogById(0, {experimentProgress: experimentProgress, status: "collected"});
+            await updateLogById(0, {experimentProgress: experimentProgress, logStatus: "collected"});
 
 
             if (experimentType.endsWith("-inb")) {
@@ -9081,7 +9206,7 @@
                 //     console.info(`➡️ Moving further to ${endPosition - shift} mm...`);
                 //
                 //     await sendCommandGeneral(`MC MOVEBY MACH -${shift}`);
-                //     await sleep(convertUnits(computeMotionTime(shift, returningSpeed, returningAcceleration), 's', 'ms') + 500); // Wait
+                //     await sleep(convertUnits(computeMotionTime(shift, returningSpeed, returningAcceleration), timeUnitMove, timeUnitSys) + 500); // Wait
                 //
                 //     endPosition = await measurePosition();
                 //
@@ -9111,7 +9236,7 @@
             (error) {
 
             if (internalError) {
-                await disableCharts();
+                await setChartsStates();
                 await clearCharts();
                 await chartUpdate(false);
 
@@ -9125,7 +9250,7 @@
                 photoDataChart = [];
                 dataCount = 0;
             } else {
-                await updateLogById(0, {status: "error"});
+                await updateLogById(0, {logStatus: "error"});
             }
 
 
@@ -9161,7 +9286,7 @@
 
             await recomputeAllCalculations();
 
-            await updateLogById(0, {status: "finalized"});
+            await updateLogById(0, {logStatus: "finalized"});
 
             // === Save Data ===
             if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
@@ -9516,7 +9641,7 @@
                 throw new Error(`Position is not a number: ${position}`);
             }
             console.info("\t📌 Current position:", position, "mm");
-            return roundDecimalFast(position, precisionPosition);
+            return roundDecimalFast(position, precisionPositionMach);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Position not received. ${error}`);
@@ -9541,7 +9666,7 @@
             if (!isNumSafe(force)) {
                 throw new Error(`Load on Loadcell${ldID} is not a number: ${force}`);
             }
-            return roundDecimalFast(force, precisionForce);
+            return roundDecimalFast(force, precisionForceMach);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Load on Loadcell${ldID} not received. ${error}`);
@@ -9646,7 +9771,7 @@
             }
             console.info("\n\t🚅 Current speed:", speed, "mm/s");
 
-            return roundDecimalFast(speed, precisionSpeed);
+            return roundDecimalFast(speed, precisionSpeedMach);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Speed not received. ${error}`);
@@ -9669,7 +9794,7 @@
             }
             console.info("\n\t🚝 Current acceleration:", acceleration, "mm/s²");
 
-            return roundDecimalFast(acceleration, precisionAcceleration);
+            return roundDecimalFast(acceleration, precisionAccelMach);
         } catch (error) {
             console.error(error.message);
             throw new Error(`Acceleration not received. ${error}`);
@@ -9775,7 +9900,7 @@
         }
 
         // TODO: zkontrolovat DSLR time relativně ke startu měření
-        const dslrTime = roundDecimalFast(dslrEvent.time - tareValues.time, precisionTime);
+        const dslrTime = roundDecimalFast(dslrEvent.time - tareValues.time, precisionTimeMach);
         const photoIndex = dslrEvent.photoIndex;
 
         if (!(prevData.time < nextData.time)) {
@@ -9789,12 +9914,12 @@
             const t1 = prevData.time, t2 = nextData.time;
             const factor = (dslrTime - t1) / (t2 - t1);
 
-            const interpPos = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPosition);
-            const interpSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeed);
+            const interpPos = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPositionMach);
+            const interpSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeedMach);
 
             const interpForce = prevData.force.map((v1, i) => {
                 const v2 = nextData.force[i];
-                if (isNumSafe(v1) && isNumSafe(v2)) return roundDecimalFast(v1 + factor * (v2 - v1), precisionForce);
+                if (isNumSafe(v1) && isNumSafe(v2)) return roundDecimalFast(v1 + factor * (v2 - v1), precisionForceMach);
                 if (isNumSafe(v1)) return v1;
                 if (isNumSafe(v2)) return v2;
                 return null;
@@ -9810,12 +9935,12 @@
 
         } else {
             console.warn("⚠️ DSLR time out of [prev,next] — using midpoint.");
-            const midT = roundDecimalFast((prevData.time + nextData.time) / 2, precisionTime);
-            const midPos = roundDecimalFast((prevData.position + nextData.position) / 2, precisionPosition);
-            const midSpeed = roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeed);
+            const midT = roundDecimalFast((prevData.time + nextData.time) / 2, precisionTimeMach);
+            const midPos = roundDecimalFast((prevData.position + nextData.position) / 2, precisionPositionMach);
+            const midSpeed = roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeedMach);
             const midForce = prevData.force.map((v1, i) => {
                 const v2 = nextData.force[i];
-                if (isNumSafe(v1) && isNumSafe(v2)) return roundDecimalFast((v1 + v2) / 2, precisionForce);
+                if (isNumSafe(v1) && isNumSafe(v2)) return roundDecimalFast((v1 + v2) / 2, precisionForceMach);
                 return isNumSafe(v1) ? v1 : (isNumSafe(v2) ? v2 : null);
             });
 
@@ -9840,7 +9965,7 @@
             return;
         }
 
-        const dslrTime = roundDecimalFast(dslrEvent.time - tareValues.time, precisionTime);
+        const dslrTime = roundDecimalFast(dslrEvent.time - tareValues.time, precisionTimeMach);
 
         const photoIndex = dslrEvent.photoIndex;
 
@@ -9857,11 +9982,11 @@
             const t1 = prevData.time, t2 = nextData.time;
             const factor = (dslrTime - t1) / (t2 - t1);
 
-            const interpolatedPosition = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPosition);
-            const interpolatedSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeed);
+            const interpolatedPosition = roundDecimalFast(prevData.position + factor * (nextData.position - prevData.position), precisionPositionMach);
+            const interpolatedSpeed = roundDecimalFast(prevData.speed + factor * (nextData.speed - prevData.speed), precisionSpeedMach);
             const interpolatedForce = prevData.force.map((f1, i) => {
                 const f2 = nextData.force[i];
-                if (isNumSafe(f1) && isNumSafe(f2)) return roundDecimalFast(f1 + factor * (f2 - f1), precisionForce);
+                if (isNumSafe(f1) && isNumSafe(f2)) return roundDecimalFast(f1 + factor * (f2 - f1), precisionForceMach);
                 if (isNumSafe(f1)) return f1;
                 if (isNumSafe(f2)) return f2;
                 return null;
@@ -9883,10 +10008,10 @@
             });
 
             interpolatedData = {
-                time: roundDecimalFast((prevData.time + nextData.time) / 2, precisionTime),
-                position: roundDecimalFast((prevData.position + nextData.position) / 2, precisionPosition),
-                speed: roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeed),
-                force: prevData.force.map((val, i) => roundDecimalFast((val + nextData.force[i]) / 2, precisionForce)),
+                time: roundDecimalFast((prevData.time + nextData.time) / 2, precisionTimeMach),
+                position: roundDecimalFast((prevData.position + nextData.position) / 2, precisionPositionMach),
+                speed: roundDecimalFast((prevData.speed + nextData.speed) / 2, precisionSpeedMach),
+                force: prevData.force.map((val, i) => roundDecimalFast((val + nextData.force[i]) / 2, precisionForceMach)),
                 photoIndex: photoIndex // Store DSLR photo order
             };
         }
@@ -9937,9 +10062,9 @@
         });
 
         return {
-            time: roundDecimalFast(sumTime / totalEntries, precisionTime),
-            position: roundDecimalFast(sumPosition / totalEntries, precisionPosition),
-            force: sumForce.map(value => roundDecimalFast(value / totalEntries, precisionForce)) // Average of `force` list values (per index)
+            time: roundDecimalFast(sumTime / totalEntries, precisionTimeMach),
+            position: roundDecimalFast(sumPosition / totalEntries, precisionPositionMach),
+            force: sumForce.map(value => roundDecimalFast(value / totalEntries, precisionForceMach)) // Average of `force` list values (per index)
         };
     }
 
@@ -9957,12 +10082,13 @@
 
         // Common parsing logic
         const timeRaw = sum1D(measurementParts.time?.map(idx => parseFloat(parts[idx]))) * timeConversionDATAC; // Convert microseconds to seconds
-        const distRaw = sum1D(measurementParts.position?.map(idx => parseFloat(parts[idx]))); // Position value
-        const speedRaw = sum1D(measurementParts.speed?.map(idx => parseFloat(parts[idx]))); // Speed value
+        const distRaw = sum1D(measurementParts.position?.map(idx => parseFloat(parts[idx]))) * positionConversionDATAC; // Position value
+        // const accelRaw = sum1D(measurementParts.accel?.map(idx => parseFloat(parts[idx]))) * accelConversionDATAC; // Acceleration value
+        const speedRaw = sum1D(measurementParts.speed?.map(idx => parseFloat(parts[idx]))) * speedConversionDATAC; // Speed value
         const forceRaw = measurementParts.force?.map((idx) => {
             const val = parts[idx];
             if (val === "0") return null;
-            const num = parseFloat(val);
+            const num = parseFloat(val) * forceConversionDATAC; // Force value
             return catchVal(num, null, isNumSafe);
         }); // LoadCell values
         // const photoIndexRaw = isDef(measurementParts?.photoIndex) ? parseInt(parts[measurementParts?.photoIndex]) : null; // DSLR photo index
@@ -9970,6 +10096,7 @@
         return {
             time: catchVal(timeRaw, null, isNumSafe),
             position: catchVal(distRaw, null, isNumSafe),
+            // accel: catchVal(accelRaw, null, isNumSafe),
             speed: catchVal(speedRaw, null, isNumSafe),
             force: catchVal(forceRaw, null, isNonEmptyArr),
             // photoIndex: catchVal(photoIndexRaw, null, Number.isInteger)
@@ -10008,17 +10135,17 @@
         } else {
             // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
             const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNumSafe), (newData?.time - tareValues.time), (dataInterval_us * timeConversionDATAC));
-            newData.time = roundDecimalFast(corrected, precisionTime);
+            newData.time = roundDecimalFast(corrected, precisionTimeMach);
 
         }
         lastAcceptedTime = newData?.time;
 
-        newData.position = roundDecimalFast((newData.position - tareValues.position) * displacementSignCorrection, precisionPosition);
-        newData.speed = roundDecimalFast(newData.speed * displacementSignCorrection, precisionSpeed);
+        newData.position = roundDecimalFast((newData.position - tareValues.position) * displacementSignCorrection, precisionPositionMach);
+        newData.speed = roundDecimalFast(newData.speed * displacementSignCorrection, precisionSpeedMach);
         newData.force = newData?.force?.map((value, index) =>
             (loadcellsInfo.presentLoadcells[index] && isNumSafe(value))
                 ?
-                roundDecimalFast((value * loadSignCorrections[index]) - (tareValues.force[index] || 0), precisionForce)
+                roundDecimalFast((value * loadSignCorrections[index]) - (tareValues.force[index] || 0), precisionForceMach)
                 :
                 null);
 
@@ -10081,7 +10208,7 @@
                     const forceHoldTimeMs = (newData?.time - timer) * timeConversionSToMs;
 
                     if (forceHoldTimeMs >= holdForceTimeMs) {
-                        const holdTime = convertUnits(forceHoldTimeMs, 'ms', 's', {precision: 3});
+                        const holdTime = convertUnits(forceHoldTimeMs, timeUnitSys, timeUnitExp, {precision: 3});
                         endMeasuring(0, {
                             ednStatus: `hold force time limit [${holdTime}s]`,
                             endText: `⏹️ Experiment stopped due to hold force time limit (${stoppingForceLimit} N for ${holdTime} s).`,
@@ -10127,10 +10254,10 @@
 
 
         // Handle speed checks and experiment stopping
-        if (checkSpeed && (newData?.speed < (1 / Math.pow(10, precisionSpeed)) && newData?.time > 0.5)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - tareValues.time) > 1 second => handled in 'timeStepCheck'
+        if (checkSpeed && (newData?.speed < (1 / Math.pow(10, precisionSpeedMach)) && newData?.time > 0.5)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - tareValues.time) > 1 second => handled in 'timeStepCheck'
             if (doBrutalMove) {
                 // await sendCommandGeneral(displacementSignCorrection === 1 ? "MC END" : "MC HOME");
-                const diff = roundDecimalFast((experimentEndLimits?.position - newData?.position), (precisionPosition + 2));
+                const diff = roundDecimalFast((experimentEndLimits?.position - newData?.position), (precisionPositionMach + 2));
                 if (isValidInputNum(diff)) sendCommandGeneral(`MC MOVEBY MACH ${diff * displacementSignCorrection}`); // small move to trigger movement
                 else endMeasuring(Math.max(delayMsAfterEndMeasurement / 4, 10), {
                     ednStatus: 'zero speed [brutal-mode]',
@@ -10903,10 +11030,10 @@
         // Helper rounding functions
         const getRoundVal = (x, dec, decSym) => getCustomStrValue(x, dec, decSym, false, true, "");
 
-        const rTime = (num) => getRoundVal(num, precisionTime, decimalSymbol);
-        const rDist = (num) => getRoundVal(num, precisionPosition, decimalSymbol);
-        const rForce = (num) => getRoundVal(num, precisionForce, decimalSymbol);
-        const rSpeed = (num) => getRoundVal(num, precisionSpeed, decimalSymbol);
+        const rTime = (num) => getRoundVal(num, precisionTimeMach, decimalSymbol);
+        const rDist = (num) => getRoundVal(num, precisionPositionMach, decimalSymbol);
+        const rForce = (num) => getRoundVal(num, precisionForceMach, decimalSymbol);
+        const rSpeed = (num) => getRoundVal(num, precisionSpeedMach, decimalSymbol);
         const rPhoto = (num) => getRoundVal(num, 0, decimalSymbol);
 
         request.onsuccess = async function () {
@@ -11023,7 +11150,7 @@
             console.info(`✅ Data saved to file: ${fileName}`);
 
             // Update IndexedDB status after saving
-            await updateLogById(0, {status: 'saved'});
+            await updateLogById(0, {logStatus: 'saved'});
         };
     }
 
@@ -11290,7 +11417,7 @@
             fileOpts.delimiter = ";";
             fileOpts.skipRows = 1;  // (Header)
             fileOpts.columns = 5;
-            fileOpts['dataTypes']['time']['conversion'] = convertUnits(1, 'µs', 's'); // Convert time from microseconds to seconds
+            fileOpts['dataTypes']['time']['conversion'] = convertUnits(1, 'µs', fileOptions?.time.unit || 's'); // Convert time from microseconds to seconds
         } else {
             // Unknown file type
             fileType = "unknown";
@@ -12298,7 +12425,7 @@
         await logMessage("\n");
 
         await sendCommandGeneral("MC STOP"); // Stop movement
-        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', 'µs')))}`); // Stop data collection
+        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', timeUnitMach)))}`); // Stop data collection
         await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
 
         await sendCommandGeneral("MC ENDSTOPS ENABLE");
@@ -12310,7 +12437,7 @@
         await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${Math.ceil(WATCHDOG_INTERVAL_MS)}`); // TODO: check units
 
         await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
-        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, convertUnits(1, 's', 'ms')))}`);
+        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, convertUnits(1, 's', timeUnitSys)))}`);
 
         await logMessage("\n");
 
@@ -12324,7 +12451,7 @@
         //
         // }
 
-        const signal = AbortSignal.timeout(convertUnits(10, 's', 'ms'));
+        const signal = AbortSignal.timeout(convertUnits(10, 's', timeUnitSys));
         if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
         signal.addEventListener('abort', (ev) => {
             console.info('Canceled!', signal.reason);
@@ -14206,14 +14333,14 @@
 
         // Sliders
         UI.speedSlider.addEventListener("input", () => {
-            currentSpeed = roundDecimalFast(getInputNumDef(UI.speedSlider.value, 15), precisionSpeedSystem);
-            UI.speedLabel.value = `${currentSpeed.toFixed(precisionSpeedSystem)}`;
+            currentSpeed = roundDecimalFast(getInputNumDef(UI.speedSlider.value, 15), precisionSpeedSys);
+            UI.speedLabel.value = `${currentSpeed.toFixed(precisionSpeedSys)}`;
         });
         UI.speedSlider.addEventListener("change", async () => isConnected ? sendCommandGeneral(`MC SET SPEEDMM ${UI.speedSlider.value}`) : null);
 
         UI.accelerationSlider.addEventListener("input", () => {
-            currentAcceleration = roundDecimalFast(getInputNumDef(UI.accelerationSlider.value, 150), precisionAccelerationSystem);
-            UI.accelerationLabel.value = currentAcceleration.toFixed(precisionAccelerationSystem);
+            currentAcceleration = roundDecimalFast(getInputNumDef(UI.accelerationSlider.value, 150), precisionAccelSys);
+            UI.accelerationLabel.value = currentAcceleration.toFixed(precisionAccelSys);
         });
         UI.accelerationSlider.addEventListener("change", async () => isConnected ? sendCommandGeneral(`MC SET ACCELMM ${UI.accelerationSlider.value}`) : null);
 
@@ -14263,7 +14390,7 @@
      */
     window.onload = async () => {
 
-        while (!(initialPageLoaded && initialDataLoaded)) await sleep(200);
+        while (!(initialPageLoaded && initialDataLoaded)) await sleep(200); // TODO: add timeout
 
         // await loadCommands();
 
