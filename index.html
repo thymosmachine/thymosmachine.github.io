@@ -6520,7 +6520,7 @@
 
         const maxSeries = Math.max(seriesCountTC, seriesCountPC);
 
-        if (!isNumSafe(series) || series < 1)  series = maxSeries;
+        if (!isNumSafe(series) || series < 1) series = maxSeries;
         series = Math.min(series, maxSeries);
 
         for (let i = 1; i <= (series); i++) {
@@ -12358,7 +12358,7 @@
             if (!serialComPort) throw new Error("No serial port available.");
 
 
-            await openSerial(serialComPort);
+            await openSerial(serialComPort, {retry: false, userRequest: userRequest});
 
         } catch (error) {
 
@@ -12367,7 +12367,7 @@
         }
     }
 
-    async function openSerial(comPort, retry = false) {
+    async function openSerial(comPort, {retry = false, userRequest = false} = {}) {
         try {
             activeWatchDog = false;
 
@@ -12387,14 +12387,22 @@
 
 
             console.info("🔌 Opening new port...");
-            await openComPort(comPort);
+            await openComPort(comPort).then(() => {
 
-            await logMessage("\n✅ Connected to ESP via Serial\n");
 
-            tryCount = 0;
-            reconnectAttempts = 0;
+                tryCount = 0;
+                reconnectAttempts = 0;
+
+                logMessage("\n✅ Connected to ESP via Serial\n");
+
+            });
 
         } catch (error) {
+            if (error.name === 'NetworkError') {
+                logAndConsoleMessage("⚠️ Network error occurred while opening the serial port.", {consoleLevel: 'error'});
+                if (userRequest) alert("⚠️ Network error occurred while opening the serial port\n\n        Port is probably already in use by another application.");
+            }
+
             activeWatchDog = false;
             if (!(error.name === "InvalidStateError" && retry)) {
                 await handleError(error, "openSerial");
@@ -12458,10 +12466,10 @@
         //
         // }
 
-        const signal = AbortSignal.timeout(convertUnits(10, 's', timeUnitSys));
+        const signal = AbortSignal.timeout(convertUnits(25, 's', timeUnitSys));
         if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
         signal.addEventListener('abort', (ev) => {
-            console.info('Canceled!', signal.reason);
+            console.info('Canceled!', ev.target.reason);
         }, {once: true});
         // signal.onabort = (ev) => {
         //     console.info('Canceled!', signal.aborted, signal.reason); // true, případně důvod
@@ -12489,7 +12497,9 @@
             } else {
                 await disconnectSerial({override: true});
             }
+
         } finally {
+            // await signal.clear();
         }
     }
 
@@ -13060,7 +13070,7 @@
 
             if (port) {
                 serialPort = port; // Update the serialPort reference
-                await openSerial(port, true);
+                await openSerial(port, {retry: true, userRequest: false});
             }
 
 
