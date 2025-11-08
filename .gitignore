@@ -20,7 +20,6 @@
 
 # Ignoruj všechny PNG soubory
 *.png
-
 # Ale neignoruj PNG soubory ve složce images/favicon
 !images/favicon/
 !images/favicon/*.png
@@ -44,11 +43,11 @@ node_modules/*
 *.xml
 *.pem
 
+*.bat
+!merge-dev-into-main-and-backup.bat
+!restore-main-from-backup.bat
+!server_python.bat
 debug.txt
-startServer_Ngorok.bat
-startServer_NPM-NODE.JS.bat
-startServer_NPX.bat
-startServer_PYTHON.bat
 index - kopie.html
 
 
