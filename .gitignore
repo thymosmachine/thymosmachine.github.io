@@ -31,12 +31,17 @@
 # Ignorovat moduly NODE.JS
 node_modules/
 .idea/
+.idea/misc.xml
+.idea/*.xml
+/.idea/misc.xml
+/.idea/*.xml
 *.xml
 *.pem
+
 debug.txt
 startServer_Ngorok.bat
 startServer_NPM-NODE.JS.bat
 startServer_NPX.bat
 startServer_PYTHON.bat
 index - kopie.html
-.idea/misc.xml
+
