@@ -32,9 +32,13 @@
 node_modules/
 .idea/
 .idea/misc.xml
+.idea/thatmatheww.github.io.iml
+.idea/*.iml
 .idea/*.xml
 /.idea/misc.xml
+/.idea/*.iml
 /.idea/*.xml
+*.iml
 *.xml
 *.pem
 
@@ -44,4 +48,5 @@ startServer_NPM-NODE.JS.bat
 startServer_NPX.bat
 startServer_PYTHON.bat
 index - kopie.html
+
 
