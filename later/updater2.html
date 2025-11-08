@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP Firmware Update</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .connection-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .file-section {
+            margin-bottom: 20px;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .file-item.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .file-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .file-header input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .file-header label {
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .file-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="file"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #229954;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #7f8c8d;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .log-section {
+            margin-top: 30px;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+        }
+
+        .log-entry.info {
+            color: #4ec9b0;
+        }
+
+        .log-entry.error {
+            color: #f48771;
+        }
+
+        .log-entry.success {
+            color: #89d185;
+        }
+
+        .log-entry.warning {
+            color: #dcdcaa;
+        }
+
+        .progress-section {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-badge.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .file-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ESP Firmware Update Tool</h1>
+        <p class="subtitle">Webové rozhraní pro nahrávání firmware do ESP zařízení</p>
+
+        <div class="info-box">
+            ℹ️ Připojte ESP zařízení přes USB a klikněte na "Připojit ESP". Vyberte až 3 soubory a nastavte jejich adresy v paměti.
+        </div>
+
+        <!-- Connection Section -->
+        <div class="connection-section">
+            <h3 style="margin-bottom: 15px;">Připojení k zařízení
+                <span class="status-badge disconnected" id="statusBadge">Odpojeno</span>
+            </h3>
+            <div class="form-group">
+                <label for="baudRate">Baudrate:</label>
+                <select id="baudRate">
+                    <option value="115200" selected>115200</option>
+                    <option value="230400">230400</option>
+                    <option value="460800">460800</option>
+                    <option value="921600">921600</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="file-section">
+            <h3 style="margin-bottom: 15px;">Soubory firmware</h3>
+
+            <!-- File 1 -->
+            <div class="file-item" id="fileItem1">
+                <div class="file-header">
+                    <input type="checkbox" id="fileEnable1" onchange="toggleFileItem(1)">
+                    <label for="fileEnable1">Soubor 1</label>
+                </div>
+                <div class="file-controls" id="fileControls1" style="display: none;">
+                    <div class="form-group">
+                        <label for="file1">Vybrat soubor:</label>
+                        <input type="file" id="file1" accept=".bin">
+                    </div>
+                    <div class="form-group">
+                        <label for="address1">Adresa (hex):</label>
+                        <input type="text" id="address1" placeholder="0x1000" value="0x1000">
+                    </div>
+                </div>
+            </div>
+
+            <!-- File 2 -->
+            <div class="file-item" id="fileItem2">
+                <div class="file-header">
+                    <input type="checkbox" id="fileEnable2" onchange="toggleFileItem(2)">
+                    <label for="fileEnable2">Soubor 2</label>
+                </div>
+                <div class="file-controls" id="fileControls2" style="display: none;">
+                    <div class="form-group">
+                        <label for="file2">Vybrat soubor:</label>
+                        <input type="file" id="file2" accept=".bin">
+                    </div>
+                    <div class="form-group">
+                        <label for="address2">Adresa (hex):</label>
+                        <input type="text" id="address2" placeholder="0x8000" value="0x8000">
+                    </div>
+                </div>
+            </div>
+
+            <!-- File 3 -->
+            <div class="file-item" id="fileItem3">
+                <div class="file-header">
+                    <input type="checkbox" id="fileEnable3" onchange="toggleFileItem(3)">
+                    <label for="fileEnable3">Soubor 3</label>
+                </div>
+                <div class="file-controls" id="fileControls3" style="display: none;">
+                    <div class="form-group">
+                        <label for="file3">Vybrat soubor:</label>
+                        <input type="file" id="file3" accept=".bin">
+                    </div>
+                    <div class="form-group">
+                        <label for="address3">Adresa (hex):</label>
+                        <input type="text" id="address3" placeholder="0x10000" value="0x10000">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <h3 style="margin-bottom: 10px;">Průběh nahrávání</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="connectBtn" onclick="connectESP()">
+                📡 Připojit ESP
+            </button>
+            <button class="btn btn-success" id="flashBtn" onclick="flashFirmware()" disabled>
+                ⚡ Nahrát Firmware
+            </button>
+            <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
+                🔄 Hard Reset
+            </button>
+            <button class="btn btn-secondary" id="disconnectBtn" onclick="disconnect()" disabled>
+                ❌ Odpojit
+            </button>
+            <button class="btn btn-secondary" onclick="clearLog()">
+                🗑️ Vymazat Log
+            </button>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <h3 style="margin-bottom: 10px;">Log konzole</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry info">Připraveno k připojení ESP zařízení...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import maps for better module support -->
+    <script type="importmap">
+    {
+      "imports": {
+        "buffer": "https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm"
+      }
+    }
+    </script>
+
+    <!-- ESPTool.js Library as Module -->
+    <script type="module">
+        import { Buffer } from 'buffer';
+        import { ESPLoader, Transport } from 'https://unpkg.com/esptool-js@0.4.0/bundle.js';
+
+        // Make Buffer globally available
+        window.Buffer = Buffer;
+
+        let esploader;
+        let transport;
+        let chip = null;
+        let connected = false;
+
+        // Make functions globally accessible
+        window.toggleFileItem = toggleFileItem;
+        window.connectESP = connectESP;
+        window.flashFirmware = flashFirmware;
+        window.hardReset = hardReset;
+        window.disconnect = disconnect;
+        window.clearLog = clearLog;
+
+        // Helper function to convert Uint8Array to binary string
+        function uint8ArrayToBinaryString(uint8Array) {
+            let binaryString = '';
+            const len = uint8Array.byteLength;
+            for (let i = 0; i < len; i++) {
+                binaryString += String.fromCharCode(uint8Array[i]);
+            }
+            return binaryString;
+        }
+
+        // Toggle file item visibility
+        function toggleFileItem(index) {
+            const checkbox = document.getElementById(`fileEnable${index}`);
+            const controls = document.getElementById(`fileControls${index}`);
+            const item = document.getElementById(`fileItem${index}`);
+
+            if (checkbox.checked) {
+                controls.style.display = 'grid';
+                item.classList.add('active');
+            } else {
+                controls.style.display = 'none';
+                item.classList.remove('active');
+            }
+        }
+
+        // Logging function
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('cs-CZ');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLog() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.innerHTML = '<div class="log-entry info">Log vymazán...</div>';
+        }
+
+        // Update progress bar
+        function updateProgress(percentage) {
+            const progressSection = document.getElementById('progressSection');
+            const progressBar = document.getElementById('progressBar');
+            progressSection.classList.add('active');
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = Math.round(percentage) + '%';
+        }
+
+        // Connect to ESP
+        async function connectESP() {
+            try {
+                addLog('Požadavek na připojení k ESP zařízení...', 'info');
+
+                const baudRate = parseInt(document.getElementById('baudRate').value);
+
+                // Request serial port
+                const port = await navigator.serial.requestPort();
+                transport = new Transport(port, true);
+
+                addLog(`Otevírám sériový port s baudrate ${baudRate}...`, 'info');
+
+                // Create ESPLoader instance
+                const loaderOptions = {
+                    transport: transport,
+                    baudrate: baudRate,
+                    terminal: {
+                        clean: () => {},
+                        writeLine: (data) => addLog(data, 'info'),
+                        write: (data) => {}
+                    }
+                };
+
+                esploader = new ESPLoader(loaderOptions);
+
+                // Connect to chip
+                chip = await esploader.main();
+
+                addLog(`✅ Připojeno k ${chip}!`, 'success');
+
+                // Try to get chip info
+                try {
+                    const chipName = await esploader.chipName();
+                    addLog(`Chip: ${chipName}`, 'info');
+                } catch (e) {
+                    addLog(`Chip: ${chip}`, 'info');
+                }
+
+                // Get MAC address
+                try {
+                    const macAddr = await esploader.readMac();
+                    addLog(`MAC adresa: ${macAddr}`, 'info');
+                } catch (e) {
+                    // MAC reading might not be supported on all chips
+                }
+
+                connected = true;
+                updateConnectionStatus(true);
+
+            } catch (error) {
+                addLog(`❌ Chyba připojení: ${error.message}`, 'error');
+                console.error(error);
+                connected = false;
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Flash firmware
+        async function flashFirmware() {
+            if (!connected) {
+                addLog('❌ ESP není připojeno!', 'error');
+                return;
+            }
+
+            try {
+                // Collect enabled files
+                const fileArray = [];
+
+                for (let i = 1; i <= 3; i++) {
+                    const checkbox = document.getElementById(`fileEnable${i}`);
+                    if (checkbox.checked) {
+                        const fileInput = document.getElementById(`file${i}`);
+                        const addressInput = document.getElementById(`address${i}`);
+
+                        if (!fileInput.files[0]) {
+                            addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                            return;
+                        }
+
+                        const file = fileInput.files[0];
+                        const address = addressInput.value;
+
+                        // Convert hex address to decimal
+                        const addressDec = parseInt(address, 16);
+
+                        // Read file as array buffer
+                        const fileData = await file.arrayBuffer();
+                        const uint8Data = new Uint8Array(fileData);
+
+                        // Convert to binary string (esptool-js expects this format)
+                        const binaryString = uint8ArrayToBinaryString(uint8Data);
+
+                        fileArray.push({
+                            data: binaryString,
+                            address: addressDec
+                        });
+
+                        addLog(`📁 Přidán soubor: ${file.name} (${uint8Data.length} bajtů) na adresu ${address} (${addressDec})`, 'info');
+                    }
+                }
+
+                if (fileArray.length === 0) {
+                    addLog('⚠️ Nebyl vybrán žádný soubor!', 'warning');
+                    return;
+                }
+
+                addLog(`🚀 Zahajuji nahrávání ${fileArray.length} soubor(ů)...`, 'info');
+
+                // Disable buttons during flashing
+                setButtonsEnabled(false);
+                updateProgress(0);
+
+                // Flash options
+                const flashOptions = {
+                    fileArray: fileArray,
+                    flashSize: 'keep',
+                    eraseAll: false,
+                    compress: true,
+                    reportProgress: (fileIndex, written, total) => {
+                        const percentage = (written / total) * 100;
+                        updateProgress(percentage);
+                    }
+                };
+
+                addLog('📝 Mazání a příprava flash paměti...', 'info');
+
+                // Write files to flash
+                await esploader.writeFlash(flashOptions);
+
+                addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+                updateProgress(100);
+
+                setButtonsEnabled(true);
+
+            } catch (error) {
+                addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+                console.error(error);
+                setButtonsEnabled(true);
+            }
+        }
+
+        // Hard reset ESP
+        async function hardReset() {
+            if (!connected) {
+                addLog('❌ ESP není připojeno!', 'error');
+                return;
+            }
+
+            try {
+                addLog('🔄 Provádím hard reset ESP...', 'info');
+                await esploader.hardReset();
+                addLog('✅ Hard reset proveden!', 'success');
+            } catch (error) {
+                addLog(`❌ Chyba při resetu: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // Disconnect
+        async function disconnect() {
+            try {
+                if (transport) {
+                    addLog('Odpojuji ESP...', 'info');
+                    await transport.disconnect();
+                    await transport.waitForUnlock(1500);
+                }
+
+                connected = false;
+                updateConnectionStatus(false);
+                addLog('✅ Odpojeno', 'success');
+
+            } catch (error) {
+                addLog(`❌ Chyba při odpojování: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(isConnected) {
+            const statusBadge = document.getElementById('statusBadge');
+            const connectBtn = document.getElementById('connectBtn');
+            const flashBtn = document.getElementById('flashBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (isConnected) {
+                statusBadge.textContent = 'Připojeno';
+                statusBadge.className = 'status-badge connected';
+                connectBtn.disabled = true;
+                flashBtn.disabled = false;
+                resetBtn.disabled = false;
+                disconnectBtn.disabled = false;
+            } else {
+                statusBadge.textContent = 'Odpojeno';
+                statusBadge.className = 'status-badge disconnected';
+                connectBtn.disabled = false;
+                flashBtn.disabled = true;
+                resetBtn.disabled = true;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        // Enable/disable buttons
+        function setButtonsEnabled(enabled) {
+            document.getElementById('flashBtn').disabled = !enabled;
+            document.getElementById('resetBtn').disabled = !enabled;
+            document.getElementById('connectBtn').disabled = !enabled;
+        }
+
+        // Check Web Serial API support
+        if (!("serial" in navigator)) {
+            addLog('❌ Web Serial API není podporováno v tomto prohlížeči!', 'error');
+            addLog('ℹ️ Použijte Chrome, Edge nebo Opera.', 'warning');
+            document.getElementById('connectBtn').disabled = true;
+        }
+    </script>
+</body>
+</html>
