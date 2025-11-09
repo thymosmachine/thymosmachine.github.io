@@ -395,6 +395,15 @@
             background: #732d91;
         }
 
+        .btn-fourth {
+            background: #16a085;
+            color: white;
+        }
+
+        .btn-fourth:hover:not(:disabled) {
+            background: #138d75;
+        }
+
         .btn-small {
             padding: 8px 16px;
             font-size: 14px;
@@ -834,6 +843,9 @@
         <button class="btn btn-third" onclick="test()">
             🧪 Test ESP
         </button>
+        <button class="btn btn-fourth" onclick="flashAllVersions()">
+            🚀 Nahrát všechny verze
+        </button>
     </div>
 
     <!-- Log Section -->
@@ -869,6 +881,17 @@
     // Make Buffer globally available
     window.Buffer = Buffer;
 
+    let doPreCommands = false; // Set to true to run pre-commands before flashing
+    let doPostCommands = true; // Set to true to run post-commands after flashing
+
+    const useFilteredPort = true;
+    const thymosFingerprints = [
+        "12346:4097", //  ≈ "0x303a:0x1001"
+    ];
+
+    let endBuffer = '';
+    let logReader = false;
+
     let esploader;
     let transport;
     let chip = null;
@@ -878,6 +901,15 @@
     let serialPort = null;
     let manifestData = null;
     let currentMode = 'custom'; // 'custom' or 'manifest'
+
+    const machineInfo = {};
+    let flashReady = false;
+    let serialReader = null;
+    let serialWriter = null;
+    let isReading = false;
+    let readBuffer = '';
+    let readableStreamClosed = null;
+    let writableStreamClosed = null;
 
     // File validation state
     const fileValidation = {
@@ -902,54 +934,111 @@
 
 
     window.test = test;
+    window.flashAllVersions = flashAllVersions;
 
     async function test() {
-        if (!connected) {
+        if (!connected || !serialPort.connected) {
             addLog('❌ Zařízení není připojeno!', 'error');
             return;
         }
 
-        const result = await sendCommandAndWait(
-            'misc get name',
-            3000,
-            {
-                // format: anything + ":" + anything
-                regex: /\s*(.+):\s*(.+)/,
-                position: 'any',
-                description: 'Machine name'
-            }
-        );
-
-        if (result?.success && result?.groups) {
-            console.log(result);
-            addLog(`📌 Name: ${result.groups[1]}`, 'success');
+        if (inBootMode) {
+            addLog('⚠️ ESP je v boot módu, provádím hard reset...', 'warning');
+            await hardReset();
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        await new Promise(resolve => setTimeout(resolve, 200));
+        try {
+            addLog('🧪 Zahajuji test komunikace...', 'info');
 
-        await writeSerial('misc get libinfo');
-        await new Promise(resolve => setTimeout(resolve, 50));
-        await writeSerial('mc get iscalibrated');
-        await new Promise(resolve => setTimeout(resolve, 50));
-        await writeSerial('misc get name');
-        await new Promise(resolve => setTimeout(resolve, 50));
-        await writeSerial('misc get machine_id');
-        await new Promise(resolve => setTimeout(resolve, 50));
+            // Initialize serial
+            if (!await initializeSerial()) {
+                return;
+            }
 
-        console.log('Test function called');
+            startSerialRead();
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Test commands
+            await writeSerial('help');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // const result = await sendCommandAndWait(
+            //     'misc get name',
+            //     3000,
+            //     {
+            //         regex: /\s*(.+):\s*(.+)/,
+            //         position: 'any',
+            //         description: 'Machine name'
+            //     }
+            // );
+            //
+            // if (result?.success && result?.groups) {
+            //     console.log(result);
+            //     addLog(`📌 Name: ${result.groups[1]}`, 'success');
+            // }
+            //
+            // await new Promise(resolve => setTimeout(resolve, 3000 + 2000));
+
+            await writeSerial('misc get libinfo');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await writeSerial('mc get iscalibrated');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            addLog('✅ Test dokončen', 'success');
+        } catch (error) {
+            addLog(`❌ Chyba při testu: ${error.message}`, 'error');
+        } finally {
+            await stopSerialRead();
+            await closeSerial();
+        }
     }
 
+    async function flashAllVersions() {
+        if (!connected || !serialPort.connected) {
+            addLog('❌ Zařízení není připojeno!', 'error');
+            return;
+        }
 
-    // Add these global variables at the top with other globals
-    let serialReader = null;
-    let serialWriter = null;
-    let isReading = false;
-    let readBuffer = '';
+        const versionSelect = document.getElementById('versionSelect');
+        const totalVersions = versionSelect.options.length - 2;
 
-    const machineInfo = {};
+        for (let i = 0; i < totalVersions; i++) {
+            try {
+                const selValue = versionSelect.options[i]?.value;
+                if (selValue === 'custom' || selValue?.includes('─────')) continue;
 
-    // Přidat na začátek skriptu s ostatními globálními proměnnými
-    let flashReady = false;
+                versionSelect.selectedIndex = i;
+
+                const current = `Flashed version [${i + 1} / ${totalVersions}]: ${versionSelect.value}`
+
+                endBuffer += '\n========================';
+                // log selected version
+                endBuffer += `\n${current}`;
+                endBuffer += '\n------------------------\n';
+                console.log(current);
+                addLog(current);
+
+                await handleVersionChange();
+                await new Promise(resolve => setTimeout(resolve, 100)); // Wait for UI update
+                await flashFirmware();
+                await new Promise(resolve => setTimeout(resolve, 500)); // Wait between flashes
+            } catch (error) {
+                endBuffer += `\n❌ Chyba při nahrávání verze [${i + 1}]: ${error.message}`;
+                endBuffer += '\n========================\n';
+                console.error(`Error flashing version [${i + 1}]:`, error);
+            }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log('All versions flashed.');
+        addLog('✅ Všechny verze byly nahrány.', 'success');
+        console.log(endBuffer);
+
+        await disconnect();
+    }
 
     // Nová funkce pro kontrolu připravenosti k flashi
     function checkFlashReadiness() {
@@ -1021,11 +1110,11 @@
         try {
             // Get readable and writable streams
             const textDecoder = new TextDecoderStream();
-            const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+            readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
             serialReader = textDecoder.readable.getReader();
 
             const textEncoder = new TextEncoderStream();
-            const writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
+            writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
             serialWriter = textEncoder.writable.getWriter();
 
             addLog('✅ Sériové čtení/zápis inicializováno', 'success');
@@ -1055,11 +1144,7 @@
                     const lines = readBuffer.split('\n');
                     readBuffer = lines.pop(); // Keep incomplete line in buffer
 
-                    lines.forEach(line => {
-                        if (line.trim()) {
-                            addLog(`📥 RX: ${line.trim()}`, 'machineOut');
-                        }
-                    });
+                    logReadings(lines);
                 }
             }
         } catch (error) {
@@ -1067,6 +1152,15 @@
                 addLog(`❌ Chyba při čtení: ${error.message}`, 'error');
             }
         }
+    }
+
+    async function logReadings(lines) {
+        lines.forEach(line => {
+            if (line.trim()) {
+                if (logReader) endBuffer += line + '\n';
+                addLog(`📥 RX: ${line.trim()}`, 'machineOut');
+            }
+        });
     }
 
     // Stop reading from serial port
@@ -1181,6 +1275,22 @@
                 console.error('Error closing writer:', error);
             }
         }
+
+        // Wait for streams to close
+        try {
+            if (writableStreamClosed) {
+                await writableStreamClosed.catch(() => {
+                });
+                writableStreamClosed = null;
+            }
+            if (readableStreamClosed) {
+                await readableStreamClosed.catch(() => {
+                });
+                readableStreamClosed = null;
+            }
+        } catch (error) {
+            console.error('Error closing streams:', error);
+        }
     }
 
     // Send command and wait for response
@@ -1250,130 +1360,136 @@
     async function executePreFlashCommands() {
         addLog('📋 Spouštím pre-flash příkazy...', 'info');
 
+        let status = false;
         try {
-            // Initialize serial communication
+            // Check if ESP is in boot mode
+            if (inBootMode) {
+                addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
+                addLog('🔄 Provádím hard reset...', 'valid');
+
+                await esploader.hardReset();
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
+
+                updateBootModeStatus(false);
+                addLog('✅ ESP je nyní v normálním módu', 'success');
+            }
+
+            // Now we can initialize serial communication
             if (!await initializeSerial()) {
                 return false;
             }
 
             // Start reading in background
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
-            // // Test basic communication
-            // let result = await waitForOK('AT', 2000);
-            // if (!result.success) {
-            //     addLog('⚠️ Zařízení neodpovídá na AT příkazy', 'warning');
+            // const response_name = await sendCommandAndWait('misc get name', 5000);
+            // const response_id = await sendCommandAndWait('misc get machine_id', 5000);
+            // const response_speed = await sendCommandAndWait('mc get speed', 5000);
+            // const response_accel = await sendCommandAndWait('mc get acceleration', 5000);
+            // console.log('Machine Name:', response_name);
+            // if (response_name && response_name.length > 0) {
+            //     machineInfo.name = response_name[0];
             // }
-
-            // Get MAC address with multiple format support
-            // const mac = await getMacAddress(3000);
-            // if (mac) {
-            //     addLog(`📌 MAC adresa: ${mac}`, 'success');
+            // console.log('Machine ID:', response_id);
+            // if (response_id && response_id.length > 0) {
+            //     machineInfo.id = response_id[id];
             // }
-            //
-            // // Get version with multiple format support
-            // const version = await getVersion(3000);
-            // if (version) {
-            //     addLog(`📌 Verze firmware: ${version}`, 'success');
+            // console.log('Machine Info:', machineInfo);
+            // if (response_speed && response_speed.length > 0) {
+            //     machineInfo.speed = response_speed[0];
             // }
-
-            // Custom command with regex
-            // result = await sendCommandAndWait(
-            //     'AT+CIPSTATUS',
-            //     3000,
-            //     [
-            //         {regex: /STATUS:(\d+)/, description: 'Connection status'},
-            //         {string: 'OK', position: 'last'}
-            //     ]
-            // );
-            //
-            // if (result.success) {
-            //     addLog(`📊 Status: ${result.groups ? result.groups[0] : 'OK'}`, 'info');
-            // }
-            //
-            // // Wait for specific response at specific position
-            // result = await sendCommandAndWait(
-            //     'AT+GMR',
-            //     3000,
-            //     {
-            //         regex: /SDK version:([0-9.]+)/,
-            //         position: 'any',
-            //         description: 'SDK version'
-            //     }
-            // );
-            //
-            // if (result.success && result.groups) {
-            //     addLog(`📌 SDK verze: ${result.groups[0]}`, 'success');
+            // console.log('Machine Speed:', machineInfo.speed);
+            // if (response_accel && response_accel.length > 0) {
+            //     machineInfo.acceleration = response_accel[0];
             // }
 
-            await stopSerialRead();
-            await closeSerial();
+            await writeSerial('misc get name');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await writeSerial('misc get machine_id');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await writeSerial('mc get speed');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await writeSerial('mc get acceleration');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Your custom commands here
+            // const result = await sendCommandAndWait('misc get name', 3000, {
+            //     regex: /\s*(.+):\s*(.+)/,
+            //     position: 'any',
+            //     description: 'Machine name'
+            // });
+
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             addLog('✅ Pre-flash příkazy dokončeny', 'success');
-            return true;
+            status = true;
 
         } catch (error) {
             addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
             await stopSerialRead();
             await closeSerial();
-            return false;
+            status = false;
+
+        } finally {
+
+            await stopSerialRead();
+            await closeSerial();
+            return status;
         }
     }
+
 
     // Post-flash commands with pattern matching
     async function executePostFlashCommands() {
         addLog('📋 Spouštím post-flash příkazy...', 'info');
 
         try {
-            // Wait for device to boot
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait
 
-            // Initialize serial communication
+            // Check if ESP is in boot mode
+            if (inBootMode) {
+                addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
+                addLog('🔄 Provádím hard reset...', 'valid');
+
+                await esploader.hardReset();
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
+
+                updateBootModeStatus(false);
+                addLog('✅ ESP je nyní v normálním módu', 'success');
+            }
+
+            // Now we can initialize serial communication
             if (!await initializeSerial()) {
                 return false;
             }
 
-            // Start reading
+            // Start reading in background
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            logReader = true;
+            await new Promise(resolve => setTimeout(resolve, 100));
 
-            // // Wait for boot message with multiple patterns
-            // let result = await sendCommandAndWait(
-            //     '', // No command, just wait for boot message
-            //     5000,
-            //     [
-            //         {regex: /ready/i, description: 'Boot ready'},
-            //         {regex: /boot.*success/i, description: 'Boot success'},
-            //         {regex: /started/i, description: 'Started'}
-            //     ]
-            // );
-            //
-            // if (result.success) {
-            //     addLog('✅ Zařízení se úspěšně nabootovalo', 'success');
+            // Your post-flash commands here
+            await writeSerial('misc get libinfo');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await writeSerial('mc get iscalibrated');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await writeSerial('misc get name');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await writeSerial('misc get machine_id');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Example: Restore machine info
+            // if (machineInfo.name) {
+            //     await writeSerial(`misc set name ${machineInfo.name}`);
+            //     await new Promise(resolve => setTimeout(resolve, 50));
             // }
-            //
-            // // Test communication
-            // result = await waitForOK('AT', 2000);
-            // if (result.success) {
-            //     addLog('✅ Komunikace po flashi funguje', 'success');
-            // }
-            //
-            // // Verify new version
-            // const version = await getVersion(3000);
-            // if (version) {
-            //     addLog(`📌 Nová verze firmware: ${version}`, 'success');
-            // }
-            //
-            // // Save configuration (example)
-            // result = await sendCommandAndWait(
-            //     'AT+SYSSTORE=1',
-            //     2000,
-            //     [
-            //         'OK',
-            //         {regex: /STORE.*OK/i}
-            //     ]
-            // );
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+            logReader = false;
+            endBuffer += '\n========================\n';
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             await stopSerialRead();
             await closeSerial();
@@ -1448,7 +1564,7 @@
 
             // Start reading in background
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             // // Example commands - customize as needed
             // await writeSerial('AT'); // Test command
@@ -1460,23 +1576,76 @@
             // // Or use sendCommandAndWait for specific responses
             // const response = await sendCommandAndWait('AT+GMR', 2000, 'OK');
 
+            // Test basic communication
+            // await writeSerial('AT');
+            // await new Promise(resolve => setTimeout(resolve, 2000));
+            // let result = await waitForStr('AT', 2000);
+            // if (!result.success) {
+            //     addLog('⚠️ Zařízení neodpovídá na AT příkazy', 'warning');
+            // }
+            //
+            // Get MAC address with multiple format support
+            // const mac = await getMacAddress(3000);
+            // if (mac) {
+            //     addLog(`📌 MAC adresa: ${mac}`, 'success');
+            // }
+            //
+            // // Get version with multiple format support
+            // const version = await getVersion(3000);
+            // if (version) {
+            //     addLog(`📌 Verze firmware: ${version}`, 'success');
+            // }
 
-            const response_name = await sendCommandAndWait('misc get name', 1500);
-            const response_id = await sendCommandAndWait('misc get machine_id', 1500);
-            const response_speed = await sendCommandAndWait('mc get speed', 1500);
-            const response_accel = await sendCommandAndWait('mc get acceleration', 1500);
+            // Custom command with regex
+            // result = await sendCommandAndWait(
+            //     'AT+CIPSTATUS',
+            //     3000,
+            //     [
+            //         {regex: /STATUS:(\d+)/, description: 'Connection status'},
+            //         {string: 'OK', position: 'last'}
+            //     ]
+            // );
+            //
+            // if (result.success) {
+            //     addLog(`📊 Status: ${result.groups ? result.groups[0] : 'OK'}`, 'info');
+            // }
+            //
+            // // Wait for specific response at specific position
+            // result = await sendCommandAndWait(
+            //     'AT+GMR',
+            //     3000,
+            //     {
+            //         regex: /SDK version:([0-9.]+)/,
+            //         position: 'any',
+            //         description: 'SDK version'
+            //     }
+            // );
+            //
+            // if (result.success && result.groups) {
+            //     addLog(`📌 SDK verze: ${result.groups[0]}`, 'success');
+            // }
+
+
+            const response_name = await sendCommandAndWait('misc get name', 2000);
+            const response_id = await sendCommandAndWait('misc get machine_id', 2000);
+            const response_speed = await sendCommandAndWait('mc get speed', 2000);
+            const response_accel = await sendCommandAndWait('mc get acceleration', 2000);
 
             if (response_name && response_name.length > 0) {
                 machineInfo.name = response_name[0];
+                console.log('Machine name:', machineInfo.name);
             }
             if (response_id && response_id.length > 0) {
                 machineInfo.id = response_id[id];
+                console.log('Machine ID:', machineInfo.id);
             }
             if (response_speed && response_speed.length > 0) {
                 machineInfo.speed = response_speed[0];
+                console.log('Machine speed:', machineInfo.speed);
             }
             if (response_accel && response_accel.length > 0) {
                 machineInfo.acceleration = response_accel[0];
+                console.log('Machine acceleration:', machineInfo.acceleration);
             }
 
             await stopSerialRead();
@@ -1516,6 +1685,43 @@
             //
             // await writeSerial('AT+RST'); // Reset device
             // await new Promise(resolve => setTimeout(resolve, 500));
+
+            // // Wait for boot message with multiple patterns
+            // let result = await sendCommandAndWait(
+            //     '', // No command, just wait for boot message
+            //     5000,
+            //     [
+            //         {regex: /ready/i, description: 'Boot ready'},
+            //         {regex: /boot.*success/i, description: 'Boot success'},
+            //         {regex: /started/i, description: 'Started'}
+            //     ]
+            // );
+            //
+            // if (result.success) {
+            //     addLog('✅ Zařízení se úspěšně nabootovalo', 'success');
+            // }
+            //
+            // // Test communication
+            // result = await waitForStr('AT', 2000);
+            // if (result.success) {
+            //     addLog('✅ Komunikace po flashi funguje', 'success');
+            // }
+            //
+            // // Verify new version
+            // const version = await getVersion(3000);
+            // if (version) {
+            //     addLog(`📌 Nová verze firmware: ${version}`, 'success');
+            // }
+            //
+            // // Save configuration (example)
+            // result = await sendCommandAndWait(
+            //     'AT+SYSSTORE=1',
+            //     2000,
+            //     [
+            //         'OK',
+            //         {regex: /STORE.*OK/i}
+            //     ]
+            // );
 
             await writeSerial('memory reset'); // Reset memory
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -1594,12 +1800,11 @@
                     option.dataset.version = item.version; // Store version in data attribute
                     versionSelect.appendChild(option);
                 });
+                versionSelect.appendChild(createDivider());
             }
 
             // Add divider
             if (manifestData?.builds && Array.isArray(manifestData?.builds)) {
-                versionSelect.appendChild(createDivider());
-
                 // Add all builds
                 manifestData.builds.forEach((build, index) => {
                     const option = document.createElement('option');
@@ -2280,6 +2485,13 @@
         try {
             addLog('⚡ Přepínám do boot módu...', 'info');
 
+            // Close serial communication if active (normal mode)
+            if (serialReader || serialWriter) {
+                addLog('Uzavírám normální komunikaci...', 'info');
+                await closeSerial();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
             // Close existing transport
             if (transport) {
                 await transport.disconnect();
@@ -2329,7 +2541,16 @@
             const baudRate = parseInt(document.getElementById('baudRate').value);
 
             // Request serial port
-            serialPort = await navigator.serial.requestPort();
+            serialPort = await navigator.serial?.requestPort({
+                    // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
+                    filters: useFilteredPort ? [
+                        ...thymosFingerprints.map(fp => {
+                            const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 10));
+                            return {usbVendorId: vendorId, usbProductId: productId};
+                        })
+                    ] : []
+                }
+            );
 
 
             serialPort.addEventListener('disconnect', () => {
@@ -2374,34 +2595,34 @@
             // Check if in boot mode - if main() succeeded, we're in boot mode
             updateBootModeStatus(true);
 
-            // Try to get chip info
-            try {
-                const chipName = await esploader.chipName();
-                chipInfo.chipType = chipName;
-                addLog(`Chip: ${chipName}`, 'info');
-            } catch (e) {
-                addLog(`Chip: ${chip}`, 'info');
-            }
-
-            // Get MAC address
-            try {
-                const macAddr = await esploader.readMac();
-                chipInfo.mac = macAddr;
-                addLog(`MAC adresa: ${macAddr}`, 'info');
-            } catch (e) {
-                // MAC reading might not be supported on all chips
-            }
-
-            // Get flash size
-            try {
-                const flashSize = await esploader.getFlashSize();
-                if (flashSize) {
-                    chipInfo.flashSize = flashSize;
-                    addLog(`Flash velikost: ${flashSize}`, 'info');
-                }
-            } catch (e) {
-                // Flash size reading might not work
-            }
+            // // Try to get chip info
+            // try {
+            //     const chipName = await esploader.chipName();
+            //     chipInfo.chipType = chipName;
+            //     addLog(`Chip: ${chipName}`, 'info');
+            // } catch (e) {
+            //     addLog(`Chip: ${chip}`, 'info');
+            // }
+            //
+            // // Get MAC address
+            // try {
+            //     const macAddr = await esploader.readMac();
+            //     chipInfo.mac = macAddr;
+            //     addLog(`MAC adresa: ${macAddr}`, 'info');
+            // } catch (e) {
+            //     // MAC reading might not be supported on all chips
+            // }
+            //
+            // // Get flash size
+            // try {
+            //     const flashSize = await esploader.getFlashSize();
+            //     if (flashSize) {
+            //         chipInfo.flashSize = flashSize;
+            //         addLog(`Flash velikost: ${flashSize}`, 'info');
+            //     }
+            // } catch (e) {
+            //     // Flash size reading might not work
+            // }
 
             // Try to detect flash chip
             try {
@@ -2415,7 +2636,15 @@
             updateChipInfo();
 
         } catch (error) {
-            addLog(`❌ Chyba připojení: ${error.message}`, 'error');
+            if (error.name === 'NotFoundError') {
+                addLog('❌ Žádné zařízení nebylo vybráno.', 'error');
+            } else if (error.name === 'NotSupportedError') {
+                addLog('❌ Váš prohlížeč nepodporuje Web Serial API.', 'error');
+            } else if (error.name === 'NetworkError') {
+                addLog('❌ Nelze otevřít sériový port. Zkontrolujte, zda není používán jinou aplikací.', 'error');
+            } else {
+                addLog(`❌ Chyba připojení: ${error.message}`, 'error');
+            }
             console.error(error);
             connected = false;
             serialPort = null;
@@ -2603,7 +2832,7 @@
             addLog('🔄 Automatický hard reset...', 'valid');
 
             await esploader.hardReset();
-            addLog('✅ Hard reset proveden!', 'success');
+            addLog('☑️ Hard reset proveden!', 'accepted');
 
             setButtonsEnabled(true);
         }
@@ -2616,18 +2845,6 @@
             return;
         }
 
-        // Check if in boot mode before flashing
-        if (!inBootMode) {
-            addLog('⚠️ ESP není v boot módu! Přepínám do boot módu...', 'warning');
-            await enterBootMode();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            if (!inBootMode) {
-                addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
-                return;
-            }
-        }
-
 
         // clear all in 'machineInfo'
         for (const key of Object.keys(machineInfo)) {
@@ -2636,18 +2853,20 @@
 
 
         try {
-            // PRE-FLASH COMMANDS
-            addLog('═'.repeat(32), 'info');
-            addLog('🔧 PRE-FLASH FÁZE', 'info');
-            addLog('═'.repeat(32), 'info');
+            if (doPreCommands) {
+                // PRE-FLASH COMMANDS
+                addLog('═'.repeat(32), 'info');
+                addLog('🔧 PRE-FLASH FÁZE', 'info');
+                addLog('═'.repeat(32), 'info');
 
-            const preFlashSuccess = await executePreFlashCommands();
-            if (!preFlashSuccess) {
-                addLog('⚠️ Pre-flash příkazy selhaly, pokračuji s flashováním...', 'warning');
+                const preFlashSuccess = await executePreFlashCommands();
+                if (!preFlashSuccess) {
+                    addLog('⚠️ Pre-flash příkazy selhaly, pokračuji s flashováním...', 'warning');
+                }
+
+                // Wait a bit before flashing
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
-
-            // Wait a bit before flashing
-            await new Promise(resolve => setTimeout(resolve, 500));
 
             // Check if file 1 is merged firmware
             const hasMergedFirmware = isMergedFirmware() && document.getElementById('fileEnable1').checked;
@@ -2731,6 +2950,18 @@
                 }
             }
 
+            // Check if in boot mode before flashing
+            if (!inBootMode) {
+                addLog('⚠️ ESP není v boot módu! Přepínám do boot módu...', 'warning');
+                await enterBootMode();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                if (!inBootMode) {
+                    addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                    return;
+                }
+            }
+
             // FLASHING PHASE
             addLog('═'.repeat(32), 'info');
             addLog('💾 FLASH FÁZE', 'info');
@@ -2770,19 +3001,16 @@
 
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Auto hard reset after flash
-            addLog('🔄 Automatický hard reset...', 'valid');
-            await esploader.hardReset();
-            addLog('✅ Hard reset proveden!', 'success');
+            if (doPostCommands) {
+                // POST-FLASH COMMANDS
+                addLog('═'.repeat(32), 'info');
+                addLog('🔧 POST-FLASH FÁZE', 'info');
+                addLog('═'.repeat(32), 'info');
 
-            // POST-FLASH COMMANDS
-            addLog('═'.repeat(32), 'info');
-            addLog('🔧 POST-FLASH FÁZE', 'info');
-            addLog('═'.repeat(32), 'info');
-
-            const postFlashSuccess = await executePostFlashCommands();
-            if (!postFlashSuccess) {
-                addLog('⚠️ Post-flash příkazy selhaly', 'warning');
+                const postFlashSuccess = await executePostFlashCommands();
+                if (!postFlashSuccess) {
+                    addLog('⚠️ Post-flash příkazy selhaly', 'warning');
+                }
             }
 
             addLog('═'.repeat(32), 'info');
@@ -2797,7 +3025,7 @@
             // Auto hard reset after flash
             addLog('🔄 Automatický hard reset...', 'valid');
             await esploader.hardReset();
-            addLog('✅ Hard reset proveden!', 'success');
+            addLog('☑️ Hard reset proveden!', 'accepted');
 
             setButtonsEnabled(true);
         }
@@ -2811,21 +3039,36 @@
         }
 
         try {
-            addLog('🔄 Provádím hard reset ESP...', 'info');
+            addLog('🔄 Provádím hard reset ESP...', 'valid');
+
+            // Close serial if open
+            if (serialReader || serialWriter) {
+                await closeSerial();
+            }
+
             await esploader.hardReset();
-            addLog('✅ Hard reset proveden!', 'success');
+            addLog('☑️ Hard reset proveden!', 'accepted');
 
             // After reset, device is no longer in boot mode
             updateBootModeStatus(false);
+
+            // Wait for ESP to boot
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            addLog('ℹ️ ESP by mělo být v normálním módu a připraveno ke komunikaci', 'info');
+
         } catch (error) {
             addLog(`❌ Chyba při resetu: ${error.message}`, 'error');
             console.error(error);
         }
     }
 
-    // Disconnect
     async function disconnect() {
         try {
+            // Close serial if open
+            if (serialReader || serialWriter) {
+                await closeSerial();
+            }
+
             // Auto hard reset before disconnect
             if (connected && esploader) {
                 try {
@@ -2838,7 +3081,7 @@
             }
 
             if (transport) {
-                addLog('Odpojuji ESP...', 'info');
+                addLog('❎ Odpojuji ESP...', 'success');
                 await transport.disconnect();
                 await transport.waitForUnlock(1500);
             }
@@ -2851,6 +3094,10 @@
         } finally {
             connected = false;
             serialPort = null;
+            serialReader = null;
+            serialWriter = null;
+            readableStreamClosed = null;
+            writableStreamClosed = null;
             updateConnectionStatus(false);
             updateBootModeStatus(false);
             clearChipInfo();
@@ -2891,16 +3138,20 @@
     function setButtonsEnabled(enabled) {
         document.getElementById('flashBtn').disabled = !enabled;
         document.getElementById('resetBtn').disabled = !enabled;
-        document.getElementById('connectBtn').disabled = !enabled;
+        document.getElementById('connectBtn').disabled = serialPort.connected ? true : !enabled;
         document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
     }
 
     // Check Web Serial API support
     if (!("serial" in navigator)) {
         addLog('❌ Web Serial API není podporováno v tomto prohlížeči!', 'error');
-        addLog('ℹ️ Použijte Chrome, Edge nebo Opera.', 'warning');
+        addLog('⚠️ Použijte Chrome, Edge nebo Opera.', 'warning');
         document.getElementById('connectBtn').disabled = true;
     }
+</script>
+
+<script>
+
 </script>
 </body>
 </html>
