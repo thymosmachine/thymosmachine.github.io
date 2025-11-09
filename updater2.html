@@ -1,0 +1,2906 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP Firmware Update</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .connection-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .chip-info-section {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #4a90e2;
+            display: none;
+        }
+
+        .chip-info-section.active {
+            display: block;
+        }
+
+        .chip-info-section h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .boot-mode-indicator {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .boot-mode-indicator.boot {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .boot-mode-indicator.normal {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .boot-mode-indicator.unknown {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .info-table tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .info-table td {
+            padding: 10px 15px;
+        }
+
+        .info-table td:first-child {
+            font-weight: 600;
+            color: #555;
+            width: 180px;
+            background: #f8f9fa;
+        }
+
+        .info-table td:last-child {
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .file-section {
+            margin-bottom: 20px;
+        }
+
+        .version-selector {
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #ffc107;
+        }
+
+        .version-selector h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        #versionSelectWrapper {
+            margin-bottom: 10px;
+        }
+
+        .custom-file-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .custom-file-actions.hidden {
+            display: none;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .file-item.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .file-item.valid {
+            border-color: #27ae60;
+            background: #e8f8f0;
+        }
+
+        .file-item.invalid {
+            border-color: #e74c3c;
+            background: #fdecea;
+        }
+
+        .file-item.ignored {
+            opacity: 0.6;
+            border-color: #95a5a6;
+            background: #ecf0f1;
+        }
+
+        .file-item.hidden {
+            display: none;
+        }
+
+        .file-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .file-header input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .file-header label {
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .validation-badge {
+            display: none;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .validation-badge.show {
+            display: inline-block;
+        }
+
+        .validation-badge.valid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .validation-badge.invalid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .validation-badge.ignored {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .file-info {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .file-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .file-info-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .file-info-value {
+            font-family: 'Courier New', monospace;
+            color: #333;
+        }
+
+        .file-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="file"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #e67e22;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #7f8c8d;
+        }
+
+        .btn-third {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .btn-third:hover:not(:disabled) {
+            background: #732d91;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .log-section {
+            margin-top: 30px;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+            color: #d4d4d4;
+        }
+
+        .log-entry.info {
+            color: #4ec9b0;
+        }
+
+        .log-entry.error {
+            color: #f48771;
+        }
+
+        .log-entry.success {
+            color: #89d185;
+        }
+
+        .log-entry.taken {
+            color: #a3bffa;
+        }
+
+        .log-entry.accepted {
+            color: #667eea;
+        }
+
+        .log-entry.valid {
+            color: #2196f3;
+        }
+
+        .log-entry.warning {
+            color: #dcdcaa;
+        }
+
+        .log-entry.machineIn {
+            color: #c586c0;
+        }
+
+        .log-entry.machineOut {
+            color: #ce9178;
+        }
+
+        .progress-section {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-badge.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+            display: none;
+        }
+
+        .warning-box.active {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .file-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .info-table td:first-child {
+                width: 120px;
+                font-size: 13px;
+            }
+        }
+
+        select {
+            cursor: pointer;
+            font-weight: bold !important;
+        }
+
+        /* Add to existing CSS */
+        #statusBadgeFiles {
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .status-success {
+            border: 2px solid #27ae60 !important;
+        }
+
+        .status-badge.status-success {
+            color: #27ae60 !important;
+            font-weight: bold !important;
+            background-color: #e8f8f0 !important;
+        }
+
+        .status-warning {
+            border: 2px solid #f39c12 !important;
+        }
+
+        .status-badge.status-warning {
+            color: #f39c12 !important;
+            font-weight: bold !important;
+            background-color: #fef5e7 !important;
+        }
+
+        .status-error {
+            border: 2px solid #e74c3c !important;
+        }
+
+        .status-badge.status-error {
+            color: #e74c3c !important;
+            font-weight: bold !important;
+            background-color: #fdecea !important;
+        }
+
+        .status-unknown {
+            border: 2px solid #95a5a6 !important;
+        }
+
+        .status-badge.status-unknown {
+            color: #95a5a6 !important;
+            font-weight: bold !important;
+            background-color: #ecf0f1 !important;
+        }
+
+        .flash-ready-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .flash-ready-indicator.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .flash-ready-indicator.not-ready {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔧 ESP Firmware Update Tool</h1>
+    <p class="subtitle">Webové rozhraní pro nahrávání firmware do ESP zařízení</p>
+
+    <div class="info-box">
+        ℹ️ Připojte ESP zařízení přes USB a klikněte na "Připojit ESP". Vyberte verzi firmware nebo nahrajte vlastní
+        soubory.
+    </div>
+
+    <div class="warning-box" id="bootModeWarning">
+        ⚠️ ESP není v bootloader módu! Před nahráváním firmware klikněte na "Přejít do Boot Módu".
+    </div>
+
+    <!-- Connection Section -->
+    <div class="connection-section">
+        <h3 style="margin-bottom: 15px;">Připojení k zařízení
+            <span class="status-badge disconnected" id="statusBadge">Odpojeno</span>
+            <span class="boot-mode-indicator unknown" id="bootModeBadge" style="display: none;">Neznámý mód</span>
+        </h3>
+        <div class="form-group">
+            <label for="baudRate">Baudrate:</label>
+            <select id="baudRate">
+                <option value="115200" selected>115200</option>
+                <option value="230400">230400</option>
+                <option value="460800">460800</option>
+                <option value="921600">921600</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Chip Info Section -->
+    <div class="chip-info-section" id="chipInfoSection">
+        <h3>📟 Informace o čipu</h3>
+        <table class="info-table" id="chipInfoTable">
+            <tr>
+                <td>Typ čipu</td>
+                <td id="infoChipType">-</td>
+            </tr>
+            <tr>
+                <td>Funkce</td>
+                <td id="infoFeatures">-</td>
+            </tr>
+            <tr>
+                <td>Krystal</td>
+                <td id="infoCrystal">-</td>
+            </tr>
+            <tr>
+                <td>MAC adresa</td>
+                <td id="infoMac">-</td>
+            </tr>
+            <tr>
+                <td>Flash velikost</td>
+                <td id="infoFlashSize">-</td>
+            </tr>
+            <tr>
+                <td>Výrobce</td>
+                <td id="infoManufacturer">-</td>
+            </tr>
+            <tr>
+                <td>Device ID</td>
+                <td id="infoDevice">-</td>
+            </tr>
+            <tr>
+                <td>Vendor ID</td>
+                <td id="infoVendorId">-</td>
+            </tr>
+            <tr>
+                <td>Product ID</td>
+                <td id="infoProductId">-</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="file-section">
+        <h3 style="margin-bottom: 15px;">Soubory firmware</h3>
+
+        <!-- Version Selector -->
+        <div class="version-selector">
+            <div id="versionSelectWrapper">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="width: max-content;">📦 Výběr verze firmware</h4>
+                    <h5 style="width: max-content">Soubory:
+                        <span class="status-badge status-unknown" id="statusBadgeFiles">Neznámý</span>
+                    </h5>
+                </div>
+                <div class="form-group">
+                    <label for="versionSelect">Verze:</label>
+                    <select id="versionSelect" onchange="handleVersionChange()">
+                    </select>
+                </div>
+            </div>
+
+            <!-- Custom file actions -->
+            <div class="custom-file-actions" id="customFileActions">
+                <button class="btn btn-secondary btn-small" onclick="selectFolder()">
+                    📁 Vybrat složku
+                </button>
+                <button class="btn btn-secondary btn-small" onclick="clearAllFiles()">
+                    🗑️ Vymazat vše
+                </button>
+            </div>
+        </div>
+
+        <!-- File 1 -->
+        <div class="file-item" id="fileItem1">
+            <div class="file-header">
+                <input type="checkbox" id="fileEnable1" onchange="toggleFileItem(1)">
+                <label for="fileEnable1">Soubor 1 (Bootloader / Merged)</label>
+                <span class="validation-badge" id="validationBadge1"></span>
+            </div>
+            <div class="file-controls" id="fileControls1" style="display: none;">
+                <div class="form-group">
+                    <label for="file1">Vybrat soubor:</label>
+                    <input type="file" id="file1" accept=".ino.bootloader.bin, .ino.merged.bin"
+                           onchange="validateFile(1)">
+                </div>
+                <div class="form-group">
+                    <label for="address1">Adresa (hex):</label>
+                    <input type="text" id="address1" placeholder="0x0000" value="0x0000">
+                </div>
+            </div>
+            <div class="file-info" id="fileInfo1"></div>
+        </div>
+
+        <!-- File 2 -->
+        <div class="file-item" id="fileItem2">
+            <div class="file-header">
+                <input type="checkbox" id="fileEnable2" onchange="toggleFileItem(2)">
+                <label for="fileEnable2">Soubor 2 (Partitions)</label>
+                <span class="validation-badge" id="validationBadge2"></span>
+            </div>
+            <div class="file-controls" id="fileControls2" style="display: none;">
+                <div class="form-group">
+                    <label for="file2">Vybrat soubor:</label>
+                    <input type="file" id="file2" accept=".ino.partitions.bin" onchange="validateFile(2)">
+                </div>
+                <div class="form-group">
+                    <label for="address2">Adresa (hex):</label>
+                    <input type="text" id="address2" placeholder="0x8000" value="0x8000">
+                </div>
+            </div>
+            <div class="file-info" id="fileInfo2"></div>
+        </div>
+
+        <!-- File 3 -->
+        <div class="file-item" id="fileItem3">
+            <div class="file-header">
+                <input type="checkbox" id="fileEnable3" onchange="toggleFileItem(3)">
+                <label for="fileEnable3">Soubor 3 (Application)</label>
+                <span class="validation-badge" id="validationBadge3"></span>
+            </div>
+            <div class="file-controls" id="fileControls3" style="display: none;">
+                <div class="form-group">
+                    <label for="file3">Vybrat soubor:</label>
+                    <input type="file" id="file3" accept=".ino.bin" onchange="validateFile(3)">
+                </div>
+                <div class="form-group">
+                    <label for="address3">Adresa (hex):</label>
+                    <input type="text" id="address3" placeholder="0x10000" value="0x10000">
+                </div>
+            </div>
+            <div class="file-info" id="fileInfo3"></div>
+        </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="progress-section" id="progressSection">
+        <h3 style="margin-bottom: 10px;">Průběh nahrávání</h3>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="btn btn-primary" id="connectBtn" onclick="connectESP()">
+            📡 Připojit ESP
+        </button>
+        <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
+            ⚡ Přejít do Boot Módu
+        </button>
+        <!-- V action-buttons sekci, změň flash button: -->
+        <button class="btn btn-success" id="flashBtn" onclick="flashFirmware()" disabled>
+            💾 Nahrát Firmware
+            <span class="flash-ready-indicator not-ready" id="flashReadyIndicator">Nepřipraveno</span>
+        </button>
+        <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
+            🔄 Hard Reset
+        </button>
+        <button class="btn btn-secondary" id="disconnectBtn" onclick="disconnect()" disabled>
+            ❌ Odpojit
+        </button>
+        <button class="btn btn-secondary" onclick="clearLog()">
+            🗑️ Vymazat Log
+        </button>
+        <button class="btn btn-third" onclick="test()">
+            🧪 Test ESP
+        </button>
+    </div>
+
+    <!-- Log Section -->
+    <div class="log-section">
+        <h3 style="margin-bottom: 10px;">Log konzole</h3>
+        <div class="log-container" id="logContainer">
+            <div class="log-entry success" style="font-weight: bold">Připraveno k připojení ESP zařízení...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file input for folder selection -->
+<div style="display: none;">
+    <label for="folderInput"></label>
+    <input type="file" id="folderInput" webkitdirectory directory multiple onchange="handleFolderSelect()">
+</div>
+
+<!-- Import maps for better module support -->
+<script type="importmap">
+    {
+      "imports": {
+        "buffer": "https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm",
+        "esptool": "https://unpkg.com/esptool-js@0.4.0/bundle.js"
+      }
+    }
+</script>
+
+<!-- ESPTool.js Library as Module -->
+<script type="module">
+    import {Buffer} from 'buffer';
+    import {ESPLoader, Transport} from 'esptool';
+
+    // Make Buffer globally available
+    window.Buffer = Buffer;
+
+    let esploader;
+    let transport;
+    let chip = null;
+    let connected = false;
+    let inBootMode = false;
+    let chipInfo = {};
+    let serialPort = null;
+    let manifestData = null;
+    let currentMode = 'custom'; // 'custom' or 'manifest'
+
+    // File validation state
+    const fileValidation = {
+        1: {valid: false, info: null},
+        2: {valid: false, info: null},
+        3: {valid: false, info: null}
+    };
+
+    // Make functions globally accessible
+    window.toggleFileItem = toggleFileItem;
+    window.validateFile = validateFile;
+    window.handleVersionChange = handleVersionChange;
+    window.selectFolder = selectFolder;
+    window.handleFolderSelect = handleFolderSelect;
+    window.clearAllFiles = clearAllFiles;
+    window.connectESP = connectESP;
+    window.enterBootMode = enterBootMode;
+    window.flashFirmware = flashFirmware;
+    window.hardReset = hardReset;
+    window.disconnect = disconnect;
+    window.clearLog = clearLog;
+
+
+    window.test = test;
+
+    async function test() {
+        if (!connected) {
+            addLog('❌ Zařízení není připojeno!', 'error');
+            return;
+        }
+
+        const result = await sendCommandAndWait(
+            'misc get name',
+            3000,
+            {
+                // format: anything + ":" + anything
+                regex: /\s*(.+):\s*(.+)/,
+                position: 'any',
+                description: 'Machine name'
+            }
+        );
+
+        if (result?.success && result?.groups) {
+            console.log(result);
+            addLog(`📌 Name: ${result.groups[1]}`, 'success');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        await writeSerial('misc get libinfo');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await writeSerial('mc get iscalibrated');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await writeSerial('misc get name');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await writeSerial('misc get machine_id');
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        console.log('Test function called');
+    }
+
+
+    // Add these global variables at the top with other globals
+    let serialReader = null;
+    let serialWriter = null;
+    let isReading = false;
+    let readBuffer = '';
+
+    const machineInfo = {};
+
+    // Přidat na začátek skriptu s ostatními globálními proměnnými
+    let flashReady = false;
+
+    // Nová funkce pro kontrolu připravenosti k flashi
+    function checkFlashReadiness() {
+        if (!connected) {
+            flashReady = false;
+            updateFlashButton();
+            return;
+        }
+
+        const enabledFiles = [1, 2, 3].filter(i => document.getElementById(`fileEnable${i}`).checked);
+
+        // Check if file 1 is merged
+        const file1Input = document.getElementById('file1');
+        const isMerged = file1Input.files[0] && file1Input.files[0].name.includes('.merged.bin');
+
+        let isReady = false;
+
+        if (isMerged && enabledFiles.length === 1 && enabledFiles[0] === 1) {
+            // Merged mode: only file 1 needs to be valid
+            isReady = fileValidation[1].valid;
+            addLog('📋 Režim: Merged firmware (1 soubor)', 'info');
+        } else if (!isMerged && enabledFiles.length === 3) {
+            // Three-file mode: all three files need to be valid
+            isReady = fileValidation[1].valid && fileValidation[2].valid && fileValidation[3].valid;
+            addLog('📋 Režim: Standardní firmware (3 soubory)', 'info');
+        } else {
+            isReady = false;
+            if (enabledFiles.length > 0) {
+                if (isMerged) {
+                    addLog('⚠️ Merged firmware detekován - deaktivujte ostatní soubory', 'warning');
+                } else {
+                    addLog('⚠️ Pro standardní firmware potřebujete všechny 3 soubory', 'warning');
+                }
+            }
+        }
+
+        flashReady = isReady;
+        updateFlashButton();
+    }
+
+    // Nová funkce pro update flash tlačítka
+    function updateFlashButton() {
+        const flashBtn = document.getElementById('flashBtn');
+        const indicator = document.getElementById('flashReadyIndicator');
+
+        if (connected && flashReady) {
+            flashBtn.disabled = false;
+            indicator.className = 'flash-ready-indicator ready';
+            indicator.textContent = '✓ Připraveno';
+        } else {
+            flashBtn.disabled = true;
+            indicator.className = 'flash-ready-indicator not-ready';
+            if (!connected) {
+                indicator.textContent = '⊗ Nepřipojeno';
+            } else {
+                indicator.textContent = '⊗ Nepřipraveno';
+            }
+        }
+    }
+
+    // Add these functions after the existing helper functions
+
+    // Initialize serial reader and writer
+    async function initializeSerial() {
+        if (!transport || !serialPort) {
+            throw new Error('Port není otevřený');
+        }
+
+        try {
+            // Get readable and writable streams
+            const textDecoder = new TextDecoderStream();
+            const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+            serialReader = textDecoder.readable.getReader();
+
+            const textEncoder = new TextEncoderStream();
+            const writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
+            serialWriter = textEncoder.writable.getWriter();
+
+            addLog('✅ Sériové čtení/zápis inicializováno', 'success');
+            return true;
+        } catch (error) {
+            addLog(`❌ Chyba inicializace serial I/O: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    // Start reading from serial port
+    async function startSerialRead() {
+        if (isReading) return;
+
+        isReading = true;
+        readBuffer = '';
+
+        try {
+            while (isReading && serialReader) {
+                const {value, done} = await serialReader.read();
+                if (done) {
+                    break;
+                }
+                if (value) {
+                    readBuffer += value;
+                    // Log each line
+                    const lines = readBuffer.split('\n');
+                    readBuffer = lines.pop(); // Keep incomplete line in buffer
+
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            addLog(`📥 RX: ${line.trim()}`, 'machineOut');
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            if (isReading) {
+                addLog(`❌ Chyba při čtení: ${error.message}`, 'error');
+            }
+        }
+    }
+
+    // Stop reading from serial port
+    async function stopSerialRead() {
+        isReading = false;
+        if (serialReader) {
+            try {
+                await serialReader.cancel();
+                serialReader = null;
+            } catch (error) {
+                console.error('Error stopping reader:', error);
+            }
+        }
+    }
+
+    // Helper functions for common response patterns
+
+    // Wait for OK response
+    async function waitForStr(command, string, timeout = 5000) {
+        return await sendCommandAndWait(command, timeout, string);
+    }
+
+    // Wait for specific value with regex
+    async function waitForValue(command, regex, timeout = 5000) {
+        return await sendCommandAndWait(command, timeout, {regex: regex});
+    }
+
+    // Wait for multiple possible responses
+    async function waitForAny(command, possibleResponses, timeout = 5000) {
+        return await sendCommandAndWait(command, timeout, possibleResponses);
+    }
+
+    // Get MAC address with various formats
+    async function getMacAddress(timeout = 5000) {
+        const macPatterns = [
+            {
+                regex: /MAC:\s*([0-9A-Fa-f:]{17})/,
+                description: 'MAC with colons'
+            },
+            {
+                regex: /MAC:\s*([0-9A-Fa-f-]{17})/,
+                description: 'MAC with dashes'
+            },
+            {
+                regex: /([0-9A-Fa-f]{12})/,
+                description: 'MAC without separators'
+            }
+        ];
+
+        const result = await sendCommandAndWait('AT+CIPSTAMAC?', timeout, macPatterns);
+
+        if (result.success && result.matched) {
+            return result.groups[0];
+        }
+
+        return null;
+    }
+
+    // Get version info
+    async function getVersion(timeout = 5000) {
+        const versionPatterns = [
+            {
+                regex: /version:\s*([0-9.]+)/i,
+                description: 'Version format: version: x.x.x'
+            },
+            {
+                regex: /v([0-9.]+)/i,
+                description: 'Version format: vx.x.x'
+            },
+            {
+                regex: /([0-9]+\.[0-9]+\.[0-9]+)/,
+                description: 'Version format: x.x.x'
+            }
+        ];
+
+        const result = await sendCommandAndWait('AT+GMR', timeout, versionPatterns);
+
+        if (result.success && result.matched) {
+            return result.groups[0];
+        }
+
+        return null;
+    }
+
+    // Write data to serial port
+    async function writeSerial(data, addNewline = true) {
+        if (!serialWriter) {
+            addLog('❌ Sériový port není připraven pro zápis', 'error');
+            return false;
+        }
+
+        try {
+            const message = addNewline ? data + '\n' : data;
+            await serialWriter.write(message);
+            addLog(`📤 TX: ${data}`, 'machineIn');
+            return true;
+        } catch (error) {
+            addLog(`❌ Chyba při zápisu: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    // Close serial reader and writer
+    async function closeSerial() {
+        await stopSerialRead();
+
+        if (serialWriter) {
+            try {
+                await serialWriter.close();
+                serialWriter = null;
+            } catch (error) {
+                console.error('Error closing writer:', error);
+            }
+        }
+    }
+
+    // Send command and wait for response
+    async function sendCommandAndWait(command, timeout = 5000, expectedResponse = null) {
+        if (!serialWriter || !serialReader) {
+            addLog('❌ Sériový port není připraven', 'error');
+            return null;
+        }
+
+        readBuffer = ''; // Clear buffer
+        const startTime = Date.now();
+        const responses = [];
+
+        try {
+            // Send command
+            await writeSerial(command);
+
+            // Wait for response
+            while (Date.now() - startTime < timeout) {
+                const {value, done} = await Promise.race([
+                    serialReader.read(),
+                    new Promise(resolve => setTimeout(() => resolve({value: null, done: true}), 100))
+                ]);
+
+                if (done || !value) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    continue;
+                }
+
+                readBuffer += value;
+                const lines = readBuffer.split('\n');
+                readBuffer = lines.pop();
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine) {
+                        responses.push(trimmedLine);
+                        addLog(`📥 RX: ${trimmedLine}`, 'machineOut');
+
+                        // Check if we got expected response
+                        if (expectedResponse && trimmedLine.includes(expectedResponse)) {
+                            return responses;
+                        }
+                    }
+                }
+
+                // If no expected response specified, return after short delay
+                if (!expectedResponse && responses.length > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    return responses;
+                }
+            }
+
+            if (expectedResponse) {
+                addLog(`⚠️ Timeout při čekání na odpověď: ${expectedResponse}`, 'warning');
+            }
+
+            return responses.length > 0 ? responses : null;
+
+        } catch (error) {
+            addLog(`❌ Chyba při komunikaci: ${error.message}`, 'error');
+            return null;
+        }
+    }
+
+    // Pre-flash commands with advanced pattern matching
+    async function executePreFlashCommands() {
+        addLog('📋 Spouštím pre-flash příkazy...', 'info');
+
+        try {
+            // Initialize serial communication
+            if (!await initializeSerial()) {
+                return false;
+            }
+
+            // Start reading in background
+            startSerialRead();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // // Test basic communication
+            // let result = await waitForOK('AT', 2000);
+            // if (!result.success) {
+            //     addLog('⚠️ Zařízení neodpovídá na AT příkazy', 'warning');
+            // }
+
+            // Get MAC address with multiple format support
+            // const mac = await getMacAddress(3000);
+            // if (mac) {
+            //     addLog(`📌 MAC adresa: ${mac}`, 'success');
+            // }
+            //
+            // // Get version with multiple format support
+            // const version = await getVersion(3000);
+            // if (version) {
+            //     addLog(`📌 Verze firmware: ${version}`, 'success');
+            // }
+
+            // Custom command with regex
+            // result = await sendCommandAndWait(
+            //     'AT+CIPSTATUS',
+            //     3000,
+            //     [
+            //         {regex: /STATUS:(\d+)/, description: 'Connection status'},
+            //         {string: 'OK', position: 'last'}
+            //     ]
+            // );
+            //
+            // if (result.success) {
+            //     addLog(`📊 Status: ${result.groups ? result.groups[0] : 'OK'}`, 'info');
+            // }
+            //
+            // // Wait for specific response at specific position
+            // result = await sendCommandAndWait(
+            //     'AT+GMR',
+            //     3000,
+            //     {
+            //         regex: /SDK version:([0-9.]+)/,
+            //         position: 'any',
+            //         description: 'SDK version'
+            //     }
+            // );
+            //
+            // if (result.success && result.groups) {
+            //     addLog(`📌 SDK verze: ${result.groups[0]}`, 'success');
+            // }
+
+            await stopSerialRead();
+            await closeSerial();
+
+            addLog('✅ Pre-flash příkazy dokončeny', 'success');
+            return true;
+
+        } catch (error) {
+            addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
+            await stopSerialRead();
+            await closeSerial();
+            return false;
+        }
+    }
+
+    // Post-flash commands with pattern matching
+    async function executePostFlashCommands() {
+        addLog('📋 Spouštím post-flash příkazy...', 'info');
+
+        try {
+            // Wait for device to boot
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Initialize serial communication
+            if (!await initializeSerial()) {
+                return false;
+            }
+
+            // Start reading
+            startSerialRead();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // // Wait for boot message with multiple patterns
+            // let result = await sendCommandAndWait(
+            //     '', // No command, just wait for boot message
+            //     5000,
+            //     [
+            //         {regex: /ready/i, description: 'Boot ready'},
+            //         {regex: /boot.*success/i, description: 'Boot success'},
+            //         {regex: /started/i, description: 'Started'}
+            //     ]
+            // );
+            //
+            // if (result.success) {
+            //     addLog('✅ Zařízení se úspěšně nabootovalo', 'success');
+            // }
+            //
+            // // Test communication
+            // result = await waitForOK('AT', 2000);
+            // if (result.success) {
+            //     addLog('✅ Komunikace po flashi funguje', 'success');
+            // }
+            //
+            // // Verify new version
+            // const version = await getVersion(3000);
+            // if (version) {
+            //     addLog(`📌 Nová verze firmware: ${version}`, 'success');
+            // }
+            //
+            // // Save configuration (example)
+            // result = await sendCommandAndWait(
+            //     'AT+SYSSTORE=1',
+            //     2000,
+            //     [
+            //         'OK',
+            //         {regex: /STORE.*OK/i}
+            //     ]
+            // );
+
+            await stopSerialRead();
+            await closeSerial();
+
+            addLog('✅ Post-flash příkazy dokončeny', 'success');
+            return true;
+
+        } catch (error) {
+            addLog(`❌ Chyba post-flash příkazů: ${error.message}`, 'error');
+            await stopSerialRead();
+            await closeSerial();
+            return false;
+        }
+    }
+
+    // // 1. Jednoduchý string
+    // await sendCommandAndWait('AT', 1000, 'OK');
+    //
+    // // 2. RegExp
+    // await sendCommandAndWait('AT+GMR', 2000, /version:\s*([0-9.]+)/);
+    //
+    // // 3. Více možností (string)
+    // await sendCommandAndWait('AT', 1000, ['OK', 'ok', 'OK\r\n']);
+    //
+    // // 4. Více možností (regex)
+    // await sendCommandAndWait('AT+MAC?', 2000, [
+    //     /MAC:\s*([0-9A-Fa-f:]{17})/,
+    //     /MAC:\s*([0-9A-Fa-f-]{17})/,
+    //     /([0-9A-Fa-f]{12})/
+    // ]);
+    //
+    // // 5. S pozicí
+    // await sendCommandAndWait('AT+GMR', 2000, {
+    //     string: 'OK',
+    //     position: 'last'  // Nebo 'first', nebo 0, 1, 2...
+    // });
+    //
+    // // 6. Regex s pozicí a popisem
+    // await sendCommandAndWait('AT+STATUS', 2000, {
+    //     regex: /STATUS:(\d+)/,
+    //     position: 'any',
+    //     description: 'Device status code'
+    // });
+    //
+    // // 7. Kombinace více podmínek
+    // await sendCommandAndWait('AT+INFO', 3000, [
+    //     {regex: /version:\s*([0-9.]+)/, position: 0},
+    //     {string: 'OK', position: 'last'},
+    //     {regex: /ERROR/i, description: 'Error response'}
+    // ]);
+    //
+    // // 8. Použití vrácených dat
+    // const result = await sendCommandAndWait('AT+MAC?', 2000, {
+    //     regex: /MAC:\s*([0-9A-Fa-f:]{17})/
+    // });
+    //
+    // if (result.success) {
+    //     console.info('MAC:', result.groups[0]);
+    //     console.info('Matched:', result.matched);
+    //     console.info('All responses:', result.responses);
+    // }
+
+    // Pre-flash commands
+    async function executePreFlashCommands2() {
+        addLog('📋 Spouštím pre-flash příkazy...', 'info');
+
+        try {
+            // Initialize serial communication
+            if (!await initializeSerial()) {
+                return false;
+            }
+
+            // Start reading in background
+            startSerialRead();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // // Example commands - customize as needed
+            // await writeSerial('AT'); // Test command
+            // await new Promise(resolve => setTimeout(resolve, 200));
+            //
+            // await writeSerial('AT+GMR'); // Get version
+            // await new Promise(resolve => setTimeout(resolve, 500));
+            //
+            // // Or use sendCommandAndWait for specific responses
+            // const response = await sendCommandAndWait('AT+GMR', 2000, 'OK');
+
+
+            const response_name = await sendCommandAndWait('misc get name', 1500);
+            const response_id = await sendCommandAndWait('misc get machine_id', 1500);
+            const response_speed = await sendCommandAndWait('mc get speed', 1500);
+            const response_accel = await sendCommandAndWait('mc get acceleration', 1500);
+
+            if (response_name && response_name.length > 0) {
+                machineInfo.name = response_name[0];
+            }
+            if (response_id && response_id.length > 0) {
+                machineInfo.id = response_id[id];
+            }
+            if (response_speed && response_speed.length > 0) {
+                machineInfo.speed = response_speed[0];
+            }
+            if (response_accel && response_accel.length > 0) {
+                machineInfo.acceleration = response_accel[0];
+            }
+
+            await stopSerialRead();
+            await closeSerial();
+
+            addLog('✅ Pre-flash příkazy dokončeny', 'success');
+            return true;
+
+        } catch (error) {
+            addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
+            await stopSerialRead();
+            await closeSerial();
+            return false;
+        }
+    }
+
+    // Post-flash commands
+    async function executePostFlashCommands2() {
+        addLog('📋 Spouštím post-flash příkazy...', 'info');
+
+        try {
+            // Wait for device to boot
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Initialize serial communication
+            if (!await initializeSerial()) {
+                return false;
+            }
+
+            // Start reading
+            startSerialRead();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // // Example commands - customize as needed
+            // await writeSerial('AT'); // Test command
+            // await new Promise(resolve => setTimeout(resolve, 200));
+            //
+            // await writeSerial('AT+RST'); // Reset device
+            // await new Promise(resolve => setTimeout(resolve, 500));
+
+            await writeSerial('memory reset'); // Reset memory
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (machineInfo.name) {
+                await writeSerial(`misc set name ${machineInfo.name}`);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            if (machineInfo.id) {
+                await writeSerial(`misc set machine_id ${machineInfo.id}`);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            if (machineInfo.speed) {
+                await writeSerial(`mc set speedmm ${machineInfo.speed}`);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            if (machineInfo.acceleration) {
+                await writeSerial(`mc set acceleration ${machineInfo.acceleration}`);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            await stopSerialRead();
+            await closeSerial();
+
+            addLog('✅ Post-flash příkazy dokončeny', 'success');
+            return true;
+
+        } catch (error) {
+            addLog(`❌ Chyba post-flash příkazů: ${error.message}`, 'error');
+            await stopSerialRead();
+            await closeSerial();
+            return false;
+        }
+    }
+
+    // Load manifest on startup
+    loadManifest();
+
+    // Load manifest.json
+    async function loadManifest() {
+        try {
+            const response = await fetch('./firmwareFiles/manifest.json');
+            if (!response.ok) {
+                throw new Error('Manifest not found');
+            }
+            manifestData = await response.json();
+            addLog('✅ Manifest načten úspěšně', 'success');
+        } catch (error) {
+            addLog('⚠️ Manifest nenalezen, používám pouze Custom mód', 'warning');
+            console.warn('Manifest load error:', error);
+        } finally {
+            populateVersionSelector();
+        }
+    }
+
+    // Populate version selector
+    function populateVersionSelector() {
+        const versionSelect = document.getElementById('versionSelect');
+
+        const createDivider = () => {
+            const divider = document.createElement('option');
+            divider.disabled = true;
+            divider.textContent = '─'.repeat(20);
+            return divider;
+        };
+
+        if (manifestData) {
+            // Add set versions first
+            if (manifestData?.set && Array.isArray(manifestData?.set)) {
+                manifestData.set.forEach((item, index) => {
+                    const option = document.createElement('option');
+                    option.value = `set_${index}`; // Use index instead of version
+                    option.textContent = `${item.label} (${item.version})`;
+                    option.dataset.version = item.version; // Store version in data attribute
+                    versionSelect.appendChild(option);
+                });
+            }
+
+            // Add divider
+            if (manifestData?.builds && Array.isArray(manifestData?.builds)) {
+                versionSelect.appendChild(createDivider());
+
+                // Add all builds
+                manifestData.builds.forEach((build, index) => {
+                    const option = document.createElement('option');
+                    option.value = `build_${index}`; // Use index instead of version
+                    option.textContent = `${build.name} (${build.version})`;
+                    option.dataset.version = build.version; // Store version in data attribute
+                    versionSelect.appendChild(option);
+                });
+
+                versionSelect.appendChild(createDivider());
+            }
+        } else {
+            // No manifest, only custom option
+            document.getElementById('versionSelectWrapper').style.display = 'none';
+        }
+
+        // Add custom option
+        const customOption = document.createElement('option');
+        customOption.value = 'custom';
+        customOption.textContent = 'Custom (vlastní soubory)';
+        versionSelect.appendChild(customOption);
+
+        // Set default selection
+        setDefaultVersion();
+    }
+
+    // Set default version
+    function setDefaultVersion() {
+        const versionSelect = document.getElementById('versionSelect');
+        let defaultIndex = -1;
+
+        // Priority: default > current > last > first
+        const defaultItem = manifestData?.set?.findIndex(item => item.label.toLowerCase() === 'default') || -1;
+        const currentItem = manifestData?.set?.findIndex(item => item.label.toLowerCase() === 'current') || -1;
+        const lastestItem = manifestData?.set?.findIndex(item => item.label.toLowerCase() === 'lastest') || -1;
+
+        if (defaultItem !== -1) {
+            defaultIndex = defaultItem;
+        } else if (currentItem !== -1) {
+            defaultIndex = currentItem;
+        } else if (lastestItem !== -1) {
+            defaultIndex = lastestItem;
+        } else if (manifestData?.set?.length > 0) {
+            defaultIndex = 0;
+        }
+
+        if (defaultIndex && defaultIndex !== -1) {
+            versionSelect.value = `set_${defaultIndex}`;
+        }
+
+        handleVersionChange();
+    }
+
+    // Handle version change
+    async function handleVersionChange() {
+        const versionSelect = document.getElementById('versionSelect');
+        const statusBadge = document.getElementById('statusBadgeFiles');
+        const selectedValue = versionSelect.value;
+        const customFileActions = document.getElementById('customFileActions');
+
+        // Clear current files
+        clearAllFiles();
+        // remove all classes
+        statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+        versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+
+
+        if (selectedValue === 'custom') {
+            // Custom mode
+            currentMode = 'custom';
+            customFileActions.classList.remove('hidden');
+            statusBadge.innerText = 'Neznámé';
+            statusBadge.classList.add('status-unknown');
+            versionSelect.classList.add('status-unknown');
+            showFileItems(true);
+            addLog('📝 Přepnuto na Custom mód', 'info');
+        } else {
+            // Manifest mode
+            currentMode = 'manifest';
+            customFileActions.classList.add('hidden');
+            showFileItems(false);
+
+            const [type, indexStr] = selectedValue.split('_');
+            const index = parseInt(indexStr);
+            let buildData = null;
+
+            if (type === 'set') {
+                // Find build by version from set
+                const setItem = manifestData?.set[index];
+                if (setItem) {
+                    buildData = manifestData?.builds.find(build => build.version === setItem.version);
+                }
+            } else if (type === 'build') {
+                // Direct build selection by index
+                buildData = manifestData?.builds[index];
+            }
+
+            const versionText = versionSelect.options[versionSelect.selectedIndex].text.trim().split(' ');
+            const version = versionText[1].replace('(', '').replace(')', '');
+            const name = versionText[0];
+
+            addLog('_'.repeat(40));
+            addLog(`📑 Vybraná verze: ${name} (${version})`, 'info');
+            addLog(`📦 Načítám verzi: ${buildData?.name || 'Unknown'} (${buildData?.version})`, 'info');
+
+            if (buildData) {
+                await loadBuildFiles(buildData);
+            } else {
+                addLog('❌ Verze nenalezena v manifestu', 'error');
+                statusBadge.innerText = 'Neplatné';
+                statusBadge.classList.add('status-error');
+                versionSelect.classList.add('status-error');
+            }
+        }
+    }
+
+    // Load build files from manifest
+    async function loadBuildFiles(buildData) {
+        if (!buildData.parts || !Array.isArray(buildData.parts)) {
+            addLog('❌ Neplatná struktura build dat', 'error');
+            return;
+        }
+
+        let allAccepted = [true, true, true];
+        const fileMapping = {
+            'bootloader': 1,
+            'partitions': 2,
+            'application': 3,
+            'merged': 1
+        };
+
+        const getType = (part) => {
+            if (part.type) return String(part.type).trim().toLowerCase();
+            if (part.path.includes('bootloader')) return 'bootloader';
+            if (part.path.includes('partitions')) return 'partitions';
+            if (part.path.includes('merged')) return 'merged';
+            return 'Application';
+        };
+
+        const tryLoad = async (part, fileIndex) => {
+            try {
+                const response = await fetch(`./firmwareFiles/${part.path}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const fileName = part.path.split('/').pop();
+                const file = new File([blob], fileName, {type: 'application/octet-stream'});
+
+                const fileInput = document.getElementById(`file${fileIndex}`);
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+
+                const addressInput = document.getElementById(`address${fileIndex}`);
+                addressInput.value = `0x${part.offset.toString(16).toUpperCase()}`;
+
+                const checkbox = document.getElementById(`fileEnable${fileIndex}`);
+                checkbox.checked = true;
+                toggleFileItem(fileIndex);
+
+                await validateFile(fileIndex);
+
+                addLog(`Soubor ${fileIndex} načten: ${fileName}`, 'taken');
+                return true;
+
+            } catch (error) {
+                if (error.message.includes('HTTP 404')) {
+                    addLog(`❌ Soubor ${fileIndex} nenalezen`, 'error');
+                } else {
+                    addLog(`❌ Chyba při načítání souboru ${fileIndex}: ${error.message}`, 'error');
+                }
+                return false;
+            }
+        };
+
+        const isMergedBuild = buildData.parts.some(part => getType(part) === 'merged');
+
+        if (isMergedBuild) {
+            const part = buildData.parts.find(part => getType(part) === 'merged');
+            allAccepted = Array(3).fill(await tryLoad(part, fileMapping['merged'] || 1));
+        } else {
+            for (const part of buildData.parts) {
+                const type = getType(part);
+                const fileIndex = fileMapping[type];
+                if (fileIndex) {
+                    allAccepted[fileIndex - 1] = await tryLoad(part, fileIndex);
+                } else {
+                    addLog(`⚠️ Neznámý typ části: ${type}`, 'warning');
+                }
+            }
+        }
+
+        const versionSelect = document.getElementById('versionSelect');
+        const statusBadge = document.getElementById('statusBadgeFiles');
+        statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+        versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+
+        await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to ensure validation states are updated
+
+        if (allAccepted.every(v => v)) {
+            addLog('✅ Všechny soubory načteny úspěšně z manifestu', 'success');
+            statusBadge.innerText = 'Platné';
+            statusBadge.classList.add('status-success');
+            versionSelect.classList.add('status-success');
+        } else if (allAccepted.some(v => v)) {
+            addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
+            statusBadge.innerText = 'Chyba';
+            statusBadge.classList.add('status-warning');
+            versionSelect.classList.add('status-warning');
+        } else {
+            addLog('❌ Žádné soubory se nepodařilo načíst z manifestu', 'error');
+            statusBadge.innerText = 'Neplatné';
+            statusBadge.classList.add('status-error');
+            versionSelect.classList.add('status-error');
+        }
+
+        checkFlashReadiness();
+    }
+
+    // Show/hide file items
+    function showFileItems(show) {
+        for (let i = 1; i <= 3; i++) {
+            const fileItem = document.getElementById(`fileItem${i}`);
+            if (show) {
+                fileItem.classList.remove('hidden');
+            } else {
+                fileItem.classList.add('hidden');
+            }
+        }
+    }
+
+    // Select folder
+    function selectFolder() {
+        document.getElementById('folderInput').click();
+    }
+
+    // Handle folder selection
+    async function handleFolderSelect() {
+        const folderInput = document.getElementById('folderInput');
+        const files = Array.from(folderInput.files);
+
+        if (files.length === 0) {
+            addLog('⚠️ Nebyla vybrána žádná složka', 'warning');
+            return;
+        }
+
+        addLog(`📁 Načítám soubory ze složky (${files.length} souborů)...`, 'info');
+
+        clearAllFiles();
+
+        let allAccepted = [true, true, true];
+
+        const mergedFile = files.find(f => f.name.includes('.merged.bin'));
+
+        if (mergedFile) {
+            addLog('📦 Detekován merged firmware, ostatní soubory budou ignorovány', 'info');
+            const accepted = await loadFileToSlot(mergedFile, 1, 0x0000);
+            allAccepted = Array(3).fill(accepted);
+        } else {
+            const bootloaderFile = files.find(f => f.name.endsWith('.bootloader.bin'));
+            const partitionsFile = files.find(f => f.name.endsWith('.partitions.bin'));
+            const appFile = files.find(f => f.name.endsWith('.ino.bin') && !f.name.includes('bootloader') && !f.name.includes('partitions'));
+
+            if (appFile) allAccepted[2] = await loadFileToSlot(appFile, 3, 0x10000);
+            if (partitionsFile) allAccepted[1] = await loadFileToSlot(partitionsFile, 2, 0x8000);
+            if (bootloaderFile) allAccepted[0] = await loadFileToSlot(bootloaderFile, 1, 0x0000);
+
+            if (!bootloaderFile && !partitionsFile && !appFile) {
+                addLog('⚠️ Ve složce nebyly nalezeny platné firmware soubory', 'warning');
+            }
+        }
+
+        const versionSelect = document.getElementById('versionSelect');
+        const statusBadge = document.getElementById('statusBadgeFiles');
+        statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+        versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+
+        if (allAccepted.every(v => v)) {
+            addLog('✅ Všechny soubory načteny úspěšně', 'success');
+            statusBadge.innerText = 'Platné';
+            statusBadge.classList.add('status-success');
+            versionSelect.classList.add('status-success');
+        } else if (allAccepted.some(v => v)) {
+            addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
+            statusBadge.innerText = 'Chyba';
+            statusBadge.classList.add('status-warning');
+            versionSelect.classList.add('status-warning');
+        } else {
+            addLog('❌ Načítání souborů selhalo', 'error');
+            statusBadge.innerText = 'Neplatné';
+            statusBadge.classList.add('status-error');
+            versionSelect.classList.add('status-error');
+        }
+
+        checkFlashReadiness();
+    }
+
+    // Load file to specific slot
+    async function loadFileToSlot(file, slot, address) {
+        try {
+            const fileInput = document.getElementById(`file${slot}`);
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            const addressInput = document.getElementById(`address${slot}`);
+            addressInput.value = `0x${address.toString(16).toUpperCase()}`;
+
+            const checkbox = document.getElementById(`fileEnable${slot}`);
+            checkbox.checked = true;
+            toggleFileItem(slot);
+
+            await validateFile(slot);
+
+            addLog(`Soubor ${slot} načten: ${file.name}`, 'taken');
+            return true;
+        } catch (error) {
+            addLog(`❌ Chyba při načítání souboru ${slot}: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    // Clear all files
+    function clearAllFiles() {
+        for (let i = 1; i <= 3; i++) {
+            const fileInput = document.getElementById(`file${i}`);
+            fileInput.value = '';
+
+            const checkbox = document.getElementById(`fileEnable${i}`);
+            checkbox.checked = false;
+
+            const fileItem = document.getElementById(`fileItem${i}`);
+            fileItem.classList.remove('valid', 'invalid', 'ignored', 'active');
+
+            const controls = document.getElementById(`fileControls${i}`);
+            controls.style.display = 'none';
+
+            const validationBadge = document.getElementById(`validationBadge${i}`);
+            validationBadge.classList.remove('show');
+
+            const fileInfo = document.getElementById(`fileInfo${i}`);
+            fileInfo.classList.remove('show');
+
+            fileValidation[i] = {valid: false, info: null};
+        }
+
+        addLog('🗑️ Všechny soubory vymazány');
+        checkFlashReadiness();
+    }
+
+    // Helper function to convert Uint8Array to binary string
+    function uint8ArrayToBinaryString(uint8Array) {
+        let binaryString = '';
+        const len = uint8Array.byteLength;
+        for (let i = 0; i < len; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+        }
+        return binaryString;
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // Check if file 1 is merged firmware
+    function isMergedFirmware() {
+        const fileInput = document.getElementById('file1');
+        if (!fileInput.files[0]) return false;
+        return fileInput.files[0].name.includes('.merged.bin');
+    }
+
+    // Update ignored state for files 2 and 3
+    function updateIgnoredState() {
+        const hasMerged = isMergedFirmware() && document.getElementById('fileEnable1').checked;
+
+        for (let i = 2; i <= 3; i++) {
+            const fileItem = document.getElementById(`fileItem${i}`);
+            const validationBadge = document.getElementById(`validationBadge${i}`);
+            const checkbox = document.getElementById(`fileEnable${i}`);
+
+            if (hasMerged && checkbox.checked) {
+                fileItem.classList.add('ignored');
+                fileItem.classList.remove('valid', 'invalid');
+                validationBadge.classList.add('show', 'ignored');
+                validationBadge.classList.remove('valid', 'invalid');
+                validationBadge.textContent = '⊘ Ignorováno';
+            } else {
+                fileItem.classList.remove('ignored');
+            }
+        }
+    }
+
+    // Validate file function
+    async function validateFile(index) {
+        const fileInput = document.getElementById(`file${index}`);
+        const file = fileInput.files[0];
+        const fileItem = document.getElementById(`fileItem${index}`);
+        const validationBadge = document.getElementById(`validationBadge${index}`);
+        const fileInfo = document.getElementById(`fileInfo${index}`);
+
+        if (!file) {
+            fileValidation[index] = {valid: false, info: null};
+            fileItem.classList.remove('valid', 'invalid', 'ignored');
+            validationBadge.classList.remove('show');
+            fileInfo.classList.remove('show');
+            checkFlashReadiness();
+            return;
+        }
+
+        addLog(`🔍 Validuji soubor ${index}: ${file.name}`, 'accepted');
+
+        const validationResult = {
+            fileName: file.name,
+            fileSize: file.size,
+            formattedSize: formatFileSize(file.size),
+            lastModified: new Date(file.lastModified).toLocaleString('cs-CZ'),
+            hasCorrectExtension: file.name.endsWith('.bin'),
+            isSizeValid: file.size >= 512 && file.size <= 16 * 1024 * 1024,
+            magicByte: null,
+            segments: null,
+            expectedExtension: null,
+            hasExpectedExtension: false,
+            isMerged: file.name.includes('.merged.bin')
+        };
+
+        // Check file extension
+        if (!validationResult.hasCorrectExtension) {
+            addLog(`❌ Soubor ${index} nemá příponu .bin`, 'error');
+            showValidationResult(index, validationResult, false);
+            updateIgnoredState();
+            return;
+        }
+
+        // Check file size
+        if (!validationResult.isSizeValid) {
+            addLog(`❌ Soubor ${index} má neplatnou velikost (${validationResult.formattedSize})`, 'error');
+            showValidationResult(index, validationResult, false);
+            updateIgnoredState();
+            return;
+        }
+
+        // Read first 8 bytes to check magic byte and segments
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const buffer = new Uint8Array(e.target.result);
+
+                // Check ESP magic byte (0xE9 for firmware, 0xAA for partitions)
+                validationResult.magicByte = `0x${buffer[0].toString(16).toUpperCase().padStart(2, '0')}`;
+
+                let hasValidMagic = false;
+
+                // For file 2 (partitions), accept 0xAA or 0xE9
+                if (index === 2) {
+                    hasValidMagic = buffer[0] === 0xAA || buffer[0] === 0xE9;
+                } else {
+                    // For other files, require 0xE9
+                    hasValidMagic = buffer[0] === 0xE9;
+                }
+
+                // Get segment count (byte at position 1)
+                if (buffer.length > 1) {
+                    validationResult.segments = buffer[1];
+                }
+
+                // Count ALL uploaded files (not just enabled)
+                const uploadedFiles = [1, 2, 3].filter(i => {
+                    const input = document.getElementById(`file${i}`);
+                    return input.files[0] !== undefined;
+                });
+
+                // Determine expected extension based on actual uploaded files
+                if (index === 1) {
+                    if (validationResult.isMerged) {
+                        validationResult.expectedExtension = '.ino.merged.bin';
+                        validationResult.hasExpectedExtension = true;
+
+                        // If merged, other files should be warned
+                        if (uploadedFiles.length > 1) {
+                            addLog('⚠️ Merged firmware detekován - ostatní soubory budou ignorovány', 'warning');
+                        }
+                    } else {
+                        // Not merged - expect bootloader
+                        validationResult.expectedExtension = '.ino.bootloader.bin';
+                        validationResult.hasExpectedExtension = file.name.endsWith('.ino.bootloader.bin');
+                    }
+                } else if (index === 2) {
+                    validationResult.expectedExtension = '.ino.partitions.bin';
+                    validationResult.hasExpectedExtension = file.name.endsWith('.ino.partitions.bin');
+                } else if (index === 3) {
+                    validationResult.expectedExtension = '.ino.bin';
+                    validationResult.hasExpectedExtension = file.name.endsWith('.ino.bin');
+                }
+
+                // Final validation
+                const isValid = hasValidMagic && validationResult.isSizeValid;
+
+                // Check extension match
+                if (isValid && !validationResult.hasExpectedExtension && validationResult.expectedExtension) {
+                    addLog(`⚠️ Soubor ${index} nemá očekávanou příponu (${validationResult.expectedExtension})`, 'warning');
+                } else if (isValid && hasValidMagic) {
+                    addLog(`☑️ Soubor ${index} je platný ESP firmware`, 'valid');
+                    if (validationResult.isMerged && index === 1) {
+                        addLog(`ℹ️ Detekován merged firmware - pro flash potřebujete pouze tento soubor`, 'info');
+                    }
+                } else if (!hasValidMagic) {
+                    const expectedMagic = index === 2 ? '0xE9 nebo 0xAA' : '0xE9';
+                    addLog(`❌ Soubor ${index} nemá platný ESP magic byte (${expectedMagic})`, 'error');
+                }
+
+                showValidationResult(index, validationResult, isValid);
+
+                // Only update ignored state if this is file 1
+                if (index === 1) {
+                    updateIgnoredState();
+                }
+            };
+
+            reader.readAsArrayBuffer(file.slice(0, 8));
+
+        } catch (error) {
+            addLog(`❌ Chyba při validaci souboru ${index}: ${error.message}`, 'error');
+            showValidationResult(index, validationResult, false);
+        }
+    }
+
+    // Show validation result
+    function showValidationResult(index, result, isValid) {
+        const fileItem = document.getElementById(`fileItem${index}`);
+        const validationBadge = document.getElementById(`validationBadge${index}`);
+        const fileInfo = document.getElementById(`fileInfo${index}`);
+
+        fileValidation[index] = {valid: isValid, info: result};
+
+        // Update visual feedback
+        fileItem.classList.remove('valid', 'invalid');
+        fileItem.classList.add(isValid ? 'valid' : 'invalid');
+
+        validationBadge.classList.add('show');
+        validationBadge.classList.remove('valid', 'invalid');
+        validationBadge.classList.add(isValid ? 'valid' : 'invalid');
+        validationBadge.textContent = isValid ? '✅ Platný' : '❌ Neplatný';
+
+        // Show file info
+        let infoHTML = '<div class="file-info-row"><div class="file-info-label">Název:</div><div class="file-info-value">' + result.fileName + '</div></div>';
+        infoHTML += '<div class="file-info-row"><div class="file-info-label">Velikost:</div><div class="file-info-value">' + result.formattedSize + '</div></div>';
+        infoHTML += '<div class="file-info-row"><div class="file-info-label">Upraveno:</div><div class="file-info-value">' + result.lastModified + '</div></div>';
+
+        if (result.magicByte) {
+            const expectedMagic = index === 2 ? '(0xE9 nebo 0xAA)' : '(0xE9)';
+            const magicValid = index === 2 ? (result.magicByte === '0xE9' || result.magicByte === '0xAA') : result.magicByte === '0xE9';
+            infoHTML += '<div class="file-info-row"><div class="file-info-label">Magic Byte:</div><div class="file-info-value">' + result.magicByte + ' ' + expectedMagic + (magicValid ? ' ✔️' : ' ❌') + '</div></div>';
+        }
+
+        if (result.segments !== null) {
+            infoHTML += '<div class="file-info-row"><div class="file-info-label">Segmenty:</div><div class="file-info-value">' + result.segments + '</div></div>';
+        }
+
+        if (result.expectedExtension) {
+            infoHTML += '<div class="file-info-row"><div class="file-info-label">Očekávaná přípona:</div><div class="file-info-value">' + result.expectedExtension + (result.hasExpectedExtension ? ' ✔️' : ' ❌') + '</div></div>';
+        }
+
+        fileInfo.innerHTML = infoHTML;
+        fileInfo.classList.add('show');
+
+        // Check flash readiness after validation
+        checkFlashReadiness();
+    }
+
+    // Update boot mode status
+    function updateBootModeStatus(isInBootMode) {
+        inBootMode = isInBootMode;
+        const bootModeBadge = document.getElementById('bootModeBadge');
+        const bootModeWarning = document.getElementById('bootModeWarning');
+        const bootModeBtn = document.getElementById('bootModeBtn');
+
+        if (connected) {
+            bootModeBadge.style.display = 'inline-block';
+
+            if (isInBootMode) {
+                bootModeBadge.textContent = 'Boot mód';
+                bootModeBadge.className = 'boot-mode-indicator boot';
+                bootModeWarning.classList.remove('active');
+                bootModeBtn.disabled = true;
+            } else {
+                bootModeBadge.textContent = 'Normální mód';
+                bootModeBadge.className = 'boot-mode-indicator normal';
+                bootModeWarning.classList.add('active');
+                bootModeBtn.disabled = false;
+            }
+        } else {
+            bootModeBadge.style.display = 'none';
+            bootModeWarning.classList.remove('active');
+        }
+    }
+
+    // Update chip info table
+    function updateChipInfo() {
+        document.getElementById('infoChipType').textContent = chipInfo.chipType || '-';
+        document.getElementById('infoFeatures').textContent = chipInfo.features || '-';
+        document.getElementById('infoCrystal').textContent = chipInfo.crystal || '-';
+        document.getElementById('infoMac').textContent = chipInfo.mac || '-';
+        document.getElementById('infoFlashSize').textContent = chipInfo.flashSize || '-';
+        document.getElementById('infoManufacturer').textContent = chipInfo.manufacturer || '-';
+        document.getElementById('infoDevice').textContent = chipInfo.device || '-';
+        document.getElementById('infoVendorId').textContent = chipInfo.vendorId || '-';
+        document.getElementById('infoProductId').textContent = chipInfo.productId || '-';
+
+        document.getElementById('chipInfoSection').classList.add('active');
+    }
+
+    // Clear chip info
+    function clearChipInfo() {
+        chipInfo = {};
+        document.getElementById('chipInfoSection').classList.remove('active');
+    }
+
+    // Toggle file item visibility
+    function toggleFileItem(index) {
+        const checkbox = document.getElementById(`fileEnable${index}`);
+        const controls = document.getElementById(`fileControls${index}`);
+        const item = document.getElementById(`fileItem${index}`);
+
+        if (checkbox.checked) {
+            controls.style.display = 'grid';
+            item.classList.add('active');
+        } else {
+            controls.style.display = 'none';
+            item.classList.remove('active', 'ignored');
+        }
+
+        // Update ignored state when toggling checkboxes
+        updateIgnoredState();
+
+        // Check flash readiness
+        checkFlashReadiness();
+    }
+
+    // Logging function
+    function addLog(message, type) {
+        const logContainer = document.getElementById('logContainer');
+        const timestamp = new Date().toLocaleTimeString('cs-CZ');
+        const logEntry = document.createElement('div');
+        if (type) logEntry.className = `log-entry ${type}`;
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function clearLog() {
+        const logContainer = document.getElementById('logContainer');
+        logContainer.innerHTML = '<div class="log-entry">Log vymazán...</div>';
+    }
+
+    // Update progress bar
+    function updateProgress(percentage, state = "") {
+        if (!(typeof percentage === 'number' && !isNaN(percentage))) return;
+        const isString = typeof state === 'string' && state.length > 0;
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        progressSection.classList.add('active');
+        progressBar.style.width = percentage + '%';
+        progressBar.textContent = isString ? state : Math.round(percentage) + '%';
+    }
+
+    // Enter boot mode - reuses existing connection
+    async function enterBootMode() {
+        if (!connected || !serialPort) {
+            addLog('❌ ESP není připojeno!', 'error');
+            return;
+        }
+
+        try {
+            addLog('⚡ Přepínám do boot módu...', 'info');
+
+            // Close existing transport
+            if (transport) {
+                await transport.disconnect();
+                await transport.waitForUnlock(500);
+            }
+
+            // Reuse the same serial port
+            transport = new Transport(serialPort, true);
+
+            const baudRate = parseInt(document.getElementById('baudRate').value);
+
+            // Create new ESPLoader instance
+            const loaderOptions = {
+                transport: transport,
+                baudrate: baudRate,
+                terminal: {
+                    clean: () => {
+                    },
+                    writeLine: (data) => {
+                        addLog(data);
+                        parseChipInfoFromLog(data);
+                    },
+                    write: (data) => {
+                    }
+                }
+            };
+
+            esploader = new ESPLoader(loaderOptions);
+
+            // Connect to chip - this will put it in boot mode
+            chip = await esploader.main();
+
+            addLog('✅ ESP je nyní v boot módu!', 'success');
+            updateBootModeStatus(true);
+
+        } catch (error) {
+            addLog(`❌ Chyba při přepínání do boot módu: ${error.message}`, 'error');
+            console.error(error);
+        }
+    }
+
+    // Connect to ESP
+    async function connectESP() {
+        try {
+            addLog('Požadavek na připojení k ESP zařízení...');
+
+            const baudRate = parseInt(document.getElementById('baudRate').value);
+
+            // Request serial port
+            serialPort = await navigator.serial.requestPort();
+
+
+            serialPort.addEventListener('disconnect', () => {
+                addLog('⚠️ Zařízení bylo odpojeno!', 'warning');
+                disconnect();
+            });
+
+
+            // Get USB info
+            const portInfo = serialPort.getInfo();
+            chipInfo.vendorId = `0x${portInfo.usbVendorId?.toString(16).padStart(4, '0')}` || '-';
+            chipInfo.productId = `0x${portInfo.usbProductId?.toString(16).padStart(4, '0')}` || '-';
+
+            transport = new Transport(serialPort, true);
+
+            addLog(`Otevírám sériový port s baudrate ${baudRate}...`, 'info');
+
+            // Create ESPLoader instance
+            const loaderOptions = {
+                transport: transport,
+                baudrate: baudRate,
+                terminal: {
+                    clean: () => {
+                    },
+                    writeLine: (data) => {
+                        addLog(data);
+                        parseChipInfoFromLog(data);
+                    },
+                    write: (data) => {
+                    }
+                }
+            };
+
+            esploader = new ESPLoader(loaderOptions);
+
+            // Connect to chip
+            chip = await esploader.main();
+
+            chipInfo.chipType = chip;
+            addLog(`✅ Připojeno k ${chip}!`, 'success');
+
+            // Check if in boot mode - if main() succeeded, we're in boot mode
+            updateBootModeStatus(true);
+
+            // Try to get chip info
+            try {
+                const chipName = await esploader.chipName();
+                chipInfo.chipType = chipName;
+                addLog(`Chip: ${chipName}`, 'info');
+            } catch (e) {
+                addLog(`Chip: ${chip}`, 'info');
+            }
+
+            // Get MAC address
+            try {
+                const macAddr = await esploader.readMac();
+                chipInfo.mac = macAddr;
+                addLog(`MAC adresa: ${macAddr}`, 'info');
+            } catch (e) {
+                // MAC reading might not be supported on all chips
+            }
+
+            // Get flash size
+            try {
+                const flashSize = await esploader.getFlashSize();
+                if (flashSize) {
+                    chipInfo.flashSize = flashSize;
+                    addLog(`Flash velikost: ${flashSize}`, 'info');
+                }
+            } catch (e) {
+                // Flash size reading might not work
+            }
+
+            // Try to detect flash chip
+            try {
+                await esploader.flashDetect();
+            } catch (e) {
+                // Flash detection might fail, but info is in logs
+            }
+
+            connected = true;
+            updateConnectionStatus(true);
+            updateChipInfo();
+
+        } catch (error) {
+            addLog(`❌ Chyba připojení: ${error.message}`, 'error');
+            console.error(error);
+            connected = false;
+            serialPort = null;
+            updateConnectionStatus(false);
+            updateBootModeStatus(false);
+        }
+    }
+
+    // Parse chip info from log messages
+    function parseChipInfoFromLog(message) {
+        if (message.includes('Features:')) {
+            chipInfo.features = message.split('Features:')[1].trim();
+        }
+        if (message.includes('Crystal is')) {
+            chipInfo.crystal = message.split('Crystal is')[1].trim();
+        }
+        if (message.includes('MAC:')) {
+            chipInfo.mac = message.split('MAC:')[1].trim();
+        }
+        if (message.includes('Manufacturer:')) {
+            const match = message.match(/Manufacturer:\s*([0-9a-fA-Fx]+)/);
+            if (match) chipInfo.manufacturer = match[1];
+        }
+        if (message.includes('Device:')) {
+            const match = message.match(/Device:\s*([0-9a-fA-Fx]+)/);
+            if (match) chipInfo.device = match[1];
+        }
+        if (message.includes('Detected flash size:')) {
+            chipInfo.flashSize = message.split('Detected flash size:')[1].trim();
+        }
+        if (message.includes('VendorID')) {
+            const match = message.match(/VendorID\s+(0x[0-9a-fA-F]+)/);
+            if (match) chipInfo.vendorId = match[1];
+        }
+        if (message.includes('ProductID')) {
+            const match = message.match(/ProductID\s+(0x[0-9a-fA-F]+)/);
+            if (match) chipInfo.productId = match[1];
+        }
+
+        // Update table in real-time
+        if (connected) {
+            updateChipInfo();
+        }
+    }
+
+    // Flash firmware
+    async function flashFirmware1() {
+        if (!connected) {
+            addLog('❌ ESP není připojeno!', 'error');
+            return;
+        }
+
+        // Check if in boot mode before flashing
+        if (!inBootMode) {
+            addLog('⚠️ ESP není v boot módu! Přepínám do boot módu...', 'warning');
+            await enterBootMode();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (!inBootMode) {
+                addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                return;
+            }
+        }
+
+        try {
+            // Check if file 1 is merged firmware
+            const hasMergedFirmware = isMergedFirmware() && document.getElementById('fileEnable1').checked;
+
+            // Collect enabled files and validate
+            const fileArray = [];
+            let hasInvalidFiles = false;
+            let hasWarnings = false;
+            const warnings = [];
+
+            for (let i = 1; i <= 3; i++) {
+                const checkbox = document.getElementById(`fileEnable${i}`);
+                if (checkbox.checked) {
+                    // Skip files 2 and 3 if file 1 is merged
+                    if (hasMergedFirmware && i > 1) {
+                        addLog(`ℹ️ Soubor ${i} ignorován (merged firmware detekován)`, 'info');
+                        continue;
+                    }
+
+                    const fileInput = document.getElementById(`file${i}`);
+                    const addressInput = document.getElementById(`address${i}`);
+
+                    if (!fileInput.files[0]) {
+                        addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                        return;
+                    }
+
+                    // Check validation
+                    if (!fileValidation[i].valid) {
+                        addLog(`❌ Soubor ${i} není platný!`, 'error');
+                        hasInvalidFiles = true;
+                        continue;
+                    }
+
+                    // Check expected extension
+                    const info = fileValidation[i].info;
+                    if (!info.hasExpectedExtension && info.expectedExtension) {
+                        hasWarnings = true;
+                        warnings.push(`Soubor ${i} nemá očekávanou příponu (${info.expectedExtension})`);
+                    }
+
+                    const file = fileInput.files[0];
+                    const address = addressInput.value;
+
+                    // Convert hex address to decimal
+                    const addressDec = parseInt(address, 16);
+
+                    // Read file as array buffer
+                    const fileData = await file.arrayBuffer();
+                    const uint8Data = new Uint8Array(fileData);
+
+                    // Convert to binary string (esptool-js expects this format)
+                    const binaryString = uint8ArrayToBinaryString(uint8Data);
+
+                    fileArray.push({
+                        data: binaryString,
+                        address: addressDec
+                    });
+
+                    addLog(`📁 Přidán soubor: ${file.name} (${uint8Data.length} bajtů) na adresu ${address} (${addressDec})`, 'info');
+                }
+            }
+
+            // Block if invalid files
+            if (hasInvalidFiles) {
+                addLog('❌ Nelze nahrát neplatné soubory!', 'error');
+                return;
+            }
+
+            if (fileArray.length === 0) {
+                addLog('⚠️ Nebyl vybrán žádný soubor!', 'warning');
+                return;
+            }
+
+            // Show confirmation if there are warnings
+            if (hasWarnings) {
+                const warningMessage = 'Varování:\n' + warnings.join('\n') + '\n\nChcete přesto pokračovat?';
+                if (!confirm(warningMessage)) {
+                    addLog('⚠️ Nahrávání zrušeno uživatelem', 'warning');
+                    return;
+                }
+            }
+            if (hasMergedFirmware) {
+                addLog(`🚀 Zahajuji nahrávání merged firmware...`, 'info');
+            } else {
+                addLog(`🚀 Zahajuji nahrávání ${fileArray.length} soubor(ů)...`, 'info');
+            }
+
+            // Disable buttons during flashing
+            setButtonsEnabled(false);
+            updateProgress(0);
+
+            // Flash options
+            const flashOptions = {
+                fileArray: fileArray,
+                flashSize: 'keep',
+                eraseAll: false,
+                compress: true,
+                reportProgress: (fileIndex, written, total) => {
+                    const percentage = (written / total) * 100;
+                    const state = percentage === 100 ? `Wrapping up, please wait...` : '';
+                    updateProgress(percentage, state);
+                }
+            };
+
+            addLog('📝 Mazání a příprava flash paměti...');
+
+            // Write files to flash
+            await esploader.writeFlash(flashOptions);
+
+            addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+            updateProgress(100, 'Done!');
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+        } catch (error) {
+            addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+            console.error(error);
+        } finally {
+            // Auto hard reset after flash
+            addLog('🔄 Automatický hard reset...', 'valid');
+
+            await esploader.hardReset();
+            addLog('✅ Hard reset proveden!', 'success');
+
+            setButtonsEnabled(true);
+        }
+    }
+
+    // Flash firmware - UPDATE THIS FUNCTION
+    async function flashFirmware() {
+        if (!connected) {
+            addLog('❌ ESP není připojeno!', 'error');
+            return;
+        }
+
+        // Check if in boot mode before flashing
+        if (!inBootMode) {
+            addLog('⚠️ ESP není v boot módu! Přepínám do boot módu...', 'warning');
+            await enterBootMode();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (!inBootMode) {
+                addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                return;
+            }
+        }
+
+
+        // clear all in 'machineInfo'
+        for (const key of Object.keys(machineInfo)) {
+            delete machineInfo[key];
+        }
+
+
+        try {
+            // PRE-FLASH COMMANDS
+            addLog('═'.repeat(32), 'info');
+            addLog('🔧 PRE-FLASH FÁZE', 'info');
+            addLog('═'.repeat(32), 'info');
+
+            const preFlashSuccess = await executePreFlashCommands();
+            if (!preFlashSuccess) {
+                addLog('⚠️ Pre-flash příkazy selhaly, pokračuji s flashováním...', 'warning');
+            }
+
+            // Wait a bit before flashing
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Check if file 1 is merged firmware
+            const hasMergedFirmware = isMergedFirmware() && document.getElementById('fileEnable1').checked;
+
+            // Collect enabled files and validate
+            const fileArray = [];
+            let hasInvalidFiles = false;
+            let hasWarnings = false;
+            const warnings = [];
+
+            for (let i = 1; i <= 3; i++) {
+                const checkbox = document.getElementById(`fileEnable${i}`);
+                if (checkbox.checked) {
+                    // Skip files 2 and 3 if file 1 is merged
+                    if (hasMergedFirmware && i > 1) {
+                        addLog(`ℹ️ Soubor ${i} ignorován (merged firmware detekován)`, 'info');
+                        continue;
+                    }
+
+                    const fileInput = document.getElementById(`file${i}`);
+                    const addressInput = document.getElementById(`address${i}`);
+
+                    if (!fileInput.files[0]) {
+                        addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                        return;
+                    }
+
+                    // Check validation
+                    if (!fileValidation[i].valid) {
+                        addLog(`❌ Soubor ${i} není platný!`, 'error');
+                        hasInvalidFiles = true;
+                        continue;
+                    }
+
+                    // Check expected extension
+                    const info = fileValidation[i].info;
+                    if (!info.hasExpectedExtension && info.expectedExtension) {
+                        hasWarnings = true;
+                        warnings.push(`Soubor ${i} nemá očekávanou příponu (${info.expectedExtension})`);
+                    }
+
+                    const file = fileInput.files[0];
+                    const address = addressInput.value;
+
+                    // Convert hex address to decimal
+                    const addressDec = parseInt(address, 16);
+
+                    // Read file as array buffer
+                    const fileData = await file.arrayBuffer();
+                    const uint8Data = new Uint8Array(fileData);
+
+                    // Convert to binary string (esptool-js expects this format)
+                    const binaryString = uint8ArrayToBinaryString(uint8Data);
+
+                    fileArray.push({
+                        data: binaryString,
+                        address: addressDec
+                    });
+
+                    addLog(`📁 Přidán soubor: ${file.name} (${uint8Data.length} bajtů) na adresu ${address} (${addressDec})`, 'info');
+                }
+            }
+
+            // Block if invalid files
+            if (hasInvalidFiles) {
+                addLog('❌ Nelze nahrát neplatné soubory!', 'error');
+                return;
+            }
+
+            if (fileArray.length === 0) {
+                addLog('⚠️ Nebyl vybrán žádný soubor!', 'warning');
+                return;
+            }
+
+            // Show confirmation if there are warnings
+            if (hasWarnings) {
+                const warningMessage = 'Varování:\n' + warnings.join('\n') + '\n\nChcete přesto pokračovat?';
+                if (!confirm(warningMessage)) {
+                    addLog('⚠️ Nahrávání zrušeno uživatelem', 'warning');
+                    return;
+                }
+            }
+
+            // FLASHING PHASE
+            addLog('═'.repeat(32), 'info');
+            addLog('💾 FLASH FÁZE', 'info');
+            addLog('═'.repeat(32), 'info');
+
+            if (hasMergedFirmware) {
+                addLog(`🚀 Zahajuji nahrávání merged firmware...`, 'info');
+            } else {
+                addLog(`🚀 Zahajuji nahrávání ${fileArray.length} soubor(ů)...`, 'info');
+            }
+
+            // Disable buttons during flashing
+            setButtonsEnabled(false);
+            updateProgress(0);
+
+            // Flash options
+            const flashOptions = {
+                fileArray: fileArray,
+                flashSize: 'keep',
+                eraseAll: false,
+                compress: true,
+                reportProgress: (fileIndex, written, total) => {
+                    const percentage = (written / total) * 100;
+                    const state = percentage === 100 ? `Wrapping up, please wait...` : '';
+                    updateProgress(percentage, state);
+                }
+            };
+
+            addLog('📝 Mazání a příprava flash paměti...', 'info');
+
+            // Write files to flash
+            await esploader.writeFlash(flashOptions);
+
+            addLog('_'.repeat(40), 'info');
+            addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+            updateProgress(100, 'Done!');
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Auto hard reset after flash
+            addLog('🔄 Automatický hard reset...', 'valid');
+            await esploader.hardReset();
+            addLog('✅ Hard reset proveden!', 'success');
+
+            // POST-FLASH COMMANDS
+            addLog('═'.repeat(32), 'info');
+            addLog('🔧 POST-FLASH FÁZE', 'info');
+            addLog('═'.repeat(32), 'info');
+
+            const postFlashSuccess = await executePostFlashCommands();
+            if (!postFlashSuccess) {
+                addLog('⚠️ Post-flash příkazy selhaly', 'warning');
+            }
+
+            addLog('═'.repeat(32), 'info');
+            addLog('✅ CELÝ PROCES DOKONČEN', 'success');
+            addLog('═'.repeat(32), 'info');
+
+
+        } catch (error) {
+            addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+            console.error(error);
+        } finally {
+            // Auto hard reset after flash
+            addLog('🔄 Automatický hard reset...', 'valid');
+            await esploader.hardReset();
+            addLog('✅ Hard reset proveden!', 'success');
+
+            setButtonsEnabled(true);
+        }
+    }
+
+    // Hard reset ESP
+    async function hardReset() {
+        if (!connected) {
+            addLog('❌ ESP není připojeno!', 'error');
+            return;
+        }
+
+        try {
+            addLog('🔄 Provádím hard reset ESP...', 'info');
+            await esploader.hardReset();
+            addLog('✅ Hard reset proveden!', 'success');
+
+            // After reset, device is no longer in boot mode
+            updateBootModeStatus(false);
+        } catch (error) {
+            addLog(`❌ Chyba při resetu: ${error.message}`, 'error');
+            console.error(error);
+        }
+    }
+
+    // Disconnect
+    async function disconnect() {
+        try {
+            // Auto hard reset before disconnect
+            if (connected && esploader) {
+                try {
+                    addLog('🔄 Hard reset před odpojením...', 'info');
+                    await esploader.hardReset();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (e) {
+                    addLog('⚠️ Hard reset se nezdařil', 'warning');
+                }
+            }
+
+            if (transport) {
+                addLog('Odpojuji ESP...', 'info');
+                await transport.disconnect();
+                await transport.waitForUnlock(1500);
+            }
+
+            addLog('✅ Odpojeno', 'success');
+
+        } catch (error) {
+            addLog(`❌ Chyba při odpojování: ${error.message}`, 'error');
+            console.error(error);
+        } finally {
+            connected = false;
+            serialPort = null;
+            updateConnectionStatus(false);
+            updateBootModeStatus(false);
+            clearChipInfo();
+        }
+    }
+
+    // Update connection status
+    function updateConnectionStatus(isConnected) {
+        const statusBadge = document.getElementById('statusBadge');
+        const connectBtn = document.getElementById('connectBtn');
+        const flashBtn = document.getElementById('flashBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const bootModeBtn = document.getElementById('bootModeBtn');
+
+        if (isConnected) {
+            statusBadge.textContent = 'Připojeno';
+            statusBadge.className = 'status-badge connected';
+            connectBtn.disabled = true;
+            resetBtn.disabled = false;
+            disconnectBtn.disabled = false;
+            bootModeBtn.disabled = inBootMode;
+        } else {
+            statusBadge.textContent = 'Odpojeno';
+            statusBadge.className = 'status-badge disconnected';
+            connectBtn.disabled = false;
+            flashBtn.disabled = true;
+            resetBtn.disabled = true;
+            disconnectBtn.disabled = true;
+            bootModeBtn.disabled = true;
+        }
+
+        // Update flash button based on connection and readiness
+        checkFlashReadiness();
+    }
+
+    // Enable/disable buttons
+    function setButtonsEnabled(enabled) {
+        document.getElementById('flashBtn').disabled = !enabled;
+        document.getElementById('resetBtn').disabled = !enabled;
+        document.getElementById('connectBtn').disabled = !enabled;
+        document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
+    }
+
+    // Check Web Serial API support
+    if (!("serial" in navigator)) {
+        addLog('❌ Web Serial API není podporováno v tomto prohlížeči!', 'error');
+        addLog('ℹ️ Použijte Chrome, Edge nebo Opera.', 'warning');
+        document.getElementById('connectBtn').disabled = true;
+    }
+</script>
+</body>
+</html>
