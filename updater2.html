@@ -487,9 +487,9 @@
             background: #e0e0e0;
             border-radius: 10px;
             height: 30px;
-            overflow: visible;
             position: relative;
             margin-top: 10px;
+            overflow: hidden;
         }
 
         .progress-bar {
@@ -884,7 +884,7 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-        <button class="btn btn-primary" id="connectBtn" onclick="connectESP()">
+        <button class="btn btn-primary" id="connectBtn" onclick="espConnect()">
             📡 Připojit ESP
         </button>
         <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
@@ -915,8 +915,13 @@
     <!-- Log Section -->
     <div class="log-section">
         <h3 style="margin-bottom: 10px;">Log konzole</h3>
-        <div class="log-container" id="logContainer">
+        <div class="log-container" id="appLogContainer">
             <div class="log-entry success" style="font-weight: bold">Připraveno k připojení ESP zařízení...</div>
+        </div>
+    </div>
+    <div class="log-section">
+        <h3 style="margin-bottom: 10px;">Device log</h3>
+        <div class="log-container" id="deviceLogContainer" style="height: 160px;">
         </div>
     </div>
 </div>
@@ -990,7 +995,7 @@
     window.selectFolder = selectFolder;
     window.handleFolderSelect = handleFolderSelect;
     window.clearAllFiles = clearAllFiles;
-    window.connectESP = connectESP;
+    window.connectESP = espConnect;
     window.enterBootMode = enterBootMode;
     window.flashFirmware = flashFirmware;
     window.hardReset = hardReset;
@@ -1223,7 +1228,7 @@
         lines.forEach(line => {
             if (line.trim()) {
                 if (logReader) endBuffer += line + '\n';
-                addLog(`📥 RX: ${line.trim()}`, 'machineOut');
+                addLog(`📥 RX: ${line.trim()}`, 'machineOut', 'device');
             }
         });
     }
@@ -1320,7 +1325,7 @@
         try {
             const message = addNewline ? data + '\n' : data;
             await serialWriter.write(message);
-            addLog(`📤 TX: ${data}`, 'machineIn');
+            addLog(`📤 TX: ${data}`, 'machineIn', 'device');
             return true;
         } catch (error) {
             addLog(`❌ Chyba při zápisu: ${error.message}`, 'error');
@@ -1393,7 +1398,7 @@
                     const trimmedLine = line.trim();
                     if (trimmedLine) {
                         responses.push(trimmedLine);
-                        addLog(`📥 RX: ${trimmedLine}`, 'machineOut');
+                        addLog(`📥 RX: ${trimmedLine}`, 'machineOut', 'device');
 
                         // Check if we got expected response
                         if (expectedResponse && trimmedLine.includes(expectedResponse)) {
@@ -2516,8 +2521,8 @@
     }
 
     // Logging function
-    function addLog(message, type) {
-        const logContainer = document.getElementById('logContainer');
+    function addLog(message, type, log = 'app') {
+        const logContainer = document.getElementById(log === 'device' ? 'deviceLogContainer' : 'appLogContainer');
         const timestamp = new Date().toLocaleTimeString('cs-CZ');
         const logEntry = document.createElement('div');
         if (type) logEntry.className = `log-entry ${type}`;
@@ -2527,8 +2532,10 @@
     }
 
     function clearLog() {
-        const logContainer = document.getElementById('logContainer');
-        logContainer.innerHTML = '<div class="log-entry">Log vymazán...</div>';
+        const appLogContainer = document.getElementById('appLogContainer');
+        const deviceLogContainer = document.getElementById('deviceLogContainer');
+        appLogContainer.innerHTML = '<div class="log-entry">Log vymazán...</div>';
+        appLogContainer.innerHTML = '';
     }
 
     // Update progress bar
@@ -2751,9 +2758,10 @@
             if (lastPortInfo &&
                 portInfo.usbVendorId === lastPortInfo.usbVendorId &&
                 portInfo.usbProductId === lastPortInfo.usbProductId) {
+
                 addLog('🔌 Zařízení bylo znovu připojeno, pokouším se o opětovné připojení...', 'info');
                 await new Promise(resolve => setTimeout(resolve, 100)); // Small delay before reconnect
-                connectESP(port);
+                espConnect(port);
             }
 
 
@@ -2766,7 +2774,7 @@
     let connectionAttempt = 0;
 
     // Connect to ESP with timeout and retry
-    async function connectESP(port = null) {
+    async function espConnect(port = null) {
         connectionAttempt = 0;
         await connectESPWithRetry(port);
     }
@@ -2803,7 +2811,7 @@
 
             serialPort.addEventListener('disconnect', () => {
                 addLog('⚠️ Zařízení bylo odpojeno!', 'warning');
-                disconnect();
+                espDisconnect();
             });
 
             // Close existing transport if any
@@ -2913,7 +2921,8 @@
                 } else {
                     // If no esploader, try manual reset via DTR/RTS
                     addLog('Pokus o manuální reset přes DTR/RTS...', 'info');
-                    await manualReset();
+                    await manualReset(); // TODO: Handle failure
+                    await hardReset();
                 }
 
                 // Wait a bit more before retry
@@ -3408,10 +3417,10 @@
     // Disconnect from ESP
     function safeDisconnect() {
         lastPortInfo = null;
-        disconnect();
+        espDisconnect();
     }
 
-    async function disconnect() {
+    async function espDisconnect() {
         try {
             // Close serial if open
             if (serialReader || serialWriter) {
