@@ -12464,6 +12464,11 @@
 
         await logMessage("\n");
 
+        comPort.addEventListener('disconnect', async (event) => {
+            console.warn("⚠️ Serial port disconnected:", event);
+            await disconnectSerial({override: true});
+        });
+
 
         // try {
         //     // 2) Počkat na všechny – když jedna chyba, vyhodí se catch
