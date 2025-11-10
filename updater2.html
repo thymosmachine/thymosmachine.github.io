@@ -898,7 +898,7 @@
         <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
             🔄 Hard Reset
         </button>
-        <button class="btn btn-secondary" id="disconnectBtn" onclick="disconnect()" disabled>
+        <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
             ❌ Odpojit
         </button>
         <button class="btn btn-secondary" onclick="clearLog()">
@@ -956,13 +956,14 @@
     let endBuffer = '';
     let logReader = false;
 
-    let esploader;
-    let transport;
-    let chip = null;
+    let espLoader;
+    let espTransport;
+    let espChip = null;
     let connected = false;
     let inBootMode = false;
     let chipInfo = {};
     let serialPort = null;
+    let lastPortInfo = null;
     let manifestData = null;
     let currentMode = 'custom'; // 'custom' or 'manifest'
 
@@ -993,7 +994,7 @@
     window.enterBootMode = enterBootMode;
     window.flashFirmware = flashFirmware;
     window.hardReset = hardReset;
-    window.disconnect = disconnect;
+    window.safeDisconnect = safeDisconnect;
     window.clearLog = clearLog;
 
 
@@ -1001,7 +1002,7 @@
     window.flashAllVersions = flashAllVersions;
 
     async function test() {
-        if (!connected || !serialPort.connected) {
+        if (!connected) {
             addLog('❌ Zařízení není připojeno!', 'error');
             return;
         }
@@ -1061,7 +1062,7 @@
     }
 
     async function flashAllVersions() {
-        if (!connected || !serialPort.connected) {
+        if (!connected) {
             addLog('❌ Zařízení není připojeno!', 'error');
             return;
         }
@@ -1101,7 +1102,7 @@
         addLog('✅ Všechny verze byly nahrány.', 'success');
         console.log(endBuffer);
 
-        await disconnect();
+        await safeDisconnect();
     }
 
     // Nová funkce pro kontrolu připravenosti k flashi
@@ -1167,7 +1168,7 @@
 
     // Initialize serial reader and writer
     async function initializeSerial() {
-        if (!transport || !serialPort) {
+        if (!espTransport || !serialPort) {
             throw new Error('Port není otevřený');
         }
 
@@ -1431,7 +1432,7 @@
                 addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
                 addLog('🔄 Provádím hard reset...', 'valid');
 
-                await esploader.hardReset();
+                await espLoader.hardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
@@ -1516,7 +1517,7 @@
                 addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
                 addLog('🔄 Provádím hard reset...', 'valid');
 
-                await esploader.hardReset();
+                await espLoader.hardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
@@ -2700,19 +2701,19 @@
             }
 
             // Close existing transport
-            if (transport) {
-                await transport.disconnect();
-                await transport.waitForUnlock(500);
+            if (espTransport) {
+                await espTransport.disconnect();
+                await espTransport.waitForUnlock(500);
             }
 
             // Reuse the same serial port
-            transport = new Transport(serialPort, true);
+            espTransport = new Transport(serialPort, true);
 
             const baudRate = parseInt(document.getElementById('baudRate').value);
 
             // Create new ESPLoader instance
             const loaderOptions = {
-                transport: transport,
+                transport: espTransport,
                 baudrate: baudRate,
                 terminal: {
                     clean: () => {
@@ -2726,10 +2727,10 @@
                 }
             };
 
-            esploader = new ESPLoader(loaderOptions);
+            espLoader = new ESPLoader(loaderOptions);
 
             // Connect to chip - this will put it in boot mode
-            chip = await esploader.main();
+            espChip = await espLoader.main();
 
             addLog('✅ ESP je nyní v boot módu!', 'success');
             updateBootModeStatus(true);
@@ -2741,43 +2742,87 @@
     }
 
     // Connect to ESP
-    async function connectESP() {
-        try {
-            addLog('Požadavek na připojení k ESP zařízení...');
+    if ('serial' in navigator) {
+        navigator.serial.addEventListener('connect', async (e) => {
+            if (connected) return;
+            const port = e.target;
+            const portInfo = await port?.getInfo();
 
+            if (lastPortInfo &&
+                portInfo.usbVendorId === lastPortInfo.usbVendorId &&
+                portInfo.usbProductId === lastPortInfo.usbProductId) {
+                addLog('🔌 Zařízení bylo znovu připojeno, pokouším se o opětovné připojení...', 'info');
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay before reconnect
+                connectESP(port);
+            }
+
+
+        });
+    }
+
+    // Globální proměnné pro retry logic
+    const CONNECTION_TIMEOUT = 15_000; // 15 sekund timeout
+    const MAX_RETRIES = 2; // Maximální počet pokusů
+    let connectionAttempt = 0;
+
+    // Connect to ESP with timeout and retry
+    async function connectESP(port = null) {
+        connectionAttempt = 0;
+        await connectESPWithRetry(port);
+    }
+
+    async function connectESPWithRetry(port = null) {
+        connectionAttempt++;
+
+        if (port) {
+            serialPort = port;
+        }
+
+        try {
             const baudRate = parseInt(document.getElementById('baudRate').value);
 
-            // Request serial port
-            serialPort = await navigator.serial?.requestPort({
-                    // Example: 'xx:yy' => usbVendorId: xx, usbProductId: yy
+            // Request serial port (only on first attempt)
+            if ((!port && connectionAttempt === 1) || !serialPort) {
+                serialPort = await navigator.serial?.requestPort({
                     filters: useFilteredPort ? [
                         ...thymosFingerprints.map(fp => {
                             const [vendorId, productId] = fp.split(":").map(id => parseInt(id, 10));
                             return {usbVendorId: vendorId, usbProductId: productId};
                         })
                     ] : []
-                }
-            );
+                });
+            }
 
+            addLog(`Pokus o připojení ${connectionAttempt}/${MAX_RETRIES}...`, 'info');
+
+            // Get USB info
+            const portInfo = serialPort?.getInfo();
+            lastPortInfo = structuredClone(portInfo || {});
+            chipInfo.vendorId = `0x${portInfo.usbVendorId?.toString(16).padStart(4, '0')}` || '-';
+            chipInfo.productId = `0x${portInfo.usbProductId?.toString(16).padStart(4, '0')}` || '-';
 
             serialPort.addEventListener('disconnect', () => {
                 addLog('⚠️ Zařízení bylo odpojeno!', 'warning');
                 disconnect();
             });
 
+            // Close existing transport if any
+            if (espTransport) {
+                try {
+                    await espTransport.disconnect();
+                    await espTransport.waitForUnlock(500);
+                } catch (e) {
+                    console.warn('Error closing previous transport:', e);
+                }
+            }
 
-            // Get USB info
-            const portInfo = serialPort.getInfo();
-            chipInfo.vendorId = `0x${portInfo.usbVendorId?.toString(16).padStart(4, '0')}` || '-';
-            chipInfo.productId = `0x${portInfo.usbProductId?.toString(16).padStart(4, '0')}` || '-';
-
-            transport = new Transport(serialPort, true);
+            espTransport = new Transport(serialPort, true);
 
             addLog(`Otevírám sériový port s baudrate ${baudRate}...`, 'info');
 
             // Create ESPLoader instance
             const loaderOptions = {
-                transport: transport,
+                transport: espTransport,
                 baudrate: baudRate,
                 terminal: {
                     clean: () => {
@@ -2791,73 +2836,157 @@
                 }
             };
 
-            esploader = new ESPLoader(loaderOptions);
+            espLoader = new ESPLoader(loaderOptions);
 
-            // Connect to chip
-            chip = await esploader.main();
+            // Connect to chip WITH TIMEOUT
+            addLog('Čekám na odpověď ESP...', 'info');
+            espChip = await Promise.race([
+                espLoader.main(),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Connection timeout')), CONNECTION_TIMEOUT)
+                )
+            ]);
 
-            chipInfo.chipType = chip;
-            addLog(`✅ Připojeno k ${chip}!`, 'success');
+            chipInfo.chipType = espChip;
+            addLog(`✅ Připojeno k ${espChip}!`, 'success');
 
             // Check if in boot mode - if main() succeeded, we're in boot mode
             updateBootModeStatus(true);
 
-            // // Try to get chip info
-            // try {
-            //     const chipName = await esploader.chipName();
-            //     chipInfo.chipType = chipName;
-            //     addLog(`Chip: ${chipName}`, 'info');
-            // } catch (e) {
-            //     addLog(`Chip: ${chip}`, 'info');
-            // }
-            //
-            // // Get MAC address
-            // try {
-            //     const macAddr = await esploader.readMac();
-            //     chipInfo.mac = macAddr;
-            //     addLog(`MAC adresa: ${macAddr}`, 'info');
-            // } catch (e) {
-            //     // MAC reading might not be supported on all chips
-            // }
-            //
-            // // Get flash size
-            // try {
-            //     const flashSize = await esploader.getFlashSize();
-            //     if (flashSize) {
-            //         chipInfo.flashSize = flashSize;
-            //         addLog(`Flash velikost: ${flashSize}`, 'info');
-            //     }
-            // } catch (e) {
-            //     // Flash size reading might not work
-            // }
-
             // Try to detect flash chip
             try {
-                await esploader.flashDetect();
+                await espLoader.flashDetect();
             } catch (e) {
                 // Flash detection might fail, but info is in logs
             }
 
             connected = true;
+            connectionAttempt = 0; // Reset counter on success
             updateConnectionStatus(true);
             updateChipInfo();
 
         } catch (error) {
-            if (error.name === 'NotFoundError') {
-                addLog('❌ Žádné zařízení nebylo vybráno.', 'error');
-            } else if (error.name === 'NotSupportedError') {
-                addLog('❌ Váš prohlížeč nepodporuje Web Serial API.', 'error');
-            } else if (error.name === 'NetworkError') {
-                addLog('❌ Nelze otevřít sériový port. Zkontrolujte, zda není používán jinou aplikací.', 'error');
-            } else {
-                addLog(`❌ Chyba připojení: ${error.message}`, 'error');
-            }
-            console.error(error);
-            connected = false;
-            serialPort = null;
-            updateConnectionStatus(false);
-            updateBootModeStatus(false);
+            await handleConnectionError(error);
         }
+    }
+
+    async function handleConnectionError(error) {
+        // Check if it's a timeout
+        const isTimeout = error.message === 'Connection timeout';
+
+        if (isTimeout) {
+            addLog(`⏱️ Timeout při připojování (${CONNECTION_TIMEOUT / 1000}s)`, 'warning');
+        } else if (error.name === 'NotFoundError') {
+            addLog('❌ Žádné zařízení nebylo vybráno.', 'error');
+            resetConnection();
+            return;
+        } else if (error.name === 'NotSupportedError') {
+            addLog('❌ Váš prohlížeč nepodporuje Web Serial API.', 'error');
+            resetConnection();
+            return;
+        } else if (error.name === 'NetworkError') {
+            addLog('❌ Nelze otevřít sériový port. Zkontrolujte, zda není používán jinou aplikací.', 'error');
+            resetConnection();
+            return;
+        } else {
+            addLog(`❌ Chyba připojení: ${error.message}`, 'error');
+        }
+
+        console.error('Connection error:', error);
+
+        // Retry logic
+        if (connectionAttempt < MAX_RETRIES && serialPort) {
+            addLog('═'.repeat(40), 'warning');
+            addLog('🔄 Pokus o hard reset a opětovné připojení...', 'warning');
+            addLog('═'.repeat(40), 'warning');
+
+            try {
+                // Try to perform hard reset if we have esploader
+                if (espLoader && espTransport) {
+                    addLog('Provádím hard reset ESP...', 'info');
+                    await espLoader.hardReset().catch(e => {
+                        addLog('⚠️ Hard reset selhal, pokračuji...', 'warning');
+                    });
+
+                    // Wait for ESP to reset
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    // If no esploader, try manual reset via DTR/RTS
+                    addLog('Pokus o manuální reset přes DTR/RTS...', 'info');
+                    await manualReset();
+                }
+
+                // Wait a bit more before retry
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Retry connection
+                await connectESPWithRetry();
+
+            } catch (resetError) {
+                addLog(`❌ Chyba při resetu: ${resetError.message}`, 'error');
+
+                // Last attempt without reset
+                if (connectionAttempt < MAX_RETRIES) {
+                    addLog('Zkouším připojení bez resetu...', 'warning');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await connectESPWithRetry();
+                } else {
+                    resetConnection();
+                }
+            }
+        } else {
+            // No more retries
+            addLog('═'.repeat(40), 'error');
+            addLog('❌ Nepodařilo se připojit k ESP po všech pokusech.', 'error');
+            addLog('💡 Zkuste:', 'info');
+            addLog('  1. Odpojit a znovu připojit USB kabel', 'info');
+            addLog('  2. Stisknout RESET tlačítko na ESP', 'info');
+            addLog('  3. Zkontrolovat, zda ESP svítí', 'info');
+            addLog('═'.repeat(40), 'error');
+            resetConnection();
+        }
+    }
+
+    // Manual reset using DTR/RTS signals
+    async function manualReset() {
+        if (!serialPort) return;
+
+        try {
+            // Open port if needed
+            if (!serialPort.readable) {
+                await serialPort.open({baudRate: 115200});
+            }
+
+            // DTR=0, RTS=1 -> Enter bootloader
+            await serialPort.setSignals({dataTerminalReady: false, requestToSend: true});
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // DTR=1, RTS=0 -> Reset
+            await serialPort.setSignals({dataTerminalReady: true, requestToSend: false});
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // DTR=1, RTS=1 -> Run
+            await serialPort.setSignals({dataTerminalReady: true, requestToSend: true});
+
+            addLog('✅ Manuální reset proveden', 'success');
+
+        } catch (error) {
+            addLog(`⚠️ Manuální reset selhal: ${error.message}`, 'warning');
+            throw error;
+        }
+    }
+
+    // Reset connection state
+    function resetConnection() {
+        connected = false;
+        serialPort = null;
+        espTransport = null;
+        espLoader = null;
+        espChip = null;
+        connectionAttempt = 0;
+        updateConnectionStatus(false);
+        updateBootModeStatus(false);
+        clearChipInfo();
     }
 
     // Parse chip info from log messages
@@ -3024,7 +3153,7 @@
             addLog('📝 Mazání a příprava flash paměti...');
 
             // Write files to flash
-            await esploader.writeFlash(flashOptions);
+            await espLoader.writeFlash(flashOptions);
 
             addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
             updateProgress(100, 'Done!');
@@ -3038,7 +3167,7 @@
             // Auto hard reset after flash
             addLog('🔄 Automatický hard reset...', 'valid');
 
-            await esploader.hardReset();
+            await espLoader.hardReset();
             addLog('☑️ Hard reset proveden!', 'accepted');
 
             setButtonsEnabled(true);
@@ -3202,7 +3331,7 @@
             addLog('📝 Mazání a příprava flash paměti...', 'info');
 
             // Write files to flash
-            await esploader.writeFlash(flashOptions);
+            await espLoader.writeFlash(flashOptions);
 
             addLog('_'.repeat(40), 'info');
             addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
@@ -3231,7 +3360,7 @@
         } finally {
             // Auto hard reset after flash
             addLog('🔄 Automatický hard reset...', 'valid');
-            await esploader.hardReset();
+            await espLoader.hardReset();
             addLog('☑️ Hard reset proveden!', 'accepted');
 
 
@@ -3260,7 +3389,7 @@
                 await closeSerial();
             }
 
-            await esploader.hardReset();
+            await espLoader.hardReset();
             addLog('☑️ Hard reset proveden!', 'accepted');
 
             // After reset, device is no longer in boot mode
@@ -3276,6 +3405,12 @@
         }
     }
 
+    // Disconnect from ESP
+    function safeDisconnect() {
+        lastPortInfo = null;
+        disconnect();
+    }
+
     async function disconnect() {
         try {
             // Close serial if open
@@ -3283,21 +3418,23 @@
                 await closeSerial();
             }
 
+            updateProgress(0, ' ');
+
             // Auto hard reset before disconnect
-            if (connected && esploader) {
+            if (connected && espLoader) {
                 try {
                     addLog('🔄 Hard reset před odpojením...', 'info');
-                    await esploader.hardReset();
+                    await espLoader.hardReset();
                     await new Promise(resolve => setTimeout(resolve, 500));
                 } catch (e) {
                     addLog('⚠️ Hard reset se nezdařil', 'warning');
                 }
             }
 
-            if (transport) {
+            if (espTransport) {
                 addLog('❎ Odpojuji ESP...', 'success');
-                await transport.disconnect();
-                await transport.waitForUnlock(1500);
+                await espTransport.disconnect();
+                await espTransport.waitForUnlock(1500);
             }
 
             addLog('✅ Odpojeno', 'success');
@@ -3352,7 +3489,7 @@
     function setButtonsEnabled(enabled) {
         document.getElementById('flashBtn').disabled = !enabled;
         document.getElementById('resetBtn').disabled = !enabled;
-        document.getElementById('connectBtn').disabled = serialPort.connected ? true : !enabled;
+        document.getElementById('connectBtn').disabled = connected ? true : !enabled;
         document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
     }
 
