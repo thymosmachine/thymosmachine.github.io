@@ -10,7 +10,7 @@ import sys
 # === KONFIGURACE ==============================================================
 # 1) Nastav kořenovou složku, která obsahuje „hlavní složky“.
 #    Příklad: ROOT = Path(r"D:\projekty\firmware")
-ROOT = Path("bb/")  # None nebo Path("/cesta/k/koreni")
+ROOT = Path("../try 2/")  # None nebo Path("/cesta/k/koreni")
 
 # 2) Chceš si složku vybrat kliknutím? (funguje ve většině IDE na desktopu)
 USE_GUI_FOLDER_PICKER = True
