@@ -507,7 +507,6 @@
 
         .progress-text-inner {
             color: white;
-            font-weight: 600;
             font-size: 14px;
             padding: 0 10px;
             white-space: nowrap;
@@ -515,6 +514,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            font-weight: bold;
             transition: opacity 0.2s;
         }
 
@@ -534,7 +534,6 @@
             position: absolute;
             left: 100%;
             color: #333;
-            font-weight: 600;
             font-size: 14px;
             padding-left: 10px;
             white-space: nowrap;
@@ -543,6 +542,7 @@
             display: flex;
             align-items: center;
             height: 100%;
+            font-weight: bold;
         }
 
         /* When text doesn't fit inside, hide inner and show outer */
@@ -880,6 +880,8 @@
                 <span class="progress-text-outer" id="progressTextOuter">0%</span>
             </div>
         </div>
+        <h5 style="margin-bottom: 10px;">Task: <span style="font-weight: normal" id="taskLabel">None</span></h5>
+
     </div>
 
     <!-- Action Buttons -->
@@ -995,7 +997,7 @@
     window.selectFolder = selectFolder;
     window.handleFolderSelect = handleFolderSelect;
     window.clearAllFiles = clearAllFiles;
-    window.connectESP = espConnect;
+    window.espConnect = espConnect;
     window.enterBootMode = enterBootMode;
     window.flashFirmware = flashFirmware;
     window.hardReset = hardReset;
@@ -2540,31 +2542,35 @@
 
     // Update progress bar
     const isString = (str) => typeof str === 'string' && str.length > 0;
+    const isNumber = (num) => typeof num === 'number' && !isNaN(num);
     const progressSection = document.getElementById('progressSection');
     const progressBar = document.getElementById('progressBar');
     const progressBarContainer = document.querySelector('.progress-bar-container');
     const textInner = document.getElementById('progressTextInner');
     const textOuter = document.getElementById('progressTextOuter');
     const textOuterWrapper = document.getElementById('progressTextOuterWrapper');
+    const taskLabel = document.getElementById('taskLabel');
 
 
     // Cache for text width measurements
-    function updateProgress(percentage, state = "") {
-        if (!(typeof percentage === 'number' && !isNaN(percentage))) return;
-
+    function updateProgress({percentage = undefined, state = undefined} = {}) {
         progressSection.classList.add('active');
-        progressBar.style.width = percentage + '%';
+        if (isNumber(percentage)) {
+            progressBar.style.width = percentage + '%';
 
-        if (textOuterWrapper) {
-            textOuterWrapper.style.width = percentage + '%';
+            if (textOuterWrapper) {
+                textOuterWrapper.style.width = percentage + '%';
+            }
+
+            const textContent = Math.round(percentage) + '%';
+            textInner.textContent = textContent;
+            textOuter.textContent = textContent;
+
+            // Use the optimized version
+            checkTextFitThrottled(progressBar, progressBarContainer, textInner, textOuter, percentage);
         }
 
-        const textContent = isString(state) ? state : Math.round(percentage) + '%';
-        textInner.textContent = textContent;
-        textOuter.textContent = textContent;
-
-        // Use the optimized version
-        checkTextFitThrottled(progressBar, progressBarContainer, textInner, textOuter, percentage);
+        if (isString(state)) taskLabel.textContent = state;
     }
 
     let measureCanvas = null;
@@ -3209,7 +3215,7 @@
 
         try {
             if (doPreCommands) {
-                updateProgress(0, 'Executing pre-flash preparations...');
+                updateProgress({percentage: 0, state: 'Executing pre-flash preparations...'});
                 // PRE-FLASH COMMANDS
                 addLog('═'.repeat(32), 'info');
                 addLog('🔧 PRE-FLASH PHASE', 'info');
@@ -3331,7 +3337,7 @@
 
             // Disable buttons during flashing
             setButtonsEnabled(false);
-            updateProgress(0);
+            updateProgress({percentage: 0, state: 'Uploading firmware...'});
 
             // Flash options
             const flashOptions = {
@@ -3341,8 +3347,8 @@
                 compress: true,
                 reportProgress: (fileIndex, written, total) => {
                     const percentage = (written / total) * 100;
-                    const state = percentage === 100 ? `Wrapping up, please wait...` : '';
-                    updateProgress(percentage, state);
+                    const state = percentage === 100 ? `Wrapping up, please wait...` : null;
+                    updateProgress({percentage: percentage, state: state});
                 }
             };
 
@@ -3353,12 +3359,12 @@
 
             addLog('_'.repeat(40), 'info');
             addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
-            updateProgress(100, 'Firmware uploaded!');
+            updateProgress({percentage: 100, state: 'Firmware uploaded!'});
 
             await new Promise(resolve => setTimeout(resolve, 500));
 
             if (doPostCommands) {
-                updateProgress(100, 'Executing post-flash procedures...');
+                updateProgress({percentage: 100, state: 'Executing post-flash procedures...'});
                 // POST-FLASH COMMANDS
                 addLog('═'.repeat(32), 'info');
                 addLog('🔧 POST-FLASH PHASE', 'info');
@@ -3386,7 +3392,7 @@
             addLog(`${success ? '✅' : '❎'} END OF FLASH PROCESS`, 'success');
             addLog('═'.repeat(32), 'info');
 
-            success ? updateProgress(100, 'Done!') : updateProgress(0, 'Failed');
+            success ? updateProgress({percentage: 100, state: 'Done!'}) : updateProgress({percentage: 0, state: 'Failed.'});
 
             setButtonsEnabled(true);
         }
@@ -3436,7 +3442,7 @@
                 await closeSerial();
             }
 
-            updateProgress(0, ' ');
+            updateProgress({percentage: 0, state: 'None'});
 
             // Auto hard reset before disconnect
             if (connected && espLoader) {
