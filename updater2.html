@@ -1008,6 +1008,18 @@
     window.test = test;
     window.flashAllVersions = flashAllVersions;
 
+    window.addEventListener('beforeunload', async (e) => {
+        if (connected) {
+            e.preventDefault();
+            e.returnValue = '';
+            await safeDisconnect();
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            window.close();
+        }
+    });
+
     async function test() {
         if (!connected) {
             addLog('❌ Zařízení není připojeno!', 'error');
