@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Remote Controller</title>
+    <script defer src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --success-dark: #38a169;
+            --danger: #f56565;
+            --danger-dark: #e53e3e;
+            --warning: #f6ad55;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            color: var(--gray-900);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h3 {
+            color: var(--gray-900);
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+        }
+
+        h3 svg {
+            flex-shrink: 0;
+            width: 1.5em;
+            height: auto;
+            aspect-ratio: 1/1;
+            fill: currentColor;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-200);
+        }
+
+        .role-selector {
+            margin-bottom: 24px;
+        }
+
+        .role-selector label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .role-selector select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-selector select:hover {
+            border-color: var(--primary);
+        }
+
+        .role-selector select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .status {
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .status.waiting {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .status.ready {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status.connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status.waiting .status-icon {
+            background: var(--gray-600);
+        }
+
+        .status.ready .status-icon {
+            background: #3b82f6;
+            animation: pulse 2s infinite;
+        }
+
+        .status.connected .status-icon {
+            background: var(--success);
+        }
+
+        .status.error .status-icon {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .id-display {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .id-display h4 {
+            color: white;
+            font-size: 0.875rem;
+            margin-bottom: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .id-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .peer-id {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 4px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .copy-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: var(--shadow);
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .token-input-section {
+            margin-bottom: 20px;
+        }
+
+        .token-input-section h4 {
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .token-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .token-box {
+            width: 48px;
+            height: 56px;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            background: white;
+            cursor: text;
+        }
+
+        .token-box.readonly {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            cursor: default;
+        }
+
+        .token-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: scale(1.05);
+        }
+
+        .token-box.filled {
+            border-color: var(--primary);
+            background: #ede9fe;
+            color: var(--primary);
+        }
+
+        .token-box.error {
+            border-color: var(--danger);
+            background: #fee2e2;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .token-separator {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-400);
+            margin: 0 4px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid #fecaca;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .error-message svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: var(--success-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--danger-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--gray-300);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            padding: 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            background: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            border-color: var(--primary);
+            background: var(--gray-50);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            background: var(--gray-100);
+        }
+
+        #log, #controllerLog {
+            background: var(--gray-50);
+            padding: 16px;
+            border-radius: 12px;
+            height: 120px;
+            overflow: auto;
+            font-size: 0.875rem;
+            font-family: 'Courier New', monospace;
+            border: 1px solid var(--gray-200);
+            margin-bottom: 20px;
+        }
+
+        #joystickSim {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            border: 2px solid var(--gray-300);
+            border-radius: 16px;
+            position: relative;
+            background: var(--gray-50);
+            margin: 0 auto 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        #dot {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--danger) 0%, #d946ef 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: calc(50% - 12px);
+            left: calc(50% - 12px);
+            box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+            transition: all 0.05s;
+        }
+
+        #joy {
+            border: 2px solid var(--gray-300);
+            border-radius: 16px;
+            touch-action: none;
+            background: var(--gray-50);
+            display: block;
+            margin: 0 auto;
+            box-shadow: var(--shadow);
+            cursor: grab;
+        }
+
+        #joy:active {
+            cursor: grabbing;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        canvas {
+            border-radius: 12px;
+            background: white;
+            border: 1px solid var(--gray-200);
+        }
+
+        h3 {
+            color: var(--gray-900);
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .peer-id {
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+            }
+
+            .token-box {
+                width: 40px;
+                height: 48px;
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎮 WebRTC Remote Controller</h2>
+
+    <div class="card">
+        <div class="role-selector">
+            <label for="roleSelect">Select Your Role</label>
+            <select id="roleSelect">
+                <option value="" disabled selected>-- Choose Your Role --</option>
+                <option value="host">🖥️ Host (Display & Receive Commands)</option>
+                <option value="controller">🎮 Controller (Send Commands)</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="hostSection" class="section">
+        <div class="card">
+            <div class="status waiting" id="hostStatus">
+                <span class="status-icon"></span>
+                <span>Initializing...</span>
+            </div>
+
+            <div class="id-display">
+                <h4>Your Connection ID</h4>
+                <div class="id-container">
+                    <span class="peer-id" id="hostId">MT-······</span>
+                    <button class="copy-btn" id="copyHostId" style="display:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                        </svg>
+                        Copy ID
+                    </button>
+                </div>
+            </div>
+
+            <div class="button-group" style="justify-content: center;">
+                <button class="btn btn-danger" id="hostDisconnect" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         style="width: 18px; height: 18px; fill: currentColor;">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    Disconnect
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <!-- 📝 Command Log -->
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+                Command Log
+            </h3>
+            <div id="log"></div>
+        </div>
+
+        <div class="card">
+            <!-- 🎯 Movement Simulation -->
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                </svg>
+                Movement Simulation
+            </h3>
+            <div id="joystickSim">
+                <div id="dot"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <!-- 📊 Position Over Time -->
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Position Over Time
+            </h3>
+            <div class="chart-container">
+                <canvas id="hostChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="controllerSection" class="section">
+        <div class="card">
+            <div class="status waiting" id="controllerStatus">
+                <span class="status-icon"></span>
+                <span>Ready to connect</span>
+            </div>
+
+            <div class="token-input-section">
+                <h4>Enter Host Connection ID</h4>
+                <div class="token-boxes">
+                    <label>
+                        <input type="text" class="token-box readonly" maxlength="1" data-index="0" readonly value="M">
+                    </label>
+                    <label>
+                        <input type="text" class="token-box readonly" maxlength="1" data-index="1" readonly value="T">
+                    </label>
+                    <span class="token-separator">-</span>
+                    <label for="token-0"></label><input type="text" class="token-box" maxlength="1" data-index="2"
+                                                        id="token-0">
+                    <label for="token-1"></label><input type="text" class="token-box" maxlength="1" data-index="3"
+                                                        id="token-1">
+                    <label for="token-2"></label><input type="text" class="token-box" maxlength="1" data-index="4"
+                                                        id="token-2">
+                    <label for="token-3"></label><input type="text" class="token-box" maxlength="1" data-index="5"
+                                                        id="token-3">
+                    <label for="token-4"></label><input type="text" class="token-box" maxlength="1" data-index="6"
+                                                        id="token-4">
+                    <label for="token-5"></label><input type="text" class="token-box" maxlength="1" data-index="7"
+                                                        id="token-5">
+                </div>
+
+                <div class="error-message" id="tokenError">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span id="tokenErrorText">Please enter a valid 6-character token</span>
+                </div>
+
+                <div class="button-group" style="justify-content: center;">
+                    <button class="btn btn-secondary" id="pasteBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                             style="width: 18px; height: 18px; fill: currentColor;">
+                            <path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/>
+                        </svg>
+                        Paste from Clipboard
+                    </button>
+                    <button class="btn btn-success" id="connectBtn" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                             style="width: 18px; height: 18px; fill: currentColor;">
+                            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                        </svg>
+                        Connect to Host
+                    </button>
+                    <button class="btn btn-danger" id="controllerDisconnect" style="display:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                             style="width: 18px; height: 18px; fill: currentColor;">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <!-- 🎮 Controls -->
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M21.58 16.09l-1.09-7.66C20.21 6.46 18.52 5 16.53 5H7.47C5.48 5 3.79 6.46 3.51 8.43l-1.09 7.66C2.2 17.63 3.39 19 4.94 19c.68 0 1.32-.27 1.8-.75L9 16h6l2.25 2.25c.48.48 1.13.75 1.8.75 1.56 0 2.75-1.37 2.53-2.91zM11 11H9v2H8v-2H6v-1h2V8h1v2h2v1zm4-1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm2 3c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                </svg>
+                Controls
+            </h3>
+            <div class="controls-grid">
+                <button class="control-btn" data-code="LEFT">⬅️ LEFT</button>
+                <button class="control-btn" data-code="RIGHT">➡️ RIGHT</button>
+                <button class="control-btn" data-code="UP">⬆️ UP</button>
+                <button class="control-btn" data-code="DOWN">⬇️ DOWN</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <!-- 🕹️ Joystick -->
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/>
+                </svg>
+                Joystick
+            </h3>
+            <canvas id="joy" width="200" height="200"></canvas>
+        </div>
+
+        <div class="card">
+            <!-- 📡 Remote Position Monitor -->
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z"/>
+                    <circle cx="12" cy="9" r="2"/>
+                    <path d="M12 12c-2.67 0-8 1.34-8 4v1h16v-1c0-2.66-5.33-4-8-4z" opacity=".3"/>
+                </svg>
+                Remote Position Monitor
+            </h3>
+            <div id="controllerLog"></div>
+            <div class="chart-container">
+                <canvas id="controllerChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const roleSelect = document.getElementById('roleSelect');
+    const hostSection = document.getElementById('hostSection');
+    const controllerSection = document.getElementById('controllerSection');
+
+    let hostInitialized = false;
+    let controllerInitialized = false;
+
+    roleSelect.addEventListener('change', () => {
+        const role = roleSelect.value;
+
+        hostSection.classList.remove('active');
+        controllerSection.classList.remove('active');
+
+        if (role === 'host') {
+            hostSection.classList.add('active');
+            if (!hostInitialized) {
+                initHost();
+                hostInitialized = true;
+            }
+        } else if (role === 'controller') {
+            controllerSection.classList.add('active');
+            if (!controllerInitialized) {
+                initController();
+                controllerInitialized = true;
+            }
+        }
+    });
+
+    // Token input functionality
+    const tokenBoxes = document.querySelectorAll('.token-box:not(.readonly)');
+    const allTokenBoxes = document.querySelectorAll('.token-box');
+    const connectBtn = document.getElementById('connectBtn');
+    const pasteBtn = document.getElementById('pasteBtn');
+    const tokenError = document.getElementById('tokenError');
+    const tokenErrorText = document.getElementById('tokenErrorText');
+
+    function showError(message) {
+        tokenErrorText.textContent = message;
+        tokenError.classList.add('show');
+        tokenBoxes.forEach(box => box.classList.add('error'));
+
+        setTimeout(() => {
+            tokenError.classList.remove('show');
+            tokenBoxes.forEach(box => box.classList.remove('error'));
+        }, 3000);
+    }
+
+    function updateConnectButton() {
+        const allFilled = Array.from(tokenBoxes).every(box => box.value.trim() !== '');
+        connectBtn.disabled = !allFilled;
+    }
+
+    function updateTokenBoxes() {
+        tokenBoxes.forEach(box => {
+            if (box.value) {
+                box.classList.add('filled');
+            } else {
+                box.classList.remove('filled');
+            }
+        });
+        updateConnectButton();
+    }
+
+    tokenBoxes.forEach((box, index) => {
+        box.addEventListener('input', (e) => {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            e.target.value = value;
+
+            if (value && index < tokenBoxes.length - 1) {
+                tokenBoxes[index + 1].focus();
+            }
+
+            updateTokenBoxes();
+        });
+
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                tokenBoxes[index - 1].focus();
+                tokenBoxes[index - 1].value = '';
+                updateTokenBoxes();
+            }
+
+            if (e.key === 'ArrowLeft' && index > 0) {
+                e.preventDefault();
+                tokenBoxes[index - 1].focus();
+            }
+
+            if (e.key === 'ArrowRight' && index < tokenBoxes.length - 1) {
+                e.preventDefault();
+                tokenBoxes[index + 1].focus();
+            }
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (index < tokenBoxes.length - 1) {
+                    tokenBoxes[index + 1].focus();
+                } else {
+                    // Last box - trigger connect if filled
+                    if (!connectBtn.disabled) {
+                        connectBtn.click();
+                    }
+                }
+            }
+        });
+
+        box.addEventListener('paste', (e) => {
+            e.preventDefault();
+            handlePaste(e.clipboardData.getData('text'));
+        });
+
+        // Allow clicking on MT- prefix to focus first editable box
+        box.addEventListener('click', () => {
+            tokenBoxes[0].focus();
+        });
+    });
+
+    // Allow clicking on readonly MT boxes to focus first editable box
+    document.querySelectorAll('.token-box.readonly').forEach(box => {
+        box.addEventListener('click', () => {
+            tokenBoxes[0].focus();
+        });
+    });
+
+    pasteBtn.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            handlePaste(text);
+        } catch (err) {
+            showError('Failed to read from clipboard. Please paste manually.');
+        }
+    });
+
+    function handlePaste(text) {
+        let paste = text.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+
+        // Remove MT- prefix if present
+        if (paste.startsWith('MT-')) {
+            paste = paste.substring(3);
+        } else if (paste.startsWith('MT')) {
+            paste = paste.substring(2);
+        }
+
+        // Remove any remaining dashes
+        paste = paste.replace(/-/g, '');
+
+        if (paste.length !== 6) {
+            showError('Token must be exactly 6 characters (found ' + paste.length + ')');
+            return;
+        }
+
+        // Fill boxes
+        for (let i = 0; i < Math.min(paste.length, tokenBoxes.length); i++) {
+            tokenBoxes[i].value = paste[i];
+        }
+
+        updateTokenBoxes();
+        tokenBoxes[tokenBoxes.length - 1].focus();
+    }
+
+    function getTokenValue() {
+        return 'MT-' + Array.from(tokenBoxes).map(box => box.value).join('');
+    }
+
+    function clearToken() {
+        tokenBoxes.forEach(box => {
+            box.value = '';
+            box.classList.remove('filled');
+        });
+        updateConnectButton();
+        if (tokenBoxes.length > 0) {
+            tokenBoxes[0].focus();
+        }
+    }
+
+    // ----------------------- Host Setup -----------------------
+    function initHost() {
+        const statusDiv = document.getElementById('hostStatus');
+        const hostIdDiv = document.getElementById('hostId');
+        const logDiv = document.getElementById('log');
+        const dot = document.getElementById('dot');
+        const copyBtn = document.getElementById('copyHostId');
+        const disconnectBtn = document.getElementById('hostDisconnect');
+
+        let pos = {x: 0, y: 0};
+        let conn = null;
+        let peer = null;
+
+        function generateId() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let id = 'MT-';
+            id += letters[Math.floor(Math.random() * letters.length)];
+            for (let i = 0; i < 5; i++) {
+                id += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return id;
+        }
+
+        const myId = generateId();
+
+        peer = new Peer(myId, {
+            debug: 2
+        });
+
+        peer.on('open', (id) => {
+            hostIdDiv.textContent = id;
+            copyBtn.style.display = 'inline-flex';
+            statusDiv.className = 'status ready';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
+            log('✅ Your Host ID: ' + id);
+        });
+
+        peer.on('error', (err) => {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
+            log('❌ Error: ' + err);
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const id = hostIdDiv.textContent;
+            navigator.clipboard.writeText(id).then(() => {
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!';
+                copyBtn.style.background = 'var(--success)';
+                copyBtn.style.color = 'white';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.style.background = 'white';
+                    copyBtn.style.color = 'var(--primary)';
+                }, 2000);
+            });
+        });
+
+        Chart.getChart('hostChart')?.destroy();
+        const ctx = document.getElementById('hostChart').getContext('2d');
+        const data = {
+            labels: [],
+            datasets: [
+                {label: 'x', data: [], borderColor: '#667eea', fill: false, tension: 0.4, borderWidth: 2},
+                {label: 'y', data: [], borderColor: '#f56565', fill: false, tension: 0.4, borderWidth: 2}
+            ]
+        };
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {title: {display: true, text: 'Time'}, grid: {display: false}},
+                    y: {title: {display: true, text: 'Position'}}
+                }
+            }
+        });
+
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div style="color: var(--gray-700);">[${time}] ${msg}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateDot() {
+            const simWidth = document.getElementById('joystickSim').offsetWidth;
+            const simHeight = document.getElementById('joystickSim').offsetHeight;
+            let cx = (simWidth / 2) + pos.x * 10 - 12;
+            let cy = (simHeight / 2) - pos.y * 10 - 12;
+            dot.style.left = cx + 'px';
+            dot.style.top = cy + 'px';
+        }
+
+        function updateChart() {
+            const t = new Date().toLocaleTimeString();
+            data.labels.push(t);
+            data.datasets[0].data.push(pos.x);
+            data.datasets[1].data.push(pos.y);
+
+            if (data.labels.length > 20) {
+                data.labels.shift();
+                data.datasets[0].data.shift();
+                data.datasets[1].data.shift();
+            }
+            chart.update();
+        }
+
+        const clampPos = (value) => {
+            return Math.max(-12, Math.min(12, value));
+        };
+
+        disconnectBtn.addEventListener('click', () => {
+            if (conn) {
+                conn.close();
+                conn = null;
+            }
+            disconnectBtn.style.display = 'none';
+            statusDiv.className = 'status ready';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
+            log('🔌 Disconnected by user');
+        });
+
+        peer.on('connection', (connection) => {
+            conn = connection;
+            log('📞 Incoming connection from: ' + conn.peer);
+            statusDiv.className = 'status waiting';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Connecting...</span>';
+
+            conn.on('open', () => {
+                log('✅ Connected to controller!');
+                statusDiv.className = 'status connected';
+                statusDiv.innerHTML = '<span class="status-icon"></span><span>Connected to Controller</span>';
+                disconnectBtn.style.display = 'inline-flex';
+            });
+
+            conn.on('data', (cmd) => {
+                log('📩 ' + cmd);
+
+                if (cmd === 'LEFT') pos.x = clampPos(pos.x - 1);
+                else if (cmd === 'RIGHT') pos.x = clampPos(pos.x + 1);
+                else if (cmd === 'UP') pos.y = clampPos(pos.y + 1);
+                else if (cmd === 'DOWN') pos.y = clampPos(pos.y - 1);
+
+                updateDot();
+                updateChart();
+
+                if (conn && conn.open) {
+                    conn.send({
+                        type: 'position',
+                        x: pos.x,
+                        y: pos.y,
+                        time: new Date().toLocaleTimeString()
+                    });
+                }
+            });
+
+            conn.on('close', () => {
+                log('❌ Connection closed');
+                statusDiv.className = 'status ready';
+                statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
+                disconnectBtn.style.display = 'none';
+                conn = null;
+            });
+        });
+    }
+
+    // ----------------------- Controller Setup -----------------------
+    function initController() {
+        const statusDiv = document.getElementById('controllerStatus');
+        const disconnectBtn = document.getElementById('controllerDisconnect');
+        const controllerLogDiv = document.getElementById('controllerLog');
+
+        const peer = new Peer({
+            debug: 2
+        });
+
+        let conn = null;
+
+        Chart.getChart('controllerChart')?.destroy();
+        const ctx = document.getElementById('controllerChart').getContext('2d');
+        const data = {
+            labels: [],
+            datasets: [
+                {label: 'x (remote)', data: [], borderColor: '#667eea', fill: false, tension: 0.4, borderWidth: 2},
+                {label: 'y (remote)', data: [], borderColor: '#f56565', fill: false, tension: 0.4, borderWidth: 2}
+            ]
+        };
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {title: {display: true, text: 'Time'}, grid: {display: false}},
+                    y: {title: {display: true, text: 'Position'}}
+                }
+            }
+        });
+
+        function controllerLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            controllerLogDiv.innerHTML += `<div style="color: var(--gray-700);">[${time}] ${msg}</div>`;
+            controllerLogDiv.scrollTop = controllerLogDiv.scrollHeight;
+        }
+
+        peer.on('open', (id) => {
+            console.log('My Controller ID:', id);
+            statusDiv.className = 'status ready';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready to connect</span>';
+        });
+
+        peer.on('error', (err) => {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
+            console.error('Error:', err);
+        });
+
+        connectBtn.onclick = () => {
+            const hostId = getTokenValue();
+
+            if (!hostId.match(/^MT-[A-Z0-9]{6}$/)) {
+                showError('Invalid token format');
+                return;
+            }
+
+            statusDiv.className = 'status waiting';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Connecting to ' + hostId + '...</span>';
+            connectBtn.disabled = true;
+
+            conn = peer.connect(hostId);
+
+            conn.on('open', () => {
+                controllerLog('✅ Connected to host');
+                statusDiv.className = 'status connected';
+                statusDiv.innerHTML = '<span class="status-icon"></span><span>Connected to Host!</span>';
+                connectBtn.style.display = 'none';
+                pasteBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-flex';
+                tokenBoxes.forEach(box => box.disabled = true);
+            });
+
+            conn.on('data', (receivedData) => {
+                if (receivedData.type === 'position') {
+                    controllerLog(`📊 Position: x=${receivedData.x}, y=${receivedData.y}`);
+
+                    data.labels.push(receivedData.time);
+                    data.datasets[0].data.push(receivedData.x);
+                    data.datasets[1].data.push(receivedData.y);
+
+                    if (data.labels.length > 20) {
+                        data.labels.shift();
+                        data.datasets[0].data.shift();
+                        data.datasets[1].data.shift();
+                    }
+                    chart.update();
+                }
+            });
+
+            conn.on('close', () => {
+                controllerLog('❌ Disconnected from host');
+                statusDiv.className = 'status ready';
+                statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready to connect</span>';
+                connectBtn.style.display = 'inline-flex';
+                pasteBtn.style.display = 'inline-flex';
+                connectBtn.disabled = false;
+                disconnectBtn.style.display = 'none';
+                tokenBoxes.forEach(box => box.disabled = false);
+                updateConnectButton();
+                conn = null;
+            });
+
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                controllerLog('❌ Connection error: ' + err);
+                showError('Connection failed. Check the token and try again.');
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<span class="status-icon"></span><span>Connection failed</span>';
+                connectBtn.disabled = false;
+                updateConnectButton();
+            });
+        };
+
+        disconnectBtn.addEventListener('click', () => {
+            if (conn) {
+                conn.close();
+                conn = null;
+            }
+            controllerLog('🔌 Disconnected by user');
+            statusDiv.className = 'status ready';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready to connect</span>';
+            connectBtn.style.display = 'inline-flex';
+            pasteBtn.style.display = 'inline-flex';
+            disconnectBtn.style.display = 'none';
+            tokenBoxes.forEach(box => box.disabled = false);
+            updateConnectButton();
+        });
+
+        document.querySelectorAll('#controllerSection .control-btn').forEach(btn => {
+            btn.onclick = () => {
+                if (conn && conn.open) {
+                    conn.send(btn.dataset.code);
+                    controllerLog('📤 Sent: ' + btn.dataset.code);
+                } else {
+                    showError('Not connected to host yet!');
+                }
+            };
+        });
+
+        const canvas = document.getElementById('joy');
+        const ctx2 = canvas.getContext('2d');
+        let isDragging = false, x = canvas.width / 2, y = canvas.height / 2;
+        let lastSent = 0;
+
+        function drawJoystick() {
+            ctx2.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx2.strokeStyle = '#d1d5db';
+            ctx2.lineWidth = 3;
+            ctx2.beginPath();
+            ctx2.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+            ctx2.stroke();
+
+            ctx2.fillStyle = '#e5e7eb';
+            ctx2.beginPath();
+            ctx2.arc(canvas.width / 2, canvas.height / 2, 8, 0, Math.PI * 2);
+            ctx2.fill();
+
+            const gradient = ctx2.createLinearGradient(x - 15, y - 15, x + 15, y + 15);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+
+            ctx2.fillStyle = gradient;
+            ctx2.beginPath();
+            ctx2.arc(x, y, 18, 0, Math.PI * 2);
+            ctx2.fill();
+
+            ctx2.strokeStyle = 'white';
+            ctx2.lineWidth = 2;
+            ctx2.stroke();
+        }
+
+        function moveJoystick(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            x = clientX - rect.left;
+            y = clientY - rect.top;
+
+            const dx = x - canvas.width / 2;
+            const dy = y - canvas.height / 2;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > 80) {
+                const ratio = 80 / dist;
+                x = canvas.width / 2 + dx * ratio;
+                y = canvas.height / 2 + dy * ratio;
+            }
+
+            drawJoystick();
+
+            const now = Date.now();
+            if (now - lastSent < 100) return;
+            lastSent = now;
+
+            if (conn && conn.open) {
+                let cmd = null;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx > 10) cmd = 'RIGHT';
+                    else if (dx < -10) cmd = 'LEFT';
+                } else {
+                    if (dy > 10) cmd = 'DOWN';
+                    else if (dy < -10) cmd = 'UP';
+                }
+                if (cmd) {
+                    conn.send(cmd);
+                    controllerLog('🕹️ ' + cmd);
+                }
+            }
+        }
+
+        function resetJoystick() {
+            x = canvas.width / 2;
+            y = canvas.height / 2;
+            drawJoystick();
+        }
+
+        canvas.onmousedown = (e) => {
+            isDragging = true;
+            moveJoystick(e.clientX, e.clientY);
+        };
+        canvas.onmousemove = (e) => {
+            if (isDragging) moveJoystick(e.clientX, e.clientY);
+        };
+        canvas.onmouseup = () => {
+            isDragging = false;
+            resetJoystick();
+        };
+        canvas.onmouseleave = () => {
+            isDragging = false;
+            resetJoystick();
+        };
+
+        canvas.ontouchstart = (e) => {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            moveJoystick(touch.clientX, touch.clientY);
+        };
+        canvas.ontouchmove = (e) => {
+            e.preventDefault();
+            if (isDragging) {
+                const touch = e.touches[0];
+                moveJoystick(touch.clientX, touch.clientY);
+            }
+        };
+        canvas.ontouchend = (e) => {
+            e.preventDefault();
+            isDragging = false;
+            resetJoystick();
+        };
+
+        drawJoystick();
+    }
+</script>
+</body>
+</html>
