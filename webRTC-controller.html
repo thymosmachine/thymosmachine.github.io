@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Remote Controller</title>
-    <script defer src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script defer src="./packages/external/p2p/peerjs.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -572,7 +572,7 @@
         <div class="role-selector">
             <label for="roleSelect">Select Your Role</label>
             <select id="roleSelect">
-                <option value="" disabled selected>-- Choose Your Role --</option>
+                <option value="" disabled selected>—— Choose Your Role ——</option>
                 <option value="host">🖥️ Host (Display & Receive Commands)</option>
                 <option value="controller">🎮 Controller (Send Commands)</option>
             </select>
