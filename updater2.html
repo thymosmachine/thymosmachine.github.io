@@ -1869,10 +1869,10 @@
     function populateVersionSelector() {
         const versionSelect = document.getElementById('versionSelect');
 
-        const createDivider = () => {
+        const createDivider = (symbol='─') => {
             const divider = document.createElement('option');
             divider.disabled = true;
-            divider.textContent = '─'.repeat(20);
+            divider.textContent = symbol.repeat(20);
             return divider;
         };
 
@@ -1900,7 +1900,7 @@
                     versionSelect.appendChild(option);
                 });
 
-                versionSelect.appendChild(createDivider());
+                versionSelect.appendChild(createDivider('—'));
             }
         } else {
             // No manifest, only custom option
