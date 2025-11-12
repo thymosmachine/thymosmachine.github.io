@@ -2451,6 +2451,9 @@
                         <div class="input-group">
                             <label for="experimentTypeDropdown">Experiment type: </label>
                             <select id="experimentTypeDropdown" class="expInput" required>
+                                <option value="" hidden>
+                                    &nbsp;◻️&nbsp;None
+                                </option>
                                 <option value="none" hidden>
                                     &nbsp;⬜&nbsp;No selection
                                 </option>
@@ -2675,7 +2678,12 @@
                         <div class="input-group controlElement">
                             <label for="systemLevelSelect">System Level: </label>
                             <select id="systemLevelSelect" class="appSelector" data-system="app" required>
-                                <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                                <option value="" hidden>
+                                    &nbsp;◻️&nbsp;None
+                                </option>
+                                <option value="none" hidden>
+                                    &nbsp;⬜&nbsp;No selection
+                                </option>
                                 <option value="remote" hidden>
                                     &nbsp;👽&nbsp;Remote
                                 </option>
@@ -2747,6 +2755,7 @@
                         <div class="input-group">
                             <label for="languageSelect">App Language: </label>
                             <select id="languageSelect" class="appSelector" data-system="app">
+                                <option value="" hidden>&nbsp;◻️&nbsp;None</option>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                                 <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇪🇳/🇬🇧/🇺🇸</option>
                                 <option value="cs" hidden>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
@@ -2767,7 +2776,12 @@
                         <div class="input-group" data-system-level="100">
                             <label for="inputAutoConnect">Automatically connect to the machine: </label>
                             <select id="inputAutoConnect" class="appSelector" data-system="app">
-                                <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                                <option value="" hidden>
+                                    &nbsp;◻️&nbsp;None
+                                </option>
+                                <option value="none" hidden>
+                                    &nbsp;⬜&nbsp;No selection
+                                </option>
                                 <option value="never" title="Don't connect to the device automatically">
                                     &nbsp;❌&nbsp;Never
                                 </option>
@@ -2797,7 +2811,12 @@
                                 Apply machine settings on connect:
                             </label>
                             <select id="inputUseMachineSettings" class="appSelector" data-system="app">
-                                <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                                <option value="" hidden>
+                                    &nbsp;◻️&nbsp;None
+                                </option>
+                                <option value="none" hidden>
+                                    &nbsp;⬜&nbsp;No selection
+                                </option>
                                 <option value="no_not" title="Keep current and don't save to machine">
                                     &nbsp;❌&nbsp;No&nbsp;&nbsp;(keep)
                                 </option>
@@ -2819,6 +2838,7 @@
                         <div class="input-group" data-system-level="200">
                             <label for="decimalSymbol" style="min-width: max-content;">CSV Decimal Symbol: </label>
                             <select id="decimalSymbol" class="appSelector" data-system="app">
+                                <option value="" hidden>&nbsp;◻️&nbsp;None</option>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                                 <option value="Option-Dot" selected>&nbsp;Dot&nbsp;&nbsp;&nbsp;( . )&nbsp;</option>
                                 <option value="Option-Comma">&nbsp;Comma&nbsp;( , )&nbsp;</option>
@@ -2828,6 +2848,7 @@
                         <div class="input-group" data-system-level="200">
                             <label for="delimiterSymbol" style="min-width: max-content;">CSV Delimiter Symbol: </label>
                             <select id="delimiterSymbol" class="appSelector" data-system="app">
+                                <option value="" hidden>&nbsp;◻️&nbsp;None</option>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
                                 <option value="Option-Semicolon" selected>
                                     &nbsp;Semicolon&nbsp;( ; )&nbsp;
@@ -2849,7 +2870,12 @@
                                 Save data to CSV automatically:
                             </label>
                             <select id="inputAutoSave" class="appSelector" data-system="app">
-                                <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
+                                <option value="" hidden>
+                                    &nbsp;◻️&nbsp;None
+                                </option>
+                                <option value="none" hidden>
+                                    &nbsp;⬜&nbsp;No selection
+                                </option>
                                 <option value="Option-Never" title="Save data only by 'save' buttons" selected>
                                     &nbsp;❌&nbsp;Never
                                 </option>
