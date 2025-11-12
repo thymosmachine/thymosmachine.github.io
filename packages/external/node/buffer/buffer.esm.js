@@ -4,7 +4,7 @@
  *
  * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
  */
-import t from"/npm/base64-js@1.5.1/+esm";import e from"/npm/ieee754@1.2.1/+esm";var r={};
+import t from "./base64-js.esm.js";import e from "./ieee754.esm.js";;var r={};
 /*!
  * The buffer module from node.js, for the browser.
  *
