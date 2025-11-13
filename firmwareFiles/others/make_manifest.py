@@ -11,7 +11,7 @@ MANIFEST_NAME = "MOIRA UPDATER – THYMOS"
 MANIFEST_VERSION = "1.0.0"
 HOMEPAGE = "https://www.thymos.cz"
 
-MAIN_ROOT = Path("../try 2/") # None x Path(__file__).parent.resolve() x Path("/path/to/firmwareFiles/others")
+MAIN_ROOT = Path("../") # None x Path(__file__).parent.resolve() x Path("/path/to/firmwareFiles/others")
 
 # === Rozpoznání typů a offsety ===
 TYPE_KEYWORDS = {
