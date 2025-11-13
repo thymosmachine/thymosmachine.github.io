@@ -939,15 +939,27 @@
     {
       "imports": {
         "buffer": "./packages/external/node/buffer/buffer.esm.js",
-        "esptool": "./packages/external/esp/esptool.min.js"
+        "esptool": "./packages/external/esp/bundle.js"
       }
     }
 </script>
 
 <!-- ESPTool.js Library as Module -->
 <script type="module">
+    // Polyfill for Buffer               "https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm"
     import {Buffer} from 'buffer';
-    import {ESPLoader, Transport} from 'esptool';
+    // ESPTool.js library               "https://unpkg.com/esptool-js@0.4.0/bundle.js"
+    import * as esptool from 'esptool';
+
+    // safe getters
+    const ESPLoader = esptool.ESPLoader;
+    const Transport = esptool.Transport;
+
+    if (!ESPLoader || !Transport) {
+        alert('❌ Nepodařilo se načíst knihovnu ESPTool.js. Zkontrolujte připojení k internetu a znovu načtěte stránku.');
+        throw new Error('ESPLoader or Transport not loaded');
+    }
+
 
     // Make Buffer globally available
     window.Buffer = Buffer;
@@ -1451,7 +1463,7 @@
                 addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
                 addLog('🔄 Provádím hard reset...', 'valid');
 
-                await espLoader.hardReset();
+                await performHardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
@@ -1536,7 +1548,7 @@
                 addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
                 addLog('🔄 Provádím hard reset...', 'valid');
 
-                await espLoader.hardReset();
+                await performHardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
@@ -1865,11 +1877,34 @@
         }
     }
 
+    function compareVersions(a, b) {
+        const pa = a.version.split('.').map(Number);
+        const pb = b.version.split('.').map(Number);
+
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            const na = pa[i] || 0;
+            const nb = pb[i] || 0;
+            if (na < nb) return -1;
+            if (na > nb) return 1;
+        }
+        return 0;
+    }
+
+    function getPriority(label) {
+        const l = label.toLowerCase(); // ať to není case-sensitive
+
+        if (l.startsWith("default")) return 0; // 1. Default
+        if (l.startsWith("stable")) return 1; // 2. Stable
+        if (l.startsWith("current")) return 2; // 3. Current
+        if (l.startsWith("latest")) return 3; // 4. Latest
+        return 4;                               // 5. ostatní
+    }
+
     // Populate version selector
     function populateVersionSelector() {
         const versionSelect = document.getElementById('versionSelect');
 
-        const createDivider = (symbol='─') => {
+        const createDivider = (symbol = '─') => {
             const divider = document.createElement('option');
             divider.disabled = true;
             divider.textContent = symbol.repeat(20);
@@ -1878,8 +1913,22 @@
 
         if (manifestData) {
             // Add set versions first
-            if (manifestData?.set && Array.isArray(manifestData?.set)) {
-                manifestData.set.forEach((item, index) => {
+            const loadedSet = manifestData?.set?.slice()?.sort((a, b) => {
+                const pa = getPriority(a.label);
+                const pb = getPriority(b.label);
+
+                // nejdřív porovnáme priority
+                if (pa !== pb) return pa - pb;
+
+                // položky se stejnou prioritou se pak řadí abecedně
+                return a.label.localeCompare(b.label);
+            });
+
+
+            if (loadedSet && Array.isArray(loadedSet)) {
+                loadedSet.forEach((item, index) => {
+                    if (!item.version) return; // Skip invalid entries
+                    if (!item.name) item.name = `Unnamed Build`;
                     const option = document.createElement('option');
                     option.value = `set_${index}`; // Use index instead of version
                     option.textContent = `${item.label} (${item.version})`;
@@ -1890,9 +1939,13 @@
             }
 
             // Add divider
-            if (manifestData?.builds && Array.isArray(manifestData?.builds)) {
+            const loadedBuilds = manifestData?.builds?.slice()?.sort(compareVersions);
+
+            if (loadedBuilds && Array.isArray(loadedBuilds)) {
                 // Add all builds
-                manifestData.builds.forEach((build, index) => {
+                loadedBuilds.forEach((build, index) => {
+                    if (!build.version) build.version = `?.?.?`;
+                    if (!build.name) build.name = `Build`;
                     const option = document.createElement('option');
                     option.value = `build_${index}`; // Use index instead of version
                     option.textContent = `${build.name} (${build.version})`;
@@ -1920,20 +1973,23 @@
     // Set default version
     function setDefaultVersion() {
         const versionSelect = document.getElementById('versionSelect');
-        let defaultIndex = -1;
+        let defaultIndex;
 
         // Priority: default > current > last > first
-        const defaultItem = manifestData?.set?.findIndex(item => item.label.toLowerCase() === 'default') || -1;
-        const currentItem = manifestData?.set?.findIndex(item => item.label.toLowerCase() === 'current') || -1;
-        const lastestItem = manifestData?.set?.findIndex(item => item.label.toLowerCase() === 'lastest') || -1;
+        const defaultItem = manifestData?.set?.findIndex(item => item.label.toLowerCase().startsWith('default')) || -1;
+        const stableItem = manifestData?.set?.findIndex(item => item.label.toLowerCase().startsWith('stable')) || -1;
+        const currentItem = manifestData?.set?.findIndex(item => item.label.toLowerCase().startsWith('current')) || -1;
+        const lastestItem = manifestData?.set?.findIndex(item => item.label.toLowerCase().startsWith('lastest')) || -1;
 
         if (defaultItem !== -1) {
             defaultIndex = defaultItem;
+        } else if (stableItem !== -1) {
+            defaultIndex = stableItem;
         } else if (currentItem !== -1) {
             defaultIndex = currentItem;
         } else if (lastestItem !== -1) {
             defaultIndex = lastestItem;
-        } else if (manifestData?.set?.length > 0) {
+        } else {
             defaultIndex = 0;
         }
 
@@ -1945,64 +2001,80 @@
     }
 
     // Handle version change
+    const versionSelect = document.getElementById('versionSelect');
+    const statusBadge = document.getElementById('statusBadgeFiles');
+    const customFileActions = document.getElementById('customFileActions');
+
     async function handleVersionChange() {
-        const versionSelect = document.getElementById('versionSelect');
-        const statusBadge = document.getElementById('statusBadgeFiles');
+
         const selectedValue = versionSelect.value;
-        const customFileActions = document.getElementById('customFileActions');
-
-        // Clear current files
-        clearAllFiles();
-        // remove all classes
-        statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
-        versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
 
-        if (selectedValue === 'custom') {
-            // Custom mode
-            currentMode = 'custom';
-            customFileActions.classList.remove('hidden');
-            statusBadge.innerText = 'Neznámé';
-            statusBadge.classList.add('status-unknown');
-            versionSelect.classList.add('status-unknown');
-            showFileItems(true);
-            addLog('📝 Přepnuto na Custom mód', 'info');
-        } else {
-            // Manifest mode
-            currentMode = 'manifest';
-            customFileActions.classList.add('hidden');
-            showFileItems(false);
+        setButtonsEnabled(false);
 
-            const [type, indexStr] = selectedValue.split('_');
-            const index = parseInt(indexStr);
-            let buildData = null;
+        try {
+            // Clear current files
+            clearAllFiles();
+            // remove all classes
+            statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+            versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
-            if (type === 'set') {
-                // Find build by version from set
-                const setItem = manifestData?.set[index];
-                if (setItem) {
-                    buildData = manifestData?.builds.find(build => build.version === setItem.version);
-                }
-            } else if (type === 'build') {
-                // Direct build selection by index
-                buildData = manifestData?.builds[index];
-            }
 
-            const versionText = versionSelect.options[versionSelect.selectedIndex].text.trim().split(' ');
-            const version = versionText[1].replace('(', '').replace(')', '');
-            const name = versionText[0];
-
-            addLog('_'.repeat(40));
-            addLog(`📑 Vybraná verze: ${name} (${version})`, 'info');
-            addLog(`📦 Načítám verzi: ${buildData?.name || 'Unknown'} (${buildData?.version})`, 'info');
-
-            if (buildData) {
-                await loadBuildFiles(buildData);
+            if (selectedValue === 'custom') {
+                // Custom mode
+                currentMode = 'custom';
+                customFileActions.classList.remove('hidden');
+                statusBadge.innerText = 'Neznámé';
+                statusBadge.classList.add('status-unknown');
+                versionSelect.classList.add('status-unknown');
+                showFileItems(true);
+                addLog('📝 Přepnuto na Custom mód', 'info');
             } else {
-                addLog('❌ Verze nenalezena v manifestu', 'error');
-                statusBadge.innerText = 'Neplatné';
-                statusBadge.classList.add('status-error');
-                versionSelect.classList.add('status-error');
+                // Manifest mode
+                currentMode = 'manifest';
+                customFileActions.classList.add('hidden');
+                showFileItems(false);
+
+                const [type, indexStr] = selectedValue.split('_');
+                const index = parseInt(indexStr);
+                let buildData = null;
+
+                if (type === 'set') {
+                    // Find build by version from set
+                    const setItem = manifestData?.set[index];
+                    if (setItem) {
+                        buildData = manifestData?.builds.find(build => build.version === setItem.version);
+                    }
+                } else if (type === 'build') {
+                    // Direct build selection by index
+                    buildData = manifestData?.builds[index];
+                }
+
+                const versionText = versionSelect.options[versionSelect.selectedIndex].text.trim().split(' ');
+                const version = versionText[1].replace('(', '').replace(')', '');
+                const name = versionText[0];
+
+                addLog('_'.repeat(40));
+                addLog(`📑 Vybraná verze: ${name} (${version})`, 'info');
+                addLog(`📦 Načítám verzi: ${buildData?.name || 'Unknown'} (${buildData?.version})`, 'info');
+
+                if (buildData) {
+                    await loadBuildFiles(buildData);
+
+                    if (connected) setButtonsEnabled(true);
+
+                } else {
+                    addLog('❌ Verze nenalezena v manifestu', 'error');
+                    statusBadge.innerText = 'Neplatné';
+                    statusBadge.classList.add('status-error');
+                    versionSelect.classList.add('status-error');
+                }
+            }
+        } catch (error) {
+            console.error('Delay error:', error);
+        } finally {
+            if (!connected) {
+                document.getElementById('connectBtn').disabled = false;
             }
         }
     }
@@ -2574,7 +2646,7 @@
                 textOuterWrapper.style.width = percentage + '%';
             }
 
-            const textContent = Math.round(percentage) + '%';
+            const textContent =  percentage > 0 ? Math.round(percentage) + '%': '';
             textInner.textContent = textContent;
             textOuter.textContent = textContent;
 
@@ -2939,7 +3011,7 @@
                 // Try to perform hard reset if we have esploader
                 if (espLoader && espTransport) {
                     addLog('Provádím hard reset ESP...', 'info');
-                    await espLoader.hardReset().catch(e => {
+                    await performHardReset().catch(e => {
                         addLog('⚠️ Hard reset selhal, pokračuji...', 'warning');
                     });
 
@@ -3203,7 +3275,7 @@
             // Auto hard reset after flash
             addLog('🔄 Automatický hard reset...', 'valid');
 
-            await espLoader.hardReset();
+            await performHardReset();
             addLog('☑️ Hard reset proveden!', 'accepted');
 
             setButtonsEnabled(true);
@@ -3396,7 +3468,7 @@
         } finally {
             // Auto hard reset after flash
             addLog('🔄 Automatický hard reset...', 'valid');
-            await espLoader.hardReset();
+            await performHardReset();
             addLog('☑️ Hard reset proveden!', 'accepted');
 
 
@@ -3404,10 +3476,128 @@
             addLog(`${success ? '✅' : '❎'} END OF FLASH PROCESS`, 'success');
             addLog('═'.repeat(32), 'info');
 
-            success ? updateProgress({percentage: 100, state: 'Done!'}) : updateProgress({percentage: 0, state: 'Failed.'});
+            success ? updateProgress({percentage: 100, state: 'Done!'}) : updateProgress({
+                percentage: 0,
+                state: 'Failed.'
+            });
 
             setButtonsEnabled(true);
         }
+    }
+
+    // Robustní wrapper pro hard reset
+    async function performHardReset({loader = espLoader, transport = espTransport, port = serialPort} = {}) {
+        // 1) pokud instance esploader má metodu hardReset, použij ji (zpětná kompatibilita)
+        try {
+            if (loader && typeof loader.hardReset === 'function') {
+                console.debug('Using esploader.hardReset()');
+                await loader.hardReset();
+                return true;
+            }
+        } catch (err) {
+            console.warn('esploader.hardReset() failed:', err);
+            // pokračuj do fallbacků
+        }
+
+        // 2) zkus použít exportovaný HardReset (může být třída nebo funkce)
+        try {
+            if (typeof HardReset !== 'undefined' && HardReset) {
+                console.debug('HardReset export is present, inspecting...');
+
+                // Vypsat do konzole, co to je
+                console.dir(HardReset);
+
+                // Pokud je to třída (konstruktér), vytvoříme instanci s transportem
+                if (typeof HardReset === 'function') {
+                    try {
+                        const hrInstance = new HardReset(transport);
+                        // Najdeme vhodnou metodu na instanci
+                        const possibleMethods = ['reset', 'run', 'perform', 'execute', 'do', 'start'];
+                        for (const m of possibleMethods) {
+                            if (typeof hrInstance[m] === 'function') {
+                                console.debug(`Calling hrInstance.${m}()`);
+                                await hrInstance[m]();
+                                return true;
+                            }
+                        }
+                        // Pokud instance sama je volatelná (funkce), zkusíme ji zavolat
+                        if (typeof hrInstance === 'function') {
+                            const maybePromise = hrInstance();
+                            if (maybePromise && typeof maybePromise.then === 'function') {
+                                await maybePromise;
+                                return true;
+                            }
+                        }
+                        // Pokud nic z toho neexistuje, zkusíme jestli HardReset je funkce, ne konstruktor (call)
+                        if (typeof HardReset === 'function') {
+                            const res = HardReset(transport);
+                            if (res && typeof res.then === 'function') {
+                                await res;
+                                return true;
+                            }
+                        }
+                    } catch (innerErr) {
+                        console.warn('Using HardReset constructor/func failed:', innerErr);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('Error while trying HardReset export:', err);
+        }
+
+        // 3) zkus ClassicReset nebo CustomReset exporty (někdy jsou tam tyto utility)
+        try {
+            if (typeof ClassicReset !== 'undefined' && ClassicReset) {
+                console.debug('Trying ClassicReset with transport');
+                const cr = new ClassicReset(transport);
+                if (typeof cr.reset === 'function') {
+                    await cr.reset();
+                    return true;
+                } else if (typeof cr.run === 'function') {
+                    await cr.run();
+                    return true;
+                }
+            }
+            if (typeof CustomReset !== 'undefined' && CustomReset) {
+                console.debug('Trying CustomReset with transport');
+                const cr = new CustomReset(transport, /* maybe sequence */);
+                if (typeof cr.reset === 'function') {
+                    await cr.reset();
+                    return true;
+                } else if (typeof cr.run === 'function') {
+                    await cr.run();
+                    return true;
+                }
+            }
+        } catch (err) {
+            console.warn('Classic/Custom reset attempts failed:', err);
+        }
+
+        // 4) Fallback: manuální reset přes Web Serial API (pokud máme serialPort a setSignals)
+        try {
+            if (port && typeof port.setSignals === 'function') {
+                console.debug('Attempting manual reset via serialPort.setSignals()');
+                // Typical sequence: toggle DTR/RTS to reset
+                await port.setSignals({dataTerminalReady: false, requestToSend: true});
+                await delay(120);
+                await port.setSignals({dataTerminalReady: true, requestToSend: false});
+                await delay(50);
+                await port.setSignals({dataTerminalReady: true, requestToSend: true});
+                await delay(2000); // čekáme, než zařízení naběhne
+                return true;
+            }
+        } catch (err) {
+            console.warn('Manual serialPort.reset via setSignals failed:', err);
+        }
+
+        // 5) Pokud nic nezabralo, selhání
+        console.error('Hard reset failed: no available method succeeded.');
+        return false;
+    }
+
+    // Pomocná delay funkce
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     // Hard reset ESP
@@ -3425,7 +3615,7 @@
                 await closeSerial();
             }
 
-            await espLoader.hardReset();
+            await performHardReset();
             addLog('☑️ Hard reset proveden!', 'accepted');
 
             // After reset, device is no longer in boot mode
@@ -3460,7 +3650,7 @@
             if (connected && espLoader) {
                 try {
                     addLog('🔄 Hard reset před odpojením...', 'info');
-                    await espLoader.hardReset();
+                    await performHardReset();
                     await new Promise(resolve => setTimeout(resolve, 500));
                 } catch (e) {
                     addLog('⚠️ Hard reset se nezdařil', 'warning');
