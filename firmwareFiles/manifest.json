@@ -2,373 +2,229 @@
   "name": "MOIRA UPDATER – THYMOS",
   "version": "1.0.0",
   "homepage": "https://www.thymos.cz",
+  "set": [
+  ],
   "builds": [
     {
-      "name": "buildFW1_0ot8rh",
+      "name": "build1",
       "version": "0.0.0",
       "parts": [
         {
           "type": "application",
-          "path": "./buildFW1_0ot8rh/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./buildFW1_0ot8rh/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        },
+        {
+          "type": "merged",
+          "path": "./build1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./buildFW1_0ot8rh/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "buildFW1_cbx51g",
+      "name": "build2",
       "version": "0.0.1",
       "parts": [
         {
           "type": "application",
-          "path": "./buildFW1_cbx51g/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./buildFW1_cbx51g/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        },
+        {
+          "type": "merged",
+          "path": "./build2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./buildFW1_cbx51g/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "buildFW2_0hrf6o",
+      "name": "build3",
       "version": "0.0.2",
       "parts": [
         {
           "type": "application",
-          "path": "./buildFW2_0hrf6o/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build3/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./buildFW2_0hrf6o/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build3/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        },
+        {
+          "type": "merged",
+          "path": "./build3/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./buildFW2_0hrf6o/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build3/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "buildFW2_di80xg",
+      "name": "build4",
       "version": "0.0.3",
       "parts": [
         {
           "type": "application",
-          "path": "./buildFW2_di80xg/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build4/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./buildFW2_di80xg/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build4/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        },
+        {
+          "type": "merged",
+          "path": "./build4/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./buildFW2_di80xg/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build4/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "build_5mm753",
+      "name": "build5",
       "version": "0.0.4",
       "parts": [
         {
           "type": "application",
-          "path": "./build_5mm753/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build5/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./build_5mm753/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build5/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
           "offset": 0
         },
         {
           "type": "merged",
-          "path": "./build_5mm753/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
+          "path": "./build5/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./build_5mm753/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build5/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "build_a6lk3x",
+      "name": "build6",
       "version": "0.0.5",
       "parts": [
         {
           "type": "application",
-          "path": "./build_a6lk3x/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build6/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./build_a6lk3x/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build6/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
           "offset": 0
         },
         {
           "type": "merged",
-          "path": "./build_a6lk3x/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
+          "path": "./build6/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./build_a6lk3x/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build6/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "build_gguipf",
+      "name": "build7",
       "version": "0.0.6",
       "parts": [
         {
           "type": "application",
-          "path": "./build_gguipf/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./build7/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./build_gguipf/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "path": "./build7/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
           "offset": 0
         },
         {
           "type": "merged",
-          "path": "./build_gguipf/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
+          "path": "./build7/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./build_gguipf/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./build7/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "build_gmj32f",
+      "name": "buildFW1",
       "version": "0.0.7",
       "parts": [
         {
           "type": "application",
-          "path": "./build_gmj32f/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./buildFW1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./build_gmj32f/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_gmj32f/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
+          "path": "./buildFW1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./build_gmj32f/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./buildFW1/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
     },
     {
-      "name": "build_mhx8v8",
+      "name": "buildFW2",
       "version": "0.0.8",
       "parts": [
         {
           "type": "application",
-          "path": "./build_mhx8v8/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
           "offset": 65536
         },
         {
           "type": "bootloader",
-          "path": "./build_mhx8v8/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_mhx8v8/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
+          "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
           "offset": 0
         },
         {
           "type": "partitions",
-          "path": "./build_mhx8v8/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
-        }
-      ]
-    },
-    {
-      "name": "build_rthpbq",
-      "version": "0.0.9",
-      "parts": [
-        {
-          "type": "application",
-          "path": "./build_rthpbq/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
-          "offset": 65536
-        },
-        {
-          "type": "bootloader",
-          "path": "./build_rthpbq/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_rthpbq/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
-          "offset": 0
-        },
-        {
-          "type": "partitions",
-          "path": "./build_rthpbq/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
-        }
-      ]
-    },
-    {
-      "name": "build_s52q04",
-      "version": "0.0.10",
-      "parts": [
-        {
-          "type": "application",
-          "path": "./build_s52q04/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
-          "offset": 65536
-        },
-        {
-          "type": "bootloader",
-          "path": "./build_s52q04/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_s52q04/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
-          "offset": 0
-        },
-        {
-          "type": "partitions",
-          "path": "./build_s52q04/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
-        }
-      ]
-    },
-    {
-      "name": "build_spagfb",
-      "version": "0.0.11",
-      "parts": [
-        {
-          "type": "application",
-          "path": "./build_spagfb/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
-          "offset": 65536
-        },
-        {
-          "type": "bootloader",
-          "path": "./build_spagfb/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_spagfb/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
-          "offset": 0
-        },
-        {
-          "type": "partitions",
-          "path": "./build_spagfb/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
-        }
-      ]
-    },
-    {
-      "name": "build_un5kol",
-      "version": "0.0.12",
-      "parts": [
-        {
-          "type": "application",
-          "path": "./build_un5kol/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
-          "offset": 65536
-        },
-        {
-          "type": "bootloader",
-          "path": "./build_un5kol/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_un5kol/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
-          "offset": 0
-        },
-        {
-          "type": "partitions",
-          "path": "./build_un5kol/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
-        }
-      ]
-    },
-    {
-      "name": "build_wq2q7w",
-      "version": "0.0.13",
-      "parts": [
-        {
-          "type": "application",
-          "path": "./build_wq2q7w/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
-          "offset": 65536
-        },
-        {
-          "type": "bootloader",
-          "path": "./build_wq2q7w/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_wq2q7w/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
-          "offset": 0
-        },
-        {
-          "type": "partitions",
-          "path": "./build_wq2q7w/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
-        }
-      ]
-    },
-    {
-      "name": "build_zxnwgj",
-      "version": "0.0.14",
-      "parts": [
-        {
-          "type": "application",
-          "path": "./build_zxnwgj/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
-          "offset": 65536
-        },
-        {
-          "type": "bootloader",
-          "path": "./build_zxnwgj/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
-          "offset": 0
-        },
-        {
-          "type": "merged",
-          "path": "./build_zxnwgj/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.merged.bin",
-          "offset": 0
-        },
-        {
-          "type": "partitions",
-          "path": "./build_zxnwgj/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
           "offset": 32768
         }
       ]
