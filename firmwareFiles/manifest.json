@@ -3,7 +3,20 @@
   "version": "1.0.0",
   "homepage": "https://www.thymos.cz",
   "set": [
+    {
+      "label": "Stable Release",
+      "version": "0.0.8"
+    },
+    {
+      "label": "Latest Release",
+      "version": "0.0.6"
+    },
+        {
+      "label": "Default Release",
+      "version": "0.0.7"
+    }
   ],
+
   "builds": [
     {
       "name": "build1",
