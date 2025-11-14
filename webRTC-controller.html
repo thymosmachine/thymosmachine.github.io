@@ -945,6 +945,184 @@
         let conn = null;
         let peer = null;
 
+
+        // Na straně HOST (odesílatel dat)
+        const isNumSafe = (val) => typeof val === 'number' && !isNaN(val) && isFinite(val);
+
+        function sendDataToController(time, position, forces, photoIndex = null) {
+            if (!conn || !conn.open) {
+                console.warn('Cannot send data: not connected');
+                return false;
+            }
+
+            // Validace dat
+            if (!isNumSafe(time) || !isNumSafe(position)) {
+                console.error('Invalid time or position data');
+                return false;
+            }
+
+            // Validace forces array
+            if (!Array.isArray(forces) || forces.length !== 3) {
+                console.error('Forces must be an array of 3 values');
+                return false;
+            }
+
+            // Vytvoření datového objektu
+            const dataPacket = {
+                type: 'chartData',  // Identifikátor typu zprávy
+                time: time,         // Čas v sekundách
+                position: position, // Pozice v mm
+                force: forces,      // Array [force1, force2, force3]
+                photoIndex: photoIndex, // Index fotky nebo null
+                timestamp: Date.now() // Timestamp pro debugging
+            };
+
+            try {
+                conn.send(dataPacket);
+                console.log('Data sent:', dataPacket);
+                return true;
+            } catch (error) {
+                console.error('Error sending data:', error);
+                return false;
+            }
+        }
+
+        // Pomocné funkce pro různé použití
+
+        // 1. Posílání dat v reálném čase během experimentu
+        function streamExperimentData(time, position, force1, force2, force3) {
+            return sendDataToController(time, position, [force1, force2, force3]);
+        }
+
+        // 2. Posílání dat s fotkou
+        function sendDataWithPhoto(time, position, force1, force2, force3, photoIdx) {
+            return sendDataToController(time, position, [force1, force2, force3], photoIdx);
+        }
+
+        // 3. Hromadné posílání dat (throttled)
+        let lastSendTime = 0;
+        const SEND_INTERVAL = 50; // 50ms = 20 Hz
+
+        function throttledSendData(time, position, forces, photoIndex = null) {
+            const now = Date.now();
+            if (now - lastSendTime < SEND_INTERVAL) {
+                return false; // Přeskočit pokud je to moc brzo
+            }
+            lastSendTime = now;
+            return sendDataToController(time, position, forces, photoIndex);
+        }
+
+        // 4. Buffer pro posílání dat v dávkách (pokud máš hodně dat)
+        let dataBuffer = [];
+        const BUFFER_SIZE = 10;
+        const FLUSH_INTERVAL = 100; // ms
+
+        function bufferData(time, position, forces, photoIndex = null) {
+            dataBuffer.push({
+                time: time,
+                position: position,
+                force: forces,
+                photoIndex: photoIndex
+            });
+
+            if (dataBuffer.length >= BUFFER_SIZE) {
+                flushDataBuffer();
+            }
+        }
+
+        function flushDataBuffer() {
+            if (dataBuffer.length === 0 || !conn || !conn.open) return;
+
+            const batchData = {
+                type: 'chartDataBatch',
+                data: dataBuffer,
+                timestamp: Date.now()
+            };
+
+            try {
+                conn.send(batchData);
+                console.log(`Sent batch of ${dataBuffer.length} data points`);
+                dataBuffer = [];
+            } catch (error) {
+                console.error('Error sending batch data:', error);
+            }
+        }
+
+        // Auto-flush každých 100ms
+        setInterval(flushDataBuffer, FLUSH_INTERVAL);
+
+        // Simulace experimentu
+        let experimentTime = 0;
+        let experimentPosition = 0;
+
+
+        let intervalId = null;
+
+        function runExperiment() {
+            intervalId = setInterval(() => {
+                // Získání dat ze sensorů (tvoje implementace)
+                const force1 = Math.random() * 100; // N
+                const force2 = Math.random() * 80;  // N
+                const force3 = Math.random() * 90;  // N
+
+                experimentTime += 0.1; // +100ms
+                experimentPosition += 0.5; // +0.5mm
+
+                // Poslání dat
+                streamExperimentData(
+                    experimentTime,
+                    experimentPosition,
+                    force1,
+                    force2,
+                    force3
+                );
+
+                // Stop podmínka
+                if (experimentPosition > 100) {
+                    clearInterval(intervalId);
+                    console.log('Experiment finished');
+                }
+            }, 100); // Každých 100ms
+        }
+
+        // Nebo s throttling
+        function runExperimentThrottled() {
+            intervalId = setInterval(() => {
+                const force1 = Math.random() * 100;
+                const force2 = Math.random() * 80;
+                const force3 = Math.random() * 90;
+
+                experimentTime += 0.05;
+                experimentPosition += 0.25;
+
+                // Throttled - pošle max 20x/sec
+                throttledSendData(
+                    experimentTime,
+                    experimentPosition,
+                    [force1, force2, force3]
+                );
+            }, 50); // Každých 50ms, ale odesílá se max 20Hz
+        }
+
+        // Nebo s bufferem pro vysokofrekvenční data
+        function runExperimentBuffered() {
+            intervalId = setInterval(() => {
+                const force1 = Math.random() * 100;
+                const force2 = Math.random() * 80;
+                const force3 = Math.random() * 90;
+
+                experimentTime += 0.01; // 10ms interval
+                experimentPosition += 0.05;
+
+                // Buffer - shromáždí 10 vzorků a pošle najednou
+                bufferData(
+                    experimentTime,
+                    experimentPosition,
+                    [force1, force2, force3]
+                );
+            }, 10); // Vysoká frekvence
+        }
+
         function generateId() {
             const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -1072,23 +1250,65 @@
             });
 
             conn.on('data', (cmd) => {
-                log('📩 ' + cmd);
+                if (typeof cmd === 'string') {
+                    log('📩 ' + cmd);
 
-                if (cmd === 'LEFT') pos.x = clampPos(pos.x - 1);
-                else if (cmd === 'RIGHT') pos.x = clampPos(pos.x + 1);
-                else if (cmd === 'UP') pos.y = clampPos(pos.y + 1);
-                else if (cmd === 'DOWN') pos.y = clampPos(pos.y - 1);
+                    if (cmd === 'LEFT') pos.x = clampPos(pos.x - 1);
+                    else if (cmd === 'RIGHT') pos.x = clampPos(pos.x + 1);
+                    else if (cmd === 'UP') pos.y = clampPos(pos.y + 1);
+                    else if (cmd === 'DOWN') pos.y = clampPos(pos.y - 1);
 
-                updateDot();
-                updateChart();
+                    updateDot();
+                    updateChart();
 
-                if (conn && conn.open) {
-                    conn.send({
-                        type: 'position',
-                        x: pos.x,
-                        y: pos.y,
-                        time: new Date().toLocaleTimeString()
-                    });
+                    if (conn && conn.open) {
+                        conn.send({
+                            type: 'position',
+                            x: pos.x,
+                            y: pos.y,
+                            time: new Date().toLocaleTimeString()
+                        });
+                    }
+                } else {
+                    if (!cmd?.command) return;
+                    const command = cmd.command?.toLowerCase().trim();
+
+                    log('📩 ' + command);
+                    if (command === 'move') {
+                        const value = cmd.value?.toLowerCase().trim();
+                        log('\t🚚 Move command: ' + value);
+                        if (value === 'start') {
+                            const direction = cmd.direction?.toLowerCase().trim();
+                            log('▶️ Starting moving in direction: ' + direction);
+                        } else if (value === 'ping') {
+                            log('🏓 Ping received, sending pong back');
+                            if (conn && conn.open) {
+                                conn.send({type: 'pong', timestamp: Date.now()});
+                            }
+                        } else if (value === 'return') {
+                            log('↩️ Returning to home position');
+                        } else {
+                            log('⏹️ Stopping moving');
+                        }
+                    } else if (command === 'experiment') {
+                        const action = cmd.action?.toLowerCase().trim();
+                        log('\t🔬 Experiment command: ' + action);
+                        if (action === 'start') {
+                            log('🧪 Starting experiment run');
+                            runExperiment();
+                        } else if (action === 'stop') {
+                            log('🛑 Stopping experiment run');
+                            if (intervalId) {
+                                clearInterval(intervalId);
+                                intervalId = null;
+                            }
+                        }
+                    } else if (command === 'calibrate') {
+                        log('⚙️ Starting calibration procedure');
+                    } else {
+                        log('❓ Unknown command received: ' + command);
+                    }
+
                 }
             });
 
