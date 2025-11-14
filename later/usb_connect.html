@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USB Serial Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4ec9b0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #1177bb;
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        button.disconnect {
+            background: #d32f2f;
+        }
+
+        button.disconnect:hover {
+            background: #f44336;
+        }
+
+        button.clear {
+            background: #f57c00;
+        }
+
+        button.clear:hover {
+            background: #ff9800;
+        }
+
+        .status {
+            padding: 10px;
+            background: #252526;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0e639c;
+        }
+
+        .status.connected {
+            border-left-color: #4caf50;
+        }
+
+        .status.error {
+            border-left-color: #f44336;
+        }
+
+        .console-container {
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .console-header {
+            background: #2d2d30;
+            padding: 8px 15px;
+            border-bottom: 1px solid #3c3c3c;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #console {
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: #0c0c0c;
+        }
+
+        #console::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #console::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        #console::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 5px;
+        }
+
+        #console::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        .console-line {
+            margin-bottom: 2px;
+        }
+
+        .console-line.sent {
+            color: #4ec9b0;
+        }
+
+        .console-line.received {
+            color: #dcdcaa;
+        }
+
+        .console-line.error {
+            color: #f48771;
+        }
+
+        .console-line.info {
+            color: #569cd6;
+        }
+
+        .console-line.warning {
+            color: #ce9178;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: #d4d4d4;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: #0e639c;
+        }
+
+        #messageInput:disabled {
+            background: #2d2d30;
+            cursor: not-allowed;
+        }
+
+        .settings {
+            background: #252526;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .settings h3 {
+            margin-bottom: 10px;
+            color: #4ec9b0;
+        }
+
+        .settings label {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        .settings select {
+            margin-left: 10px;
+            padding: 5px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            color: #d4d4d4;
+            border-radius: 3px;
+        }
+
+        .line-ending-info {
+            font-size: 12px;
+            color: #858585;
+            margin-top: 5px;
+        }
+
+        .warning-box {
+            background: #3a2a1a;
+            border-left: 4px solid #ce9178;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .warning-box h3 {
+            color: #ce9178;
+            margin-bottom: 10px;
+        }
+
+        .warning-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 USB Serial Console</h1>
+
+        <div class="warning-box">
+            <h3>⚠️ Pokud se nemůžete připojit:</h3>
+            <ul>
+                <li>Zavřete <strong>Arduino IDE, PlatformIO, Serial Monitor</strong> a jiné aplikace používající USB</li>
+                <li>Na <strong>Linuxu</strong>: Přidejte uživatele do skupiny <code>dialout</code></li>
+                <li><strong>Obnovte stránku</strong> a zkuste znovu připojit</li>
+                <li>Zkuste <strong>jiný USB port</strong> nebo <strong>odpojte a znovu připojte</strong> zařízení</li>
+            </ul>
+        </div>
+
+        <div class="status" id="status">
+            <strong>Status:</strong> Odpojeno
+        </div>
+
+        <div class="settings">
+            <h3>⚙️ Nastavení</h3>
+            <label>
+                Baud Rate:
+                <select id="baudRate">
+                    <option value="9600">9600</option>
+                    <option value="19200">19200</option>
+                    <option value="38400">38400</option>
+                    <option value="57600">57600</option>
+                    <option value="115200" selected>115200</option>
+                    <option value="230400">230400</option>
+                    <option value="460800">460800</option>
+                    <option value="921600">921600</option>
+                </select>
+            </label>
+            <label>
+                Line Ending:
+                <select id="lineEnding">
+                    <option value="none">Žádný</option>
+                    <option value="lf" selected>LF (\n)</option>
+                    <option value="cr">CR (\r)</option>
+                    <option value="crlf">CR+LF (\r\n)</option>
+                </select>
+            </label>
+            <div class="line-ending-info">Line Ending se přidá na konec každé odeslané zprávy</div>
+        </div>
+
+        <div class="controls">
+            <button id="connectBtn" onclick="connect()">🔌 Připojit USB</button>
+            <button id="disconnectBtn" class="disconnect" onclick="disconnect()" disabled>❌ Odpojit</button>
+            <button class="clear" onclick="clearConsole()">🗑️ Vyčistit konzoli</button>
+        </div>
+
+        <div class="console-container">
+            <div class="console-header">
+                <span>Konzole</span>
+                <span id="lineCount">Řádků: 0</span>
+            </div>
+            <div id="console"></div>
+        </div>
+
+        <div class="input-container">
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Napište zprávu a stiskněte Enter..."
+                disabled
+                onkeypress="handleKeyPress(event)"
+            >
+            <button id="sendBtn" onclick="sendMessage()" disabled>📤 Odeslat</button>
+        </div>
+    </div>
+
+    <script>
+        let device = null;
+        let interfaceNumber = 0;
+        let endpointIn = 1;
+        let endpointOut = 1;
+        let lineCount = 0;
+        let isReading = false;
+
+        // Přidání řádku do konzole
+        function addToConsole(message, type = 'received') {
+            const consoleEl = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+
+            const timestamp = new Date().toLocaleTimeString('cs-CZ', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                fractionalSecondDigits: 3
+            });
+
+            line.textContent = `[${timestamp}] ${message}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+
+            lineCount++;
+            document.getElementById('lineCount').textContent = `Řádků: ${lineCount}`;
+        }
+
+        // Vyčištění konzole
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '';
+            lineCount = 0;
+            document.getElementById('lineCount').textContent = 'Řádků: 0';
+        }
+
+        // Aktualizace statusu
+        function updateStatus(message, isConnected = false, isError = false) {
+            const status = document.getElementById('status');
+            status.innerHTML = `<strong>Status:</strong> ${message}`;
+            status.className = 'status';
+            if (isConnected) status.classList.add('connected');
+            if (isError) status.classList.add('error');
+        }
+
+        // Diagnostika USB zařízení
+        function logDeviceInfo(device) {
+            addToConsole(`📋 Informace o zařízení:`, 'info');
+            addToConsole(`  Název: ${device.productName || 'N/A'}`, 'info');
+            addToConsole(`  Výrobce: ${device.manufacturerName || 'N/A'}`, 'info');
+            addToConsole(`  Vendor ID: 0x${device.vendorId.toString(16).padStart(4, '0')}`, 'info');
+            addToConsole(`  Product ID: 0x${device.productId.toString(16).padStart(4, '0')}`, 'info');
+            addToConsole(`  Serial Number: ${device.serialNumber || 'N/A'}`, 'info');
+
+            if (device.configuration) {
+                addToConsole(`  Konfigurace: ${device.configuration.configurationValue}`, 'info');
+                addToConsole(`  Počet interfaces: ${device.configuration.interfaces.length}`, 'info');
+
+                device.configuration.interfaces.forEach((iface, idx) => {
+                    addToConsole(`  Interface ${idx}:`, 'info');
+                    iface.alternates.forEach((alt, altIdx) => {
+                        addToConsole(`    Alternate ${altIdx}: Class=${alt.interfaceClass}, Subclass=${alt.interfaceSubclass}`, 'info');
+                        alt.endpoints.forEach(ep => {
+                            const dir = ep.direction === 'in' ? '←IN' : '→OUT';
+                            addToConsole(`      Endpoint ${ep.endpointNumber} ${dir}: ${ep.type}, ${ep.packetSize} bytes`, 'info');
+                        });
+                    });
+                });
+            }
+        }
+
+        // Najít správné endpointy
+        function findEndpoints(device) {
+            if (!device.configuration) return false;
+
+            for (let iface of device.configuration.interfaces) {
+                for (let alt of iface.alternates) {
+                    let inEp = null;
+                    let outEp = null;
+
+                    for (let ep of alt.endpoints) {
+                        if (ep.direction === 'in' && ep.type === 'bulk') {
+                            inEp = ep.endpointNumber;
+                        }
+                        if (ep.direction === 'out' && ep.type === 'bulk') {
+                            outEp = ep.endpointNumber;
+                        }
+                    }
+
+                    if (inEp && outEp) {
+                        interfaceNumber = iface.interfaceNumber;
+                        endpointIn = inEp;
+                        endpointOut = outEp;
+                        addToConsole(`✓ Nalezeny endpointy: IN=${inEp}, OUT=${outEp}, Interface=${interfaceNumber}`, 'info');
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Připojení k USB zařízení
+        async function connect() {
+            try {
+                addToConsole('🔍 Žádost o USB zařízení...', 'info');
+
+                // Požádání o zařízení (bez filtrů pro zobrazení všech zařízení)
+                device = await navigator.usb.requestDevice({
+                    filters: []
+                });
+
+                addToConsole(`✓ Zařízení vybráno: ${device.productName || 'Unknown'}`, 'info');
+
+                // Otevření zařízení
+                await device.open();
+                addToConsole('✓ Zařízení otevřeno', 'info');
+
+                // Výběr konfigurace
+                if (device.configuration === null) {
+                    addToConsole('⚙️ Volím konfiguraci 1...', 'info');
+                    await device.selectConfiguration(1);
+                }
+
+                // Diagnostika
+                logDeviceInfo(device);
+
+                // Najít správné endpointy
+                if (!findEndpoints(device)) {
+                    throw new Error('Nepodařilo se najít bulk endpointy');
+                }
+
+                // Pokus o claim interface s lepším zpracováním chyb
+                try {
+                    addToConsole(`⚙️ Claim interface ${interfaceNumber}...`, 'info');
+                    await device.claimInterface(interfaceNumber);
+                    addToConsole(`✓ Interface ${interfaceNumber} claimed`, 'info');
+                } catch (claimError) {
+                    addToConsole(`❌ Chyba claim interface: ${claimError.message}`, 'error');
+                    addToConsole(`💡 TIP: Zavřete všechny aplikace používající tento USB port (Arduino IDE, PlatformIO Monitor, apod.)`, 'warning');
+                    throw claimError;
+                }
+
+                // Nastavení control transfer pro sériovou komunikaci (DTR/RTS)
+                const baudRate = parseInt(document.getElementById('baudRate').value);
+                try {
+                    // SET_CONTROL_LINE_STATE - aktivace DTR a RTS
+                    await device.controlTransferOut({
+                        requestType: 'class',
+                        recipient: 'interface',
+                        request: 0x22,
+                        value: 0x03, // DTR=1, RTS=1
+                        index: interfaceNumber
+                    });
+                    addToConsole(`✓ Control line state nastaven (DTR+RTS)`, 'info');
+
+                    // SET_LINE_CODING - nastavení baud rate
+                    const lineCoding = new ArrayBuffer(7);
+                    const view = new DataView(lineCoding);
+                    view.setUint32(0, baudRate, true); // baud rate (little-endian)
+                    view.setUint8(4, 0); // stop bits: 1
+                    view.setUint8(5, 0); // parity: none
+                    view.setUint8(6, 8); // data bits: 8
+
+                    await device.controlTransferOut({
+                        requestType: 'class',
+                        recipient: 'interface',
+                        request: 0x20,
+                        value: 0x00,
+                        index: interfaceNumber
+                    }, lineCoding);
+                    addToConsole(`✓ Baud rate nastaven na ${baudRate}`, 'info');
+                } catch (ctrlError) {
+                    addToConsole(`⚠️ Control transfer selhal (může fungovat i tak): ${ctrlError.message}`, 'warning');
+                }
+
+                updateStatus(`Připojeno k ${device.productName || 'USB zařízení'} (${baudRate} baud)`, true);
+
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+
+                // Spuštění čtení dat
+                startReading();
+
+            } catch (error) {
+                addToConsole(`❌ Chyba připojení: ${error.message}`, 'error');
+                updateStatus(`Chyba: ${error.message}`, false, true);
+                console.error('USB chyba:', error);
+
+                // Cleanup při chybě
+                if (device) {
+                    try {
+                        await device.close();
+                    } catch (e) {}
+                    device = null;
+                }
+            }
+        }
+
+        // Čtení dat ze zařízení
+        async function startReading() {
+            const decoder = new TextDecoder();
+            let buffer = '';
+            isReading = true;
+
+            addToConsole(`📖 Spouštím čtení z endpointu ${endpointIn}...`, 'info');
+
+            try {
+                while (device && device.opened && isReading) {
+                    try {
+                        const result = await device.transferIn(endpointIn, 64);
+
+                        if (result.data && result.data.byteLength > 0) {
+                            const text = decoder.decode(result.data);
+                            buffer += text;
+
+                            // Zpracování kompletních řádků
+                            let lines = buffer.split('\n');
+                            buffer = lines.pop(); // Poslední neúplný řádek zůstane v bufferu
+
+                            for (let line of lines) {
+                                line = line.replace('\r', '');
+                                if (line.length > 0) {
+                                    addToConsole(line, 'received');
+                                }
+                            }
+                        }
+                    } catch (readError) {
+                        // Timeout nebo přerušení čtení je OK
+                        if (readError.message.includes('TRANSFER_ERROR') ||
+                            readError.message.includes('DEVICE_LOST')) {
+                            throw readError;
+                        }
+                        // Jinak pokračujeme
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+            } catch (error) {
+                if (device && device.opened && isReading) {
+                    addToConsole(`❌ Chyba čtení: ${error.message}`, 'error');
+                    console.error('Read error:', error);
+                }
+            }
+        }
+
+        // Odeslání zprávy
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value;
+
+            if (!message || !device) return;
+
+            try {
+                const lineEnding = document.getElementById('lineEnding').value;
+                let textToSend = message;
+
+                // Přidání line ending
+                switch(lineEnding) {
+                    case 'lf': textToSend += '\n'; break;
+                    case 'cr': textToSend += '\r'; break;
+                    case 'crlf': textToSend += '\r\n'; break;
+                }
+
+                const encoder = new TextEncoder();
+                const data = encoder.encode(textToSend);
+
+                await device.transferOut(endpointOut, data);
+
+                addToConsole(message, 'sent');
+                input.value = '';
+            } catch (error) {
+                addToConsole(`❌ Chyba odesílání: ${error.message}`, 'error');
+                console.error('Send error:', error);
+            }
+        }
+
+        // Odpojení
+        async function disconnect() {
+            if (device) {
+                try {
+                    isReading = false;
+                    await new Promise(resolve => setTimeout(resolve, 100)); // Počkáme na ukončení čtení
+
+                    if (device.opened) {
+                        try {
+                            await device.releaseInterface(interfaceNumber);
+                        } catch (e) {
+                            console.warn('Release interface failed:', e);
+                        }
+                        await device.close();
+                    }
+                    addToConsole('✓ Odpojeno od zařízení', 'info');
+                    updateStatus('Odpojeno');
+                } catch (error) {
+                    addToConsole(`❌ Chyba odpojení: ${error.message}`, 'error');
+                }
+
+                device = null;
+
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('sendBtn').disabled = true;
+            }
+        }
+
+        // Zpracování stisku Enter
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Kontrola podpory Web USB
+        if (!navigator.usb) {
+            updateStatus('Web USB API není podporováno v tomto prohlížeči!', false, true);
+            addToConsole('⚠️ Web USB API není podporováno. Použijte Chrome, Edge nebo Opera na desktopu.', 'error');
+            document.getElementById('connectBtn').disabled = true;
+        } else {
+            addToConsole('✅ Web USB API je podporováno', 'info');
+        }
+
+        // Odpojení při zavření stránky
+        window.addEventListener('beforeunload', () => {
+            if (device) {
+                disconnect();
+            }
+        });
+    </script>
+</body>
+</html>
