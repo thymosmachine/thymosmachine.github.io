@@ -948,6 +948,10 @@
 <script type="module">
     // Polyfill for Buffer               "https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm"
     import {Buffer} from 'buffer';
+
+    // Make Buffer globally available
+    window.Buffer = Buffer;
+
     // ESPTool.js library               "https://unpkg.com/esptool-js@0.4.0/bundle.js"
     import * as esptool from 'esptool';
 
@@ -960,9 +964,6 @@
         throw new Error('ESPLoader or Transport not loaded');
     }
 
-
-    // Make Buffer globally available
-    window.Buffer = Buffer;
 
     let doPreCommands = false; // Set to true to run pre-commands before flashing
     let doPostCommands = true; // Set to true to run post-commands after flashing
@@ -1108,7 +1109,7 @@
 
                 versionSelect.selectedIndex = i;
 
-                const current = `Flashed version [${i + 1} / ${totalVersions}]: ${versionSelect.value}`
+                const current = `Flashed version [${i + 1} / ${totalVersions}]: ${selValue.textContent} ; {${selValue}}`;
 
                 endBuffer += '\n========================';
                 // log selected version
@@ -2607,7 +2608,7 @@
     }
 
     // Logging function
-    function addLog(message, type, log = 'app') {
+    function addLog(message, type = undefined, log = 'app') {
         const logContainer = document.getElementById(log === 'device' ? 'deviceLogContainer' : 'appLogContainer');
         const timestamp = new Date().toLocaleTimeString('cs-CZ');
         const logEntry = document.createElement('div');
@@ -2646,7 +2647,7 @@
                 textOuterWrapper.style.width = percentage + '%';
             }
 
-            const textContent =  percentage > 0 ? Math.round(percentage) + '%': '';
+            const textContent = percentage > 0 ? Math.round(percentage) + '%' : '';
             textInner.textContent = textContent;
             textOuter.textContent = textContent;
 
