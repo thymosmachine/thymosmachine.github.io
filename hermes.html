@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hermes - Remote Control</title>
+    <link rel="stylesheet" href="packages/external/uplot/uPlot.min.css">
+    <script defer src="packages/external/uplot/uPlot.iife.min.js"></script>
+    <script defer src="./packages/external/p2p/peerjs.min.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --success-dark: #38a169;
+            --danger: #f56565;
+            --danger-dark: #e53e3e;
+            --warning: #f6ad55;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+            padding: 16px;
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--gray-900);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        h1 svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--primary);
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-200);
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status.ready {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status.connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .token-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .token-box {
+            width: 48px;
+            height: 56px;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .token-box.readonly {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .token-box:focus:not(:disabled) {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .token-box.filled {
+            border-color: var(--primary);
+            background: #ede9fe;
+            color: var(--primary);
+        }
+
+        .token-box:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .token-separator {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-400);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .error-message svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+            touch-action: manipulation;
+            min-height: 48px;
+        }
+
+        .btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .btn:not(:disabled):active {
+            transform: scale(0.95);
+        }
+
+        .btn:not(:disabled):hover {
+            filter: brightness(1.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            filter: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-large {
+            font-size: 1.25rem;
+            padding: 20px;
+            min-height: 80px;
+            flex-direction: column;
+        }
+
+        .btn-large svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .button-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--gray-200);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            color: var(--gray-900);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h3 svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .direction-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 8px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .direction-pad .btn {
+            aspect-ratio: 1;
+            font-size: 2rem;
+        }
+
+        .direction-pad .btn svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .direction-pad .btn:nth-child(1) {
+            grid-column: 2;
+        }
+
+        .direction-pad .btn:nth-child(2) {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        @media (max-width: 640px) {
+            .token-box {
+                width: 40px;
+                height: 48px;
+                font-size: 1.25rem;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <defs>
+                <linearGradient id="hermes-gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#48bb78;stop-opacity:1"/>
+                    <stop offset="100%" style="stop-color:#2196F3;stop-opacity:1"/>
+                </linearGradient>
+                <linearGradient id="hermes-gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1"/>
+                    <stop offset="100%" style="stop-color:#667eea;stop-opacity:1"/>
+                </linearGradient>
+                <linearGradient id="hermes-gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1"/>
+                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1"/>
+                </linearGradient>
+                <linearGradient id="hermes-gradient4" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#764ba2;stop-opacity:1"/>
+                    <stop offset="100%" style="stop-color:#2196F3;stop-opacity:1"/>
+                </linearGradient>
+                <linearGradient id="hermes-gradient5" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1"/>
+                    <stop offset="100%" style="stop-color:#FF9800;stop-opacity:1"/>
+                </linearGradient>
+            </defs>
+            <g transform="scale(-1, 1) translate(-512, 0)">
+                <path fill="url(#hermes-gradient1)"
+                      d="M487 37.1C396.4 53.23 292 95.28 207.5 140 163 163.6 124 187.8 95.39 209.2 81.08 220 69.36 230 60.93 238.6c-8.43 8.7-13.38 16.3-14.65 20.3-9.04 28.7-3.42 57.7 1.73 84.7 9.55 50.4-3.23 88.9-22.98 126.3 25.24-5.7 45.36-19.8 57-47 8.47-19.8 9.13-37 11.43-57.6 2.3-20.6 6.45-44.2 22.44-73.2l.2-.4.2-.4c8.8-12.6 26.2-22.2 50-33.4 23.7-11.2 53.6-23 86-35.1 63.8-23.8 137.2-48.7 190.1-71.3 20-30.1 34-74.24 44.6-114.4z"/>
+                <path fill="url(#hermes-gradient2)"
+                      d="M432 175.3c-51.7 21-116.6 43.1-173.5 64.3-32.2 12-61.8 23.7-84.6 34.5-22.6 10.7-38.5 21.6-42.6 27.2-6.8 12.3-11.1 23.2-14 33.3 83.4-6.5 195.3-31.8 271.3-66.6 27.4-29.7 36.9-59.7 43.4-92.7z"/>
+                <path fill="url(#hermes-gradient3)"
+                      d="M374 294.1c-79 32.2-182 53.3-260.8 58.6-.9 5-1.5 9.8-2 14.6-.4 3.5-.7 7.1-1.1 10.6 72.4 7.5 136.3 4 206.2-6.5 32.6-22.5 49.8-49.6 57.7-77.3z"/>
+                <path fill="url(#hermes-gradient4)"
+                      d="M295.6 392.3c-62.3 8.1-121.6 10.2-187.6 3.4-.7 4.5-1.6 9-2.7 13.6 35.9 19.2 98.1 25.8 140.7 24.6 30.2-12.4 41.5-24.8 49.6-41.6z"/>
+                <path fill="url(#hermes-gradient5)"
+                      d="M99.78 426.7c-1.15 2.1-3.14 6.7-4.21 8.9 14.03 20.2 48.73 32.2 88.43 39.3 21.2-8 28.3-15.5 36.5-23-39.7-1.1-86.7-7.7-120.7-25.2z"/>
+            </g>
+        </svg>
+        <span>HERMES Control Panel</span>
+    </h1>
+    <h3>
+        Μοῖρα remote controller
+    </h3>
+
+    <div class="card">
+        <div class="status ready" id="status">
+            <span>Ready to connect</span>
+        </div>
+
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+            </svg>
+            Connection
+        </h3>
+        <div class="token-boxes">
+            <label>
+                <input type="text" class="token-box readonly" maxlength="1" readonly value="M">
+            </label>
+            <label>
+                <input type="text" class="token-box readonly" maxlength="1" readonly value="T">
+            </label>
+            <span class="token-separator">-</span>
+            <label for="token-0">
+                <input type="text" class="token-box" maxlength="1" id="token-0">
+            </label>
+            <label for="token-1">
+                <input type="text" class="token-box" maxlength="1" id="token-1">
+            </label>
+            <label for="token-2">
+                <input type="text" class="token-box" maxlength="1" id="token-2">
+            </label>
+            <label for="token-3">
+                <input type="text" class="token-box" maxlength="1" id="token-3">
+            </label>
+            <label for="token-4">
+                <input type="text" class="token-box" maxlength="1" id="token-4">
+            </label>
+            <label for="token-5">
+                <input type="text" class="token-box" maxlength="1" id="token-5">
+            </label>
+        </div>
+
+        <div class="error-message" id="errorMsg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <span id="errorText">Connection error</span>
+        </div>
+
+        <div class="button-grid">
+            <button class="btn btn-secondary" id="pasteBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/>
+                </svg>
+                Paste Token
+            </button>
+            <button class="btn btn-success" id="connectBtn" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                </svg>
+                Connect
+            </button>
+        </div>
+    </div>
+
+    <div id="controlPanel" style="display: none;">
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M21.58 16.09l-1.09-7.66C20.21 6.46 18.52 5 16.53 5H7.47C5.48 5 3.79 6.46 3.51 8.43l-1.09 7.66C2.2 17.63 3.39 19 4.94 19c.68 0 1.32-.27 1.8-.75L9 16h6l2.25 2.25c.48.48 1.13.75 1.8.75 1.56 0 2.75-1.37 2.53-2.91zM11 11H9v2H8v-2H6v-1h2V8h1v2h2v1zm4-1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm2 3c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                </svg>
+                Experiment Control
+            </h3>
+            <div class="button-grid">
+                <button class="btn btn-success btn-large" id="startExperiment">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M7 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18c.62-.39.62-1.29 0-1.69L8.54 5.98C7.87 5.55 7 6.03 7 6.82z"/>
+                    </svg>
+                    Start Experiment
+                </button>
+                <button class="btn btn-danger btn-large" id="stopMachine">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    Stop Machine
+                </button>
+            </div>
+            <div class="button-grid"> <!-- button-grid-3 -->
+                <button class="btn btn-primary" id="returnPositionExperimentBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M11.67 3.87L9.9 2.1 0 12l9.9 9.9 1.77-1.77L3.54 12z"/>
+                    </svg>
+                    Return
+                </button>
+                <button class="btn btn-secondary" id="calibrateBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/>
+                    </svg>
+                    Calibrate
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/>
+                </svg>
+                Manual Movement
+            </h3>
+            <div class="direction-pad">
+                <button class="btn btn-primary" id="moveMachineUP">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+                <button class="btn btn-primary" id="moveMachineDOWN">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+                </svg>
+                Movement Settings
+            </h3>
+
+            <div class="slider-container">
+                <div class="control-label">
+                    <span>Speed</span>
+                    <span id="speedValue">15.00</span>
+                </div>
+                <label for="movementSpeed">
+                    <input type="range" id="movementSpeed" min="0.01" max="25" value="15" step="0.01">
+                </label>
+            </div>
+
+            <div class="slider-container">
+                <div class="control-label">
+                    <span>Acceleration</span>
+                    <span id="accelerationValue">100.00</span>
+                </div>
+                <label for="movementAcceleration">
+                    <input type="range" id="movementAcceleration" min="10" max="200" value="100" step="0.01">
+                </label>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Force-Time Graph
+            </h3>
+            <div class="chart-container" id="timeChart"></div>
+        </div>
+
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Force-Position Graph
+            </h3>
+            <div class="chart-container" id="positionChart"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Helper functions
+    const $ID = (id) => document.getElementById(id);
+    const $$ = (selector, parent = document) => Array.from(parent.querySelectorAll(selector));
+    const isDict = (obj) => obj && typeof obj === 'object' && !Array.isArray(obj);
+    const isNumSafe = (val) => typeof val === 'number' && !isNaN(val) && isFinite(val);
+
+    // Global variables
+    let peer = null;
+    let conn = null;
+    let isConnected = false;
+    let timeChart = null;
+    let positionChart = null;
+    let timeDataChart = [];
+    let positionDataChart = [];
+    let forceDataChart = [[], [], []];
+    let photoDataChart = [];
+    const maxDataPoints = 500;
+
+    // Token input
+    const tokenBoxes = $$('.token-box:not(.readonly)');
+    const connectBtn = $ID('connectBtn');
+    const pasteBtn = $ID('pasteBtn');
+    const errorMsg = $ID('errorMsg');
+    const errorText = $ID('errorText');
+    const statusDiv = $ID('status');
+    const controlPanel = $ID('controlPanel');
+
+    function showError(message) {
+        errorText.textContent = message;
+        errorMsg.classList.add('show');
+        setTimeout(() => errorMsg.classList.remove('show'), 3000);
+    }
+
+    function updateConnectButton() {
+        if (isConnected) return;
+        const allFilled = Array.from(tokenBoxes).every(box => box.value.trim() !== '');
+        connectBtn.disabled = !allFilled;
+    }
+
+    function updateTokenBoxes() {
+        tokenBoxes.forEach(box => {
+            if (box.value) {
+                box.classList.add('filled');
+            } else {
+                box.classList.remove('filled');
+            }
+        });
+        updateConnectButton();
+    }
+
+    function setTokenInputsDisabled(disabled) {
+        tokenBoxes.forEach(box => box.disabled = disabled);
+        pasteBtn.disabled = disabled;
+    }
+
+    tokenBoxes.forEach((box, index) => {
+        box.addEventListener('input', (e) => {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            e.target.value = value;
+            if (value && index < tokenBoxes.length - 1) {
+                tokenBoxes[index + 1].focus();
+            }
+            updateTokenBoxes();
+        });
+
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                tokenBoxes[index - 1].focus();
+                tokenBoxes[index - 1].value = '';
+                updateTokenBoxes();
+            }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (index < tokenBoxes.length - 1) {
+                    tokenBoxes[index + 1].focus();
+                } else if (!connectBtn.disabled) {
+                    connectBtn.click();
+                }
+            }
+        });
+
+        box.addEventListener('paste', (e) => {
+            e.preventDefault();
+            handlePaste(e.clipboardData.getData('text'));
+        });
+    });
+
+    pasteBtn.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            handlePaste(text);
+        } catch (err) {
+            showError('Failed to read clipboard');
+        }
+    });
+
+    function handlePaste(text) {
+        if (isConnected || !text) return;
+        let paste = text.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        if (paste.startsWith('MT-')) paste = paste.substring(3);
+        else if (paste.startsWith('MT')) paste = paste.substring(2);
+        paste = paste.replace(/-/g, '');
+
+        if (paste.length !== 6) {
+            showError('Token must be 6 characters');
+            return;
+        }
+
+        for (let i = 0; i < Math.min(paste.length, tokenBoxes.length); i++) {
+            tokenBoxes[i].value = paste[i];
+        }
+        updateTokenBoxes();
+        tokenBoxes[tokenBoxes.length - 1].focus();
+    }
+
+    function getTokenValue() {
+        return 'MT-' + Array.from(tokenBoxes).map(box => box.value).join('');
+    }
+
+    function destroyCharts() {
+        if (timeChart) {
+            timeChart.destroy();
+            timeChart = null;
+        }
+        if (positionChart) {
+            positionChart.destroy();
+            positionChart = null;
+        }
+        // Clear data
+        timeDataChart = [];
+        positionDataChart = [];
+        forceDataChart = [[], [], []];
+        photoDataChart = [];
+    }
+
+    // Chart creation
+    function onResize(container, chart) {
+        if (!container || !chart) return;
+        const width = container.clientWidth || 400;
+        const height = container.clientHeight - (2 * 24) || 300;
+        chart.setSize({width, height});
+    }
+
+    function createChart(containerID, seriesLabels, title = "Graph", labelX = "", labelY = "") {
+        let container = $ID(containerID);
+        if (!container) {
+            console.error(`Container ${containerID} not found`);
+            return null;
+        }
+
+        let width = container.clientWidth || 400;
+        let height = container.clientHeight - (2 * 24) || 300;
+
+        const options = {
+            title: title,
+            width: width,
+            height: height,
+            axes: [
+                {label: labelX},
+                {label: labelY}
+            ],
+            scales: {
+                x: {time: false},
+                y: {auto: true}
+            },
+            series: [
+                {label: seriesLabels[0]},
+                ...seriesLabels.slice(1).map((label, index) => ({
+                    label: label,
+                    stroke: ["#FF2730", "#2196F3", "#4CAF50"][index] || "#555555",
+                    width: 2
+                })),
+                {
+                    label: "Photos",
+                    paths: () => null,
+                    points: {show: true, size: 8, width: 2.5},
+                    stroke: "#FF8C00",
+                    fill: "#FF8C00"
+                }
+            ]
+        };
+
+        if (!window.uPlot) {
+            console.error("uPlot not loaded");
+            return null;
+        }
+
+        let chart = new uPlot(options, [[], ...seriesLabels.slice(1).map(() => []), []], container);
+        window.addEventListener("resize", () => onResize(container, chart));
+        onResize(container, chart);
+
+        return chart;
+    }
+
+    function updateChart(inputData) {
+        if (!isDict(inputData)) return;
+
+        if (!isNumSafe(inputData.time) || !isNumSafe(inputData.position)) {
+            return;
+        }
+
+        timeDataChart.push(inputData.time);
+        positionDataChart.push(inputData.position);
+        inputData.force?.forEach((value, index) => forceDataChart[index]?.push(value));
+        photoDataChart.push(isNumSafe(inputData.photoIndex) ? 0 : null);
+
+        if (timeDataChart.length > maxDataPoints) {
+            timeDataChart.shift();
+            positionDataChart.shift();
+            forceDataChart.forEach(dataset => dataset.shift());
+            photoDataChart.shift();
+        }
+
+        if (timeChart) {
+            timeChart.setData([timeDataChart, ...forceDataChart, photoDataChart]);
+        }
+        if (positionChart) {
+            positionChart.setData([positionDataChart, ...forceDataChart, photoDataChart]);
+        }
+    }
+
+    // WebRTC connection
+    connectBtn.addEventListener('click', () => {
+        // Protection against multiple connections
+        if (isConnected) {
+            console.warn('Already connected');
+            return;
+        }
+
+        const hostId = getTokenValue();
+        if (!hostId.match(/^MT-[A-Z0-9]{6}$/)) {
+            showError('Invalid token format');
+            return;
+        }
+
+        statusDiv.textContent = 'Connecting...';
+        statusDiv.className = 'status ready';
+        connectBtn.disabled = true;
+        setTokenInputsDisabled(true);
+
+        peer = new Peer();
+
+        peer.on('open', (id) => {
+            console.log('My ID:', id);
+            conn = peer.connect(hostId);
+
+            conn.on('open', () => {
+                isConnected = true;
+                statusDiv.textContent = 'Connected!';
+                statusDiv.className = 'status connected';
+                controlPanel.style.display = 'block';
+
+                // Change button to disconnect
+                connectBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    Disconnect
+                `;
+                connectBtn.classList.remove('btn-success');
+                connectBtn.classList.add('btn-danger');
+                connectBtn.disabled = false;
+                connectBtn.onclick = disconnectFromHost;
+
+                // Initialize charts
+                setTimeout(() => {
+                    timeChart = createChart("timeChart", ["Time (s)", "Force 1", "Force 2", "Force 3"], "Force-Time", "Time [s]", "Force [N]");
+                    positionChart = createChart("positionChart", ["Position (mm)", "Force 1", "Force 2", "Force 3"], "Force-Position", "Position [mm]", "Force [N]");
+                }, 100);
+            });
+
+            conn.on('data', (data) => {
+                console.log('Received:', data);
+                updateChart(data);
+            });
+
+            conn.on('close', () => {
+                handleDisconnection();
+            });
+
+            conn.on('error', (err) => {
+                showError('Connection failed: ' + err);
+                handleDisconnection();
+            });
+        });
+
+        peer.on('error', (err) => {
+            showError('Peer error: ' + err.type);
+            handleDisconnection();
+        });
+    });
+
+    function disconnectFromHost() {
+        if (!isConnected) {
+            console.warn('Not connected');
+            return;
+        }
+
+        if (conn) {
+            conn.close();
+            conn = null;
+        }
+        if (peer) {
+            peer.destroy();
+            peer = null;
+        }
+        handleDisconnection();
+    }
+
+    function handleDisconnection() {
+        isConnected = false;
+        statusDiv.textContent = 'Disconnected';
+        statusDiv.className = 'status error';
+        controlPanel.style.display = 'none';
+
+        // Destroy charts
+        destroyCharts();
+
+        // Reset button
+        connectBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+            </svg>
+            Connect
+        `;
+        connectBtn.classList.remove('btn-danger');
+        connectBtn.classList.add('btn-success');
+        connectBtn.onclick = null; // Remove disconnect handler
+        setTokenInputsDisabled(false);
+        updateConnectButton();
+    }
+
+    // Send command helper
+    function sendCommand(command, value = null, additional = {}) {
+        if (!isConnected) {
+            console.warn('Cannot send command: not connected');
+            return;
+        }
+        if (conn && conn.open) {
+            const message = value !== null ? {command, value} : {command};
+            if (isDict(additional)) {
+                Object.assign(message, additional);
+            }
+            conn.send(message);
+            console.log('Sent:', message);
+        }
+    }
+
+    // Button controls with long press
+    function setupButton(btnId, command, additional = undefined) {
+        const btn = $ID(btnId);
+        let intervalTimer = null;
+
+        const startPress = () => {
+            if (!isConnected) return;
+            sendCommand(command, 'start', additional);
+            intervalTimer = setInterval(() => {
+                sendCommand(command, 'ping');
+            }, 200);
+        };
+
+        const endPress = () => {
+            if (intervalTimer) {
+                clearInterval(intervalTimer);
+                intervalTimer = null;
+            }
+            if (isConnected) {
+                sendCommand(command, 'stop');
+            }
+        };
+
+        btn.addEventListener('mousedown', startPress);
+        btn.addEventListener('mouseup', endPress);
+        btn.addEventListener('mouseleave', endPress);
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startPress();
+        });
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            endPress();
+        });
+        btn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            endPress();
+        });
+        btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    // Simple click buttons
+    function setupSimpleButton(btnId, command, additional = undefined) {
+        const btn = $ID(btnId);
+        btn.addEventListener('click', () => {
+            if (!isConnected) {
+                showError('Not connected to host');
+                return;
+            }
+            sendCommand(command, undefined, additional);
+        });
+        btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    // Setup all controls
+    setupButton('moveMachineUP', 'move', {direction: 'up'});
+    setupButton('moveMachineDOWN', 'move', {direction: 'down'});
+    setupSimpleButton('startExperiment', 'experiment', {action: 'start'});
+    setupSimpleButton('stopMachine', 'experiment', {action: 'stop'});
+    setupSimpleButton('returnPositionExperimentBtn', 'move', {direction: 'return'});
+    setupSimpleButton('calibrateBtn', 'calibrate');
+
+    // Sliders
+    const speedSlider = $ID('movementSpeed');
+    const speedValue = $ID('speedValue');
+    const accelSlider = $ID('movementAcceleration');
+    const accelValue = $ID('accelerationValue');
+
+    let speedTimeout = null;
+    speedSlider.addEventListener('input', (e) => {
+        speedValue.textContent = parseFloat(e.target.value).toFixed(2);
+        clearTimeout(speedTimeout);
+        speedTimeout = setTimeout(() => {
+            if (isConnected) {
+                sendCommand('setSpeed', parseFloat(e.target.value));
+            }
+        }, 200);
+    });
+
+    let accelTimeout = null;
+    accelSlider.addEventListener('input', (e) => {
+        accelValue.textContent = parseFloat(e.target.value).toFixed(2);
+        clearTimeout(accelTimeout);
+        accelTimeout = setTimeout(() => {
+            if (isConnected) {
+                sendCommand('setAcceleration', parseFloat(e.target.value));
+            }
+        }, 200);
+    });
+
+    // Prevent context menu on all buttons
+    $$('button').forEach(btn => {
+        btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    });
+
+    // Initial setup
+    updateConnectButton();
+</script>
+
+</body>
+</html>
