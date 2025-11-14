@@ -64,6 +64,9 @@
     <!--    <script async src="packages/external/zip/jszip.min.js"></script> &lt;!&ndash; Add JSZip JavaScript &ndash;&gt;-->
     <script async src="packages/external/zip/pako.min.js"></script> <!-- Add Pako JavaScript (for DEFLATE) -->
 
+    <!-- P2P -->
+    <script defer src="./packages/external/p2p/peerjs.min.js"></script>
+
     <!-- KaTeX -->
     <!-- source: "https://cdn.jsdelivr.net/npm/katex@0.16.9/" -->
     <link rel="stylesheet" href="packages/external/katex/katex.min.css">
@@ -887,6 +890,7 @@
         }
 
         #chartsWrapper {
+            position: relative;
             width: 100%;
             min-height: min-content;
             gap: 20px;
@@ -895,7 +899,7 @@
             background: var(--charts-bg);
             border-radius: 10px;
             border: 2px solid var(--chart-border);
-            padding: 1em 0.5em 2em;
+            padding: 1em 0.5em 1.5em;
             margin: 15px 0 10px;
         }
 
@@ -1910,7 +1914,9 @@
                         </button>
 
                         <!-- Stop Experiment Button -->
-                        <button id="stopMachine" class="controlBtn machineControlElement">🛑<br>Stop Machine</button>
+                        <button id="stopMachine" class="controlBtn machineControlElement">
+                            🛑<br>Stop Machine
+                        </button>
 
                         <!-- Return to the original position Button -->
                         <div style="display: inline-flex; gap: var(--gap);">
@@ -2024,12 +2030,12 @@
 
                 </div>
                 <button id="setUserZeroBtn"
-                        class="movementControlElement machineControlElement controlBtn controllerBtn prohibited">🎯 Set
-                    Zero
+                        class="movementControlElement machineControlElement controlBtn controllerBtn prohibited">
+                    🎯 Set Zero
                 </button>
-                <button id="calibrateBtn" class="movementControlElement machineControlElement controlBtn controllerBtn">
-                    📏
-                    Calibrate
+                <button id="calibrateBtn"
+                        class="movementControlElement machineControlElement controlBtn controllerBtn">
+                    📏 Calibrate
                 </button>
             </nav>
         </article>
@@ -2702,6 +2708,9 @@
                                 <option value="limited" hidden>
                                     &nbsp;🔲&nbsp;Limited
                                 </option>
+                                <option value="go">
+                                    &nbsp;➡️&nbsp;Go Mode
+                                </option>
                                 <option value="minimal" disabled> <!--TODO: implement-->
                                     &nbsp;⏹️&nbsp;Minimal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🔜)
                                 </option>
@@ -2757,7 +2766,7 @@
                             <select id="languageSelect" class="appSelector" data-system="app">
                                 <option value="" hidden>&nbsp;◻️&nbsp;None</option>
                                 <option value="none" hidden>&nbsp;⬜&nbsp;No selection</option>
-                                <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇪🇳/🇬🇧/🇺🇸</option>
+                                <option value="en" selected>&nbsp;English&nbsp;&nbsp;&nbsp;&nbsp;🇬🇧/🇺🇸</option>
                                 <option value="cs" hidden>&nbsp;Čeština&nbsp;&nbsp;&nbsp;&nbsp;🇨🇿</option>
                                 <option value="de" hidden>&nbsp;Deutsch&nbsp;&nbsp;&nbsp;&nbsp;🇩🇪</option>
                                 <option value="es" hidden>&nbsp;Español&nbsp;&nbsp;&nbsp;&nbsp;🇪🇸</option>
@@ -4319,7 +4328,7 @@
     // =====================================================================
 
 
-    function getLocaleOrder(locales = null, {
+    function getLocaleOrder(locales = undefined, {
         timeZone = undefined,           // nech prázdné pro aktuální zónu
         force24h = false                // true => vynutí 24h (H), i když je locale 12h
     } = {}) {
@@ -5630,10 +5639,10 @@
         return `${TYPE_CONNECT_EMOJI[t] || ''} Connect via<br>${T}`;
     }
 
-    function updateConnectionStatus(status, type = null) {
+    function updateConnectionStatus(status, type = undefined) {
         if (!STATE[status]) return;
 
-        if (type != null) connectionType = String(type).toLowerCase().trim();
+        if (isDef(type)) connectionType = String(type).toLowerCase().trim();
 
         // status řádek
         const dot = STATE[status].dot;
@@ -5660,7 +5669,7 @@
         });
     }
 
-    function lockConnectionButtons(lock = true, exceptType = null) {
+    function lockConnectionButtons(lock = true, exceptType = undefined) {
         if (isNonEmptyStr(exceptType)) exceptType = String(exceptType)?.toLowerCase().trim();
         else exceptType = null;
         UI.connectBtns?.forEach(btn =>
@@ -6566,7 +6575,7 @@
 
 
     // /////// Toggle Live Update /////////
-    function chartUpdate(setState = null) {
+    function chartUpdate(setState = undefined) {
         if (isBool(setState)) {
             liveUpdate = setState;
         } else {
@@ -6886,7 +6895,7 @@
 
         // Get the container dimensions
         let width = container.clientWidth || 400; // Default width if the container is empty
-        let height = container.clientHeight || 300; // Default height if the container is empty
+        let height = container.clientHeight - (2 * 24) || 300; // Default height if the container is empty
 
         // Configurations for uPlot chart
         const options = {
@@ -6948,7 +6957,7 @@
 
     function onResize(container, chart) {
         const newWidth = container.clientWidth || 400;
-        const newHeight = container.clientHeight || 300;
+        const newHeight = container.clientHeight - (2 * 24) || 300;
         chart.setSize({width: newWidth, height: newHeight});
         UI.chartsContainer.style.height = getChartHeightIncludingLegend() + "px";
     }
@@ -7650,31 +7659,32 @@
     }
 
     // ------- Movement -------
-    async function beganMoving(timeoutMs = null) {
+    async function beganMoving(timeoutMs = NaN) {
         if (machineOccupation) return; // is already moving
         lockConnectionButtons(true);
         lockControls();
 
         // schedule automatic ending (optional)
-        if (isValidInputNum(timeoutMs)) {
-            machineOccupation = true;
-            warnOnClose = true;
-            startWatchdog(WATCHDOG_INTERVAL_MS);
+        if (!isValidInputNum(timeoutMs)) return;
 
-            const delay = toInteger(timeoutMs, "up");
-            if (!isNumber(delay)) {
-                console.warn("\nInvalid delay for beganMoving:", timeoutMs);
-                endedMoving();
-                return;
-            }
-            if (isDef(movingTimeout)) {
-                clearTimeout(movingTimeout);
-                movingTimeout = null;
-            }
-            movingTimeout = setTimeout(() => {
-                endedMoving();
-            }, delay);
+        machineOccupation = true;
+        warnOnClose = true;
+        startWatchdog(WATCHDOG_INTERVAL_MS);
+
+        const delay = toInteger(timeoutMs, "up");
+        if (!isNumber(delay)) {
+            console.warn("\nInvalid delay for beganMoving:", timeoutMs);
+            endedMoving();
+            return;
         }
+        if (isDef(movingTimeout)) {
+            clearTimeout(movingTimeout);
+            movingTimeout = null;
+        }
+        movingTimeout = setTimeout(() => {
+            endedMoving();
+        }, delay);
+
     }
 
     function setSpeed(speed, updateCurrent = true, timeOut = 1) {
@@ -7712,12 +7722,12 @@
         UI.accelerationLabel.value = `${acceleration.toFixed(2)}`;
     }
 
-    function setSpeedAndAcceleration(speed, acceleration, updateCurrent = true, timeOut = 2) {
+    function setSpeedAndAcceleration(speed, acceleration, updateCurrent = true, timeOut = 2,) {
         if (!isConnected) return;
 
         timeOut = Math.max(Math.abs(Math.round(timeOut / 2)), 1);
-        setSpeed(speed, updateCurrent, timeOut);
         setAcceleration(acceleration, updateCurrent, timeOut);
+        setSpeed(speed, updateCurrent, timeOut);
     }
 
     function endedMoving() {
@@ -8282,8 +8292,8 @@
      * Vstupy v mm/s, mm/s², mm/s³. Čas v sekundách.
      *
      * @param {number} v     - cílová rychlost [mm/s]
-     * @param {number} jmax  - max jerk [mm/s^3]
-     * @param {number} amax  - max zrychlení [mm/s^2] (volitelné, default Infinity)
+     * @param {number} jMax  - max jerk [mm/s^3]
+     * @param {number} aMax  - max zrychlení [mm/s^2] (volitelné, default Infinity)
      * @param {number} amin  - min zrychlení [mm/s^2] (default 5)
      * @returns {{
      *   a_peak: number,   // doporučené špičkové zrychlení [mm/s^2]
@@ -8292,38 +8302,38 @@
      *   warning?: string  // případné upozornění na omezení
      * }}
      */
-    function accelFromJerkAndVelocity(v, jmax, amax = Infinity, amin = 5) {
-        if (!(v > 0) || !(jmax > 0)) {
-            throw new Error("v > 0 a jmax > 0");
+    function accelFromJerkAndVelocity(v, jMax, aMax = Infinity, amin = 5) {
+        if (!(v > 0) || !(jMax > 0)) {
+            throw new Error("v > 0 a jMax > 0");
         }
-        if (!(amax > 0)) amax = Infinity;
+        if (!(aMax > 0)) aMax = Infinity;
         if (!(amin > 0)) amin = 5;
 
         // Limit daný jerky: bez porušení Jmax nelze jít nad sqrt(J*v)
-        const aByJerk = Math.sqrt(jmax * v);
+        const aByJerk = Math.sqrt(jMax * v);
 
         let warning;
         if (aByJerk < amin) {
-            // Požadované min. zrychlení je nerealizovatelné při daném jmax a v
+            // Požadované min. zrychlení je nerealizovatelné při daném jMax a v
             // (musel bys povolit vyšší jerk nebo zvýšit v).
-            warning = `amin=${amin} mm/s² nelze dosáhnout pro v=${v} mm/s a jmax=${jmax} mm/s³; použito a_peak=${aByJerk.toFixed(3)} mm/s².`;
+            warning = `amin=${amin} mm/s² nelze dosáhnout pro v=${v} mm/s a jmax=${jMax} mm/s³; použito a_peak=${aByJerk.toFixed(3)} mm/s².`;
         }
 
-        // a_peak omezeno postupně: jerkem, mechanickým amax a minimem amin
+        // a_peak omezeno postupně: jerkem, mechanickým aMax a minimem amin
         // (pokud aByJerk < amin, vezmeme aByJerk a připojíme warning).
-        let a_peak = (aByJerk < amin) ? aByJerk : Math.min(amax, Math.max(amin, aByJerk));
+        let a_peak = (aByJerk < amin) ? aByJerk : Math.min(aMax, Math.max(amin, aByJerk));
 
         // Režim: bez plateau, pokud jsme omezeni čistě jerky (a == aByJerk)
         const mode = (Math.abs(a_peak - aByJerk) < 1e-12) ? "no_plateau" : "with_plateau";
 
         // Celkový čas rozjezdu:
-        // - no_plateau: t_total = 2 * sqrt(v / jmax)
-        // - with_plateau: t_total = 2*(a_peak/jmax) + (v/a_peak - a_peak/jmax)
+        // - no_plateau: t_total = 2 * sqrt(v / jMax)
+        // - with_plateau: t_total = 2*(a_peak/jMax) + (v/a_peak - a_peak/jMax)
         let t_total;
         if (mode === "no_plateau") {
-            t_total = 2 * Math.sqrt(v / jmax);
+            t_total = 2 * Math.sqrt(v / jMax);
         } else {
-            const tRamp = a_peak / jmax;
+            const tRamp = a_peak / jMax;
             const tFlat = Math.max(0, v / a_peak - tRamp);
             t_total = 2 * tRamp + tFlat;
         }
@@ -9702,7 +9712,7 @@
             if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             if (!isNumSafe(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
 
-            const force = toNumber(await getPromisedValue(`LC READ ${ldID}`, /.../, 1, timeOut), true);
+            const force = toNumber(await getPromisedValue(`LC READ ${ldID}`, /.../, 1, timeOut), true); // TODO: doplnit regex
 
             if (!isNumSafe(force)) {
                 throw new Error(`Load on Loadcell${ldID} is not a number: ${force}`);
@@ -9789,7 +9799,7 @@
         try {
             if (debugging) logMessage(" 📢\tGet calibration status...");
 
-            return await getPromisedValue("MC GET ISCALIBRATED", /^Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
+            return await getPromisedValue("MC GET ISCALIBRATED", /Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
             // return await getPromisedValue("MC GET ISCALIBRATED", /S0:([01])/, 1, timeOut) === "1";
         } catch (error) {
             console.error(error.message);
@@ -9805,7 +9815,7 @@
         try {
             if (debugging) logMessage(" 📢\tGet speed...");
 
-            const speed = toNumber(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut), true);
+            const speed = toNumber(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\s?mm\/s/, 1, timeOut), true);
             // const speed = parseFloat(await getPromisedValue("MC GET SPEED", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
             if (!isNumSafe(speed)) {
                 throw new Error(`Speed is not a number: ${speed}`);
@@ -9828,7 +9838,7 @@
         try {
             if (debugging) logMessage(" 📢\tGet acceleration...");
 
-            const acceleration = toNumber(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut), true);
+            const acceleration = toNumber(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(?:\.\d+)?)\s?mm\/s(?:\^2|²)/, 1, timeOut), true); // [¹²³⁴⁵⁶⁷⁸⁹]
             // const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
             if (!isNumSafe(acceleration)) {
                 throw new Error(`Acceleration is not a number: ${acceleration}`);
@@ -9905,7 +9915,7 @@
     let pendingDSLR = null; // Store DSLR event until the next data arrives
     let lastAcceptedTime = null;
 
-    function timeStepCheck(previous, current, stepSize, tolerance = null) {
+    function timeStepCheck(previous, current, stepSize, tolerance = NaN) {
         if (!isNumSafe(tolerance)) tolerance = (stepSize * 0.01); // set default tolerance to 2x 1% of step size
 
         // TODO: optimalizovat tolerance dle rychlosti zpracování dat
@@ -12313,6 +12323,19 @@
         }
     };
 
+    async function checkThymosPort(port) {
+        if (!port) return null;
+        try {
+            const portInfo = await port?.getInfo() ?? {};
+            const fingerprint = `${Number(portInfo.usbVendorId)?.toString(10) ?? 'N/A'}:${Number(portInfo.usbProductId)?.toString(10) ?? 'N/A'}`;
+            const isThymos = thymosFingerprints.includes(fingerprint);
+            if (debugging) console.info("\tFingerprint:", fingerprint, "Is Thymos:", isThymos);
+            return isThymos;
+        } catch (error) {
+            await handleError(error, "checkThymosPort");
+            return false;
+        }
+    }
 
     function checkAllPorts() {
         let thymosPorts = [];
@@ -12341,7 +12364,7 @@
         await lockConnectionButtons(true);
         await updateConnectionStatus("connecting", "serial");
         try {
-            let ports = null;
+            let ports = [];
 
             if (usePortAutoConnect) {
                 ports = await serialFunctionGetPorts();
@@ -12353,7 +12376,14 @@
                 serialComPort = ports[0];
                 console.info("\t... Only one port found.");
 
-            } else {
+
+                if (!(await checkThymosPort(serialComPort))) {
+                    serialComPort = null;
+                    console.info("\t... Port is not Thymos device.");
+                }
+            }
+
+            if (isVoid(serialComPort)) {
                 let founds = false;
 
                 if (isArr(ports) && ports.length > 1) {
@@ -12373,8 +12403,8 @@
 
                 if (isVoid(serialComPort)) {
                     if (userRequest) {
-                        // console.info("\t\t⚠️ No port selected. Connecting canceled.");
-                        // await logMessage("\n\t\t⚠️ No port selected. Connecting canceled.");
+                        console.info("\t\t⚠️ No port selected. Connecting canceled.");
+                        await logMessage("\n\t\t⚠️ No port selected. Connecting canceled.");
                     } else {
                         if (founds) {
                             logAndConsoleMessage("⚠️ Multiple ports found, please select one.");
@@ -12389,8 +12419,14 @@
                 }
             }
 
-            if (!serialComPort) throw new Error("No serial port available.");
 
+            const isThymos = await checkThymosPort(serialComPort);
+            if (isThymos === false) {
+                console.info("\t... Port is not Thymos device.");
+                throw new Error("No Thymos device found on the selected port.");
+            } else if (isThymos === null) {
+                throw new Error("Error checking Thymos device on the selected port.");
+            }
 
             await openSerial(serialComPort, {retry: false, userRequest: userRequest});
 
@@ -12477,16 +12513,9 @@
         await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', timeUnitMach)))}`); // Stop data collection
         await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
 
-        await sendCommandGeneral("MC ENDSTOPS ENABLE");
-        await sendCommandGeneral("MC SET ALARMS ENABLE");
-
         await logMessage("\n");
 
-        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
-        await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${Math.ceil(WATCHDOG_INTERVAL_MS)}`); // TODO: check units
-
-        await sendCommandGeneral(`MISC SET USB_CHECK_ENABLED ${1}`);
-        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, convertUnits(1, 's', timeUnitSys)))}`);
+        await sendCommandGeneral("MISC SET VERBOSE USR"); // Set verbosity to user level
 
         await logMessage("\n");
 
@@ -12505,10 +12534,11 @@
         //
         // }
 
+        let allDone = false;
         const signal = AbortSignal.timeout(convertUnits(25, 's', timeUnitSys));
         if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
         signal.addEventListener('abort', (ev) => {
-            console.info('Canceled!', ev.target.reason);
+            if (!allDone) console.info('Canceled!', ev.target.reason); // TODO: nefunguje správně, nějakou možnost zrušit když vše proběhne správně
         }, {once: true});
         // signal.onabort = (ev) => {
         //     console.info('Canceled!', signal.aborted, signal.reason); // true, případně důvod
@@ -12522,6 +12552,7 @@
             ]);
             if (signal.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
 
+            allDone = true;
             await updateConnectionStatus("connected", "serial");
         } catch (e) {
             if (e.name === 'AbortError') {
@@ -12538,15 +12569,31 @@
             }
 
         } finally {
-            // await signal.clear();
+            // signal.abort(); // Clean up
         }
+
+        const isOldVersion = compareVersions(machineFirmware, "1.5.0") < 0;
+
+        await sendCommandGeneral("MC ENDSTOPS ENABLE");
+        await sendCommandGeneral("MC SET ALARMS ENABLE");
+
+        await logMessage("\n");
+
+        await sendCommandGeneral(`MISC SET WATCHDOG${isOldVersion ? '_ENABLED' : ''} ${0}`);
+        await sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${Math.ceil(WATCHDOG_INTERVAL_MS)}`); // TODO: check units
+
+        await sendCommandGeneral(`MISC SET USB_CHECK${isOldVersion ? '_ENABLED' : ''} ${1}`);
+        await sendCommandGeneral(`MISC SET USB_CHECK_INTERVAL ${Math.ceil(clamp(WATCHDOG_INTERVAL_MS * 0.9, 150, convertUnits(1, 's', timeUnitSys)))}`);
+
+        await logMessage("\n");
+
     }
 
     const abort = (s) => isVoid(s) ? null : (s?.throwIfAborted?.() ?? (s?.aborted && (() => {
         throw new DOMException('Aborted', 'AbortError')
     })()));
 
-    async function handShake({signal = null} = {}) {
+    async function handShake({signal = undefined} = {}) {
         abort(signal);
         try {
             machineName = (await getMachineName(5_000) || "")?.trim();
@@ -12670,7 +12717,7 @@
         return true;
     }
 
-    async function setMovement({signal = null} = {}) {
+    async function setMovement({signal = undefined} = {}) {
         abort(signal);
         // check Calibration status
         calibrationStatus = await getCalibrationStatus(2_000);
@@ -12692,7 +12739,7 @@
     }
 
     async function getFingerprint({
-                                      signal = null,
+                                      signal = undefined,
                                       port = serialPort,
                                       save = true,
                                       storageKey = "lastFingerprint"
@@ -12805,7 +12852,7 @@
         }
     }
 
-    async function closePort(port, {reader = null, writer = null, verbose = false} = {}) {
+    async function closePort(port, {reader = undefined, writer = null, verbose = false} = {}) {
         if (!port) return;
 
         const info = (() => {
@@ -13222,6 +13269,8 @@
                 THYMOS_DEVICES.push(port);
             }
 
+            console.log(THYMOS_DEVICES)
+
             if (THYMOS_DEVICES.length === 0) return;
 
             console.info(`%c\n👀 ${THYMOS_DEVICES.length > 1 ? THYMOS_DEVICES.length : 'A'} Thymos device${THYMOS_DEVICES.length > 1 ? 's' : ''} has been connected.`, "color: gray; font-weight: bold;");
@@ -13230,10 +13279,10 @@
 
             if (THYMOS_DEVICES.length === 1) {
                 if (autoConnectSetting === 'always') startSerial(false);
-                else if (autoConnectSetting === 'ask') if (confirm("Thymos device connected. Do you want to connect?")) startSerial(true);
+                else if (autoConnectSetting === 'ask') if (confirm("Thymos device connected. Do you want to connect?")) startSerial(true);  // TODO: SECURITY ERROR - should not ask for port again if already granted
 
             } else if (THYMOS_DEVICES.length > 1) {
-                if (autoConnectSetting === 'always' || autoConnectSetting === 'ask') if (confirm("Multiple Thymos devices connected. Do you want to connect?")) startSerial(true);
+                if (autoConnectSetting === 'always' || autoConnectSetting === 'ask') if (confirm("Multiple Thymos devices connected. Do you want to connect?")) startSerial(true);  // TODO: SECURITY ERROR - should not ask for port again if already granted
             }
         });
     }
@@ -13934,6 +13983,13 @@
         $ID('systemLevelSelect').addEventListener('change', (event) => {
             const selectedLevel = event.target.value.toLowerCase().trim();
             switch (selectedLevel) {
+                case 'go':
+                    (async () => {
+                        if (isConnected) await disconnectSerial({override: true, verbose: false});
+                        await sleep(100);
+                        window.location.href = './hermes.html';
+                    })();
+                    return;
                 case 'minimal':
                     systemLevel = 1;
                     break;
@@ -14450,6 +14506,9 @@
 
         // await loadCommands();
 
+        setSpeedUI(0);
+        setAccelerationUI(0);
+
         const serialAllowed = await isSerialAvailable();
         const portsCount = (serialAllowed ? await availablePorts() : 0) || 0;
 
@@ -14474,9 +14533,6 @@
             await clearCalculations();
             await clearCharts();
             setChartsStates({show: false});
-
-            setSpeedUI(0);
-            setAccelerationUI(0);
         }
 
         if (anyDataLoaded) alert("\nℹ️ Found previous unsaved logged data.\n     It has been successfully loaded into the charts.\n\n     You can now save it as a CSV file if desired.");
@@ -14490,7 +14546,10 @@
                     (portsCount >= 1 && autoConnectSetting === 'ask') ||
                     (portsCount > 1 && (autoConnectSetting === 'always' || autoConnectSetting === 'beginning'))
                 ) {
-                    if (confirm(`${portsCount > 1 ? 'Multiple machines' : 'Machine'} found. Do you want to connect?`)) await startSerial(false);
+                    if (confirm(`${portsCount > 1 ? 'Multiple machines' : 'Machine'} found. Do you want to connect?`)) {
+                        await sleep(500); // Let user see the app
+                        startSerial(true); // TODO: SECURITY ERROR - should not ask for port again if already granted
+                    }
                 }
             }
 
@@ -14516,7 +14575,6 @@
         }, {once: true});
 
     }
-
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
