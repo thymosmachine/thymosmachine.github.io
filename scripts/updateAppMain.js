@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
             await closeSerial();
             await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
         }
-        // Go back to index.html page (one folder up)
+        // Go back to index.html page (main page)
         window.location.href = './';
     });
 
