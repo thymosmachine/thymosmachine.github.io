@@ -44,7 +44,7 @@
         }
 
         .connection-section {
-            background: #f8f9fa;
+            background: #f5f5f5;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -132,16 +132,16 @@
         }
 
         .version-selector {
-            background: #fff9e6;
+            background: #f5f5f5;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            border: 2px solid #ffc107;
+            border: 2px solid #dcdcdc;
         }
 
         .version-selector h4 {
             margin-bottom: 10px;
-            color: #856404;
+            color: #6c6c6c;
         }
 
         #versionSelectWrapper {
@@ -182,10 +182,16 @@
             background: #fdecea;
         }
 
+
+        .file-item.empty {
+            border-color: #f39c12;
+            background: #fef5e7;
+        }
+
         .file-item.ignored {
-            opacity: 0.6;
-            border-color: #95a5a6;
-            background: #ecf0f1;
+            opacity: 0.6 !important;
+            border-color: #95a5a6 !important;;
+            background: #ecf0f1 !important;;
         }
 
         .file-item.hidden {
@@ -195,7 +201,6 @@
         .file-header {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
         }
 
         .file-header input[type="checkbox"] {
@@ -205,11 +210,16 @@
             cursor: pointer;
         }
 
-        .file-header label {
+        .file-header .labels {
             font-weight: 600;
             color: #333;
             cursor: pointer;
             flex: 1;
+            align-self: baseline;
+        }
+
+        .file-header .labels, .file-header label {
+            margin-bottom: 0;
         }
 
         .validation-badge {
@@ -236,8 +246,8 @@
         }
 
         .validation-badge.ignored {
-            background: #e2e3e5;
-            color: #383d41;
+            background: #e2e3e5 !important;;
+            color: #383d41 !important;;
         }
 
         .file-info {
@@ -287,7 +297,7 @@
             flex-direction: column;
         }
 
-        label {
+        label, .labels {
             font-weight: 500;
             color: #555;
             margin-bottom: 5px;
@@ -700,239 +710,301 @@
             background: #f8d7da;
             color: #721c24;
         }
+
+        .file-progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+            width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .file-progress-bar-container.active {
+            display: block;
+        }
+
+        .file-progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0;
+            transition: width 0.3s;
+        }
+
+        .file-progress-bar.complete {
+            background: #27ae60;
+        }
+
+        .file-item.manifest-mode .file-header input[type="checkbox"] {
+            visibility: hidden;
+            width: 0;
+            margin: 0;
+        }
+
+        .file-item.manifest-mode .file-header .labels {
+            pointer-events: none;
+            cursor: default;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🔧 ESP Firmware Update Tool</h1>
-    <p class="subtitle">Webové rozhraní pro nahrávání firmware do ESP zařízení</p>
-
-    <div class="info-box">
-        ℹ️ Připojte ESP zařízení přes USB a klikněte na "Připojit ESP". Vyberte verzi firmware nebo nahrajte vlastní
-        soubory.
-    </div>
-
-    <div class="warning-box" id="bootModeWarning">
-        ⚠️ ESP není v bootloader módu! Před nahráváním firmware klikněte na "Přejít do Boot Módu".
-    </div>
-
-    <!-- Connection Section -->
-    <div class="connection-section">
-        <h3 style="margin-bottom: 15px;">Připojení k zařízení
-            <span class="status-badge disconnected" id="statusBadge">Odpojeno</span>
-            <span class="boot-mode-indicator unknown" id="bootModeBadge" style="display: none;">Neznámý mód</span>
-        </h3>
-        <div class="form-group">
-            <label for="baudRate">Baudrate:</label>
-            <select id="baudRate">
-                <option value="115200" selected>115200</option>
-                <option value="230400">230400</option>
-                <option value="460800">460800</option>
-                <option value="921600">921600</option>
-            </select>
+<noscript>
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            <h2 style="color: #e74c3c; margin-bottom: 20px;">⚠️ JavaScript Required</h2>
+            <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">This ESP Firmware Updater requires JavaScript
+                to function properly.</p>
+            <p style="color: #666; line-height: 1.6;">Please enable JavaScript in your browser settings and reload the
+                page.</p>
         </div>
     </div>
+</noscript>
 
-    <!-- Chip Info Section -->
-    <div class="chip-info-section" id="chipInfoSection">
-        <h3>📟 Informace o čipu</h3>
-        <table class="info-table" id="chipInfoTable">
-            <tr>
-                <td>Typ čipu</td>
-                <td id="infoChipType">-</td>
-            </tr>
-            <tr>
-                <td>Funkce</td>
-                <td id="infoFeatures">-</td>
-            </tr>
-            <tr>
-                <td>Krystal</td>
-                <td id="infoCrystal">-</td>
-            </tr>
-            <tr>
-                <td>MAC adresa</td>
-                <td id="infoMac">-</td>
-            </tr>
-            <tr>
-                <td>Flash velikost</td>
-                <td id="infoFlashSize">-</td>
-            </tr>
-            <tr>
-                <td>Výrobce</td>
-                <td id="infoManufacturer">-</td>
-            </tr>
-            <tr>
-                <td>Device ID</td>
-                <td id="infoDevice">-</td>
-            </tr>
-            <tr>
-                <td>Vendor ID</td>
-                <td id="infoVendorId">-</td>
-            </tr>
-            <tr>
-                <td>Product ID</td>
-                <td id="infoProductId">-</td>
-            </tr>
-        </table>
-    </div>
+<main id="mainContent">
+    <div class="container">
+        <h1>🔧 ESP Firmware Update Tool</h1>
+        <p class="subtitle">Webové rozhraní pro nahrávání firmware do ESP zařízení</p>
 
-    <!-- File Upload Section -->
-    <div class="file-section">
-        <h3 style="margin-bottom: 15px;">Soubory firmware</h3>
+        <div class="info-box">
+            ℹ️ Připojte ESP zařízení přes USB a klikněte na "Připojit ESP". Vyberte verzi firmware nebo nahrajte vlastní
+            soubory.
+        </div>
 
-        <!-- Version Selector -->
-        <div class="version-selector">
-            <div id="versionSelectWrapper">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h4 style="width: max-content;">📦 Výběr verze firmware</h4>
-                    <h5 style="width: max-content">Soubory:
-                        <span class="status-badge status-unknown" id="statusBadgeFiles">Neznámý</span>
-                    </h5>
-                </div>
-                <div class="form-group">
-                    <label for="versionSelect">Verze:</label>
-                    <select id="versionSelect" onchange="handleVersionChange()">
-                    </select>
-                </div>
-            </div>
+        <div class="warning-box" id="bootModeWarning">
+            ⚠️ ESP není v bootloader módu! Před nahráváním firmware klikněte na "Přejít do Boot Módu".
+        </div>
 
-            <!-- Custom file actions -->
-            <div class="custom-file-actions" id="customFileActions">
-                <button class="btn btn-secondary btn-small" onclick="selectFolder()">
-                    📁 Vybrat složku
-                </button>
-                <button class="btn btn-secondary btn-small" onclick="clearAllFiles()">
-                    🗑️ Vymazat vše
-                </button>
+        <!-- Connection Section -->
+        <div class="connection-section">
+            <h3 style="margin-bottom: 15px;">Připojení k zařízení
+                <span class="status-badge disconnected" id="statusBadge">Odpojeno</span>
+                <span class="boot-mode-indicator unknown" id="bootModeBadge" style="display: none;">Neznámý mód</span>
+            </h3>
+            <div class="form-group">
+                <label for="baudRate">Baudrate:</label>
+                <select id="baudRate">
+                    <option value="115200" selected>115200</option>
+                    <option value="230400">230400</option>
+                    <option value="460800">460800</option>
+                    <option value="921600">921600</option>
+                </select>
             </div>
         </div>
 
-        <!-- File 1 -->
-        <div class="file-item" id="fileItem1">
-            <div class="file-header">
-                <input type="checkbox" id="fileEnable1" onchange="toggleFileItem(1)">
-                <label for="fileEnable1">Soubor 1 (Bootloader / Merged)</label>
-                <span class="validation-badge" id="validationBadge1"></span>
-            </div>
-            <div class="file-controls" id="fileControls1" style="display: none;">
-                <div class="form-group">
-                    <label for="file1">Vybrat soubor:</label>
-                    <input type="file" id="file1" accept=".ino.bootloader.bin, .ino.merged.bin"
-                           onchange="validateFile(1)">
-                </div>
-                <div class="form-group">
-                    <label for="address1">Adresa (hex):</label>
-                    <input type="text" id="address1" placeholder="0x0000" value="0x0000">
-                </div>
-            </div>
-            <div class="file-info" id="fileInfo1"></div>
+        <!-- Chip Info Section -->
+        <div class="chip-info-section" id="chipInfoSection">
+            <h3>📟 Informace o čipu</h3>
+            <table class="info-table" id="chipInfoTable">
+                <tr>
+                    <td>Typ čipu</td>
+                    <td id="infoChipType">-</td>
+                </tr>
+                <tr>
+                    <td>Funkce</td>
+                    <td id="infoFeatures">-</td>
+                </tr>
+                <tr>
+                    <td>Krystal</td>
+                    <td id="infoCrystal">-</td>
+                </tr>
+                <tr>
+                    <td>MAC adresa</td>
+                    <td id="infoMac">-</td>
+                </tr>
+                <tr>
+                    <td>Flash velikost</td>
+                    <td id="infoFlashSize">-</td>
+                </tr>
+                <tr>
+                    <td>Výrobce</td>
+                    <td id="infoManufacturer">-</td>
+                </tr>
+                <tr>
+                    <td>Device ID</td>
+                    <td id="infoDevice">-</td>
+                </tr>
+                <tr>
+                    <td>Vendor ID</td>
+                    <td id="infoVendorId">-</td>
+                </tr>
+                <tr>
+                    <td>Product ID</td>
+                    <td id="infoProductId">-</td>
+                </tr>
+            </table>
         </div>
 
-        <!-- File 2 -->
-        <div class="file-item" id="fileItem2">
-            <div class="file-header">
-                <input type="checkbox" id="fileEnable2" onchange="toggleFileItem(2)">
-                <label for="fileEnable2">Soubor 2 (Partitions)</label>
-                <span class="validation-badge" id="validationBadge2"></span>
-            </div>
-            <div class="file-controls" id="fileControls2" style="display: none;">
-                <div class="form-group">
-                    <label for="file2">Vybrat soubor:</label>
-                    <input type="file" id="file2" accept=".ino.partitions.bin" onchange="validateFile(2)">
+        <!-- File Upload Section -->
+        <div class="file-section">
+            <h3 style="margin-bottom: 15px;">Soubory firmware</h3>
+
+            <!-- Version Selector -->
+            <div class="version-selector">
+                <div id="versionSelectWrapper">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="width: max-content;">📦 Výběr verze firmware</h4>
+                        <h5 style="width: max-content">Soubory:
+                            <span class="status-badge status-unknown" id="statusBadgeFiles">Neznámý</span>
+                        </h5>
+                    </div>
+                    <div class="form-group">
+                        <label for="versionSelect">Verze:</label>
+                        <select id="versionSelect" onchange="handleVersionChange()">
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="address2">Adresa (hex):</label>
-                    <input type="text" id="address2" placeholder="0x8000" value="0x8000">
+
+                <!-- Custom file actions -->
+                <div class="custom-file-actions" id="customFileActions">
+                    <button class="btn btn-secondary btn-small" onclick="selectFolder()">
+                        📁 Vybrat složku
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="clearAllFiles()">
+                        🗑️ Vymazat vše
+                    </button>
                 </div>
             </div>
-            <div class="file-info" id="fileInfo2"></div>
+
+            <!-- File 1 -->
+            <div class="file-item" id="fileItem1">
+                <div class="file-header">
+                    <label for="fileEnable1"><input type="checkbox" id="fileEnable1"
+                                                    onchange="toggleFileItem(1)"></label>
+                    <span class="labels">Bootloader / Merged</span>
+                    <span class="validation-badge" id="validationBadge1"></span>
+                </div>
+                <div class="file-progress-bar-container">
+                    <div class="file-progress-bar"></div>
+                </div>
+                <div class="file-controls" id="fileControls1" style="display: none;">
+                    <div class="form-group">
+                        <label for="file1">Vybrat soubor:</label>
+                        <input type="file" id="file1" accept=".ino.bootloader.bin, .ino.merged.bin"
+                               onchange="selectFile(1)">
+                    </div>
+                    <div class="form-group">
+                        <label for="address1">Adresa (hex):</label>
+                        <input type="text" id="address1" placeholder="0x0000" value="0x0000">
+                    </div>
+                </div>
+                <div class="file-info" id="fileInfo1"></div>
+            </div>
+
+            <!-- File 2 -->
+            <div class="file-item" id="fileItem2">
+                <div class="file-header">
+                    <label for="fileEnable2"><input type="checkbox" id="fileEnable2"
+                                                    onchange="toggleFileItem(2)"></label>
+                    <span class="labels">Partitions</span>
+                    <span class="validation-badge" id="validationBadge2"></span>
+                </div>
+                <div class="file-progress-bar-container">
+                    <div class="file-progress-bar"></div>
+                </div>
+                <div class="file-controls" id="fileControls2" style="display: none;">
+                    <div class="form-group">
+                        <label for="file2">Vybrat soubor:</label>
+                        <input type="file" id="file2" accept=".ino.partitions.bin" onchange="selectFile(2)">
+                    </div>
+                    <div class="form-group">
+                        <label for="address2">Adresa (hex):</label>
+                        <input type="text" id="address2" placeholder="0x8000" value="0x8000">
+                    </div>
+                </div>
+                <div class="file-info" id="fileInfo2"></div>
+            </div>
+
+            <!-- File 3 -->
+            <div class="file-item" id="fileItem3">
+                <div class="file-header">
+                    <label for="fileEnable3"><input type="checkbox" id="fileEnable3"
+                                                    onchange="toggleFileItem(3)"></label>
+                    <span class="labels">Application</span>
+                    <span class="validation-badge" id="validationBadge3"></span>
+                </div>
+                <div class="file-progress-bar-container">
+                    <div class="file-progress-bar"></div>
+                </div>
+                <div class="file-controls" id="fileControls3" style="display: none;">
+                    <div class="form-group">
+                        <label for="file3">Vybrat soubor:</label>
+                        <input type="file" id="file3" accept=".ino.bin" onchange="selectFile(3)">
+                    </div>
+                    <div class="form-group">
+                        <label for="address3">Adresa (hex):</label>
+                        <input type="text" id="address3" placeholder="0x10000" value="0x10000">
+                    </div>
+                </div>
+                <div class="file-info" id="fileInfo3"></div>
+            </div>
         </div>
 
-        <!-- File 3 -->
-        <div class="file-item" id="fileItem3">
-            <div class="file-header">
-                <input type="checkbox" id="fileEnable3" onchange="toggleFileItem(3)">
-                <label for="fileEnable3">Soubor 3 (Application)</label>
-                <span class="validation-badge" id="validationBadge3"></span>
-            </div>
-            <div class="file-controls" id="fileControls3" style="display: none;">
-                <div class="form-group">
-                    <label for="file3">Vybrat soubor:</label>
-                    <input type="file" id="file3" accept=".ino.bin" onchange="validateFile(3)">
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <h3 style="margin-bottom: 10px;">Průběh nahrávání</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar">
+                    <span class="progress-text-inner" id="progressTextInner">0%</span>
                 </div>
-                <div class="form-group">
-                    <label for="address3">Adresa (hex):</label>
-                    <input type="text" id="address3" placeholder="0x10000" value="0x10000">
+                <div class="progress-text-outer-wrapper" id="progressTextOuterWrapper">
+                    <span class="progress-text-outer" id="progressTextOuter">0%</span>
                 </div>
             </div>
-            <div class="file-info" id="fileInfo3"></div>
+            <h5 style="margin-bottom: 10px;">Task: <span style="font-weight: normal" id="taskLabel">None</span></h5>
+
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="connectBtn" onclick="espConnect()">
+                📡 Připojit ESP
+            </button>
+            <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
+                ⚡ Přejít do Boot Módu
+            </button>
+            <!-- V action-buttons sekci, změň flash button: -->
+            <button class="btn btn-success" id="flashBtn" onclick="flashFirmware()" disabled>
+                💾 Nahrát Firmware
+                <span class="flash-ready-indicator not-ready" id="flashReadyIndicator">Nepřipraveno</span>
+            </button>
+            <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
+                🔄 Hard Reset
+            </button>
+            <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
+                ❌ Odpojit
+            </button>
+            <button class="btn btn-secondary" onclick="clearLog()">
+                🗑️ Vymazat Log
+            </button>
+            <button class="btn btn-third" onclick="test()">
+                🧪 Test ESP
+            </button>
+            <button class="btn btn-fourth" onclick="flashAllVersions()">
+                🚀 Nahrát všechny verze
+            </button>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <h3 style="margin-bottom: 10px;">Log konzole</h3>
+            <div class="log-container" id="appLogContainer">
+                <div class="log-entry success" style="font-weight: bold">Připraveno k připojení ESP zařízení...</div>
+            </div>
+        </div>
+        <div class="log-section">
+            <h3 style="margin-bottom: 10px;">Device log</h3>
+            <div class="log-container" id="deviceLogContainer" style="height: 160px;">
+            </div>
         </div>
     </div>
 
-    <!-- Progress Section -->
-    <div class="progress-section" id="progressSection">
-        <h3 style="margin-bottom: 10px;">Průběh nahrávání</h3>
-        <div class="progress-bar-container">
-            <div class="progress-bar" id="progressBar">
-                <span class="progress-text-inner" id="progressTextInner">0%</span>
-            </div>
-            <div class="progress-text-outer-wrapper" id="progressTextOuterWrapper">
-                <span class="progress-text-outer" id="progressTextOuter">0%</span>
-            </div>
-        </div>
-        <h5 style="margin-bottom: 10px;">Task: <span style="font-weight: normal" id="taskLabel">None</span></h5>
-
+    <!-- Hidden file input for folder selection -->
+    <div style="display: none;">
+        <label for="folderInput"></label>
+        <input type="file" id="folderInput" webkitdirectory directory multiple onchange="handleFolderSelect()">
     </div>
-
-    <!-- Action Buttons -->
-    <div class="action-buttons">
-        <button class="btn btn-primary" id="connectBtn" onclick="espConnect()">
-            📡 Připojit ESP
-        </button>
-        <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
-            ⚡ Přejít do Boot Módu
-        </button>
-        <!-- V action-buttons sekci, změň flash button: -->
-        <button class="btn btn-success" id="flashBtn" onclick="flashFirmware()" disabled>
-            💾 Nahrát Firmware
-            <span class="flash-ready-indicator not-ready" id="flashReadyIndicator">Nepřipraveno</span>
-        </button>
-        <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
-            🔄 Hard Reset
-        </button>
-        <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
-            ❌ Odpojit
-        </button>
-        <button class="btn btn-secondary" onclick="clearLog()">
-            🗑️ Vymazat Log
-        </button>
-        <button class="btn btn-third" onclick="test()">
-            🧪 Test ESP
-        </button>
-        <button class="btn btn-fourth" onclick="flashAllVersions()">
-            🚀 Nahrát všechny verze
-        </button>
-    </div>
-
-    <!-- Log Section -->
-    <div class="log-section">
-        <h3 style="margin-bottom: 10px;">Log konzole</h3>
-        <div class="log-container" id="appLogContainer">
-            <div class="log-entry success" style="font-weight: bold">Připraveno k připojení ESP zařízení...</div>
-        </div>
-    </div>
-    <div class="log-section">
-        <h3 style="margin-bottom: 10px;">Device log</h3>
-        <div class="log-container" id="deviceLogContainer" style="height: 160px;">
-        </div>
-    </div>
-</div>
-
-<!-- Hidden file input for folder selection -->
-<div style="display: none;">
-    <label for="folderInput"></label>
-    <input type="file" id="folderInput" webkitdirectory directory multiple onchange="handleFolderSelect()">
-</div>
+</main>
 
 <!-- Import maps for better module support -->
 <script type="importmap">
@@ -944,8 +1016,28 @@
     }
 </script>
 
-<!-- ESPTool.js Library as Module -->
+
 <script type="module">
+    // Check Web Serial API support
+    if (!("serial" in navigator)) {
+        addLog('❌ Web Serial API není podporováno v tomto prohlížeči!', 'error');
+        addLog('⚠️ Použijte Chrome, Edge nebo Opera.', 'warning');
+        document.getElementById('connectBtn').disabled = true;
+
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+            <div style="background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                <h2 style="color: #e74c3c; margin-bottom: 20px;">❌ Web Serial API není podporováno</h2>
+                <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">Tento nástroj pro aktualizaci firmware ESP vyžaduje Web Serial API.</p>
+                <p style="color: #666; line-height: 1.6;">Prosím, použijte Chomium-based prohlížeč (Chrome, Edge nebo Opera) a znovu načtěte stránku.</p>
+            </div>
+        </div>
+        `;
+
+        throw new Error('Web Serial API not supported');
+    }
+
     // Polyfill for Buffer               "https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm"
     import {Buffer} from 'buffer';
 
@@ -1005,7 +1097,7 @@
 
     // Make functions globally accessible
     window.toggleFileItem = toggleFileItem;
-    window.validateFile = validateFile;
+    window.selectFile = selectFile;
     window.handleVersionChange = handleVersionChange;
     window.selectFolder = selectFolder;
     window.handleFolderSelect = handleFolderSelect;
@@ -1453,8 +1545,104 @@
         }
     }
 
-    // Pre-flash commands with advanced pattern matching
     async function executePreFlashCommands() {
+        addLog('📋 Spouštím pre-flash příkazy...', 'info');
+        currentPhase = 'pre-flash';
+
+        const commands = [
+            {cmd: () => performHardReset(), desc: 'Hard reset'},
+            {cmd: () => initializeSerial(), desc: 'Init serial'},
+            {cmd: () => startSerialRead(), desc: 'Start reading'},
+            {cmd: () => writeSerial('misc get name'), desc: 'Get name'},
+            {cmd: () => writeSerial('misc get machine_id'), desc: 'Get ID'},
+            {cmd: () => writeSerial('mc get speed'), desc: 'Get speed'},
+            {cmd: () => writeSerial('mc get acceleration'), desc: 'Get acceleration'}
+        ];
+
+        let status = false;
+        try {
+            if (inBootMode) {
+                addLog('⚠️ ESP je v boot módu - hard reset...', 'warning');
+                updatePreFlashProgress(0, commands.length);
+                await performHardReset();
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                updateBootModeStatus(false);
+                addLog('✅ ESP v normálním módu', 'success');
+            }
+
+            for (let i = 0; i < commands.length; i++) {
+                updatePreFlashProgress(i, commands.length);
+                await commands[i].cmd();
+                await new Promise(resolve => setTimeout(resolve, i < 3 ? 500 : 1500));
+            }
+
+            updatePreFlashProgress(commands.length, commands.length);
+            addLog('✅ Pre-flash příkazy dokončeny', 'success');
+            status = true;
+
+        } catch (error) {
+            addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
+            status = false;
+        } finally {
+            await stopSerialRead();
+            await closeSerial();
+        }
+        return status;
+    }
+
+
+    // Post-flash commands with pattern matching
+    async function executePostFlashCommands() {
+        addLog('📋 Spouštím post-flash příkazy...', 'info');
+        currentPhase = 'post-flash';
+
+        const commands = [
+            {cmd: () => performHardReset(), desc: 'Hard reset'},
+            {cmd: () => initializeSerial(), desc: 'Init serial'},
+            {cmd: () => startSerialRead(), desc: 'Start reading'},
+            {cmd: () => writeSerial('memory reset'), desc: 'Memory reset'},
+            {cmd: () => writeSerial('misc get libinfo'), desc: 'Get libinfo'},
+            {cmd: () => writeSerial('mc get iscalibrated'), desc: 'Get calibrated'},
+            {cmd: () => writeSerial('misc get name'), desc: 'Get name'},
+            {cmd: () => writeSerial('misc get machine_id'), desc: 'Get ID'}
+        ];
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (inBootMode) {
+                addLog('⚠️ ESP je v boot módu - hard reset...', 'warning');
+                await performHardReset();
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                updateBootModeStatus(false);
+            }
+
+            for (let i = 0; i < commands.length; i++) {
+                updatePostFlashProgress(i, commands.length);
+                await commands[i].cmd();
+                await new Promise(resolve => setTimeout(resolve, i < 3 ? 500 : (i === 3 ? 3000 : 1000)));
+            }
+
+            updatePostFlashProgress(commands.length, commands.length);
+            logReader = false;
+            endBuffer += '\n========================\n';
+
+            await stopSerialRead();
+            await closeSerial();
+
+            addLog('✅ Post-flash příkazy dokončeny', 'success');
+            return true;
+
+        } catch (error) {
+            addLog(`❌ Chyba post-flash příkazů: ${error.message}`, 'error');
+            await stopSerialRead();
+            await closeSerial();
+            return false;
+        }
+    }
+
+    // Pre-flash commands with advanced pattern matching
+    async function executePreFlashCommands1() {
         addLog('📋 Spouštím pre-flash příkazy...', 'info');
 
         let status = false;
@@ -1538,7 +1726,7 @@
 
 
     // Post-flash commands with pattern matching
-    async function executePostFlashCommands() {
+    async function executePostFlashCommands1() {
         addLog('📋 Spouštím post-flash příkazy...', 'info');
 
         try {
@@ -2036,27 +2224,15 @@
                 customFileActions.classList.add('hidden');
                 showFileItems(false);
 
-                const [type, indexStr] = selectedValue.split('_');
-                const index = parseInt(indexStr);
-                let buildData = null;
-
-                if (type === 'set') {
-                    // Find build by version from set
-                    const setItem = manifestData?.set[index];
-                    if (setItem) {
-                        buildData = manifestData?.builds.find(build => build.version === setItem.version);
-                    }
-                } else if (type === 'build') {
-                    // Direct build selection by index
-                    buildData = manifestData?.builds[index];
-                }
+                const version = versionSelect.options[versionSelect.selectedIndex].dataset.version;
+                const buildData = manifestData?.builds.find(build => build.version === version);
 
                 const versionText = versionSelect.options[versionSelect.selectedIndex].text.trim().split(' ');
-                const version = versionText[1].replace('(', '').replace(')', '');
+                const versionLabel = versionText[1].replace('(', '').replace(')', '');
                 const name = versionText[0];
 
                 addLog('_'.repeat(40));
-                addLog(`📑 Vybraná verze: ${name} (${version})`, 'info');
+                addLog(`📑 Vybraná verze: ${name} (${versionLabel})`, 'info');
                 addLog(`📦 Načítám verzi: ${buildData?.name || 'Unknown'} (${buildData?.version})`, 'info');
 
                 if (buildData) {
@@ -2069,6 +2245,10 @@
                     statusBadge.innerText = 'Neplatné';
                     statusBadge.classList.add('status-error');
                     versionSelect.classList.add('status-error');
+                    showManifestFileItem(1, 'Bootloader', false, false);
+                    showManifestFileItem(2, 'Partitions', false, false);
+                    showManifestFileItem(3, 'Application', false, false);
+
                 }
             }
         } catch (error) {
@@ -2081,13 +2261,16 @@
     }
 
     // Load build files from manifest
+    let validFiles = [false, false, false];
+
     async function loadBuildFiles(buildData) {
         if (!buildData.parts || !Array.isArray(buildData.parts)) {
             addLog('❌ Neplatná struktura build dat', 'error');
             return;
         }
 
-        let allAccepted = [true, true, true];
+        validFiles = [false, false, false];
+        let allAccepted = [false, false, false];
         const fileMapping = {
             'bootloader': 1,
             'partitions': 2,
@@ -2134,6 +2317,7 @@
             } catch (error) {
                 if (error.message.includes('HTTP 404')) {
                     addLog(`❌ Soubor ${fileIndex} nenalezen`, 'error');
+                    return null;
                 } else {
                     addLog(`❌ Chyba při načítání souboru ${fileIndex}: ${error.message}`, 'error');
                 }
@@ -2146,6 +2330,12 @@
         if (isMergedBuild) {
             const part = buildData.parts.find(part => getType(part) === 'merged');
             allAccepted = Array(3).fill(await tryLoad(part, fileMapping['merged'] || 1));
+
+            showManifestFileItem(1, 'Merged', allAccepted[0]);
+            showManifestFileItem(2, 'Partitions', false, false);
+            showManifestFileItem(3, 'Application', false, false);
+
+
         } else {
             for (const part of buildData.parts) {
                 const type = getType(part);
@@ -2156,16 +2346,20 @@
                     addLog(`⚠️ Neznámý typ části: ${type}`, 'warning');
                 }
             }
+
+            for (let i = 0; i < 3; i++) {
+                const typeName = Object.keys(fileMapping).find(key => fileMapping[key] === (i + 1));
+                const label = typeName ? typeName.charAt(0).toUpperCase() + typeName.slice(1) : `File ${i + 1}`;
+                showManifestFileItem(i + 1, label, allAccepted[i]);
+            }
         }
 
-        const versionSelect = document.getElementById('versionSelect');
-        const statusBadge = document.getElementById('statusBadgeFiles');
         statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
         versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
         await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to ensure validation states are updated
 
-        if (allAccepted.every(v => v)) {
+        if (allAccepted.every(v => v) && validFiles.every(v => v === true)) {
             addLog('✅ Všechny soubory načteny úspěšně z manifestu', 'success');
             statusBadge.innerText = 'Platné';
             statusBadge.classList.add('status-success');
@@ -2185,16 +2379,65 @@
         checkFlashReadiness();
     }
 
+    function showManifestFileItem(fileIndex, label, isValid, visible = true) {
+        const fileItem = document.getElementById(`fileItem${fileIndex}`);
+        const fileLabel = fileItem.querySelector('.file-header .labels');
+
+        fileItem.classList.remove('manifest-hidden', 'hidden');
+        fileItem.classList.add('manifest-mode', isValid === true ? 'valid' : validFiles[fileIndex - 1] === false ? 'empty' : 'invalid');
+
+        if (!visible) {
+            fileItem.classList.add('hidden');
+        }
+
+        if (fileLabel) fileLabel.textContent = label;
+
+        fileItem.querySelector('.file-info')?.classList.remove('show');
+        fileItem.querySelector('.file-controls').style.display = 'none';
+    }
+
     // Show/hide file items
     function showFileItems(show) {
         for (let i = 1; i <= 3; i++) {
             const fileItem = document.getElementById(`fileItem${i}`);
+            const fileLabel = fileItem.querySelector('.file-header .labels');
+
             if (show) {
-                fileItem.classList.remove('hidden');
+                fileItem.classList.remove('hidden', 'manifest-mode', 'manifest-hidden');
+                const labels = {1: 'Bootloader / Merged', 2: 'Partitions', 3: 'Application'};
+                if (fileLabel) fileLabel.textContent = labels[i];
             } else {
-                fileItem.classList.add('hidden');
+                fileItem.classList.add('manifest-hidden');
             }
         }
+    }
+
+    async function selectFile(slot) {
+        validFiles[slot - 1] = false;
+        await validateFile(slot);
+        await delay(100);
+
+        if (currentMode === 'custom') {
+            statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+            versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+
+            if (validFiles.every(v => v)) {
+                addLog('✅ Všechny soubory načteny úspěšně', 'success');
+                statusBadge.innerText = 'Platné';
+                statusBadge.classList.add('status-success');
+                versionSelect.classList.add('status-success');
+            } else if (validFiles.some(v => v)) {
+                addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
+                statusBadge.innerText = 'Chyba';
+                statusBadge.classList.add('status-warning');
+                versionSelect.classList.add('status-warning');
+            } else {
+                statusBadge.innerText = 'Neznámé';
+                statusBadge.classList.add('status-unknown');
+                versionSelect.classList.add('status-unknown');
+            }
+        }
+        updateIgnoredState();
     }
 
     // Select folder
@@ -2204,6 +2447,8 @@
 
     // Handle folder selection
     async function handleFolderSelect() {
+        validFiles = [false, false, false];
+
         const folderInput = document.getElementById('folderInput');
         const files = Array.from(folderInput.files);
 
@@ -2216,39 +2461,35 @@
 
         clearAllFiles();
 
-        let allAccepted = [true, true, true];
-
         const mergedFile = files.find(f => f.name.includes('.merged.bin'));
 
         if (mergedFile) {
             addLog('📦 Detekován merged firmware, ostatní soubory budou ignorovány', 'info');
             const accepted = await loadFileToSlot(mergedFile, 1, 0x0000);
-            allAccepted = Array(3).fill(accepted);
+            validFiles = Array(3).fill(accepted);
         } else {
             const bootloaderFile = files.find(f => f.name.endsWith('.bootloader.bin'));
             const partitionsFile = files.find(f => f.name.endsWith('.partitions.bin'));
             const appFile = files.find(f => f.name.endsWith('.ino.bin') && !f.name.includes('bootloader') && !f.name.includes('partitions'));
 
-            if (appFile) allAccepted[2] = await loadFileToSlot(appFile, 3, 0x10000);
-            if (partitionsFile) allAccepted[1] = await loadFileToSlot(partitionsFile, 2, 0x8000);
-            if (bootloaderFile) allAccepted[0] = await loadFileToSlot(bootloaderFile, 1, 0x0000);
+            if (appFile) validFiles[2] = await loadFileToSlot(appFile, 3, 0x10000);
+            if (partitionsFile) validFiles[1] = await loadFileToSlot(partitionsFile, 2, 0x8000);
+            if (bootloaderFile) validFiles[0] = await loadFileToSlot(bootloaderFile, 1, 0x0000);
 
             if (!bootloaderFile && !partitionsFile && !appFile) {
                 addLog('⚠️ Ve složce nebyly nalezeny platné firmware soubory', 'warning');
             }
         }
 
-        const versionSelect = document.getElementById('versionSelect');
-        const statusBadge = document.getElementById('statusBadgeFiles');
         statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
         versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
-        if (allAccepted.every(v => v)) {
+        if (validFiles.every(v => v)) {
             addLog('✅ Všechny soubory načteny úspěšně', 'success');
             statusBadge.innerText = 'Platné';
             statusBadge.classList.add('status-success');
             versionSelect.classList.add('status-success');
-        } else if (allAccepted.some(v => v)) {
+        } else if (validFiles.some(v => v)) {
             addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
             statusBadge.innerText = 'Chyba';
             statusBadge.classList.add('status-warning');
@@ -2290,6 +2531,7 @@
 
     // Clear all files
     function clearAllFiles() {
+        validFiles = [false, false, false];
         for (let i = 1; i <= 3; i++) {
             const fileInput = document.getElementById(`file${i}`);
             fileInput.value = '';
@@ -2298,7 +2540,7 @@
             checkbox.checked = false;
 
             const fileItem = document.getElementById(`fileItem${i}`);
-            fileItem.classList.remove('valid', 'invalid', 'ignored', 'active');
+            fileItem.classList.remove('valid', 'invalid', 'empty', 'ignored', 'active');
 
             const controls = document.getElementById(`fileControls${i}`);
             controls.style.display = 'none';
@@ -2342,21 +2584,50 @@
 
     // Update ignored state for files 2 and 3
     function updateIgnoredState() {
-        const hasMerged = isMergedFirmware() && document.getElementById('fileEnable1').checked;
+        // Zkontroluj, jestli je v prvním slotu merged firmware
+        const file1Input = document.getElementById('file1');
+        const checkbox1 = document.getElementById('fileEnable1');
+        const hasMerged = file1Input.files[0] &&
+            file1Input.files[0].name.includes('.merged.bin') &&
+            checkbox1.checked;
+        if (!checkbox1.checked) document.getElementById(`validationBadge${1}`).classList.remove('show');
+
 
         for (let i = 2; i <= 3; i++) {
             const fileItem = document.getElementById(`fileItem${i}`);
             const validationBadge = document.getElementById(`validationBadge${i}`);
             const checkbox = document.getElementById(`fileEnable${i}`);
 
-            if (hasMerged && checkbox.checked) {
+            if (hasMerged) {
+                // Merged detekován - nastav ignored pro soubory 2 a 3
                 fileItem.classList.add('ignored');
-                fileItem.classList.remove('valid', 'invalid');
+                // fileItem.classList.remove('valid', 'invalid', 'empty');
                 validationBadge.classList.add('show', 'ignored');
-                validationBadge.classList.remove('valid', 'invalid');
+                validationBadge.classList.remove('valid', 'invalid', 'empty');
                 validationBadge.textContent = '⊘ Ignorováno';
             } else {
+                // Není merged - odeber ignored a obnov původní stav
                 fileItem.classList.remove('ignored');
+                validationBadge.classList.remove('ignored');
+                validationBadge.classList.remove('show');
+
+                // Restore validation state from fileValidation
+                if (checkbox.checked && fileValidation[i].valid !== undefined) {
+                    if (!fileValidation[i].info) continue;
+                    if (fileValidation[i].valid) {
+                        fileItem.classList.add('valid');
+                        fileItem.classList.remove('invalid', 'empty');
+                        validationBadge.classList.add('show', 'valid');
+                        validationBadge.classList.remove('invalid', 'empty');
+                        validationBadge.textContent = '✅ Platný';
+                    } else {
+                        fileItem.classList.add('invalid');
+                        fileItem.classList.remove('valid');
+                        validationBadge.classList.add('show', 'invalid');
+                        validationBadge.classList.remove('valid');
+                        validationBadge.textContent = '❌ Neplatný';
+                    }
+                }
             }
         }
     }
@@ -2371,10 +2642,11 @@
 
         if (!file) {
             fileValidation[index] = {valid: false, info: null};
-            fileItem.classList.remove('valid', 'invalid', 'ignored');
+            fileItem.classList.remove('valid', 'invalid', 'empty', 'ignored');
             validationBadge.classList.remove('show');
             fileInfo.classList.remove('show');
             checkFlashReadiness();
+            validFiles[index - 1] = false;
             return;
         }
 
@@ -2399,6 +2671,7 @@
             addLog(`❌ Soubor ${index} nemá příponu .bin`, 'error');
             showValidationResult(index, validationResult, false);
             updateIgnoredState();
+            validFiles[index - 1] = false;
             return;
         }
 
@@ -2407,6 +2680,7 @@
             addLog(`❌ Soubor ${index} má neplatnou velikost (${validationResult.formattedSize})`, 'error');
             showValidationResult(index, validationResult, false);
             updateIgnoredState();
+            validFiles[index - 1] = false;
             return;
         }
 
@@ -2469,17 +2743,21 @@
                 // Check extension match
                 if (isValid && !validationResult.hasExpectedExtension && validationResult.expectedExtension) {
                     addLog(`⚠️ Soubor ${index} nemá očekávanou příponu (${validationResult.expectedExtension})`, 'warning');
+                    validFiles[index - 1] = false;
                 } else if (isValid && hasValidMagic) {
                     addLog(`☑️ Soubor ${index} je platný ESP firmware`, 'valid');
+                    validFiles[index - 1] = true;
                     if (validationResult.isMerged && index === 1) {
                         addLog(`ℹ️ Detekován merged firmware - pro flash potřebujete pouze tento soubor`, 'info');
+                        validFiles = [true, true, true];
                     }
                 } else if (!hasValidMagic) {
                     const expectedMagic = index === 2 ? '0xE9 nebo 0xAA' : '0xE9';
                     addLog(`❌ Soubor ${index} nemá platný ESP magic byte (${expectedMagic})`, 'error');
+                    validFiles[index - 1] = false;
                 }
 
-                showValidationResult(index, validationResult, isValid);
+                showValidationResult(index, validationResult, isValid && validationResult.hasExpectedExtension);
 
                 // Only update ignored state if this is file 1
                 if (index === 1) {
@@ -2492,6 +2770,7 @@
         } catch (error) {
             addLog(`❌ Chyba při validaci souboru ${index}: ${error.message}`, 'error');
             showValidationResult(index, validationResult, false);
+            validFiles[index - 1] = false;
         }
     }
 
@@ -2503,14 +2782,16 @@
 
         fileValidation[index] = {valid: isValid, info: result};
 
+        const isIgnored = fileItem.classList.contains('ignored');
+
         // Update visual feedback
-        fileItem.classList.remove('valid', 'invalid');
+        fileItem.classList.remove('valid', 'invalid', 'empty');
         fileItem.classList.add(isValid ? 'valid' : 'invalid');
 
         validationBadge.classList.add('show');
-        validationBadge.classList.remove('valid', 'invalid');
+        validationBadge.classList.remove('valid', 'invalid', 'empty');
         validationBadge.classList.add(isValid ? 'valid' : 'invalid');
-        validationBadge.textContent = isValid ? '✅ Platný' : '❌ Neplatný';
+        if (!isIgnored) validationBadge.textContent = isValid ? '✅ Platný' : '❌ Neplatný';
 
         // Show file info
         let infoHTML = '<div class="file-info-row"><div class="file-info-label">Název:</div><div class="file-info-value">' + result.fileName + '</div></div>';
@@ -2532,7 +2813,11 @@
         }
 
         fileInfo.innerHTML = infoHTML;
-        fileInfo.classList.add('show');
+        if (document.getElementById('versionSelect').value !== 'custom') { // is from Manifest mode?
+            fileInfo.classList.remove('show');
+        } else {
+            fileInfo.classList.add('show');
+        }
 
         // Check flash readiness after validation
         checkFlashReadiness();
@@ -2595,9 +2880,11 @@
         if (checkbox.checked) {
             controls.style.display = 'grid';
             item.classList.add('active');
+            selectFile(index);
         } else {
             controls.style.display = 'none';
             item.classList.remove('active', 'ignored');
+            validFiles[index - 1] = false;
         }
 
         // Update ignored state when toggling checkboxes
@@ -2605,6 +2892,27 @@
 
         // Check flash readiness
         checkFlashReadiness();
+
+        if (currentMode === 'custom') {
+            statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+            versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
+
+            if (validFiles.every(v => v)) {
+                addLog('✅ Všechny soubory načteny úspěšně', 'success');
+                statusBadge.innerText = 'Platné';
+                statusBadge.classList.add('status-success');
+                versionSelect.classList.add('status-success');
+            } else if (validFiles.some(v => v)) {
+                addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
+                statusBadge.innerText = 'Chyba';
+                statusBadge.classList.add('status-warning');
+                versionSelect.classList.add('status-warning');
+            } else {
+                statusBadge.innerText = 'Neznámé';
+                statusBadge.classList.add('status-unknown');
+                versionSelect.classList.add('status-unknown');
+            }
+        }
     }
 
     // Logging function
@@ -2621,14 +2929,25 @@
     function clearLog() {
         const appLogContainer = document.getElementById('appLogContainer');
         const deviceLogContainer = document.getElementById('deviceLogContainer');
+
         appLogContainer.innerHTML = '<div class="log-entry">Log vymazán...</div>';
         appLogContainer.innerHTML = '';
+        deviceLogContainer.innerHTML = '';
+
+        updateProgress({percentage: 0, state: 'None'});
+        updateFileProgress(1, 0, 0);
+        updateFileProgress(2, 0, 0);
+        updateFileProgress(3, 0, 0);
+
+        progressSection.classList.remove('active');
+        fileProgressBars?.forEach(bar => bar?.classList.remove('active'));
     }
 
     // Update progress bar
     const isString = (str) => typeof str === 'string' && str.length > 0;
     const isNumber = (num) => typeof num === 'number' && !isNaN(num);
     const progressSection = document.getElementById('progressSection');
+    const fileProgressBars = document.querySelector('.file-progress-bar-container');
     const progressBar = document.getElementById('progressBar');
     const progressBarContainer = document.querySelector('.progress-bar-container');
     const textInner = document.getElementById('progressTextInner');
@@ -2637,9 +2956,71 @@
     const taskLabel = document.getElementById('taskLabel');
 
 
-    // Cache for text width measurements
+    function calculateOverallProgress(phaseProgress) {
+        const phases = {
+            'pre-flash': {start: 0, size: 12.5},
+            'flashing': {start: 12.5, size: 75},
+            'post-flash': {start: 87.5, size: 12.5}
+        };
+
+        if (!phases[currentPhase]) return 0;
+
+        const phase = phases[currentPhase];
+        return phase.start + (phaseProgress * phase.size / 100);
+    }
+
+    function updatePreFlashProgress(completed, total) {
+        totalPreFlashCommands = total;
+        completedPreFlashCommands = completed;
+        const phaseProgress = (completed / total) * 100;
+        const overallProgress = calculateOverallProgress(phaseProgress);
+        updateProgress({
+            percentage: overallProgress,
+            state: `Pre-flash: příkaz ${completed}/${total}`
+        });
+    }
+
+    // Funkce pro update progressu post-flash příkazů
+    function updatePostFlashProgress(completed, total) {
+        totalPostFlashCommands = total;
+        completedPostFlashCommands = completed;
+        const phaseProgress = (completed / total) * 100;
+        const overallProgress = calculateOverallProgress(phaseProgress);
+        updateProgress({
+            percentage: overallProgress,
+            state: `Post-flash: příkaz ${completed}/${total}`
+        });
+    }
+
+    // Funkce pro update progressu jednotlivých souborů
+    function updateFileProgress(fileIndex, written, total) {
+        const fileProgress = (written / total) * 100;
+
+        // Update file-specific progress bar in file-item
+        const fileItem = document.getElementById(`fileItem${fileIndex}`);
+        if (fileItem) {
+            const progressBar = fileItem.querySelector('.file-progress-bar');
+            if (progressBar) {
+                progressBar.style.width = fileProgress + '%';
+                if (fileProgress >= 100) {
+                    progressBar.classList.add('complete');
+                }
+            }
+        }
+
+        // Calculate overall progress within flashing phase
+        const filesCompleted = fileIndex - 1;
+        const currentFileProgress = fileProgress / 100;
+        const phaseProgress = ((filesCompleted + currentFileProgress) / totalFilesToFlash) * 100;
+        const overallProgress = calculateOverallProgress(phaseProgress);
+
+        updateProgress({
+            percentage: overallProgress,
+            state: `Nahrávám soubor ${fileIndex}/${totalFilesToFlash}: ${Math.round(fileProgress)}%`
+        });
+    }
+
     function updateProgress({percentage = undefined, state = undefined} = {}) {
-        progressSection.classList.add('active');
         if (isNumber(percentage)) {
             progressBar.style.width = percentage + '%';
 
@@ -3136,6 +3517,148 @@
     }
 
     // Flash firmware
+    async function flashFirmware() {
+        if (!connected) {
+            addLog('❌ ESP není připojeno!', 'error');
+            return;
+        }
+
+        // Clear machine info
+        for (const key of Object.keys(machineInfo)) {
+            delete machineInfo[key];
+        }
+
+        progressSection.classList.add('active');
+        fileProgressBars?.forEach(bar => bar?.classList.add('active'));
+
+        // Reset all file progress bars
+        updateProgress({percentage: 0, state: 'Initializing...'});
+        updateFileProgress(1, 0, 0);
+        updateFileProgress(2, 0, 0);
+        updateFileProgress(3, 0, 0);
+
+        let success = false;
+
+        try {
+            // PRE-FLASH PHASE
+            if (doPreCommands) {
+                currentPhase = 'pre-flash';
+                const preFlashSuccess = await executePreFlashCommands();
+                if (!preFlashSuccess) {
+                    addLog('⚠️ Pre-flash příkazy selhaly', 'warning');
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Prepare files
+            const hasMergedFirmware = isMergedFirmware() && document.getElementById('fileEnable1').checked;
+            const fileArray = [];
+            let hasInvalidFiles = false;
+
+            for (let i = 1; i <= 3; i++) {
+                const checkbox = document.getElementById(`fileEnable${i}`);
+                if (checkbox.checked) {
+                    if (hasMergedFirmware && i > 1) continue;
+
+                    const fileInput = document.getElementById(`file${i}`);
+                    const addressInput = document.getElementById(`address${i}`);
+
+                    if (!fileInput.files[0]) {
+                        addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                        return;
+                    }
+
+                    if (!fileValidation[i].valid) {
+                        addLog(`❌ Soubor ${i} není platný!`, 'error');
+                        hasInvalidFiles = true;
+                        continue;
+                    }
+
+                    const file = fileInput.files[0];
+                    const address = addressInput.value;
+                    const addressDec = parseInt(address, 16);
+                    const fileData = await file.arrayBuffer();
+                    const uint8Data = new Uint8Array(fileData);
+                    const binaryString = uint8ArrayToBinaryString(uint8Data);
+
+                    fileArray.push({
+                        data: binaryString,
+                        address: addressDec,
+                        index: i
+                    });
+                }
+            }
+
+            if (hasInvalidFiles || fileArray.length === 0) {
+                addLog('❌ Nelze nahrát firmware!', 'error');
+                return;
+            }
+
+            // Check boot mode
+            if (!inBootMode) {
+                await enterBootMode();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                if (!inBootMode) {
+                    addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                    return;
+                }
+            }
+
+            // FLASHING PHASE
+            currentPhase = 'flashing';
+            totalFilesToFlash = fileArray.length;
+            currentFileIndex = 0;
+
+            addLog('═'.repeat(32), 'info');
+            addLog('💾 FLASH PHASE', 'info');
+            addLog('═'.repeat(32), 'info');
+
+            setButtonsEnabled(false);
+
+            // Flash with progress tracking
+            const flashOptions = {
+                fileArray: fileArray.map(f => ({data: f.data, address: f.address})),
+                flashSize: 'keep',
+                eraseAll: false,
+                compress: true,
+                reportProgress: (fileIndex, written, total) => {
+                    updateFileProgress(fileIndex + 1, written, total);
+                }
+            };
+
+            await espLoader.writeFlash(flashOptions);
+
+            addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+            updateProgress({percentage: 87.5, state: 'Firmware uploaded!'});
+
+            // POST-FLASH PHASE
+            if (doPostCommands) {
+                currentPhase = 'post-flash';
+                const postFlashSuccess = await executePostFlashCommands();
+                if (!postFlashSuccess) {
+                    addLog('⚠️ Post-flash příkazy selhaly', 'warning');
+                }
+            }
+
+            success = true;
+
+        } catch (error) {
+            addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+            console.error(error);
+        } finally {
+            await performHardReset();
+            addLog(success ? '✅ END OF FLASH PROCESS' : '❌ FLASH FAILED', success ? 'success' : 'error');
+
+            currentPhase = 'idle';
+            updateProgress({
+                percentage: success ? 100 : 0,
+                state: success ? 'Done!' : 'Failed.'
+            });
+
+            setButtonsEnabled(true);
+        }
+    }
+
     async function flashFirmware1() {
         if (!connected) {
             addLog('❌ ESP není připojeno!', 'error');
@@ -3283,8 +3806,8 @@
         }
     }
 
-    // Flash firmware - UPDATE THIS FUNCTION
-    async function flashFirmware() {
+    // Flash firmware
+    async function flashFirmware2() {
         if (!connected) {
             addLog('❌ ESP není připojeno!', 'error');
             return;
@@ -3646,6 +4169,12 @@
             }
 
             updateProgress({percentage: 0, state: 'None'});
+            updateFileProgress(1, 0, 0);
+            updateFileProgress(2, 0, 0);
+            updateFileProgress(3, 0, 0);
+
+            progressSection.classList.remove('active');
+            fileProgressBars?.forEach(bar => bar?.classList.remove('active'));
 
             // Auto hard reset before disconnect
             if (connected && espLoader) {
@@ -3718,13 +4247,6 @@
         document.getElementById('resetBtn').disabled = !enabled;
         document.getElementById('connectBtn').disabled = connected ? true : !enabled;
         document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
-    }
-
-    // Check Web Serial API support
-    if (!("serial" in navigator)) {
-        addLog('❌ Web Serial API není podporováno v tomto prohlížeči!', 'error');
-        addLog('⚠️ Použijte Chrome, Edge nebo Opera.', 'warning');
-        document.getElementById('connectBtn').disabled = true;
     }
 </script>
 
