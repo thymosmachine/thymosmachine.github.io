@@ -84,78 +84,76 @@
         <circle cx="95"
                 cy="18"
                 r="5"/>
-    </g>
 
-    <g transform="translate(128,490) scale(1,1)">
-        <!-- mask - "crop" -->
-        <defs>
-            <mask id="scanner-cutout" maskUnits="userSpaceOnUse">
-                <!-- white part of the mask = the visible part -->
-                <rect x="18"
-                      y="18"
-                      width="28"
-                      height="28"
-                      rx="5"
-                      ry="5"
-                      fill="#ffffff"/>
-                <!-- black part of the mask = the cutout -->
-                <rect x="10"
-                      y="32.5"
-                      width="44"
-                      height="6"
-                      rx="3"
-                      ry="3"
-                      fill="#000000"/>
-            </mask>
-        </defs>
+        <!-- scanner icon -->
+        <g transform="translate(128,490) scale(1,1)">
+            <!-- mask - "crop" -->
+            <defs>
+                <mask id="scanner-cutout" maskUnits="userSpaceOnUse">
+                    <!-- white part of the mask = the visible part -->
+                    <rect x="18"
+                          y="18"
+                          width="28"
+                          height="28"
+                          rx="5"
+                          ry="5"
+                          fill="#ffffff"/>
+                    <!-- black part of the mask = the cutout -->
+                    <rect x="10"
+                          y="32.5"
+                          width="44"
+                          height="6"
+                          rx="3"
+                          ry="3"
+                          fill="#000000"/>
+                </mask>
+            </defs>
 
-        <!-- background -->
-        <rect x="0"
-              y="0"
-              width="64"
-              height="64"
-              rx="12"
-              ry="12"
-              fill="#000000"/>
+            <!-- background -->
+            <rect x="0"
+                  y="0"
+                  width="64"
+                  height="64"
+                  rx="12"
+                  ry="12"
+                  fill="#000000"/>
 
-        <!-- outer corners -->
-        <g fill="none"
-           stroke="#ffffff"
-           stroke-width="4.5"
-           stroke-linecap="round"
-           stroke-linejoin="round">
+            <!-- outer corners -->
+            <g fill="none"
+               stroke-width="4.5"
+               stroke-linecap="round"
+               stroke-linejoin="round">
 
-            <!-- left top -->
-            <path d="M12 22 V20 Q12 12 20 12 H24"/>
+                <!-- left top -->
+                <path d="M12 22 V20 Q12 12 20 12 H24"/>
 
-            <!-- right top -->
-            <path d="M52 22 V20 Q52 12 44 12 H40"/>
+                <!-- right top -->
+                <path d="M52 22 V20 Q52 12 44 12 H40"/>
 
-            <!-- left bottom -->
-            <path d="M12 42 V44 Q12 52 20 52 H24"/>
+                <!-- left bottom -->
+                <path d="M12 42 V44 Q12 52 20 52 H24"/>
 
-            <!-- right bottom -->
-            <path d="M52 42 V44 Q52 52 44 52 H40"/>
+                <!-- right bottom -->
+                <path d="M52 42 V44 Q52 52 44 52 H40"/>
+            </g>
+
+            <!-- central „scanner“ – cropped -->
+            <rect x="18"
+                  y="18"
+                  width="28"
+                  height="28"
+                  rx="5"
+                  ry="5"
+                  mask="url(#scanner-cutout)"/>
+
+            <!-- vertical line -->
+            <line x1="12"
+                  y1="32"
+                  x2="52"
+                  y2="32"
+                  stroke-width="5"
+                  stroke-linecap="round"/>
         </g>
-
-        <!-- central „scanner“ – cropped -->
-        <rect x="18"
-              y="18"
-              width="28"
-              height="28"
-              rx="5"
-              ry="5"
-              fill="#ffffff"
-              mask="url(#scanner-cutout)"/>
-
-        <!-- vertical line -->
-        <line x1="12"
-              y1="32"
-              x2="52"
-              y2="32"
-              stroke="#ffffff"
-              stroke-width="5"
-              stroke-linecap="round"/>
     </g>
 
     <!-- QR code -->
