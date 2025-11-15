@@ -5,15 +5,23 @@
   "set": [
     {
       "label": "Stable Release",
-      "version": "0.0.8"
+      "version": "0.0.7"
     },
     {
       "label": "Latest Release",
       "version": "0.0.6"
     },
-        {
+    {
       "label": "Default Release",
-      "version": "0.0.7"
+      "version": "0.0.6"
+    },
+    {
+      "label": "Experimental Release",
+      "version": "0.0.9"
+    },
+    {
+      "label": "Test Release",
+      "version": "0.0.10"
     }
   ],
 
@@ -238,7 +246,65 @@
         {
           "type": "partitions",
           "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
-          "offset": 32768
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "buildFW2",
+      "version": "0.0.9",
+      "parts": [
+        {
+          "type": "application",
+          "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "offset": 65536
+        },
+        {
+          "type": "bootloader",
+          "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "buildFW3",
+      "version": "0.0.11",
+      "parts": [
+        {
+          "type": "application",
+          "path": "",
+          "offset": 65536
+        },
+        {
+          "type": "bootloader",
+          "path": "./buildFW2/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "offset": 0
+        },
+        {
+          "type": "partitions",
+          "path": "./partitions",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "testBuild",
+      "version": "0.0.120",
+      "parts": [
+        {
+          "type": "application",
+          "path": "./testbuild/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bin",
+          "offset": 65536
+        },
+        {
+          "type": "bootloader",
+          "path": "./testbuild/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.bootloader.bin",
+          "offset": 0
+        },
+        {
+          "type": "partitions",
+          "path": "./testbuild/esp32.esp32.esp32s3/09_ESP32_LM_mainboard.ino.partitions.bin",
+          "offset": 0
         }
       ]
     }
