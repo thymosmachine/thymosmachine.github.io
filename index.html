@@ -6636,8 +6636,6 @@
                     let dataEntries = request2.result;
                     const experimentInfo = dataEntries[0];
 
-                    console.log(experimentInfo)
-
                     let date = "Unknown date";
                     const expDate = experimentInfo.experimentDate;
                     if (expDate) {
@@ -13596,8 +13594,6 @@
                 THYMOS_DEVICES.push(port);
             }
 
-            console.log(THYMOS_DEVICES)
-
             if (THYMOS_DEVICES.length === 0) return;
 
             console.info(`%c\n👀 ${THYMOS_DEVICES.length > 1 ? THYMOS_DEVICES.length : 'A'} Thymos device${THYMOS_DEVICES.length > 1 ? 's' : ''} has been connected.`, "color: gray; font-weight: bold;");
@@ -14314,7 +14310,7 @@
                     (async () => {
                         if (isConnected) await disconnectSerial({override: true, verbose: false});
                         await sleep(100);
-                        window.location.href = './hermes.html';
+                        window.location.href = './hermes';
                     })();
                     return;
                 case 'minimal':
@@ -14536,7 +14532,7 @@
         // Open in new tab:         window.open('about.html', '_blank', 'noopener,noreferrer')
         // Open in new window:      window.open('about.html', '_blank', 'noopener,noreferrer,width=800,height=600')
 
-        $ID("aboutButton")?.addEventListener("click", async () => window.open('about.html', '_blank', 'noopener,noreferrer'));
+        $ID("aboutButton")?.addEventListener("click", async () => window.open('about', '_blank', 'noopener,noreferrer'));
 
         $ID("updateMachButton")?.addEventListener("click", async () => {
             // const preloadScreen = $ID("preloadScreen");
@@ -14547,7 +14543,7 @@
 
             await disconnectSerial({override: true});
             await sleep(100);
-            window.location.href = './update.html';
+            window.location.href = './update';
         });
 
         $ID("rebootButton")?.addEventListener("click", async () => await rebootDevice());
@@ -14924,6 +14920,8 @@
         let conn = null;
         let peer = null;
 
+        console.info('🌐 Initializing Host Peer-to-Peer connection...');
+
         function generateId() {
             const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -14936,12 +14934,15 @@
         }
 
         const myId = generateId();
+        console.info('\t🆔 Generated Host ID: ' + myId);
 
         peer = new Peer(myId, {
             debug: 2
         });
+        console.info('\t🔧 Peer object created, connecting to PeerJS server...');
 
         peer.on('open', (id) => {
+            console.log('🌐 Peer connection opened with ID: ' + id);
             hostIdDiv.textContent = id;
             copyBtn.style.display = 'inline-flex';
             statusDiv.className = 'status ready';
@@ -14950,6 +14951,7 @@
         });
 
         peer.on('error', (err) => {
+            console.error('❌ Peer error: ', err);
             statusDiv.className = 'status error';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
             log('❌ Error: ' + err);
