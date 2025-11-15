@@ -393,8 +393,7 @@
             --containers-bg: var(--dark-color);
 
             --chart-text: black;
-            --charts-bg: #e6e6e6;
-            --charts-bg-active: white;
+            --charts-bg: white;
             --chart-border: lightgray;
 
             --text-color: black;
@@ -439,8 +438,7 @@
             /*--page-bg: var(--darker-color);*/
             /*--color-bg: var(--dark-light-color);*/
             /*--containers-bg: var(--gray-color);*/
-            /*--charts-bg: var(--gray-color);*/
-            /*--charts-bg-active: var(--mid-dark-color);*/
+            /*--charts-bg: var(--mid-dark-color);*/
             /*--text-color: white;*/
             /*--slider-bg: var(--mid-dark-color);*/
             /*--input-bg: var(--mid-dark-color);*/
@@ -455,8 +453,7 @@
             --containers-bg: #303030;
 
             --chart-text: black;
-            --charts-bg: #262626;
-            --charts-bg-active: #353535;
+            --charts-bg: #353535;
             --chart-border: #4e4e4e;
 
             --text-color: #b4b4b4;
@@ -901,6 +898,12 @@
             border: 2px solid var(--chart-border);
             padding: 1em 0.5em 1.5em;
             margin: 15px 0 10px;
+
+            filter: grayscale(0.6) brightness(0.9) opacity(0.6);
+        }
+
+        #chartsWrapper .active {
+            filter: unset;
         }
 
         #chartsContainer, #chartsInfoContainer {
@@ -1711,6 +1714,7 @@
             --gray-200: #e5e7eb;
             --gray-300: #d1d5db;
             --gray-400: #9ca3af;
+            --gray-500: #6b7280;
             --gray-600: #4b5563;
             --gray-700: #374151;
             --gray-900: #111827;
@@ -1719,84 +1723,54 @@
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
         }
 
+        body[data-theme="light"] {
+            --wait-bg: color-mix(in srgb, var(--page-bg), var(--gray-900) 5%);
+            --wait-txt: var(--gray-600);
+        }
+
+        body[data-theme="dark"] {
+            --wait-bg: var(--containers-bg);
+            --wait-txt: var(--gray-400);
+        }
+
+        body[data-theme="dark"] .section {
+            filter: grayscale(0.45);
+        }
 
         .section {
             width: 100%;
         }
 
-        .section h2 {
-            color: var(--gray-900);
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            text-align: center;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
         .section h3 {
             color: var(--gray-900);
-            font-size: 1.25rem;
-            margin-bottom: 16px;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 2px solid var(--gray-200);
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
         .section h3 svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary);
             flex-shrink: 0;
-            width: 1.5em;
-            height: auto;
-            aspect-ratio: 1/1;
-            fill: currentColor;
-            vertical-align: middle;
-            margin-right: 8px;
         }
 
         .card {
-            background: white;
+            background: var(--page-bg);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 8px;
             box-shadow: var(--shadow-lg);
-            border: 1px solid var(--gray-200);
+            border: 1px solid var(--border-color);
+            gap: var(--gap);
         }
 
         .statusContainer .card {
             height: -webkit-fill-available;
-        }
-
-        .section .role-selector label {
-            display: block;
-            font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 8px;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .section .role-selector select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--gray-300);
-            border-radius: 12px;
-            font-size: 1rem;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .section .role-selector select:hover {
-            border-color: var(--primary);
-        }
-
-        .section .role-selector select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .status {
@@ -1804,7 +1778,6 @@
             border-radius: 12px;
             font-weight: 600;
             text-align: center;
-            margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1813,8 +1786,8 @@
         }
 
         .status.waiting {
-            background: var(--gray-100);
-            color: var(--gray-600);
+            background: var(--wait-bg);
+            color: var(--wait-txt);
         }
 
         .status.ready {
@@ -1841,7 +1814,7 @@
         }
 
         .status.waiting .status-icon {
-            background: var(--gray-600);
+            background: var(--wait-txt);
         }
 
         .status.ready .status-icon {
@@ -1997,15 +1970,6 @@
             gap: 12px;
             flex-wrap: wrap;
         }
-
-
-        .section h3 {
-            color: var(--gray-900);
-            font-size: 1.25rem;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--gray-200);
-        }
     </style>
 </head>
 
@@ -2093,9 +2057,9 @@
     <section class="statusContainer outsetShadow" style="display: grid; grid-template-columns: 1fr 1fr;">
         <!-- Connection Section -->
         <article class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div class="status waiting">
+            <div class="status waiting" id="appStatus">
                 <span class="status-icon"></span>
-                <span id="connectionStatus"> 🔴 Disconnected</span>
+                <span id="connectionStatus">Idle</span>
             </div>
             <div class="inlineDiv" style="    flex-wrap: wrap;">
                 <div class="inlineDiv" style="width: max-content">
@@ -2131,8 +2095,8 @@
                     <span>Initializing...</span>
                 </div>
 
-                <div class="button-group" style="justify-content: center;">
-                    <button class="btn btn-danger" id="hostDisconnect" style="display:none;">
+                <div class="button-group" id="hostButtonsWrapper" style="display: none; justify-content: center;">
+                    <button class="btn btn-danger" id="hostDisconnect">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                              style="width: 18px; height: 18px; fill: currentColor;">
                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -2663,10 +2627,11 @@
                     </span>
                 </article>
 
-                <hr data-system-level="100">
+                <hr data-system-level="100" data-eq-type="Flx, InB, HBr">
 
-                <h4 data-system-level="100">📜 Interim results:</h4>
-                <article id="interimCalcWrapper" class="inputsContainer" data-system-level="100">
+                <h4 data-system-level="100" data-eq-type="Flx, InB, HBr">📜 Interim results:</h4>
+                <article id="interimCalcWrapper" class="inputsContainer" data-system-level="100"
+                         data-eq-type="Flx, InB, HBr">
 
                     <div class="input-group data-eq" data-eq-type="Flx">
                         <label for="outputIy">Moment of Inertia \( I_{y} \)<span
@@ -6945,7 +6910,7 @@
         }
 
         UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "⏯️ Activate Charts";
-        $ID("chartsWrapper").style.background = liveUpdate ? "var(--charts-bg-active)" : "var(--charts-bg)";
+        $ID("chartsWrapper").classList.toggle("active", liveUpdate);
 
         if (isExperimentRunning && liveUpdate) loadDataFromDBToChart();
 
@@ -14955,6 +14920,7 @@
         const dot = document.getElementById('dot');
         const copyBtn = document.getElementById('copyHostId');
         const disconnectBtn = document.getElementById('hostDisconnect');
+        const btnWrapper = document.getElementById('hostButtonsWrapper');
         let conn = null;
         let peer = null;
 
@@ -15025,7 +14991,7 @@
                 conn.close();
                 conn = null;
             }
-            disconnectBtn.style.display = 'none';
+            btnWrapper.style.display = 'none';
             statusDiv.className = 'status ready';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
             log('🔌 Disconnected by user');
@@ -15041,7 +15007,7 @@
                 log('✅ Connected to controller!');
                 statusDiv.className = 'status connected';
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Connected to Controller</span>';
-                disconnectBtn.style.display = 'inline-flex';
+                btnWrapper.style.display = 'inline-flex';
             });
 
             conn.on('data', (cmd) => {
@@ -15111,7 +15077,7 @@
                 log('❌ Connection closed');
                 statusDiv.className = 'status ready';
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
-                disconnectBtn.style.display = 'none';
+                btnWrapper.style.display = 'none';
                 conn = null;
             });
         });
