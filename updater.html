@@ -1406,9 +1406,9 @@
                 addLog(current);
 
                 await handleVersionChange();
-                await delay(100); // Wait for UI update
+                await delay(200); // Wait for UI update
                 await flashFirmware();
-                await delay(500); // Wait between flashes
+                await delay(300); // Wait between flashes
             } catch (error) {
                 endBuffer += `\n❌ Error flashing version [${i + 1}]: ${error.message}`;
                 endBuffer += '\n========================\n';
@@ -2454,6 +2454,11 @@
 
         setButtonsEnabled(false);
 
+        // hide all file items
+        for (let i = 1; i <= 3; i++) {
+            showManifestFileItem(i, '', false, false);
+        }
+
         try {
             // Clear current files
             clearAllFiles();
@@ -2498,10 +2503,6 @@
                     statusBadge.innerText = 'Invalid';
                     statusBadge.classList.add('status-error');
                     versionSelect.classList.add('status-error');
-                    showManifestFileItem(1, 'Bootloader', false, false);
-                    showManifestFileItem(2, 'Partitions', false, false);
-                    showManifestFileItem(3, 'Application', false, false);
-
                 }
             }
         } catch (error) {
