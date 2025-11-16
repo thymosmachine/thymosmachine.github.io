@@ -210,15 +210,12 @@
             cursor: pointer;
         }
 
-        .file-header .labels {
+        .file-header label {
             font-weight: 600;
             color: #333;
             cursor: pointer;
             flex: 1;
             align-self: baseline;
-        }
-
-        .file-header .labels, .file-header label {
             margin-bottom: 0;
         }
 
@@ -297,11 +294,14 @@
             flex-direction: column;
         }
 
-        label, .labels {
+        label {
             font-weight: 500;
             color: #555;
             margin-bottom: 5px;
             font-size: 14px;
+
+            pointer-events: none;
+            cursor: default;
         }
 
         input[type="text"],
@@ -741,11 +741,6 @@
             width: 0;
             margin: 0;
         }
-
-        .file-item.manifest-mode .file-header .labels {
-            pointer-events: none;
-            cursor: default;
-        }
     </style>
 </head>
 <body>
@@ -767,7 +762,8 @@
         <p class="subtitle">Web interface for uploading firmware to ESP devices</p>
 
         <div class="info-box">
-            ℹ️ Connect the ESP device via USB and click "Connect ESP". Select a firmware version or upload your own files.
+            ℹ️ Connect the ESP device via USB and click "Connect ESP". Select a firmware version or upload your own
+            files.
         </div>
 
         <div class="warning-box" id="bootModeWarning">
@@ -868,9 +864,8 @@
             <!-- File 1 -->
             <div class="file-item" id="fileItem1">
                 <div class="file-header">
-                    <label for="fileEnable1"><input type="checkbox" id="fileEnable1"
-                                                    onchange="toggleFileItem(1)"></label>
-                    <span class="labels">Bootloader / Merged</span>
+                    <input type="checkbox" id="fileEnable1" onchange="toggleFileItem(1)">
+                    <label for="fileEnable1">Bootloader / Merged</label>
                     <span class="validation-badge" id="validationBadge1"></span>
                 </div>
                 <div class="file-progress-bar-container">
@@ -893,9 +888,8 @@
             <!-- File 2 -->
             <div class="file-item" id="fileItem2">
                 <div class="file-header">
-                    <label for="fileEnable2"><input type="checkbox" id="fileEnable2"
-                                                    onchange="toggleFileItem(2)"></label>
-                    <span class="labels">Partitions</span>
+                    <input type="checkbox" id="fileEnable2" onchange="toggleFileItem(2)">
+                    <label for="fileEnable2">Partitions</label>
                     <span class="validation-badge" id="validationBadge2"></span>
                 </div>
                 <div class="file-progress-bar-container">
@@ -917,9 +911,9 @@
             <!-- File 3 -->
             <div class="file-item" id="fileItem3">
                 <div class="file-header">
-                    <label for="fileEnable3"><input type="checkbox" id="fileEnable3"
-                                                    onchange="toggleFileItem(3)"></label>
-                    <span class="labels">Application</span>
+                    <input type="checkbox" id="fileEnable3"
+                           onchange="toggleFileItem(3)">
+                    <label for="fileEnable3">Application</label>
                     <span class="validation-badge" id="validationBadge3"></span>
                 </div>
                 <div class="file-progress-bar-container">
@@ -1118,7 +1112,7 @@
             e.returnValue = '';
             await safeDisconnect();
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
 
             window.close();
         }
@@ -1133,7 +1127,7 @@
         if (inBootMode) {
             addLog('⚠️ ESP is in boot mode, performing hard reset...', 'warning');
             await hardReset();
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
         }
 
         try {
@@ -1145,15 +1139,15 @@
             }
 
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3_000);
 
             // Test commands
             await writeSerial('help');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await delay(2_000);
 
             // const result = await sendCommandAndWait(
             //     'misc get name',
-            //     3000,
+            //     3_000,
             //     {
             //         regex: /\s*(.+):\s*(.+)/,
             //         position: 'any',
@@ -1166,15 +1160,15 @@
             //     addLog(`📌 Name: ${result.groups[1]}`, 'success');
             // }
             //
-            // await new Promise(resolve => setTimeout(resolve, 3000 + 2000));
+            // await delay(3_000 + 2_000);
 
             await writeSerial('misc get libinfo');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await delay(2_000);
             await writeSerial('mc get iscalibrated');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await delay(2_000);
 
 
-            await new Promise(resolve => setTimeout(resolve, 4000));
+            await delay(4_000);
             addLog('✅ Test completed', 'success');
         } catch (error) {
             addLog(`❌ Error during test: ${error.message}`, 'error');
@@ -1210,9 +1204,9 @@
                 addLog(current);
 
                 await handleVersionChange();
-                await new Promise(resolve => setTimeout(resolve, 100)); // Wait for UI update
+                await delay(100); // Wait for UI update
                 await flashFirmware();
-                await new Promise(resolve => setTimeout(resolve, 500)); // Wait between flashes
+                await delay(500); // Wait between flashes
             } catch (error) {
                 endBuffer += `\n❌ Error flashing version [${i + 1}]: ${error.message}`;
                 endBuffer += '\n========================\n';
@@ -1220,7 +1214,7 @@
             }
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await delay(1_500);
         console.log('All versions flashed.');
         addLog('✅ All versions have been flashed.', 'success');
         console.log(endBuffer);
@@ -1365,22 +1359,22 @@
     // Helper functions for common response patterns
 
     // Wait for OK response
-    async function waitForStr(command, string, timeout = 5000) {
+    async function waitForStr(command, string, timeout = 5_000) {
         return await sendCommandAndWait(command, timeout, string);
     }
 
     // Wait for specific value with regex
-    async function waitForValue(command, regex, timeout = 5000) {
+    async function waitForValue(command, regex, timeout = 5_000) {
         return await sendCommandAndWait(command, timeout, {regex: regex});
     }
 
     // Wait for multiple possible responses
-    async function waitForAny(command, possibleResponses, timeout = 5000) {
+    async function waitForAny(command, possibleResponses, timeout = 5_000) {
         return await sendCommandAndWait(command, timeout, possibleResponses);
     }
 
     // Get MAC address with various formats
-    async function getMacAddress(timeout = 5000) {
+    async function getMacAddress(timeout = 5_000) {
         const macPatterns = [
             {
                 regex: /MAC:\s*([0-9A-Fa-f:]{17})/,
@@ -1406,7 +1400,7 @@
     }
 
     // Get version info
-    async function getVersion(timeout = 5000) {
+    async function getVersion(timeout = 5_000) {
         const versionPatterns = [
             {
                 regex: /version:\s*([0-9.]+)/i,
@@ -1480,7 +1474,7 @@
     }
 
     // Send command and wait for response
-    async function sendCommandAndWait(command, timeout = 5000, expectedResponse = null) {
+    async function sendCommandAndWait(command, timeout = 5_000, expectedResponse = null) {
         if (!serialWriter || !serialReader) {
             addLog('❌ Serial port is not ready', 'error');
             return null;
@@ -1502,7 +1496,7 @@
                 ]);
 
                 if (done || !value) {
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                    await delay(50);
                     continue;
                 }
 
@@ -1525,7 +1519,7 @@
 
                 // If no expected response specified, return after short delay
                 if (!expectedResponse && responses.length > 0) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await delay(100);
                     return responses;
                 }
             }
@@ -1562,7 +1556,7 @@
                 addLog('⚠️ ESP is in boot mode - hard reset...', 'warning');
                 updatePreFlashProgress(0, commands.length);
                 await performHardReset();
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await delay(2_000);
                 updateBootModeStatus(false);
                 addLog('✅ ESP in normal mode', 'success');
             }
@@ -1570,7 +1564,7 @@
             for (let i = 0; i < commands.length; i++) {
                 updatePreFlashProgress(i, commands.length);
                 await commands[i].cmd();
-                await new Promise(resolve => setTimeout(resolve, i < 3 ? 500 : 1500));
+                await delay(i < 3 ? 500 : 1_500);
             }
 
             updatePreFlashProgress(commands.length, commands.length);
@@ -1605,19 +1599,19 @@
         ];
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
 
             if (inBootMode) {
                 addLog('⚠️ ESP is in boot mode - hard reset...', 'warning');
                 await performHardReset();
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await delay(2_000);
                 updateBootModeStatus(false);
             }
 
             for (let i = 0; i < commands.length; i++) {
                 updatePostFlashProgress(i, commands.length);
                 await commands[i].cmd();
-                await new Promise(resolve => setTimeout(resolve, i < 3 ? 500 : (i === 3 ? 3000 : 1000)));
+                await delay(i < 3 ? 500 : (i === 3 ? 3_000 : 1_000));
             }
 
             updatePostFlashProgress(commands.length, commands.length);
@@ -1650,7 +1644,7 @@
                 addLog('🔄 Performing hard reset...', 'valid');
 
                 await performHardReset();
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
+                await delay(2_000); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
                 addLog('✅ ESP is now in normal mode', 'success');
@@ -1663,12 +1657,12 @@
 
             // Start reading in background
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3_000);
 
-            // const response_name = await sendCommandAndWait('misc get name', 5000);
-            // const response_id = await sendCommandAndWait('misc get machine_id', 5000);
-            // const response_speed = await sendCommandAndWait('mc get speed', 5000);
-            // const response_accel = await sendCommandAndWait('mc get acceleration', 5000);
+            // const response_name = await sendCommandAndWait('misc get name', 5_000);
+            // const response_id = await sendCommandAndWait('misc get machine_id', 5_000);
+            // const response_speed = await sendCommandAndWait('mc get speed', 5_000);
+            // const response_accel = await sendCommandAndWait('mc get acceleration', 5_000);
             // console.log('Machine Name:', response_name);
             // if (response_name && response_name.length > 0) {
             //     machineInfo.name = response_name[0];
@@ -1687,22 +1681,22 @@
             // }
 
             await writeSerial('misc get name');
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await delay(1_500);
             await writeSerial('misc get machine_id');
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await delay(1_500);
             await writeSerial('mc get speed');
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await delay(1_500);
             await writeSerial('mc get acceleration');
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await delay(1_500);
 
             // Your custom commands here
-            // const result = await sendCommandAndWait('misc get name', 3000, {
+            // const result = await sendCommandAndWait('misc get name', 3_000, {
             //     regex: /\s*(.+):\s*(.+)/,
             //     position: 'any',
             //     description: 'Machine name'
             // });
 
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3_000);
 
             addLog('✅ Pre-flash commands completed', 'success');
             status = true;
@@ -1727,7 +1721,7 @@
         addLog('📋 Running post-flash commands...', 'info');
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait
+            await delay(500); // Wait
 
             // Check if ESP is in boot mode
             if (inBootMode) {
@@ -1735,7 +1729,7 @@
                 addLog('🔄 Performing hard reset...', 'valid');
 
                 await performHardReset();
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
+                await delay(2_000); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
                 addLog('✅ ESP is now in normal mode', 'success');
@@ -1748,32 +1742,32 @@
 
             // Start reading in background
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3_000);
             logReader = true;
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await delay(100);
 
             // Your post-flash commands here
             await writeSerial('memory reset');
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3_000);
             await writeSerial('misc get libinfo');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await delay(2_000);
             await writeSerial('mc get iscalibrated');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await delay(1_000);
             await writeSerial('misc get name');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await delay(1_000);
             await writeSerial('misc get machine_id');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await delay(1_000);
 
             // Example: Restore machine info
             // if (machineInfo.name) {
             //     await writeSerial(`misc set name ${machineInfo.name}`);
-            //     await new Promise(resolve => setTimeout(resolve, 50));
+            //     await delay(50);
             // }
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
             logReader = false;
             endBuffer += '\n========================\n';
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await delay(100);
 
             await stopSerialRead();
             await closeSerial();
@@ -1790,43 +1784,43 @@
     }
 
     // // 1. Simple string
-    // await sendCommandAndWait('AT', 1000, 'OK');
+    // await sendCommandAndWait('AT', 1_000, 'OK');
     //
     // // 2. RegExp
-    // await sendCommandAndWait('AT+GMR', 2000, /version:\s*([0-9.]+)/);
+    // await sendCommandAndWait('AT+GMR', 2_000, /version:\s*([0-9.]+)/);
     //
     // // 3. Multiple options (string)
-    // await sendCommandAndWait('AT', 1000, ['OK', 'ok', 'OK\r\n']);
+    // await sendCommandAndWait('AT', 1_000, ['OK', 'ok', 'OK\r\n']);
     //
     // // 4. Multiple options (regex)
-    // await sendCommandAndWait('AT+MAC?', 2000, [
+    // await sendCommandAndWait('AT+MAC?', 2_000, [
     //     /MAC:\s*([0-9A-Fa-f:]{17})/,
     //     /MAC:\s*([0-9A-Fa-f-]{17})/,
     //     /([0-9A-Fa-f]{12})/
     // ]);
     //
     // // 5. With position
-    // await sendCommandAndWait('AT+GMR', 2000, {
+    // await sendCommandAndWait('AT+GMR', 2_000, {
     //     string: 'OK',
     //     position: 'last'  // Or 'first', or 0, 1, 2...
     // });
     //
     // // 6. Regex with position and description
-    // await sendCommandAndWait('AT+STATUS', 2000, {
+    // await sendCommandAndWait('AT+STATUS', 2_000, {
     //     regex: /STATUS:(\d+)/,
     //     position: 'any',
     //     description: 'Device status code'
     // });
     //
     // // 7. Combination of multiple conditions
-    // await sendCommandAndWait('AT+INFO', 3000, [
+    // await sendCommandAndWait('AT+INFO', 3_000, [
     //     {regex: /version:\s*([0-9.]+)/, position: 0},
     //     {string: 'OK', position: 'last'},
     //     {regex: /ERROR/i, description: 'Error response'}
     // ]);
     //
     // // 8. Using returned data
-    // const result = await sendCommandAndWait('AT+MAC?', 2000, {
+    // const result = await sendCommandAndWait('AT+MAC?', 2_000, {
     //     regex: /MAC:\s*([0-9A-Fa-f:]{17})/
     // });
     //
@@ -1849,34 +1843,34 @@
 
             // Start reading in background
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3_000);
 
             // // Example commands - customize as needed
             // await writeSerial('AT'); // Test command
-            // await new Promise(resolve => setTimeout(resolve, 200));
+            // await delay(200);
             //
             // await writeSerial('AT+GMR'); // Get version
-            // await new Promise(resolve => setTimeout(resolve, 500));
+            // await delay(500);
             //
             // // Or use sendCommandAndWait for specific responses
-            // const response = await sendCommandAndWait('AT+GMR', 2000, 'OK');
+            // const response = await sendCommandAndWait('AT+GMR', 2_000, 'OK');
 
             // Test basic communication
             // await writeSerial('AT');
-            // await new Promise(resolve => setTimeout(resolve, 2000));
-            // let result = await waitForStr('AT', 2000);
+            // await delay(2_000);
+            // let result = await waitForStr('AT', 2_000);
             // if (!result.success) {
             //     addLog('⚠️ Device does not respond to AT commands', 'warning');
             // }
             //
             // Get MAC address with multiple format support
-            // const mac = await getMacAddress(3000);
+            // const mac = await getMacAddress(3_000);
             // if (mac) {
             //     addLog(`📌 MAC address: ${mac}`, 'success');
             // }
             //
             // // Get version with multiple format support
-            // const version = await getVersion(3000);
+            // const version = await getVersion(3_000);
             // if (version) {
             //     addLog(`📌 Firmware version: ${version}`, 'success');
             // }
@@ -1884,7 +1878,7 @@
             // Custom command with regex
             // result = await sendCommandAndWait(
             //     'AT+CIPSTATUS',
-            //     3000,
+            //     3_000,
             //     [
             //         {regex: /STATUS:(\d+)/, description: 'Connection status'},
             //         {string: 'OK', position: 'last'}
@@ -1898,7 +1892,7 @@
             // // Wait for specific response at specific position
             // result = await sendCommandAndWait(
             //     'AT+GMR',
-            //     3000,
+            //     3_000,
             //     {
             //         regex: /SDK version:([0-9.]+)/,
             //         position: 'any',
@@ -1911,10 +1905,10 @@
             // }
 
 
-            const response_name = await sendCommandAndWait('misc get name', 2000);
-            const response_id = await sendCommandAndWait('misc get machine_id', 2000);
-            const response_speed = await sendCommandAndWait('mc get speed', 2000);
-            const response_accel = await sendCommandAndWait('mc get acceleration', 2000);
+            const response_name = await sendCommandAndWait('misc get name', 2_000);
+            const response_id = await sendCommandAndWait('misc get machine_id', 2_000);
+            const response_speed = await sendCommandAndWait('mc get speed', 2_000);
+            const response_accel = await sendCommandAndWait('mc get acceleration', 2_000);
 
             if (response_name && response_name.length > 0) {
                 machineInfo.name = response_name[0];
@@ -1953,7 +1947,7 @@
 
         try {
             // Wait for device to boot
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await delay(2_000);
 
             // Initialize serial communication
             if (!await initializeSerial()) {
@@ -1962,19 +1956,19 @@
 
             // Start reading
             startSerialRead();
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
 
             // // Example commands - customize as needed
             // await writeSerial('AT'); // Test command
-            // await new Promise(resolve => setTimeout(resolve, 200));
+            // await delay(200);
             //
             // await writeSerial('AT+RST'); // Reset device
-            // await new Promise(resolve => setTimeout(resolve, 500));
+            // await delay(500);
 
             // // Wait for boot message with multiple patterns
             // let result = await sendCommandAndWait(
             //     '', // No command, just wait for boot message
-            //     5000,
+            //     5_000,
             //     [
             //         {regex: /ready/i, description: 'Boot ready'},
             //         {regex: /boot.*success/i, description: 'Boot success'},
@@ -1987,13 +1981,13 @@
             // }
             //
             // // Test communication
-            // result = await waitForStr('AT', 2000);
+            // result = await waitForStr('AT', 2_000);
             // if (result.success) {
             //     addLog('✅ Communication after flash is working', 'success');
             // }
             //
             // // Verify new version
-            // const version = await getVersion(3000);
+            // const version = await getVersion(3_000);
             // if (version) {
             //     addLog(`📌 New firmware version: ${version}`, 'success');
             // }
@@ -2001,7 +1995,7 @@
             // // Save configuration (example)
             // result = await sendCommandAndWait(
             //     'AT+SYSSTORE=1',
-            //     2000,
+            //     2_000,
             //     [
             //         'OK',
             //         {regex: /STORE.*OK/i}
@@ -2009,26 +2003,26 @@
             // );
 
             await writeSerial('memory reset'); // Reset memory
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
 
             if (machineInfo.name) {
                 await writeSerial(`misc set name ${machineInfo.name}`);
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await delay(50);
             }
             if (machineInfo.id) {
                 await writeSerial(`misc set machine_id ${machineInfo.id}`);
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await delay(50);
             }
             if (machineInfo.speed) {
                 await writeSerial(`mc set speedmm ${machineInfo.speed}`);
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await delay(50);
             }
             if (machineInfo.acceleration) {
                 await writeSerial(`mc set acceleration ${machineInfo.acceleration}`);
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await delay(50);
             }
 
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await delay(300);
 
             await stopSerialRead();
             await closeSerial();
@@ -2091,10 +2085,10 @@
     function populateVersionSelector() {
         const versionSelect = document.getElementById('versionSelect');
 
-        const createDivider = (symbol = '─') => {
+        const createDivider = (symbol = '—', count = 20) => {
             const divider = document.createElement('option');
             divider.disabled = true;
-            divider.textContent = symbol.repeat(20);
+            divider.textContent = symbol.repeat(count);
             return divider;
         };
 
@@ -2140,7 +2134,7 @@
                     versionSelect.appendChild(option);
                 });
 
-                versionSelect.appendChild(createDivider('—'));
+                versionSelect.appendChild(createDivider('─', 28));
             }
         } else {
             // No manifest, only custom option
@@ -2259,7 +2253,18 @@
     }
 
     // Load build files from manifest
-    let validFiles = [false, false, false];
+    const fileMapping = {
+        'bootloader': 1,
+        'partitions': 2,
+        'application': 3,
+        'merged': 1
+    };
+
+    const validFiles = [null, null, null];
+    // null = not loaded (empty)
+    // undefined = ???
+    // true = loaded valid
+    // false = loaded invalid
 
     async function loadBuildFiles(buildData) {
         if (!buildData.parts || !Array.isArray(buildData.parts)) {
@@ -2267,14 +2272,12 @@
             return;
         }
 
-        validFiles = [false, false, false];
-        let allAccepted = [false, false, false];
-        const fileMapping = {
-            'bootloader': 1,
-            'partitions': 2,
-            'application': 3,
-            'merged': 1
-        };
+        validFiles.fill(null);
+
+        // try to sort parts by offset
+        buildData.parts.sort((a, b) => {
+            return a.offset - b.offset;
+        });
 
         const getType = (part) => {
             if (part.type) return String(part.type).trim().toLowerCase();
@@ -2288,7 +2291,14 @@
             try {
                 const response = await fetch(`./firmwareFiles/${part.path}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    console.warn(`file ${fileIndex} [${part.type}]: \n\tHTTP ${response.status} - ${response.statusText}`);
+                    if (response.status === 404) {
+                        addLog(`❌ File ${fileIndex} not found`, 'error');
+                        return null;
+                    } else {
+                        addLog(`❌ Error loading file ${fileIndex}: HTTP ${response.status}`, 'error');
+                    }
+                    return null;
                 }
 
                 const blob = await response.blob();
@@ -2307,19 +2317,18 @@
                 checkbox.checked = true;
                 toggleFileItem(fileIndex);
 
-                await validateFile(fileIndex);
-
                 addLog(`File ${fileIndex} loaded: ${fileName}`, 'taken');
                 return true;
 
             } catch (error) {
+                console.warn(`file ${fileIndex} [${part.type}]: \n\t${error.message}`);
                 if (error.message.includes('HTTP 404')) {
                     addLog(`❌ File ${fileIndex} not found`, 'error');
                     return null;
                 } else {
                     addLog(`❌ Error loading file ${fileIndex}: ${error.message}`, 'error');
+                    return false;
                 }
-                return false;
             }
         };
 
@@ -2327,9 +2336,9 @@
 
         if (isMergedBuild) {
             const part = buildData.parts.find(part => getType(part) === 'merged');
-            allAccepted = Array(3).fill(await tryLoad(part, fileMapping['merged'] || 1));
+            validFiles.fill(await tryLoad(part, fileMapping['merged'] || 1));
 
-            showManifestFileItem(1, 'Merged', allAccepted[0]);
+            showManifestFileItem(1, 'Merged', validFiles[0]);
             showManifestFileItem(2, 'Partitions', false, false);
             showManifestFileItem(3, 'Application', false, false);
 
@@ -2339,7 +2348,7 @@
                 const type = getType(part);
                 const fileIndex = fileMapping[type];
                 if (fileIndex) {
-                    allAccepted[fileIndex - 1] = await tryLoad(part, fileIndex);
+                    validFiles[fileIndex - 1] = await tryLoad(part, fileIndex);
                 } else {
                     addLog(`⚠️ Unknown part type: ${type}`, 'warning');
                 }
@@ -2348,21 +2357,21 @@
             for (let i = 0; i < 3; i++) {
                 const typeName = Object.keys(fileMapping).find(key => fileMapping[key] === (i + 1));
                 const label = typeName ? typeName.charAt(0).toUpperCase() + typeName.slice(1) : `File ${i + 1}`;
-                showManifestFileItem(i + 1, label, allAccepted[i]);
+                showManifestFileItem(i + 1, label, validFiles[i]);
             }
         }
 
         statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
         versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
-        await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to ensure validation states are updated
+        await delay(50); // Small delay to ensure validation states are updated
 
-        if (allAccepted.every(v => v) && validFiles.every(v => v === true)) {
+        if (validFiles.every(v => v === true)) {
             addLog('✅ All files successfully loaded from manifest', 'success');
             statusBadge.innerText = 'Valid';
             statusBadge.classList.add('status-success');
             versionSelect.classList.add('status-success');
-        } else if (allAccepted.some(v => v)) {
+        } else if (validFiles.some(v => v === true)) {
             addLog('⚠️ Some files were loaded with issues', 'warning');
             statusBadge.innerText = 'Error';
             statusBadge.classList.add('status-warning');
@@ -2379,10 +2388,10 @@
 
     function showManifestFileItem(fileIndex, label, isValid, visible = true) {
         const fileItem = document.getElementById(`fileItem${fileIndex}`);
-        const fileLabel = fileItem.querySelector('.file-header .labels');
+        const fileLabel = fileItem.querySelector(`label[for="fileEnable${fileIndex}"]`)
 
         fileItem.classList.remove('manifest-hidden', 'hidden');
-        fileItem.classList.add('manifest-mode', isValid === true ? 'valid' : validFiles[fileIndex - 1] === false ? 'empty' : 'invalid');
+        fileItem.classList.add('manifest-mode', isValid === true ? 'valid' : isValid === false ? 'invalid' : isValid === null ? 'empty' : isValid === undefined ? 'empty' : isValid === 0 ? 'empty' : 'invalid');
 
         if (!visible) {
             fileItem.classList.add('hidden');
@@ -2398,7 +2407,7 @@
     function showFileItems(show) {
         for (let i = 1; i <= 3; i++) {
             const fileItem = document.getElementById(`fileItem${i}`);
-            const fileLabel = fileItem.querySelector('.file-header .labels');
+            const fileLabel = fileItem.querySelector(`label[for="fileEnable${i}"]`);
 
             if (show) {
                 fileItem.classList.remove('hidden', 'manifest-mode', 'manifest-hidden');
@@ -2411,20 +2420,20 @@
     }
 
     async function selectFile(slot) {
-        validFiles[slot - 1] = false;
+        validFiles[slot - 1] = null;
         await validateFile(slot);
-        await delay(100);
+        await delay(50); // Small delay to ensure validation states are updated
 
         if (currentMode === 'custom') {
             statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
             versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
-            if (validFiles.every(v => v)) {
+            if (validFiles.every(v => v === true)) {
                 addLog('✅ All files successfully loaded', 'success');
                 statusBadge.innerText = 'Valid';
                 statusBadge.classList.add('status-success');
                 versionSelect.classList.add('status-success');
-            } else if (validFiles.some(v => v)) {
+            } else if (validFiles.some(v => v === true)) {
                 addLog('⚠️ Some files were loaded with issues', 'warning');
                 statusBadge.innerText = 'Error';
                 statusBadge.classList.add('status-warning');
@@ -2445,7 +2454,7 @@
 
     // Handle folder selection
     async function handleFolderSelect() {
-        validFiles = [false, false, false];
+        validFiles.fill(null);
 
         const folderInput = document.getElementById('folderInput');
         const files = Array.from(folderInput.files);
@@ -2464,7 +2473,7 @@
         if (mergedFile) {
             addLog('📦 Merged firmware detected, other files will be ignored', 'info');
             const accepted = await loadFileToSlot(mergedFile, 1, 0x0000);
-            validFiles = Array(3).fill(accepted);
+            validFiles.fill(accepted);
         } else {
             const bootloaderFile = files.find(f => f.name.endsWith('.bootloader.bin'));
             const partitionsFile = files.find(f => f.name.endsWith('.partitions.bin'));
@@ -2482,12 +2491,12 @@
         statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
         versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
-        if (validFiles.every(v => v)) {
+        if (validFiles.every(v => v === true)) {
             addLog('✅ All files successfully loaded', 'success');
             statusBadge.innerText = 'Valid';
             statusBadge.classList.add('status-success');
             versionSelect.classList.add('status-success');
-        } else if (validFiles.some(v => v)) {
+        } else if (validFiles.some(v => v === true)) {
             addLog('⚠️ Some files were loaded with issues', 'warning');
             statusBadge.innerText = 'Error';
             statusBadge.classList.add('status-warning');
@@ -2517,8 +2526,6 @@
             checkbox.checked = true;
             toggleFileItem(slot);
 
-            await validateFile(slot);
-
             addLog(`File ${slot} loaded: ${file.name}`, 'taken');
             return true;
         } catch (error) {
@@ -2529,7 +2536,7 @@
 
     // Clear all files
     function clearAllFiles() {
-        validFiles = [false, false, false];
+        validFiles.fill(null);
         for (let i = 1; i <= 3; i++) {
             const fileInput = document.getElementById(`file${i}`);
             fileInput.value = '';
@@ -2645,7 +2652,7 @@
             validationBadge.classList.remove('show');
             fileInfo.classList.remove('show');
             checkFlashReadiness();
-            validFiles[index - 1] = false;
+            validFiles[index - 1] = null;
             return;
         }
 
@@ -2748,7 +2755,7 @@
                     validFiles[index - 1] = true;
                     if (validationResult.isMerged && index === 1) {
                         addLog(`ℹ️ Merged firmware detected - you only need this file to flash`, 'info');
-                        validFiles = [true, true, true];
+                        validFiles.fill(true)
                     }
                 } else if (!hasValidMagic) {
                     const expectedMagic = index === 2 ? '0xE9 or 0xAA' : '0xE9';
@@ -2883,7 +2890,7 @@
         } else {
             controls.style.display = 'none';
             item.classList.remove('active', 'ignored');
-            validFiles[index - 1] = false;
+            validFiles[index - 1] = null;
         }
 
         // Update ignored state when toggling checkboxes
@@ -2896,12 +2903,12 @@
             statusBadge.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
             versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
-            if (validFiles.every(v => v)) {
+            if (validFiles.every(v => v === true)) {
                 addLog('✅ All files successfully loaded', 'success');
                 statusBadge.innerText = 'Valid';
                 statusBadge.classList.add('status-success');
                 versionSelect.classList.add('status-success');
-            } else if (validFiles.some(v => v)) {
+            } else if (validFiles.some(v => v === true)) {
                 addLog('⚠️ Some files were loaded with issues', 'warning');
                 statusBadge.innerText = 'Error';
                 statusBadge.classList.add('status-warning');
@@ -3175,7 +3182,7 @@
             if (serialReader || serialWriter) {
                 addLog('Closing normal communication...', 'info');
                 await closeSerial();
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await delay(500);
             }
 
             // Close existing transport
@@ -3231,7 +3238,7 @@
                 portInfo.usbProductId === lastPortInfo.usbProductId) {
 
                 addLog('🔌 Device was reconnected, attempting to reconnect...', 'info');
-                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay before reconnect
+                await delay(100); // Small delay before reconnect
                 // espConnect(port);
             }
 
@@ -3363,7 +3370,7 @@
         const isTimeout = error.message === 'Connection timeout';
 
         if (isTimeout) {
-            addLog(`⏱️ Timeout while connecting (${CONNECTION_TIMEOUT / 1000}s)`, 'warning');
+            addLog(`⏱️ Timeout while connecting (${CONNECTION_TIMEOUT / 1_000}s)`, 'warning');
         } else if (error.name === 'NotFoundError') {
             addLog('❌ No device was selected.', 'error');
             resetConnection();
@@ -3397,7 +3404,7 @@
                     });
 
                     // Wait for ESP to reset
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    await delay(2_000);
                 } else {
                     // If no esploader, try manual reset via DTR/RTS
                     addLog('Attempting manual reset via DTR/RTS...', 'info');
@@ -3406,7 +3413,7 @@
                 }
 
                 // Wait a bit more before retry
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await delay(1_000);
 
                 // Retry connection
                 await connectESPWithRetry();
@@ -3417,7 +3424,7 @@
                 // Last attempt without reset
                 if (connectionAttempt < MAX_RETRIES) {
                     addLog('Trying to connect without reset...', 'warning');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await delay(1_000);
                     await connectESPWithRetry();
                 } else {
                     resetConnection();
@@ -3448,11 +3455,11 @@
 
             // DTR=0, RTS=1 -> Enter bootloader
             await serialPort.setSignals({dataTerminalReady: false, requestToSend: true});
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await delay(100);
 
             // DTR=1, RTS=0 -> Reset
             await serialPort.setSignals({dataTerminalReady: true, requestToSend: false});
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await delay(50);
 
             // DTR=1, RTS=1 -> Run
             await serialPort.setSignals({dataTerminalReady: true, requestToSend: true});
@@ -3547,7 +3554,7 @@
                 if (!preFlashSuccess) {
                     addLog('⚠️ Pre-flash commands failed', 'warning');
                 }
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await delay(500);
             }
 
             // Prepare files
@@ -3597,7 +3604,7 @@
             // Check boot mode
             if (!inBootMode) {
                 await enterBootMode();
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await delay(1_000);
                 if (!inBootMode) {
                     addLog('❌ Failed to enter boot mode!', 'error');
                     return;
@@ -3669,7 +3676,7 @@
         if (!inBootMode) {
             addLog('⚠️ ESP is not in boot mode! Switching to boot mode...', 'warning');
             await enterBootMode();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await delay(1_000);
 
             if (!inBootMode) {
                 addLog('❌ Failed to enter boot mode!', 'error');
@@ -3790,7 +3797,7 @@
             addLog('🎉 Upload completed successfully!', 'success');
             updateProgress(100, 'Done!');
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
 
         } catch (error) {
             addLog(`❌ Error while flashing: ${error.message}`, 'error');
@@ -3835,7 +3842,7 @@
                 }
 
                 // Wait a bit before flashing
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await delay(500);
             }
 
             // Check if file 1 is merged firmware
@@ -3924,7 +3931,7 @@
             if (!inBootMode) {
                 addLog('⚠️ ESP is not in boot mode! Switching to boot mode...', 'warning');
                 await enterBootMode();
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await delay(1_000);
 
                 if (!inBootMode) {
                     addLog('❌ Failed to enter boot mode!', 'error');
@@ -3969,7 +3976,7 @@
             addLog('🎉 Upload completed successfully!', 'success');
             updateProgress({percentage: 100, state: 'Firmware uploaded!'});
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await delay(500);
 
             if (doPostCommands) {
                 updateProgress({percentage: 100, state: 'Executing post-flash procedures...'});
@@ -4107,7 +4114,7 @@
                 await port.setSignals({dataTerminalReady: true, requestToSend: false});
                 await delay(50);
                 await port.setSignals({dataTerminalReady: true, requestToSend: true});
-                await delay(2000); // wait for device to boot
+                await delay(2_000); // wait for device to boot
                 return true;
             }
         } catch (err) {
@@ -4146,7 +4153,7 @@
             updateBootModeStatus(false);
 
             // Wait for ESP to boot
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await delay(2_000);
             addLog('ℹ️ ESP should now be in normal mode and ready for communication', 'info');
 
         } catch (error) {
@@ -4181,7 +4188,7 @@
                 try {
                     addLog('🔄 Hard reset before disconnecting...', 'info');
                     await performHardReset();
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await delay(500);
                 } catch (e) {
                     addLog('⚠️ Hard reset failed', 'warning');
                 }
@@ -4190,7 +4197,7 @@
             if (espTransport) {
                 addLog('❎ Disconnecting ESP...', 'success');
                 await espTransport.disconnect();
-                await espTransport.waitForUnlock(1500);
+                await espTransport.waitForUnlock(1_500);
             }
 
             addLog('✅ Disconnected', 'success');
