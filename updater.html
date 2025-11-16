@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP Firmware Update</title>
+    <title>Atropos - Thymos Firmware Update</title>
     <style>
         * {
             margin: 0;
@@ -34,6 +34,17 @@
             color: #333;
             margin-bottom: 10px;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h1 svg {
+            flex-shrink: 0;
+            width: 1.5em;
+            height: auto;
+            aspect-ratio: 1/1;
         }
 
         .subtitle {
@@ -129,10 +140,13 @@
 
         .file-section {
             margin-bottom: 20px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
         }
 
         .version-selector {
-            background: #f5f5f5;
+            background: #f9f9f9;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -917,8 +931,37 @@
 
 <main id="mainContent">
     <div class="container">
-        <h1>🔧 ESP Firmware Update Tool</h1>
-        <p class="subtitle">Web interface for uploading firmware to ESP devices</p>
+        <h1>
+            <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none"
+                   stroke="#333"
+                   stroke-width="1"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+
+                    <!-- horní trojúhelník -->
+                    <path d="M6.833325 2.3915532
+             H10.166675
+             L8.5 5.2783191
+             Z"/>
+
+                    <!-- levý spodní trojúhelník -->
+                    <path d="M1.833325 2.3915532
+             H5.166675
+             L3.5 5.2783191
+             Z"/>
+
+                    <!-- spodní trojúhelník -->
+                    <path d="M4.333325 6.7216807
+             H7.666675
+             L6 9.6084466
+             Z"/>
+
+                </g>
+            </svg>
+            <span>Atropos - Thymos Firmware Update</span>
+        </h1>
+        <p class="subtitle">Web interface for uploading firmware to Thymos (ESP-based) devices</p>
 
         <div class="info-box">
             ℹ️ Connect the ESP device via USB and click "Connect". Select a firmware version or upload your own
@@ -1155,7 +1198,7 @@
         <!-- Log Section -->
         <div class="log-section">
             <div class="log-header" style="margin-bottom: 10px;">
-                <h3>Console log</h3>
+                <h3>App log</h3>
                 <div>Lines: <span id="lineCount-app">0</span></div>
             </div>
             <div class="log-wrapper">
