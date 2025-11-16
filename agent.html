@@ -206,6 +206,11 @@
             flex-shrink: 0;
         }
 
+        #returnToMoiraBtn svg {
+            fill: none;
+            stroke: currentColor;
+        }
+
         .btn:not(:disabled):active {
             transform: scale(0.95);
         }
@@ -411,8 +416,9 @@
     </h1>
     <h3>
         <button class="btn btn-primary" id="returnToMoiraBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M11.67 3.87L9.9 2.1 0 12l9.9 9.9 1.77-1.77L3.54 12z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 2.5 L1.5 12 L11 21.5"/>
             </svg>
             Return to Μοῖρα
         </button>
