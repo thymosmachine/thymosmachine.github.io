@@ -505,6 +505,7 @@
             gap: 10px;
             margin-top: 20px;
             flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         .log-section {
@@ -515,6 +516,7 @@
             border: 1px solid #3c3c3c;
             border-radius: 8px;
             overflow: hidden;
+            width: 700px;
         }
 
         .log-header {
@@ -542,10 +544,11 @@
             border-radius: 0;
             color: #d4d4d4;
             font-size: 14px;
+            background: #3c3c3c;
         }
 
         .input-container input::placeholder {
-            color: #d4d4d4;
+            color: #999;
             opacity: 1;
         }
 
@@ -1356,8 +1359,8 @@
     const IS_LOCAL = isLocalhost();
 
 
-    let doPreCommands = false; // Set to true to run pre-commands before flashing
-    let doPostCommands = true; // Set to true to run post-commands after flashing
+    let DO_PRE_FLASH = true; // Set to true to run pre-commands before flashing
+    let DO_POST_FLASH = true; // Set to true to run post-commands after flashing
 
     const useFilteredPort = true;
     const thymosFingerprints = [
@@ -1386,6 +1389,7 @@
     let readBuffer = '';
     let readableStreamClosed = null;
     let writableStreamClosed = null;
+    let serialInitialized = false;
 
     // File validation state
     const fileValidation = {
@@ -1397,6 +1401,7 @@
     let totalFilesToFlash = 0;
     let currentPhase = '';
 
+    const MAX_LOG_LINES = 100;
     let lineCount = {
         app: 0,
         device: 0
@@ -1417,6 +1422,8 @@
     window.hardReset = hardReset;
     window.safeDisconnect = safeDisconnect;
     window.clearLog = clearLog;
+    window.handleKeyPress = handleKeyPress;
+    window.sendMessage = sendMessage;
 
 
     window.test = test;
@@ -1429,8 +1436,6 @@
             await safeDisconnect();
 
             await delay(500);
-
-            window.close();
         }
     });
 
@@ -1489,7 +1494,6 @@
         } catch (error) {
             addLog(`❌ Error during test: ${error.message}`, 'error');
         } finally {
-            await stopSerialRead();
             await closeSerial();
         }
     }
@@ -1603,8 +1607,19 @@
             throw new Error('Port is not open');
         }
 
+        if (serialInitialized) {
+            addLog('ℹ️ Serial I/O already initialized', 'info');
+            return true;
+        }
+
         try {
-            // Get readable and writable streams
+            // if the streams are locked, clean up first
+            if (serialPort.readable?.locked || serialPort.writable?.locked) {
+                addLog('ℹ️ Serial streams locked – cleaning up...', 'info');
+                await closeSerial();
+                await delay(200);
+            }
+
             const textDecoder = new TextDecoderStream();
             readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
             serialReader = textDecoder.readable.getReader();
@@ -1613,6 +1628,9 @@
             writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
             serialWriter = textEncoder.writable.getWriter();
 
+            serialInitialized = true;
+
+            await delay(200);
             addLog('✅ Serial read/write initialized', 'success');
             return true;
         } catch (error) {
@@ -1620,6 +1638,7 @@
             return false;
         }
     }
+
 
     // Start reading from serial port
     async function startSerialRead() {
@@ -1657,19 +1676,6 @@
                 addLog(`📥 RX: ${line.trim()}`, 'machineOut', 'device');
             }
         });
-    }
-
-    // Stop reading from serial port
-    async function stopSerialRead() {
-        isReading = false;
-        if (serialReader) {
-            try {
-                await serialReader.cancel();
-                serialReader = null;
-            } catch (error) {
-                console.error('Error stopping reader:', error);
-            }
-        }
     }
 
     // Helper functions for common response patterns
@@ -1753,7 +1759,26 @@
         if (!message) return;
 
         try {
-            const lineEnding = document.getElementById('lineEnding').value || 'lf';
+            if (inBootMode) {
+                addLog('⚠️ ESP is in boot mode, performing hard reset...', 'warning');
+                await hardReset();
+                await delay(500);
+            }
+
+            // Initialize serial
+            if (!await initializeSerial()) {
+                return;
+            }
+
+            startSerialRead();
+            await delay(3_000);
+        } catch (error) {
+            addLog(`❌ Error preparing to send message: ${error.message}`, 'error');
+            return;
+        }
+
+        try {
+            const lineEnding = document.getElementById('lineEnding')?.value || 'lf';
             let textToSend = message;
 
             // Přidání line ending
@@ -1806,31 +1831,41 @@
 
     // Close serial reader and writer
     async function closeSerial() {
-        await stopSerialRead();
-
-        if (serialWriter) {
-            try {
-                await serialWriter.close();
-                serialWriter = null;
-            } catch (error) {
-                console.error('Error closing writer:', error);
-            }
-        }
+        addLog('🔒 Closing serial connection...', 'info');
 
         // Wait for streams to close
         try {
-            if (writableStreamClosed) {
-                await writableStreamClosed.catch(() => {
-                });
-                writableStreamClosed = null;
+            isReading = false;
+            try {
+                await serialReader.cancel();
+            } catch {
             }
-            if (readableStreamClosed) {
-                await readableStreamClosed.catch(() => {
-                });
-                readableStreamClosed = null;
+            try {
+                serialReader.releaseLock();
+            } catch {
             }
         } catch (error) {
             console.error('Error closing streams:', error);
+        } finally {
+            serialReader = null;
+            readableStreamClosed = null;
+        }
+
+        try {
+            serialInitialized = false;
+            try {
+                await serialWriter.close();
+            } catch {
+            }
+            try {
+                serialWriter.releaseLock();
+            } catch {
+            }
+        } catch (error) {
+            console.error('Error closing streams:', error);
+        } finally {
+            serialWriter = null;
+            writableStreamClosed = null;
         }
     }
 
@@ -1902,9 +1937,6 @@
         currentPhase = 'pre-flash';
 
         const commands = [
-            {cmd: () => performHardReset(), desc: 'Hard reset'},
-            {cmd: () => initializeSerial(), desc: 'Init serial'},
-            {cmd: () => startSerialRead(), desc: 'Start reading'},
             {cmd: () => writeSerial('misc get name'), desc: 'Get name'},
             {cmd: () => writeSerial('misc get machine_id'), desc: 'Get ID'},
             {cmd: () => writeSerial('mc get speed'), desc: 'Get speed'},
@@ -1916,19 +1948,29 @@
             if (inBootMode) {
                 addLog('⚠️ ESP is in boot mode - hard reset...', 'warning');
                 updatePreFlashProgress(0, commands.length);
-                await performHardReset();
+                const ok = await performHardReset();
+                if (!ok) {
+                    addLog('❌ Hard reset failed!', 'error');
+                }
                 await delay(2_000);
-                updateBootModeStatus(false);
+                await updateBootModeStatus(false);
                 addLog('✅ ESP in normal mode', 'success');
             }
 
+            if (!await initializeSerial()) {
+                return false;
+            }
+            startSerialRead();
+            await delay(3_000);
+
             for (let i = 0; i < commands.length; i++) {
-                updatePreFlashProgress(i, commands.length);
-                await commands[i].cmd();
-                await delay(i < 3 ? 500 : 1_500);
+                await updatePreFlashProgress(i, commands.length);
+                commands[i].cmd();
+                await delay(i === (commands.length - 1) ? 3_000 : 1_500);
             }
 
-            updatePreFlashProgress(commands.length, commands.length);
+            await updatePreFlashProgress(commands.length, commands.length);
+
             addLog('✅ Pre-flash commands completed', 'success');
             status = true;
 
@@ -1936,8 +1978,11 @@
             addLog(`❌ Error in pre-flash commands: ${error.message}`, 'error');
             status = false;
         } finally {
-            await stopSerialRead();
-            await closeSerial();
+            try {
+                await closeSerial();
+            } catch (e) {
+                console.warn('Error during serial closeSerial:', e);
+            }
         }
         return status;
     }
@@ -1949,9 +1994,6 @@
         currentPhase = 'post-flash';
 
         const commands = [
-            {cmd: () => performHardReset(), desc: 'Hard reset'},
-            {cmd: () => initializeSerial(), desc: 'Init serial'},
-            {cmd: () => startSerialRead(), desc: 'Start reading'},
             {cmd: () => writeSerial('memory reset'), desc: 'Memory reset'},
             {cmd: () => writeSerial('misc get libinfo'), desc: 'Get libinfo'},
             {cmd: () => writeSerial('mc get iscalibrated'), desc: 'Get calibrated'},
@@ -1959,38 +2001,49 @@
             {cmd: () => writeSerial('misc get machine_id'), desc: 'Get ID'}
         ];
 
+        let status = false;
         try {
-            await delay(500);
-
             if (inBootMode) {
                 addLog('⚠️ ESP is in boot mode - hard reset...', 'warning');
-                await performHardReset();
+                updatePreFlashProgress(0, commands.length);
+                const ok = await performHardReset();
+                if (!ok) {
+                    addLog('❌ Hard reset failed!', 'error');
+                }
                 await delay(2_000);
-                updateBootModeStatus(false);
+                await updateBootModeStatus(false);
+                addLog('✅ ESP in normal mode', 'success');
             }
+
+            if (!await initializeSerial()) {
+                return false;
+            }
+            startSerialRead();
+            await delay(3_000);
 
             for (let i = 0; i < commands.length; i++) {
-                updatePostFlashProgress(i, commands.length);
-                await commands[i].cmd();
-                await delay(i < 3 ? 500 : (i === 3 ? 3_000 : 1_000));
+                await updatePostFlashProgress(i, commands.length);
+                commands[i].cmd();
+                await delay(i === (commands.length - 1) ? 3_000 : 1_000);
             }
 
-            updatePostFlashProgress(commands.length, commands.length);
+            await updatePostFlashProgress(commands.length, commands.length);
             logReader = false;
             endBuffer += '\n========================\n';
 
-            await stopSerialRead();
-            await closeSerial();
-
             addLog('✅ Post-flash commands completed', 'success');
-            return true;
-
+            status = true;
         } catch (error) {
             addLog(`❌ Error in post-flash commands: ${error.message}`, 'error');
-            await stopSerialRead();
-            await closeSerial();
-            return false;
+            status = false;
+        } finally {
+            try {
+                await closeSerial();
+            } catch (e) {
+                console.warn('Error during serial closeSerial:', e);
+            }
         }
+        return status;
     }
 
     // Pre-flash commands with advanced pattern matching
@@ -2004,7 +2057,10 @@
                 addLog('⚠️ ESP is in boot mode - first perform a hard reset for normal communication', 'warning');
                 addLog('🔄 Performing hard reset...', 'valid');
 
-                await performHardReset();
+                const ok = await performHardReset();
+                if (!ok) {
+                    addLog('❌ Hard reset failed!', 'error');
+                }
                 await delay(2_000); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
@@ -2064,13 +2120,9 @@
 
         } catch (error) {
             addLog(`❌ Error in pre-flash commands: ${error.message}`, 'error');
-            await stopSerialRead();
-            await closeSerial();
             status = false;
 
         } finally {
-
-            await stopSerialRead();
             await closeSerial();
         }
         return status;
@@ -2089,7 +2141,10 @@
                 addLog('⚠️ ESP is in boot mode - first perform a hard reset for normal communication', 'warning');
                 addLog('🔄 Performing hard reset...', 'valid');
 
-                await performHardReset();
+                const ok = await performHardReset();
+                if (!ok) {
+                    addLog('❌ Hard reset failed!', 'error');
+                }
                 await delay(2_000); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
@@ -2130,7 +2185,6 @@
             endBuffer += '\n========================\n';
             await delay(100);
 
-            await stopSerialRead();
             await closeSerial();
 
             addLog('✅ Post-flash commands completed', 'success');
@@ -2138,7 +2192,6 @@
 
         } catch (error) {
             addLog(`❌ Error in post-flash commands: ${error.message}`, 'error');
-            await stopSerialRead();
             await closeSerial();
             return false;
         }
@@ -2288,7 +2341,7 @@
                 console.log('Machine acceleration:', machineInfo.acceleration);
             }
 
-            await stopSerialRead();
+
             await closeSerial();
 
             addLog('✅ Pre-flash commands completed', 'success');
@@ -2296,7 +2349,7 @@
 
         } catch (error) {
             addLog(`❌ Error in pre-flash commands: ${error.message}`, 'error');
-            await stopSerialRead();
+
             await closeSerial();
             return false;
         }
@@ -2385,7 +2438,6 @@
 
             await delay(300);
 
-            await stopSerialRead();
             await closeSerial();
 
             addLog('✅ Post-flash commands completed', 'success');
@@ -2393,7 +2445,6 @@
 
         } catch (error) {
             addLog(`❌ Error in post-flash commands: ${error.message}`, 'error');
-            await stopSerialRead();
             await closeSerial();
             return false;
         }
@@ -3211,6 +3262,7 @@
         const bootModeBadge = document.getElementById('bootModeBadge');
         const bootModeWarning = document.getElementById('bootModeWarning');
         const bootModeBtn = document.getElementById('bootModeBtn');
+        const resetBtn = document.getElementById('resetBtn');
 
         if (connected) {
             bootModeBadge.style.display = 'inline-block';
@@ -3219,12 +3271,18 @@
                 bootModeBadge.textContent = 'Boot mode';
                 bootModeBadge.className = 'boot-mode-indicator boot';
                 bootModeWarning.classList.remove('active');
-                bootModeBtn.disabled = true;
+                if (currentPhase === 'idle' || currentPhase === 'ready' || currentPhase === '' || !currentPhase) {
+                    bootModeBtn.disabled = true;
+                    resetBtn.disabled = false;
+                }
             } else {
                 bootModeBadge.textContent = 'Normal mode';
                 bootModeBadge.className = 'boot-mode-indicator normal';
                 bootModeWarning.classList.add('active');
-                bootModeBtn.disabled = false;
+                if (currentPhase === 'idle' || currentPhase === 'ready' || currentPhase === '' || !currentPhase) {
+                    bootModeBtn.disabled = false;
+                    resetBtn.disabled = true;
+                }
             }
         } else {
             bootModeBadge.style.display = 'none';
@@ -3311,6 +3369,12 @@
 
         lineCount[log] += 1;
         document.getElementById(`lineCount-${log}`).textContent = lineCount[log];
+        if (lineCount[log] > MAX_LOG_LINES) {
+            // Remove oldest entry
+            logContainer.removeChild(logContainer.firstChild);
+            lineCount[log] -= 1;
+            document.getElementById(`lineCount-${log}`).textContent = lineCount[log];
+        }
     }
 
     function clearLog() {
@@ -3362,7 +3426,7 @@
     }
 
     function updatePreFlashProgress(completed, total) {
-        const phaseProgress = (completed / total) * 100;
+        const phaseProgress = ((completed / total) * 100) || 0;
         const overallProgress = calculateOverallProgress(phaseProgress);
         updateProgress({
             percentage: overallProgress,
@@ -3372,7 +3436,7 @@
 
     // Function to update progress of post-flash commands
     function updatePostFlashProgress(completed, total) {
-        const phaseProgress = (completed / total) * 100;
+        const phaseProgress = ((completed / total) * 100) || 0;
         const overallProgress = calculateOverallProgress(phaseProgress);
         updateProgress({
             percentage: overallProgress,
@@ -3382,7 +3446,7 @@
 
     // Function to update progress of individual files
     function updateFileProgress(fileIndex, written, total) {
-        const fileProgress = (written / total) * 100;
+        const fileProgress = ((written / total) * 100) || 0;
 
         // Update file-specific progress bar in file-item
         const fileItem = document.getElementById(`fileItem${fileIndex}`);
@@ -3402,9 +3466,12 @@
         const phaseProgress = ((filesCompleted + currentFileProgress) / (totalFilesToFlash || 1)) * 100;
         const overallProgress = calculateOverallProgress(phaseProgress);
 
+        const state = (fileIndex === totalFilesToFlash && fileProgress === 100) ?
+            'Wrapping up, please wait...' :
+            `Flashing file ${fileIndex}/${(totalFilesToFlash || 1)}: ${Math.round(fileProgress)}%`;
         updateProgress({
             percentage: overallProgress,
-            state: `Flashing file ${fileIndex}/${(totalFilesToFlash || 1)}: ${Math.round(fileProgress)}%`
+            state: state
         });
     }
 
@@ -3553,60 +3620,86 @@
     // Enter boot mode - reuses existing connection
     async function enterBootMode() {
         if (!connected || !serialPort) {
-            addLog('Boot-mode: ❌ ESP is not connected!', 'error');
-            return;
+            const msg = 'Boot-mode: ❌ ESP is not connected!';
+            addLog(msg, 'error');
+            // ať se to *propaguje* ven
+            throw new Error(msg);
         }
 
-        try {
-            addLog('⚡ Switching to boot mode...', 'info');
+        const timeoutMs = 6000;
 
-            // Close serial communication if active (normal mode)
-            if (serialReader || serialWriter) {
-                addLog('Closing normal communication...', 'info');
-                await closeSerial();
-                await delay(500);
-            }
+        // promise, která po čase shodí celý enterBootMode
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error('Boot-mode: ❌ Timeout while switching to boot mode!'));
+            }, timeoutMs);
+        });
 
-            // Close existing transport
-            if (espTransport) {
-                await espTransport.disconnect();
-                await espTransport.waitForUnlock(500);
-            }
+        // vlastní logika přepnutí do boot módu
+        const workPromise = (async () => {
+            try {
+                addLog('⚡ Switching to boot mode...', 'info');
 
-            // Reuse the same serial port
-            espTransport = new Transport(serialPort, true);
-
-            const baudRate = parseInt(document.getElementById('baudRate').value);
-
-            // Create new ESPLoader instance
-            const loaderOptions = {
-                transport: espTransport,
-                baudrate: baudRate,
-                terminal: {
-                    clean: () => {
-                    },
-                    writeLine: (data) => {
-                        addLog(data);
-                        parseChipInfoFromLog(data);
-                    },
-                    write: (data) => {
-                    }
+                // Close serial communication if active (normal mode)
+                if (serialReader || serialWriter) {
+                    addLog('Closing normal communication...', 'info');
+                    await closeSerial();
+                    await delay(500);
                 }
-            };
 
-            espLoader = new ESPLoader(loaderOptions);
+                // Close existing transport
+                if (espTransport) {
+                    await espTransport.disconnect();
+                    await espTransport.waitForUnlock(500);
+                }
 
-            // Connect to chip - this will put it in boot mode
-            espChip = await espLoader.main();
+                // Reuse the same serial port
+                espTransport = new Transport(serialPort, true);
 
-            addLog('✅ ESP is now in boot mode!', 'success');
-            updateBootModeStatus(true);
+                const baudRate = parseInt(document.getElementById('baudRate').value, 10);
 
-        } catch (error) {
-            addLog(`❌ Error while switching to boot mode: ${error.message}`, 'error');
-            console.error(error);
-        }
+                // Create new ESPLoader instance
+                const loaderOptions = {
+                    transport: espTransport,
+                    baudrate: baudRate,
+                    terminal: {
+                        clean: () => {
+                        },
+                        writeLine: (data) => {
+                            addLog(data);
+                            parseChipInfoFromLog(data);
+                        },
+                        write: (data) => {
+                        }
+                    }
+                };
+
+                espLoader = new ESPLoader(loaderOptions);
+
+                // Connect to chip - this will put it in boot mode
+                espChip = await espLoader.main();
+
+                addLog('✅ ESP is now in boot mode!', 'success');
+                updateBootModeStatus(true);   // tady si nejspíš nastavuješ inBootMode = true
+
+            } catch (error) {
+                updateBootModeStatus(false);  // jistota, že je to false
+                addLog(`❌ Error while switching to boot mode: ${error.message}`, 'error');
+                console.error(error);
+                throw error; // důležité – ať se chyba propaguje ven
+            }
+        })();
+
+        // tady se rozhodne, jestli vyhraje timeout nebo práce
+        return Promise.race([workPromise, timeoutPromise])
+            .catch((error) => {
+                // logneme timeout nebo jinou chybu
+                addLog(error.message, 'error');
+                updateBootModeStatus(false);
+                throw error; // ať to ví i volající
+            });
     }
+
 
     // Connect to ESP
     if ('serial' in navigator) {
@@ -3643,6 +3736,10 @@
 
     async function connectESPWithRetry(port = null) {
         connectionAttempt++;
+        serialInitialized = false;
+        currentPhase = 'idle';
+
+        setButtonsEnabledDuringConnection(false);
 
         if (port) {
             serialPort = port;
@@ -3667,6 +3764,7 @@
 
             // Get USB info
             const portInfo = serialPort?.getInfo();
+            console.log('Port info:', portInfo);
             lastSerialPort = serialPort;
             lastPortInfo = structuredClone(portInfo || {});
             chipInfo.vendorId = `0x${portInfo.usbVendorId?.toString(16).padStart(4, '0')}` || '-';
@@ -3682,9 +3780,20 @@
                 espConnect(lastSerialPort); // TODO: verify port
             }, {once: true});
 
+            console.log({
+                    connected,
+                    serialPort,
+                    espTransport,
+                    espLoader,
+                    espChip,
+                    chipInfo
+                }
+            );
+
 
             // Close existing transport if any
             if (espTransport) {
+                console.info('Closing existing transport before new connection...');
                 try {
                     await espTransport.disconnect();
                     await espTransport.waitForUnlock(500);
@@ -3741,6 +3850,7 @@
             connectionAttempt = 0; // Reset counter on success
             updateConnectionStatus(true);
             updateChipInfo();
+            setButtonsEnabledDuringConnection(true);
 
         } catch (error) {
             await handleConnectionError(error);
@@ -3781,9 +3891,10 @@
                 // Try to perform hard reset if we have esploader
                 if (espLoader && espTransport) {
                     addLog('Performing ESP hard reset...', 'info');
-                    await performHardReset().catch(e => {
+                    const ok = await performHardReset();
+                    if (!ok) {
                         addLog('⚠️ Hard reset failed, continuing...', 'warning');
-                    });
+                    }
 
                     // Wait for ESP to reset
                     await delay(2_000);
@@ -3906,11 +4017,18 @@
 
 
     // Flash firmware
+    let flashTry = {
+        secondTry: false,
+        preflashSet: DO_PRE_FLASH
+    };
+
     async function flashFirmware() {
         if (!connected) {
             addLog('Flash function: ❌ ESP is not connected!', 'error');
             return;
         }
+
+        setButtonsEnabledDuringFlash(false);
 
         // Clear machine info
         for (const key of Object.keys(machineInfo)) {
@@ -3930,13 +4048,13 @@
 
         try {
             // PRE-FLASH PHASE
-            if (doPreCommands) {
+            if (DO_PRE_FLASH) {
                 currentPhase = 'pre-flash';
                 const preFlashSuccess = await executePreFlashCommands();
                 if (!preFlashSuccess) {
                     addLog('⚠️ Pre-flash commands failed', 'warning');
                 }
-                await delay(500);
+                await delay(1_000);
             }
 
             // Prepare files
@@ -3984,13 +4102,57 @@
             }
 
             // Check boot mode
-            if (!inBootMode) {
-                await enterBootMode();
-                await delay(1_000);
+            try {
                 if (!inBootMode) {
-                    addLog('❌ Failed to enter boot mode!', 'error');
-                    return;
+                    addLog('⚠️ ESP is not in boot mode! Switching to boot mode...', 'warning');
+                    await enterBootMode();
+                    await delay(1_000);
+
+                    if (!inBootMode) {
+                        addLog('❌ Failed to enter boot mode!', 'error');
+                        return;
+                    }
                 }
+            } catch (e) {
+                // sem spadneš i při timeoutu
+                addLog('❌ Failed to enter boot mode: ' + e.message, 'error');
+
+                flashTry.secondTry = true;
+                flashTry.preflashSet = DO_PRE_FLASH;
+                DO_PRE_FLASH = false;
+
+                await espDisconnect();
+                await resetConnection();
+                addLog('🔄 Will retry flashing without pre-flash commands on next attempt...', 'info');
+                addLog('⚠️ Please reconnect the device and start flash procedure again WITHOUT CLOSING OR RELOADING this app ❗️', 'info');
+                alert('    Flash failed to enter boot mode.\n    Please reconnect the device and start flash procedure again WITHOUT CLOSING OR RELOADING this app ❗️');
+
+                // const portInfo = structuredClone(lastPortInfo || {});
+                // const ports = await navigator.serial.getPorts();
+                // const port = ports.find(p => {
+                //     const info = p.getInfo();
+                //     return info.usbVendorId === portInfo.usbVendorId &&
+                //         info.usbProductId === portInfo.usbProductId;
+                // });
+                //
+                // addLog('🔄 Will retry flashing without pre-flash commands...', 'info');
+                // await delay(100);
+                //
+                // console.info('Disconnected for retrying flash');
+                // await delay(1_000);
+                // await resetConnection();
+                // await delay(1_000);
+                // console.info('Reconnecting for retrying flash');
+                // await espConnect(port);
+                // console.info('Reconnected, retrying flash now');
+                // await flashFirmware();
+                return;
+            }
+
+            if (flashTry.secondTry) {
+                addLog('🔄 Retry flash after reconnecting...', 'info');
+                flashTry.secondTry = false;
+                DO_PRE_FLASH = flashTry.preflashSet;
             }
 
             // FLASHING PHASE
@@ -4000,8 +4162,6 @@
             addLog('═'.repeat(32), 'info');
             addLog('💾 FLASH PHASE', 'info');
             addLog('═'.repeat(32), 'info');
-
-            setButtonsEnabled(false);
 
             // Flash with progress tracking
             const flashOptions = {
@@ -4020,7 +4180,7 @@
             updateProgress({percentage: 87.5, state: 'Firmware uploaded!'});
 
             // POST-FLASH PHASE
-            if (doPostCommands) {
+            if (DO_POST_FLASH) {
                 currentPhase = 'post-flash';
                 const postFlashSuccess = await executePostFlashCommands();
                 if (!postFlashSuccess) {
@@ -4034,7 +4194,10 @@
             addLog(`❌ Error while flashing: ${error.message}`, 'error');
             console.error(error);
         } finally {
-            await performHardReset();
+            const ok = await performHardReset();
+            if (!ok) {
+                addLog('❌ Hard reset failed!', 'error');
+            }
             addLog(success ? '✅ END OF FLASH PROCESS' : '❌ FLASH FAILED', success ? 'success' : 'error');
 
             currentPhase = 'idle';
@@ -4043,7 +4206,7 @@
                 state: success ? 'Done!' : 'Failed.'
             });
 
-            setButtonsEnabled(true);
+            setButtonsEnabledDuringFlash(true);
         }
     }
 
@@ -4187,8 +4350,12 @@
             // Auto hard reset after flash
             addLog('🔄 Automatic hard reset...', 'valid');
 
-            await performHardReset();
-            addLog('☑️ Hard reset done!', 'accepted');
+            const ok = await performHardReset();
+            if (!ok) {
+                addLog('❌ Hard reset failed!', 'error');
+            } else {
+                addLog('☑️ Hard reset done!', 'accepted');
+            }
 
             setButtonsEnabled(true);
         }
@@ -4210,7 +4377,7 @@
         let success = false;
 
         try {
-            if (doPreCommands) {
+            if (DO_PRE_FLASH) {
                 updateProgress({percentage: 0, state: 'Executing pre-flash preparations...'});
                 // PRE-FLASH COMMANDS
                 addLog('═'.repeat(32), 'info');
@@ -4359,7 +4526,7 @@
 
             await delay(500);
 
-            if (doPostCommands) {
+            if (DO_POST_FLASH) {
                 updateProgress({percentage: 100, state: 'Executing post-flash procedures...'});
                 // POST-FLASH COMMANDS
                 addLog('═'.repeat(32), 'info');
@@ -4380,8 +4547,12 @@
         } finally {
             // Auto hard reset after flash
             addLog('🔄 Automatic hard reset...', 'valid');
-            await performHardReset();
-            addLog('☑️ Hard reset done!', 'accepted');
+            const ok = await performHardReset();
+            if (!ok) {
+                addLog('❌ Hard reset failed!', 'error');
+            } else {
+                addLog('☑️ Hard reset done!', 'accepted');
+            }
 
 
             addLog('═'.repeat(32), 'info');
@@ -4398,114 +4569,137 @@
     }
 
     // Robust wrapper for hard reset
-    async function performHardReset({loader = espLoader, transport = espTransport, port = serialPort} = {}) {
-        // 1) if the esploader instance has a hardReset method, use it (backwards compatibility)
-        try {
-            if (loader && typeof loader.hardReset === 'function') {
-                console.debug('Using esploader.hardReset()');
-                await loader.hardReset();
-                return true;
+    async function performHardReset(
+        {loader = espLoader, transport = espTransport, port = serialPort} = {}
+    ) {
+        const timeoutMs = 8000; // → můžeš změnit podle potřeby
+
+        // timeout promise – když se nic nestane do timeoutMs, shodí celý hard reset
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error('Hard reset: ❌ Timeout while performing hard reset!'));
+            }, timeoutMs);
+        });
+
+        // původní logika hard resetu zabalená do async „workPromise“
+        const workPromise = (async () => {
+            serialInitialized = false;
+
+            // 1) pokud esploader instance má hardReset(), použijeme ji
+            try {
+                if (loader && typeof loader.hardReset === 'function') {
+                    console.debug('Using esploader.hardReset()');
+                    await loader.hardReset();
+                    return true;
+                }
+            } catch (err) {
+                console.warn('esploader.hardReset() failed:', err);
+                // pokračujeme na fallbacky
             }
-        } catch (err) {
-            console.warn('esploader.hardReset() failed:', err);
-            // continue to fallbacks
-        }
 
-        // 2) try to use exported HardReset (may be a class or a function)
-        try {
-            if (typeof HardReset !== 'undefined' && HardReset) {
-                console.debug('HardReset export is present, inspecting...');
+            // 2) HardReset export (class nebo function)
+            try {
+                if (typeof HardReset !== 'undefined' && HardReset) {
+                    console.debug('HardReset export is present, inspecting...');
+                    console.dir(HardReset);
 
-                // Log to console what it is
-                console.dir(HardReset);
+                    if (typeof HardReset === 'function') {
+                        try {
+                            const hrInstance = new HardReset(transport);
+                            const possibleMethods = ['reset', 'run', 'perform', 'execute', 'do', 'start'];
 
-                // If it is a class (constructor), create instance with transport
-                if (typeof HardReset === 'function') {
-                    try {
-                        const hrInstance = new HardReset(transport);
-                        // Find suitable method on instance
-                        const possibleMethods = ['reset', 'run', 'perform', 'execute', 'do', 'start'];
-                        for (const m of possibleMethods) {
-                            if (typeof hrInstance[m] === 'function') {
-                                console.debug(`Calling hrInstance.${m}()`);
-                                await hrInstance[m]();
-                                return true;
+                            for (const m of possibleMethods) {
+                                if (typeof hrInstance[m] === 'function') {
+                                    console.debug(`Calling hrInstance.${m}()`);
+                                    await hrInstance[m]();
+                                    return true;
+                                }
                             }
-                        }
-                        // If instance itself is callable (function), try to call it
-                        if (typeof hrInstance === 'function') {
-                            const maybePromise = hrInstance();
-                            if (maybePromise && typeof maybePromise.then === 'function') {
-                                await maybePromise;
-                                return true;
+
+                            if (typeof hrInstance === 'function') {
+                                const maybePromise = hrInstance();
+                                if (maybePromise && typeof maybePromise.then === 'function') {
+                                    await maybePromise;
+                                    return true;
+                                }
                             }
-                        }
-                        // If none of that exists, try if HardReset is a function, not a constructor (call)
-                        if (typeof HardReset === 'function') {
-                            const res = HardReset(transport);
-                            if (res && typeof res.then === 'function') {
-                                await res;
-                                return true;
+
+                            if (typeof HardReset === 'function') {
+                                const res = HardReset(transport);
+                                if (res && typeof res.then === 'function') {
+                                    await res;
+                                    return true;
+                                }
                             }
+                        } catch (innerErr) {
+                            console.warn('Using HardReset constructor/func failed:', innerErr);
                         }
-                    } catch (innerErr) {
-                        console.warn('Using HardReset constructor/func failed:', innerErr);
                     }
                 }
+            } catch (err) {
+                console.warn('Error while trying HardReset export:', err);
             }
-        } catch (err) {
-            console.warn('Error while trying HardReset export:', err);
-        }
 
-        // 3) try ClassicReset or CustomReset exports (sometimes these utilities are there)
-        try {
-            if (typeof ClassicReset !== 'undefined' && ClassicReset) {
-                console.debug('Trying ClassicReset with transport');
-                const cr = new ClassicReset(transport);
-                if (typeof cr.reset === 'function') {
-                    await cr.reset();
-                    return true;
-                } else if (typeof cr.run === 'function') {
-                    await cr.run();
+            // 3) ClassicReset / CustomReset
+            try {
+                if (typeof ClassicReset !== 'undefined' && ClassicReset) {
+                    console.debug('Trying ClassicReset with transport');
+                    const cr = new ClassicReset(transport);
+                    if (typeof cr.reset === 'function') {
+                        await cr.reset();
+                        return true;
+                    } else if (typeof cr.run === 'function') {
+                        await cr.run();
+                        return true;
+                    }
+                }
+                if (typeof CustomReset !== 'undefined' && CustomReset) {
+                    console.debug('Trying CustomReset with transport');
+                    const cr = new CustomReset(transport);
+                    if (typeof cr.reset === 'function') {
+                        await cr.reset();
+                        return true;
+                    } else if (typeof cr.run === 'function') {
+                        await cr.run();
+                        return true;
+                    }
+                }
+            } catch (err) {
+                console.warn('Classic/Custom reset attempts failed:', err);
+            }
+
+            // 4) fallback přes Web Serial API
+            try {
+                if (port && typeof port.setSignals === 'function') {
+                    console.debug('Attempting manual reset via serialPort.setSignals()');
+                    await port.setSignals({dataTerminalReady: false, requestToSend: true});
+                    await delay(120);
+                    await port.setSignals({dataTerminalReady: true, requestToSend: false});
+                    await delay(50);
+                    await port.setSignals({dataTerminalReady: true, requestToSend: true});
+                    await delay(2000); // čekání na boot
                     return true;
                 }
+            } catch (err) {
+                console.warn('Manual serialPort.reset via setSignals failed:', err);
             }
-            if (typeof CustomReset !== 'undefined' && CustomReset) {
-                console.debug('Trying CustomReset with transport');
-                const cr = new CustomReset(transport /* maybe sequence */);
-                if (typeof cr.reset === 'function') {
-                    await cr.reset();
-                    return true;
-                } else if (typeof cr.run === 'function') {
-                    await cr.run();
-                    return true;
-                }
-            }
-        } catch (err) {
-            console.warn('Classic/Custom reset attempts failed:', err);
-        }
 
-        // 4) Fallback: manual reset via Web Serial API (if we have serialPort and setSignals)
+            console.error('Hard reset failed: no available method succeeded.');
+            return false;
+        })();
+
+        // tady se rozhodne, jestli vyhraje práce nebo timeout
         try {
-            if (port && typeof port.setSignals === 'function') {
-                console.debug('Attempting manual reset via serialPort.setSignals()');
-                // Typical sequence: toggle DTR/RTS to reset
-                await port.setSignals({dataTerminalReady: false, requestToSend: true});
-                await delay(120);
-                await port.setSignals({dataTerminalReady: true, requestToSend: false});
-                await delay(50);
-                await port.setSignals({dataTerminalReady: true, requestToSend: true});
-                await delay(2_000); // wait for device to boot
-                return true;
-            }
+            return await Promise.race([workPromise, timeoutPromise]);
         } catch (err) {
-            console.warn('Manual serialPort.reset via setSignals failed:', err);
+            console.error('Hard reset failed (exception or timeout):', err);
+            if (typeof addLog === 'function') {
+                addLog(`❌ Hard reset failed: ${err.message}`, 'error');
+            }
+            return false; // pro volajícího – „nepovedlo se“
         }
-
-        // 5) If nothing worked, failure
-        console.error('Hard reset failed: no available method succeeded.');
-        return false;
     }
+
 
     // Helper delay function
     function delay(ms) {
@@ -4527,8 +4721,12 @@
                 await closeSerial();
             }
 
-            await performHardReset();
-            addLog('☑️ Hard reset done!', 'accepted');
+            const ok = await performHardReset();
+            if (!ok) {
+                addLog('❌ Hard reset failed!', 'error');
+            } else {
+                addLog('☑️ Hard reset done!', 'accepted');
+            }
 
             // After reset, device is no longer in boot mode
             updateBootModeStatus(false);
@@ -4556,6 +4754,9 @@
                 await closeSerial();
             }
 
+            serialInitialized = false;
+            currentPhase = '';
+
             updateProgress({percentage: 0, state: 'None'});
             updateFileProgress(1, 0, 0);
             updateFileProgress(2, 0, 0);
@@ -4568,7 +4769,10 @@
             if (connected && espLoader) {
                 try {
                     addLog('🔄 Hard reset before disconnecting...', 'info');
-                    await performHardReset();
+                    const ok = await performHardReset();
+                    if (!ok) {
+                        addLog('❌ Hard reset failed!', 'error');
+                    }
                     await delay(500);
                 } catch (e) {
                     addLog('⚠️ Hard reset failed', 'warning');
@@ -4577,8 +4781,28 @@
 
             if (espTransport) {
                 addLog('❎ Disconnecting ESP...', 'success');
-                await espTransport.disconnect();
-                await espTransport.waitForUnlock(1_500);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const work = (async () => {
+                            try {
+                                await espTransport.disconnect();
+                                await espTransport.waitForUnlock(1_500);
+                                resolve();           // done OK
+                            } catch (err) {
+                                reject(err);         // error v disconnect/waitForUnlock
+                            }
+                        })();
+
+                        const timer = setTimeout(() => {
+                            reject(new Error('Timeout while disconnecting transport.'));
+                        }, 3_000);
+
+                        // když práce skončí dřív, timeout zrušíme
+                        work.finally(() => clearTimeout(timer));
+                    });
+                } catch (e) {
+                    addLog('⚠️ Transport disconnect failed', 'warning');
+                }
             }
 
             addLog('✅ Disconnected', 'success');
@@ -4662,6 +4886,7 @@
             disconnectBtn.disabled = false;
             bootModeBtn.disabled = inBootMode;
 
+            setButtonsEnabledDuringConnection(true);
             // ➜ start connection timer
             startConnectionTimer();
         } else {
@@ -4673,6 +4898,7 @@
             disconnectBtn.disabled = true;
             bootModeBtn.disabled = true;
 
+            setButtonsEnabledDuringConnection(false);
             // ➜ stop connection timer
             stopConnectionTimer(true);
         }
@@ -4685,8 +4911,33 @@
     // Enable/disable buttons
     function setButtonsEnabled(enabled) {
         document.getElementById('flashBtn').disabled = !enabled;
-        document.getElementById('resetBtn').disabled = !enabled;
+        document.getElementById('resetBtn').disabled = !enabled || !inBootMode;
         document.getElementById('connectBtn').disabled = connected ? true : !enabled;
+        document.getElementById('disconnectBtn').disabled = !connected ? true : !enabled;
+        document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
+        document.getElementById('flashAllBtn').disabled = !enabled;
+        document.getElementById('testBtn').disabled = !enabled;
+        document.getElementById('messageInput').disabled = !enabled;
+        document.getElementById('sendBtn').disabled = !enabled;
+    }
+
+    function setButtonsEnabledDuringFlash(enabled) {
+        document.getElementById('flashBtn').disabled = !enabled;
+        document.getElementById('resetBtn').disabled = !enabled || !inBootMode;
+        document.getElementById('connectBtn').disabled = connected ? true : !enabled;
+        document.getElementById('disconnectBtn').disabled = !connected ? true : !enabled;
+        document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
+        document.getElementById('flashAllBtn').disabled = !enabled;
+        document.getElementById('testBtn').disabled = !enabled;
+        document.getElementById('messageInput').disabled = !enabled;
+        document.getElementById('sendBtn').disabled = !enabled;
+    }
+
+    function setButtonsEnabledDuringConnection(enabled) {
+        document.getElementById('flashBtn').disabled = !enabled;
+        document.getElementById('resetBtn').disabled = !enabled || !inBootMode;
+        document.getElementById('connectBtn').disabled = connected;
+        document.getElementById('disconnectBtn').disabled = !connected;
         document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
         document.getElementById('flashAllBtn').disabled = !enabled;
         document.getElementById('testBtn').disabled = !enabled;
