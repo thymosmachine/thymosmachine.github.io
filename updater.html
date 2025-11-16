@@ -953,28 +953,32 @@
             <button class="btn btn-primary" id="connectBtn" onclick="espConnect()">
                 📡 Connect ESP
             </button>
+            <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
+                ❌ Disconnect
+            </button>
             <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
                 ⚡ Enter Boot Mode
             </button>
+            <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
+                🔄 Hard Reset
+            </button>
+        </div>
+        <div class="action-buttons">
             <!-- In the action-buttons section, change the flash button: -->
             <button class="btn btn-success" id="flashBtn" onclick="flashFirmware()" disabled>
                 💾 Upload Firmware
                 <span class="flash-ready-indicator not-ready" id="flashReadyIndicator">Not ready</span>
             </button>
-            <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
-                🔄 Hard Reset
-            </button>
-            <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
-                ❌ Disconnect
-            </button>
             <button class="btn btn-secondary" onclick="clearLog()">
                 🗑️ Clear log
             </button>
-            <button class="btn btn-third" onclick="test()">
-                🧪 Test ESP
-            </button>
+        </div>
+        <div class="action-buttons">
             <button class="btn btn-fourth" onclick="flashAllVersions()">
                 🚀 Flash all versions
+            </button>
+            <button class="btn btn-third" onclick="test()">
+                🧪 Test ESP
             </button>
         </div>
 
