@@ -1242,6 +1242,20 @@
     }
 
 
+    function isLocalhost() {
+        const hostname = window.location.hostname;
+
+        return (
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname === '' ||                // some browsers use empty hostname for file:// protocol
+            hostname === '::1'                // IPv6 localhost
+        );
+    }
+
+    const IS_LOCAL = isLocalhost();
+
+
     let doPreCommands = false; // Set to true to run pre-commands before flashing
     let doPostCommands = true; // Set to true to run post-commands after flashing
 
@@ -3185,6 +3199,7 @@
 
     // Logging function
     function addLog(message, type = undefined, log = 'app') {
+        if (!IS_LOCAL && type === 'debug') return;
         log = String(log).toLowerCase().trim();
         const logContainer = document.getElementById(log === 'device' ? 'deviceLogContainer' : 'appLogContainer');
         const timestamp = new Date().toLocaleTimeString('cs-CZ');
@@ -3247,8 +3262,6 @@
     }
 
     function updatePreFlashProgress(completed, total) {
-        totalPreFlashCommands = total;
-        completedPreFlashCommands = completed;
         const phaseProgress = (completed / total) * 100;
         const overallProgress = calculateOverallProgress(phaseProgress);
         updateProgress({
@@ -3259,8 +3272,6 @@
 
     // Function to update progress of post-flash commands
     function updatePostFlashProgress(completed, total) {
-        totalPostFlashCommands = total;
-        completedPostFlashCommands = completed;
         const phaseProgress = (completed / total) * 100;
         const overallProgress = calculateOverallProgress(phaseProgress);
         updateProgress({
