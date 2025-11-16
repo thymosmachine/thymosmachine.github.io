@@ -341,9 +341,19 @@
         }
 
         .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
         }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: none;
+            box-shadow: none;
+        }
+
 
         .btn-primary {
             background: #667eea;
@@ -352,39 +362,11 @@
 
         .btn-primary:hover:not(:disabled) {
             background: #5568d3;
-            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
 
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            background: #c0392b;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
-        }
-
-        .btn-success {
-            background: #27ae60;
-            color: white;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background: #229954;
-        }
-
-        .btn-warning {
-            background: #f39c12;
-            color: white;
-        }
-
-        .btn-warning:hover:not(:disabled) {
-            background: #e67e22;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+        .btn-primary:active:not(:disabled) {
+            background: #364179;
         }
 
         .btn-secondary {
@@ -394,6 +376,11 @@
 
         .btn-secondary:hover:not(:disabled) {
             background: #7f8c8d;
+            box-shadow: 0 5px 15px rgba(149, 165, 166, 0.3);
+        }
+
+        .btn-secondary:active:not(:disabled) {
+            background: #606e6f;
         }
 
         .btn-third {
@@ -403,6 +390,11 @@
 
         .btn-third:hover:not(:disabled) {
             background: #732d91;
+            box-shadow: 0 5px 15px rgba(142, 68, 173, 0.3);
+        }
+
+        .btn-third:active:not(:disabled) {
+            background: #5e216f;
         }
 
         .btn-fourth {
@@ -412,6 +404,81 @@
 
         .btn-fourth:hover:not(:disabled) {
             background: #138d75;
+            box-shadow: 0 5px 15px rgba(22, 160, 133, 0.3);
+        }
+
+        .btn-fourth:active:not(:disabled) {
+            background: #0e6655;
+        }
+
+        .btn-fifth {
+            background: #f57c00;
+            color: white;
+        }
+
+        .btn-fifth:hover:not(:disabled) {
+            background: #ff9800;
+            box-shadow: 0 5px 15px rgba(245, 124, 0, 0.3);
+        }
+
+        .btn-fifth:active:not(:disabled) {
+            background: #e65100;
+        }
+
+        .btn-sixth {
+            background: #d35400;
+            color: white;
+        }
+
+        .btn-sixth:hover:not(:disabled) {
+            background: #ba4a00;
+            box-shadow: 0 5px 15px rgba(211, 84, 0, 0.3);
+        }
+
+        .btn-sixth:active:not(:disabled) {
+            background: #873600;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-danger:active:not(:disabled) {
+            background: #922b21;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #229954;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-success:active:not(:disabled) {
+            background: #1e8449;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #e67e22;
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-warning:active:not(:disabled) {
+            background: #b9770e;
         }
 
         .btn-small {
@@ -430,16 +497,44 @@
             margin-top: 30px;
         }
 
-        .log-container {
+        .log-wrapper {
             background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 15px;
+            padding: 15px 7px 10px 5px;
             border-radius: 8px;
             height: 300px;
+            overflow: hidden;
+        }
+
+        .log-container {
+            color: #d4d4d4;
+            padding: 0 15px 0 10px;
+            height: 100%;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
             font-size: 13px;
             line-height: 1.5;
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: #323232;
+            border-radius: 5px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 5px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        .log-container::-webkit-scrollbar-thumb:active {
+            background: #999;
         }
 
         .log-entry {
@@ -762,7 +857,7 @@
         <p class="subtitle">Web interface for uploading firmware to ESP devices</p>
 
         <div class="info-box">
-            ℹ️ Connect the ESP device via USB and click "Connect ESP". Select a firmware version or upload your own
+            ℹ️ Connect the ESP device via USB and click "Connect". Select a firmware version or upload your own
             files.
         </div>
 
@@ -862,7 +957,7 @@
             </div>
 
             <!-- File 1 -->
-            <div class="file-item" id="fileItem1">
+            <div class="file-item hidden" id="fileItem1">
                 <div class="file-header">
                     <input type="checkbox" id="fileEnable1" onchange="toggleFileItem(1)">
                     <label for="fileEnable1">Bootloader / Merged</label>
@@ -886,7 +981,7 @@
             </div>
 
             <!-- File 2 -->
-            <div class="file-item" id="fileItem2">
+            <div class="file-item hidden" id="fileItem2">
                 <div class="file-header">
                     <input type="checkbox" id="fileEnable2" onchange="toggleFileItem(2)">
                     <label for="fileEnable2">Partitions</label>
@@ -909,7 +1004,7 @@
             </div>
 
             <!-- File 3 -->
-            <div class="file-item" id="fileItem3">
+            <div class="file-item hidden" id="fileItem3">
                 <div class="file-header">
                     <input type="checkbox" id="fileEnable3"
                            onchange="toggleFileItem(3)">
@@ -951,15 +1046,15 @@
         <!-- Action Buttons -->
         <div class="action-buttons">
             <button class="btn btn-primary" id="connectBtn" onclick="espConnect()">
-                📡 Connect ESP
+                📡 Connect
             </button>
-            <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
+            <button class="btn btn-danger" id="disconnectBtn" onclick="safeDisconnect()" disabled>
                 ❌ Disconnect
             </button>
             <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
                 ⚡ Enter Boot Mode
             </button>
-            <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
+            <button class="btn btn-fifth" id="resetBtn" onclick="hardReset()" disabled>
                 🔄 Hard Reset
             </button>
         </div>
@@ -974,10 +1069,10 @@
             </button>
         </div>
         <div class="action-buttons">
-            <button class="btn btn-fourth" onclick="flashAllVersions()">
+            <button class="btn btn-fourth" id="flashAllBtn" onclick="flashAllVersions()">
                 🚀 Flash all versions
             </button>
-            <button class="btn btn-third" onclick="test()">
+            <button class="btn btn-third" id="testBtn" onclick="test()">
                 🧪 Test ESP
             </button>
         </div>
@@ -985,13 +1080,17 @@
         <!-- Log Section -->
         <div class="log-section">
             <h3 style="margin-bottom: 10px;">Console log</h3>
-            <div class="log-container" id="appLogContainer">
-                <div class="log-entry success" style="font-weight: bold">Ready to connect ESP device...</div>
+            <div class="log-wrapper">
+                <div class="log-container" id="appLogContainer">
+                    <div class="log-entry success" style="font-weight: bold">Ready to connect ESP device...</div>
+                </div>
             </div>
         </div>
         <div class="log-section">
             <h3 style="margin-bottom: 10px;">Device log</h3>
-            <div class="log-container" id="deviceLogContainer" style="height: 160px;">
+            <div class="log-wrapper" style="height: 160px;">
+                <div class="log-container" id="deviceLogContainer">
+                </div>
             </div>
         </div>
     </div>
@@ -1124,7 +1223,7 @@
 
     async function test() {
         if (!connected) {
-            addLog('❌ Device is not connected!', 'error');
+            addLog('Test function: ❌ Device is not connected!', 'error');
             return;
         }
 
@@ -1184,7 +1283,7 @@
 
     async function flashAllVersions() {
         if (!connected) {
-            addLog('❌ Device is not connected!', 'error');
+            addLog('Flash all versions: ❌ Device is not connected!', 'error');
             return;
         }
 
@@ -1280,7 +1379,7 @@
             if (!connected) {
                 indicator.textContent = '⊗ Not connected';
             } else {
-                indicator.textContent = '⊗ Not ready';
+                indicator.textContent = '⊘ Not ready';
             }
         }
     }
@@ -2096,7 +2195,16 @@
             return divider;
         };
 
+        const createSpacer = () => {
+            const spacer = document.createElement('option');
+            spacer.disabled = true;
+            spacer.textContent = '';
+            return spacer;
+        };
+
         if (manifestData) {
+            versionSelect.appendChild(createSpacer());
+
             // Add set versions first
             const loadedSet = manifestData?.set?.slice()?.sort((a, b) => {
                 const pa = getPriority(a.label);
@@ -2150,6 +2258,11 @@
         customOption.value = 'custom';
         customOption.textContent = 'Custom (custom files)';
         versionSelect.appendChild(customOption);
+
+
+        if (manifestData) {
+            versionSelect.appendChild(createSpacer());
+        }
 
         // Set default selection
         setDefaultVersion();
@@ -3175,7 +3288,7 @@
     // Enter boot mode - reuses existing connection
     async function enterBootMode() {
         if (!connected || !serialPort) {
-            addLog('❌ ESP is not connected!', 'error');
+            addLog('Boot-mode: ❌ ESP is not connected!', 'error');
             return;
         }
 
@@ -3530,7 +3643,7 @@
     // Flash firmware
     async function flashFirmware() {
         if (!connected) {
-            addLog('❌ ESP is not connected!', 'error');
+            addLog('Flash function: ❌ ESP is not connected!', 'error');
             return;
         }
 
@@ -4138,7 +4251,7 @@
     // Hard reset ESP
     async function hardReset() {
         if (!connected) {
-            addLog('❌ ESP is not connected!', 'error');
+            addLog('Reset: ❌ ESP is not connected!', 'error');
             return;
         }
 
@@ -4258,6 +4371,8 @@
         document.getElementById('resetBtn').disabled = !enabled;
         document.getElementById('connectBtn').disabled = connected ? true : !enabled;
         document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
+        document.getElementById('flashAllBtn').disabled = !enabled;
+        document.getElementById('testBtn').disabled = !enabled;
     }
 </script>
 
