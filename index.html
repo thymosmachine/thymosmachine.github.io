@@ -89,6 +89,17 @@
 
 
     <script>
+        function isLocalhost() {
+            const hostname = window.location.hostname;
+
+            return (
+                hostname === 'localhost' ||
+                hostname === '127.0.0.1' ||
+                hostname === '' ||                // some browsers use empty hostname for file:// protocol
+                hostname === '::1'                // IPv6 localhost
+            );
+        }
+
         function unblockDebugging(unBlock = true) {
             // console.ignoredYellowBox = unBlock ? [] : ['Remote debugger'];
             // console.disableYellowBox = !unBlock;
@@ -158,7 +169,7 @@
             }
 
 
-            debugging = unBlock;
+            IS_DEBUGGING = unBlock;
         }
 
 
@@ -204,13 +215,14 @@
             }
         }
 
-        let debugging = false;
+        let IS_DEBUGGING = false;
+        const IS_LOCAL = isLocalhost();
 
         (async () =>
-                debugging = await checkDebugFlag() // find "debug.txt" in the main directory
+                IS_DEBUGGING = await checkDebugFlag() // find "debug.txt" in the main directory
         )().then(() =>
             window.addEventListener('load', () =>
-                unblockDebugging(debugging)
+                unblockDebugging(IS_DEBUGGING)
             ));
 
 
@@ -3396,7 +3408,7 @@
 
         // Prevent native reload/close dialog (show warning)
         window.addEventListener('beforeunload', (e) => {
-            if (warnOnClose && !debugging) {
+            if (warnOnClose && !IS_DEBUGGING) {
                 e.preventDefault();
                 // Standard: most browsers ignore custom text
                 e.returnValue = '';
@@ -3406,7 +3418,7 @@
         // Capture keys that normally cause reload/close/close-tab
         window.addEventListener('keydown', (e) => {
             // F5 (116), Ctrl+R, Ctrl+F5, Ctrl+W, Ctrl+F4, Ctrl+Shift+R, Meta(Command)+R
-            if ((warnOnClose && !debugging) &&
+            if ((warnOnClose && !IS_DEBUGGING) &&
                 (
                     e.key === 'F5' ||
                     (e.ctrlKey && e.key.toLowerCase() === 'r') ||
@@ -3426,7 +3438,7 @@
 
         // Capture clicks on links that could leave the page
         document.addEventListener('click', (e) => {
-            if (warnOnClose && !debugging) {
+            if (warnOnClose && !IS_DEBUGGING) {
                 const a = e.target.closest && e.target.closest('a[href]');
                 if (!a) return;
                 const href = a.getAttribute('href');
@@ -3446,7 +3458,7 @@
         window.addEventListener('popstate', (event) => {
             // We push state again and show warning
             history.pushState({page: 1}, '', '');
-            if (warnOnClose && !debugging) {
+            if (warnOnClose && !IS_DEBUGGING) {
                 if (confirm('Are you sure you want to leave this page? Make sure to finish all tasks, stop machine and save your data before leaving.')) {
                     // optionally allow navigation
                     history.back();
@@ -3826,7 +3838,7 @@
         if (!isUnavailable(el)) val = catchVal(el?.value?.trim(), null, isNonEmptyStr); // TODO: el.disabled, el.hidden
         if (isNotEmpty(val)) return val;
 
-        if (debugging) console.info('Getting default value for', el.id);
+        if (IS_DEBUGGING) console.info('Getting default value for', el.id);
 
         if (el.dataset.hasOwnProperty('defaultValue')) return el.dataset.defaultValue;
 
@@ -5718,7 +5730,7 @@
         // TODO: handle recomputeAllCalculations spamming on connect and end of experiment
         if (isExperimentRunning || !(initialPageLoaded && initialDataLoaded)) return;
 
-        if (debugging) console.log("%c\n\n\n\tRecomputing all calculations...\n\n\n", 'color: red; font-size: 14px; font-weight: bold;');
+        if (IS_DEBUGGING) console.log("%c\n\n\n\tRecomputing all calculations...\n\n\n", 'color: red; font-size: 14px; font-weight: bold;');
 
         calculateComputableInputs();
 
@@ -6320,7 +6332,7 @@
 
                     const loadData = formData?.settingsLoad || {};
                     const sysData = formData?.settingsSys || {};
-                    if (!debugging) {
+                    if (!IS_DEBUGGING) {
                         const levels = ['operator', 'admin', 'service', 'developer', 'god'];
                         if (levels.some(level => level === sysData?.systemLevelSelect)) {
                             const level = 'expert';
@@ -7551,7 +7563,7 @@
     }
 
     function checkCommand(command) {
-        if (debugging) console.info(`Preparing to send command:\n\t\t${command}`);
+        if (IS_DEBUGGING) console.info(`Preparing to send command:\n\t\t${command}`);
         if (!isConnected || !serialPort?.writable) {
             logMessage("\n⚠️ No device is connected or port is unavailable!");
             console.error("⚠️", command);
@@ -7629,8 +7641,8 @@
                 return;
 
             case "toggle debugging":
-                unblockDebugging(!debugging);
-                await logMessage(`\n🔀 Toggled debugging: ${debugging ? "ON" : "OFF"}`);
+                unblockDebugging(!IS_DEBUGGING);
+                await logMessage(`\n🔀 Toggled debugging: ${IS_DEBUGGING ? "ON" : "OFF"}`);
                 return;
 
             case "toggle exp brutal":
@@ -7990,7 +8002,7 @@
         // nezdržujeme — fire and forget
         sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${hwInterval}`);
         sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${1}`);
-        if (debugging) console.info("\t🐕 Watchdog is active.");
+        if (IS_DEBUGGING) console.info("\t🐕 Watchdog is active.");
 
         watchdogTimer = setInterval(() => {
             // posílej SYSWR pouze když je to smysluplné
@@ -8006,8 +8018,8 @@
             watchdogTimer = null;
         }
         // HW watchdog turn off — optional:
-        if (isConnected && turnOff) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);// if (debugging) TODO: turned off by DEBUGGING!!!
-        if (debugging) console.info("\t🐶 Watchdog is inactive.");
+        if (isConnected && turnOff) sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);// if (debugging) TODO: turned off by IS_DEBUGGING!!!
+        if (IS_DEBUGGING) console.info("\t🐶 Watchdog is inactive.");
     }
 
     // ------- Movement -------
@@ -8383,7 +8395,7 @@
             // First, try to match and resolve waiting messages in the queue
             const consumed = _tryMatchAndResolve(msg);
             if (consumed) {
-                if (debugging) logMessage("   📯\t" + msg);
+                if (IS_DEBUGGING) logMessage("   📯\t" + msg);
                 continue;             // If a message is consumed, skip further processing
             }
 
@@ -8755,8 +8767,8 @@
             await beganMoving();
             await lockConnectionButtons(true);
 
-            if (!debugging) await console.clear();
-            if (!debugging) await clearConsoleLog();
+            if (!IS_DEBUGGING) await console.clear();
+            if (!IS_DEBUGGING) await clearConsoleLog();
             await console.info("%c\n\n\n──────────── NEW EXPERIMENT ────────────\n\n\n", "color: black; font-size: 14px; font-weight: bold;");
             await console.groupCollapsed("New Experiment Section");
             await console.info(`%c🕒 Experiment started at: ${date.toLocaleString()}`, "color: gray; font-size: 12px; font-style: italic;");
@@ -9782,7 +9794,7 @@
                 UI.progressBar.value = 100;
                 UI.progressLabel.textContent = `100%`;
                 document.title = `Μοῖρα - Experiment done (100%)`;
-                if (debugging) console.info("✅ Experiment done 💯");
+                if (IS_DEBUGGING) console.info("✅ Experiment done 💯");
             }
 
             aggregatedDataBetweenSteps = [];
@@ -9957,7 +9969,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tGet firmware version...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet firmware version...");
             const version = await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut);
 
             if (!version) {
@@ -9981,7 +9993,7 @@
         const versions = {};
         try {
             for (const t of tags) {
-                if (debugging) logMessage(` 📢\tGet ${t} firmware version...`);
+                if (IS_DEBUGGING) logMessage(` 📢\tGet ${t} firmware version...`);
                 let version = await getPromisedValue(`MISC GET LIBINFO ${t}`, /Firmware:\s*([^,]+)/, 1, timeOut);
 
                 version = version || null;
@@ -9999,7 +10011,7 @@
 
     async function getMachineName(timeOut = 2_000) {
         try {
-            if (debugging) logMessage(" 📢\tGet machine name...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet machine name...");
             const name = await getPromisedValue("MISC GET NAME", /Machine Name:\s*(.+)/, 1, timeOut);
 
             if (!name) {
@@ -10015,7 +10027,7 @@
 
     async function getMachineID(timeOut = 2_000) {
         try {
-            if (debugging) logMessage(" 📢\tGet machine ID...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet machine ID...");
             const id = toNumber(await getPromisedValue("MISC GET MACHINE_ID", /Machine ID:\s*(.+)/, 1, timeOut), true);
 
             if (!isNumSafe(id)) {
@@ -10036,7 +10048,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tGet position...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet position...");
             const position = toNumber(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut), true);
             // const position = parseFloat(await getPromisedValue("MC GET POS", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
 
@@ -10059,7 +10071,7 @@
         }
         const ldID = toInteger(loadcellID);
         try {
-            if (debugging) logMessage(` 📢\tGet Loadcell ${ldID} reading...`);
+            if (IS_DEBUGGING) logMessage(` 📢\tGet Loadcell ${ldID} reading...`);
 
             if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             if (!isNumSafe(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
@@ -10083,7 +10095,7 @@
         }
         const forces = [];
         try {
-            if (debugging) logMessage(" 📢\tGet Loadcells readings...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet Loadcells readings...");
 
             if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             for (let i = 0; i < loadCellNum; i++) {
@@ -10104,7 +10116,7 @@
         }
         try {
             const ldID = toInteger(loadcellID);
-            if (debugging) logMessage(` 📢\tCheck Loadcell ${ldID} presence...`);
+            if (IS_DEBUGGING) logMessage(` 📢\tCheck Loadcell ${ldID} presence...`);
 
             if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             if (!isNumSafe(ldID) || (ldID < 0 || ldID > (loadCellNum - 1))) throw new Error(`Loadcell ID must be between 0 and ${loadCellNum - 1}: ${ldID} given.`);
@@ -10129,7 +10141,7 @@
         }
         const isPresent = [];
         try {
-            if (debugging) logMessage(" 📢\tCheck Loadcells presence...");
+            if (IS_DEBUGGING) logMessage(" 📢\tCheck Loadcells presence...");
 
             if (!isNumSafe(loadCellNum)) throw new Error(`Total Loadcell count is not defined: ${loadCellNum}`);
             for (let i = 0; i < loadCellNum; i++) {
@@ -10149,7 +10161,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tGet calibration status...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet calibration status...");
 
             return await getPromisedValue("MC GET ISCALIBRATED", /Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
             // return await getPromisedValue("MC GET ISCALIBRATED", /S0:([01])/, 1, timeOut) === "1";
@@ -10165,7 +10177,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tGet speed...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet speed...");
 
             const speed = toNumber(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\s?mm\/s/, 1, timeOut), true);
             // const speed = parseFloat(await getPromisedValue("MC GET SPEED", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
@@ -10188,7 +10200,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tGet acceleration...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet acceleration...");
 
             const acceleration = toNumber(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(?:\.\d+)?)\s?mm\/s(?:\^2|²)/, 1, timeOut), true); // [¹²³⁴⁵⁶⁷⁸⁹]
             // const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
@@ -10210,7 +10222,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tGet moving status...");
+            if (IS_DEBUGGING) logMessage(" 📢\tGet moving status...");
 
             return await getPromisedValue("MC GET RUNNING", /Motor running:\s[01]/, 1, timeOut) === "1";
             // return await getPromisedValue("MC GET RUNNING", /S0:([01])/, 1, timeOut) === "1";
@@ -10226,7 +10238,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tRebooting device...");
+            if (IS_DEBUGGING) logMessage(" 📢\tRebooting device...");
 
             await sendCommandGeneral("MISC REBOOT");
 
@@ -10246,7 +10258,7 @@
             return;
         }
         try {
-            if (debugging) logMessage(" 📢\tResetting memory device...");
+            if (IS_DEBUGGING) logMessage(" 📢\tResetting memory device...");
 
             await sendCommandGeneral("MEMORY RESET");
 
@@ -12681,7 +12693,7 @@
             const portInfo = await port?.getInfo() ?? {};
             const fingerprint = `${Number(portInfo.usbVendorId)?.toString(10) ?? 'N/A'}:${Number(portInfo.usbProductId)?.toString(10) ?? 'N/A'}`;
             const isThymos = thymosFingerprints.includes(fingerprint);
-            if (debugging) console.info("\tFingerprint:", fingerprint, "Is Thymos:", isThymos);
+            if (IS_DEBUGGING) console.info("\tFingerprint:", fingerprint, "Is Thymos:", isThymos);
             return isThymos;
         } catch (error) {
             await handleError(error, "checkThymosPort");
@@ -12862,7 +12874,7 @@
         await logMessage("\n");
 
         await sendCommandGeneral("MC STOP"); // Stop movement
-        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (debugging ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', timeUnitMach)))}`); // Stop data collection
+        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (IS_DEBUGGING ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', timeUnitMach)))}`); // Stop data collection
         await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
 
         await logMessage("\n");
@@ -12970,8 +12982,8 @@
         }
 
         if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
-            if (debugging) console.warn("Firmware, Name or ID not read correctly, retrying...");
-            if (debugging) console.info(`\nFirmware:  ${machineFirmware} = ${isOk(machineFirmware)}\nName:  ${machineName} = ${isOk(machineName)}\nID:  ${machineID} = ${isOk(machineID)}\n`);
+            if (IS_DEBUGGING) console.warn("Firmware, Name or ID not read correctly, retrying...");
+            if (IS_DEBUGGING) console.info(`\nFirmware:  ${machineFirmware} = ${isOk(machineFirmware)}\nName:  ${machineName} = ${isOk(machineName)}\nID:  ${machineID} = ${isOk(machineID)}\n`);
 
             abort(signal);
             alert("\n⚠️ Device did not respond correctly.");
@@ -13040,7 +13052,7 @@
             // TODO: implement: confirm(.....) => automatic firmware update procedure
         }
 
-        if (debugging) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
+        if (IS_DEBUGGING) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
 
         $ID("inputMachineName").value = machineName;
         $ID("inputMachineID").value = machineID;
@@ -13170,7 +13182,7 @@
                 });
 
             } catch (error) {
-                if (debugging) console.warn("\n⚠️ Error stopping data collection:", error);
+                if (IS_DEBUGGING) console.warn("\n⚠️ Error stopping data collection:", error);
             }
 
             await endedMoving();
@@ -13891,7 +13903,7 @@
             preloadScreen.style.display = 'flex';
             preloadScreen.style.opacity = "1";
             document.body.style.overflowY = "hidden";
-            if (debugging) console.info("%cPreloader screen shown.", "color: gray; font-style: italic;");
+            if (IS_DEBUGGING) console.info("%cPreloader screen shown.", "color: gray; font-style: italic;");
             return;
         }
 
@@ -13904,7 +13916,7 @@
             // preloadScreen?.remove();
             preloadScreen.style.display = "none";
 
-            if (debugging) console.info("%cPreloader screen hidden.", "color: gray; font-style: italic;");
+            if (IS_DEBUGGING) console.info("%cPreloader screen hidden.", "color: gray; font-style: italic;");
         }, {once: true});
     }
 
@@ -14337,7 +14349,7 @@
                     (async () => {
                         if (isConnected) await disconnectSerial({override: true, verbose: false});
                         await sleep(100);
-                        window.location.href = './hermes';
+                        window.location.href = `./hermes${IS_LOCAL ? '.html' : ''}`;
                     })();
                     return;
                 case 'minimal':
@@ -14559,7 +14571,7 @@
         // Open in new tab:         window.open('about.html', '_blank', 'noopener,noreferrer')
         // Open in new window:      window.open('about.html', '_blank', 'noopener,noreferrer,width=800,height=600')
 
-        $ID("aboutButton")?.addEventListener("click", async () => window.open('about', '_blank', 'noopener,noreferrer'));
+        $ID("aboutButton")?.addEventListener("click", async () => window.open(`./about${IS_LOCAL ? '.html' : ''}`, '_blank', 'noopener,noreferrer'));
 
         $ID("updateMachButton")?.addEventListener("click", async () => {
             // const preloadScreen = $ID("preloadScreen");
@@ -14570,7 +14582,7 @@
 
             await disconnectSerial({override: true});
             await sleep(100);
-            window.location.href = './update';
+            window.location.href = `./update${IS_LOCAL ? '.html' : ''}`;
         });
 
         $ID("rebootButton")?.addEventListener("click", async () => await rebootDevice());
