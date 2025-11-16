@@ -1,0 +1,24 @@
+<svg width="16" height="16" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+    <!--  source: https://commons.wikimedia.org/wiki/File:Atropos_symbol_(fixed_width).svg  -->
+    <g fill="none"
+       stroke="#333"
+       stroke-width="1"
+       stroke-linecap="round"
+       stroke-linejoin="round">
+        <!-- horní trojúhelník -->
+        <path d="M6.833325 2.3915532
+             H10.166675
+             L8.5 5.2783191
+             Z"/>
+        <!-- levý spodní trojúhelník -->
+        <path d="M1.833325 2.3915532
+             H5.166675
+             L3.5 5.2783191
+             Z"/>
+        <!-- spodní trojúhelník -->
+        <path d="M4.333325 6.7216807
+             H7.666675
+             L6 9.6084466
+             Z"/>
+    </g>
+</svg>

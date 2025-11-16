@@ -1,0 +1,24 @@
+<svg width="16" height="16" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+    <!--  source: https://commons.wikimedia.org/wiki/File:Lachesis_symbol_(fixed_width).svg  -->
+    <g fill="none"
+       stroke="#333"
+       stroke-width="1.5"
+       stroke-linecap="round"
+       stroke-linejoin="round">
+        <!-- bottom triangle -->
+        <path d="M3.5 10.33
+                 L8.5 10.33
+                 L6 6
+                 Z"/>
+        <!-- left upper triangle -->
+        <path d="M1 6
+                 L3.5 1.67
+                 L6 6
+                 Z"/>
+        <!-- right upper triangle -->
+        <path d="M11 6
+                 L8.5 1.67
+                 L6 6
+                 Z"/>
+    </g>
+</svg>

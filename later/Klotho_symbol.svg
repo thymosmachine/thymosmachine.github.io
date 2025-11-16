@@ -1,0 +1,24 @@
+<svg width="16" height="16" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+    <!--  source: https://commons.wikimedia.org/wiki/File:Klotho_symbol_(fixed_width).svg  -->
+    <g fill="none"
+       stroke="#333"
+       stroke-width="1.3"
+       stroke-linecap="round"
+       stroke-linejoin="round">
+        <!-- top triangle -->
+        <path d="M2.2501476 1.6697567
+                 L6.0001476 8.164947
+                 L9.7501476 1.6697567
+                 Z"/>
+        <!-- right triangle -->
+        <path d="M1.0002728 3.8346047
+                 L4.7502728 10.329795
+                 L8.500228 3.8346047
+                 Z"/>
+        <!-- left triangle -->
+        <path d="M7.2500228 10.329795
+                    L11.000023 3.8346047
+                    L3.5001476 3.8346047
+                    Z"/>
+    </g>
+</svg>
