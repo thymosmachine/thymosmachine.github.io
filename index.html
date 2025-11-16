@@ -14349,7 +14349,7 @@
                     (async () => {
                         if (isConnected) await disconnectSerial({override: true, verbose: false});
                         await sleep(100);
-                        window.location.href = `./hermes${IS_LOCAL ? '.html' : ''}`;
+                        window.location.href = `./agent${IS_LOCAL ? '.html' : ''}`;
                     })();
                     return;
                 case 'minimal':
