@@ -3408,6 +3408,8 @@
 
         // Prevent native reload/close dialog (show warning)
         window.addEventListener('beforeunload', (e) => {
+            // TODO: navigator.sendBeacon("/save", JSON.stringify(data));
+
             if (warnOnClose && !IS_DEBUGGING) {
                 e.preventDefault();
                 // Standard: most browsers ignore custom text
