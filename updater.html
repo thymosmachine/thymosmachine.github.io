@@ -494,19 +494,83 @@
         }
 
         .log-section {
+            color: #d4d4d4;
             margin-top: 30px;
+            margin-bottom: 20px;
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 15px 5px 10px;
+
+            background: #2d2d30;
+            border-bottom: 1px solid #3c3c3c;
+            font-weight: bold;
+        }
+
+        .input-container {
+            display: flex;
+            border-top: 1px solid #3c3c3c;
+            background: #2d2d30;
+        }
+
+        .input-container input {
+            flex: 1;
+            margin: 0;
+            padding: 10px;
+            border: none;
+            border-radius: 0;
+            color: #d4d4d4;
+            font-size: 14px;
+        }
+
+        .input-container input::placeholder {
+            color: #d4d4d4;
+            opacity: 1;
+        }
+
+        .input-container input:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+        }
+
+        .input-container .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 0;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .input-container .btn:hover:not(:disabled) {
+            background: #5568d3;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .input-container .btn:active:not(:disabled) {
+            background: #364179;
+            box-shadow: none;
+            transform: none;
+        }
+
+
         .log-wrapper {
-            background: #1e1e1e;
-            padding: 15px 7px 10px 5px;
-            border-radius: 8px;
+            padding: 0 7px 10px 5px;
             height: 300px;
             overflow: hidden;
         }
 
         .log-container {
-            color: #d4d4d4;
             padding: 0 15px 0 10px;
             height: 100%;
             overflow-y: auto;
@@ -867,10 +931,21 @@
 
         <!-- Connection Section -->
         <div class="connection-section">
-            <h3 style="margin-bottom: 15px;">Connection to device
-                <span class="status-badge disconnected" id="statusBadge">Disconnected</span>
-                <span class="boot-mode-indicator unknown" id="bootModeBadge" style="display: none;">Unknown mode</span>
-            </h3>
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h3>
+                    Connection to device
+                    <span class="status-badge disconnected" id="statusBadge">Disconnected</span>
+                    <span class="boot-mode-indicator unknown" id="bootModeBadge"
+                          style="display: none;">Unknown mode</span>
+                </h3>
+                <div>
+                    <b>Time:</b>
+                    <span id="connectionTimer"
+                          style="margin-left: 10px; font-family: monospace; font-size: 0.9em; opacity: 0.8;">
+                    --:--:--
+                    </span>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="baudRate">Baudrate:</label>
                 <select id="baudRate">
@@ -1079,7 +1154,10 @@
 
         <!-- Log Section -->
         <div class="log-section">
-            <h3 style="margin-bottom: 10px;">Console log</h3>
+            <div class="log-header" style="margin-bottom: 10px;">
+                <h3>Console log</h3>
+                <div>Lines: <span id="lineCount-app">0</span></div>
+            </div>
             <div class="log-wrapper">
                 <div class="log-container" id="appLogContainer">
                     <div class="log-entry success" style="font-weight: bold">Ready to connect ESP device...</div>
@@ -1087,10 +1165,21 @@
             </div>
         </div>
         <div class="log-section">
-            <h3 style="margin-bottom: 10px;">Device log</h3>
+            <div class="log-header" style="margin-bottom: 10px;">
+                <h3>Device log</h3>
+                <div>Lines: <span id="lineCount-device">0</span></div>
+            </div>
             <div class="log-wrapper" style="height: 160px;">
                 <div class="log-container" id="deviceLogContainer">
                 </div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="messageInput" placeholder="Type a message to send to the device..."
+                       onkeypress="handleKeyPress(event)">
+                <label for="messageInput"></label>
+                <button class="btn" id="sendBtn" onclick="sendMessage()">
+                    ➤ Send
+                </button>
             </div>
         </div>
     </div>
@@ -1190,6 +1279,16 @@
         2: {valid: false, info: null},
         3: {valid: false, info: null}
     };
+
+    let totalFilesToFlash = 0;
+    let currentPhase = '';
+
+    let lineCount = {
+        app: 0,
+        device: 0
+    };
+    let connectionStartTime = null;
+    let connectionTimerInterval = null;
 
     // Make functions globally accessible
     window.toggleFileItem = toggleFileItem;
@@ -1526,6 +1625,51 @@
         }
 
         return null;
+    }
+
+    async function sendMessage() {
+        if (!connected) {
+            addLog('❌ Cannot send message: Device is not connected', 'error');
+            return;
+        }
+
+        const input = document.getElementById('messageInput');
+        const message = input.value.toLowerCase().trim();
+
+        if (!message) return;
+
+        try {
+            const lineEnding = document.getElementById('lineEnding').value || 'lf';
+            let textToSend = message;
+
+            // Přidání line ending
+            switch (lineEnding) {
+                case 'lf':
+                    textToSend += '\n';
+                    break;
+                case 'cr':
+                    textToSend += '\r';
+                    break;
+                case 'crlf':
+                    textToSend += '\r\n';
+                    break;
+                default:
+                    // No line ending
+                    break;
+            }
+
+            await writeSerial(textToSend, false);
+
+        } catch (error) {
+            addLog(`❌ Error sending message: ${error.message}`, 'error');
+            console.warn('Error sending message:', error);
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
     }
 
     // Write data to serial port
@@ -3040,6 +3184,7 @@
 
     // Logging function
     function addLog(message, type = undefined, log = 'app') {
+        log = String(log).toLowerCase().trim();
         const logContainer = document.getElementById(log === 'device' ? 'deviceLogContainer' : 'appLogContainer');
         const timestamp = new Date().toLocaleTimeString('cs-CZ');
         const logEntry = document.createElement('div');
@@ -3047,15 +3192,23 @@
         logEntry.textContent = `[${timestamp}] ${message}`;
         logContainer.appendChild(logEntry);
         logContainer.scrollTop = logContainer.scrollHeight;
+
+        lineCount[log] += 1;
+        document.getElementById(`lineCount-${log}`).textContent = lineCount[log];
     }
 
     function clearLog() {
+        lineCount.app = 0;
+        lineCount.device = 0;
+        document.getElementById('lineCount-app').textContent = '0';
+        document.getElementById('lineCount-device').textContent = '0';
         const appLogContainer = document.getElementById('appLogContainer');
         const deviceLogContainer = document.getElementById('deviceLogContainer');
 
-        appLogContainer.innerHTML = '<div class="log-entry">Log cleared...</div>';
         appLogContainer.innerHTML = '';
         deviceLogContainer.innerHTML = '';
+
+        addLog('🗑️ Application log cleared', 'none', 'app');
 
         updateProgress({percentage: 0, state: 'None'});
         updateFileProgress(1, 0, 0);
@@ -3070,7 +3223,7 @@
     const isString = (str) => typeof str === 'string' && str.length > 0;
     const isNumber = (num) => typeof num === 'number' && !isNaN(num);
     const progressSection = document.getElementById('progressSection');
-    const fileProgressBars = document.querySelector('.file-progress-bar-container');
+    const fileProgressBars = Array.from(document.querySelectorAll('.file-progress-bar-container'));
     const progressBar = document.getElementById('progressBar');
     const progressBarContainer = document.querySelector('.progress-bar-container');
     const textInner = document.getElementById('progressTextInner');
@@ -3134,12 +3287,12 @@
         // Calculate overall progress within flashing phase
         const filesCompleted = fileIndex - 1;
         const currentFileProgress = fileProgress / 100;
-        const phaseProgress = ((filesCompleted + currentFileProgress) / totalFilesToFlash) * 100;
+        const phaseProgress = ((filesCompleted + currentFileProgress) / (totalFilesToFlash || 1)) * 100;
         const overallProgress = calculateOverallProgress(phaseProgress);
 
         updateProgress({
             percentage: overallProgress,
-            state: `Flashing file ${fileIndex}/${totalFilesToFlash}: ${Math.round(fileProgress)}%`
+            state: `Flashing file ${fileIndex}/${(totalFilesToFlash || 1)}: ${Math.round(fileProgress)}%`
         });
     }
 
@@ -3731,7 +3884,6 @@
             // FLASHING PHASE
             currentPhase = 'flashing';
             totalFilesToFlash = fileArray.length;
-            currentFileIndex = 0;
 
             addLog('═'.repeat(32), 'info');
             addLog('💾 FLASH PHASE', 'info');
@@ -4335,6 +4487,52 @@
         }
     }
 
+    function formatDuration(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        const hh = String(hours).padStart(2, '0');
+        const mm = String(minutes).padStart(2, '0');
+        const ss = String(seconds).padStart(2, '0');
+
+        return `${hh}:${mm}:${ss}`;
+    }
+
+    function startConnectionTimer() {
+        const timerEl = document.getElementById('connectionTimer');
+        if (!timerEl) return;
+
+        // kdyby něco už běželo, zastav
+        if (connectionTimerInterval) {
+            clearInterval(connectionTimerInterval);
+        }
+
+        connectionStartTime = Date.now();
+        timerEl.textContent = '00:00:00';
+
+        connectionTimerInterval = setInterval(() => {
+            if (!connectionStartTime) return;
+            const diff = Date.now() - connectionStartTime;
+            timerEl.textContent = formatDuration(diff);
+        }, 1_000);
+    }
+
+    function stopConnectionTimer(reset = true) {
+        const timerEl = document.getElementById('connectionTimer');
+        if (connectionTimerInterval) {
+            clearInterval(connectionTimerInterval);
+            connectionTimerInterval = null;
+        }
+        connectionStartTime = null;
+
+        if (timerEl && reset) {
+            timerEl.textContent = '--:--:--';
+        }
+    }
+
+
     // Update connection status
     function updateConnectionStatus(isConnected) {
         const statusBadge = document.getElementById('statusBadge');
@@ -4345,25 +4543,32 @@
         const bootModeBtn = document.getElementById('bootModeBtn');
 
         if (isConnected) {
-            statusBadge.textContent = 'Connected';
+            statusBadge.textContent = 'Připojeno';
             statusBadge.className = 'status-badge connected';
             connectBtn.disabled = true;
             resetBtn.disabled = false;
             disconnectBtn.disabled = false;
             bootModeBtn.disabled = inBootMode;
+
+            // ➜ start connection timer
+            startConnectionTimer();
         } else {
-            statusBadge.textContent = 'Disconnected';
+            statusBadge.textContent = 'Odpojeno';
             statusBadge.className = 'status-badge disconnected';
             connectBtn.disabled = false;
             flashBtn.disabled = true;
             resetBtn.disabled = true;
             disconnectBtn.disabled = true;
             bootModeBtn.disabled = true;
+
+            // ➜ stop connection timer
+            stopConnectionTimer(true);
         }
 
         // Update flash button based on connection and readiness
         checkFlashReadiness();
     }
+
 
     // Enable/disable buttons
     function setButtonsEnabled(enabled) {
@@ -4373,6 +4578,8 @@
         document.getElementById('bootModeBtn').disabled = !enabled || inBootMode;
         document.getElementById('flashAllBtn').disabled = !enabled;
         document.getElementById('testBtn').disabled = !enabled;
+        document.getElementById('messageInput').disabled = !enabled;
+        document.getElementById('sendBtn').disabled = !enabled;
     }
 </script>
 
