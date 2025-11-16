@@ -764,22 +764,21 @@
 <main id="mainContent">
     <div class="container">
         <h1>🔧 ESP Firmware Update Tool</h1>
-        <p class="subtitle">Webové rozhraní pro nahrávání firmware do ESP zařízení</p>
+        <p class="subtitle">Web interface for uploading firmware to ESP devices</p>
 
         <div class="info-box">
-            ℹ️ Připojte ESP zařízení přes USB a klikněte na "Připojit ESP". Vyberte verzi firmware nebo nahrajte vlastní
-            soubory.
+            ℹ️ Connect the ESP device via USB and click "Connect ESP". Select a firmware version or upload your own files.
         </div>
 
         <div class="warning-box" id="bootModeWarning">
-            ⚠️ ESP není v bootloader módu! Před nahráváním firmware klikněte na "Přejít do Boot Módu".
+            ⚠️ ESP is not in bootloader mode! Before uploading firmware, click "Enter Boot Mode".
         </div>
 
         <!-- Connection Section -->
         <div class="connection-section">
-            <h3 style="margin-bottom: 15px;">Připojení k zařízení
-                <span class="status-badge disconnected" id="statusBadge">Odpojeno</span>
-                <span class="boot-mode-indicator unknown" id="bootModeBadge" style="display: none;">Neznámý mód</span>
+            <h3 style="margin-bottom: 15px;">Connection to device
+                <span class="status-badge disconnected" id="statusBadge">Disconnected</span>
+                <span class="boot-mode-indicator unknown" id="bootModeBadge" style="display: none;">Unknown mode</span>
             </h3>
             <div class="form-group">
                 <label for="baudRate">Baudrate:</label>
@@ -794,30 +793,30 @@
 
         <!-- Chip Info Section -->
         <div class="chip-info-section" id="chipInfoSection">
-            <h3>📟 Informace o čipu</h3>
+            <h3>📟 Chip information</h3>
             <table class="info-table" id="chipInfoTable">
                 <tr>
-                    <td>Typ čipu</td>
+                    <td>Chip type</td>
                     <td id="infoChipType">-</td>
                 </tr>
                 <tr>
-                    <td>Funkce</td>
+                    <td>Features</td>
                     <td id="infoFeatures">-</td>
                 </tr>
                 <tr>
-                    <td>Krystal</td>
+                    <td>Crystal</td>
                     <td id="infoCrystal">-</td>
                 </tr>
                 <tr>
-                    <td>MAC adresa</td>
+                    <td>MAC address</td>
                     <td id="infoMac">-</td>
                 </tr>
                 <tr>
-                    <td>Flash velikost</td>
+                    <td>Flash size</td>
                     <td id="infoFlashSize">-</td>
                 </tr>
                 <tr>
-                    <td>Výrobce</td>
+                    <td>Manufacturer</td>
                     <td id="infoManufacturer">-</td>
                 </tr>
                 <tr>
@@ -837,19 +836,19 @@
 
         <!-- File Upload Section -->
         <div class="file-section">
-            <h3 style="margin-bottom: 15px;">Soubory firmware</h3>
+            <h3 style="margin-bottom: 15px;">Firmware files</h3>
 
             <!-- Version Selector -->
             <div class="version-selector">
                 <div id="versionSelectWrapper">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h4 style="width: max-content;">📦 Výběr verze firmware</h4>
-                        <h5 style="width: max-content">Soubory:
-                            <span class="status-badge status-unknown" id="statusBadgeFiles">Neznámý</span>
+                        <h4 style="width: max-content;">📦 Firmware version selection</h4>
+                        <h5 style="width: max-content">Files:
+                            <span class="status-badge status-unknown" id="statusBadgeFiles">Unknown</span>
                         </h5>
                     </div>
                     <div class="form-group">
-                        <label for="versionSelect">Verze:</label>
+                        <label for="versionSelect">Version:</label>
                         <select id="versionSelect" onchange="handleVersionChange()">
                         </select>
                     </div>
@@ -858,10 +857,10 @@
                 <!-- Custom file actions -->
                 <div class="custom-file-actions" id="customFileActions">
                     <button class="btn btn-secondary btn-small" onclick="selectFolder()">
-                        📁 Vybrat složku
+                        📁 Select folder
                     </button>
                     <button class="btn btn-secondary btn-small" onclick="clearAllFiles()">
-                        🗑️ Vymazat vše
+                        🗑️ Clear all
                     </button>
                 </div>
             </div>
@@ -879,12 +878,12 @@
                 </div>
                 <div class="file-controls" id="fileControls1" style="display: none;">
                     <div class="form-group">
-                        <label for="file1">Vybrat soubor:</label>
+                        <label for="file1">Select file:</label>
                         <input type="file" id="file1" accept=".ino.bootloader.bin, .ino.merged.bin"
                                onchange="selectFile(1)">
                     </div>
                     <div class="form-group">
-                        <label for="address1">Adresa (hex):</label>
+                        <label for="address1">Address (hex):</label>
                         <input type="text" id="address1" placeholder="0x0000" value="0x0000">
                     </div>
                 </div>
@@ -904,11 +903,11 @@
                 </div>
                 <div class="file-controls" id="fileControls2" style="display: none;">
                     <div class="form-group">
-                        <label for="file2">Vybrat soubor:</label>
+                        <label for="file2">Select file:</label>
                         <input type="file" id="file2" accept=".ino.partitions.bin" onchange="selectFile(2)">
                     </div>
                     <div class="form-group">
-                        <label for="address2">Adresa (hex):</label>
+                        <label for="address2">Address (hex):</label>
                         <input type="text" id="address2" placeholder="0x8000" value="0x8000">
                     </div>
                 </div>
@@ -928,11 +927,11 @@
                 </div>
                 <div class="file-controls" id="fileControls3" style="display: none;">
                     <div class="form-group">
-                        <label for="file3">Vybrat soubor:</label>
+                        <label for="file3">Select file:</label>
                         <input type="file" id="file3" accept=".ino.bin" onchange="selectFile(3)">
                     </div>
                     <div class="form-group">
-                        <label for="address3">Adresa (hex):</label>
+                        <label for="address3">Address (hex):</label>
                         <input type="text" id="address3" placeholder="0x10000" value="0x10000">
                     </div>
                 </div>
@@ -942,7 +941,7 @@
 
         <!-- Progress Section -->
         <div class="progress-section" id="progressSection">
-            <h3 style="margin-bottom: 10px;">Průběh nahrávání</h3>
+            <h3 style="margin-bottom: 10px;">Upload progress</h3>
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar">
                     <span class="progress-text-inner" id="progressTextInner">0%</span>
@@ -958,38 +957,38 @@
         <!-- Action Buttons -->
         <div class="action-buttons">
             <button class="btn btn-primary" id="connectBtn" onclick="espConnect()">
-                📡 Připojit ESP
+                📡 Connect ESP
             </button>
             <button class="btn btn-warning" id="bootModeBtn" onclick="enterBootMode()" disabled>
-                ⚡ Přejít do Boot Módu
+                ⚡ Enter Boot Mode
             </button>
-            <!-- V action-buttons sekci, změň flash button: -->
+            <!-- In the action-buttons section, change the flash button: -->
             <button class="btn btn-success" id="flashBtn" onclick="flashFirmware()" disabled>
-                💾 Nahrát Firmware
-                <span class="flash-ready-indicator not-ready" id="flashReadyIndicator">Nepřipraveno</span>
+                💾 Upload Firmware
+                <span class="flash-ready-indicator not-ready" id="flashReadyIndicator">Not ready</span>
             </button>
             <button class="btn btn-danger" id="resetBtn" onclick="hardReset()" disabled>
                 🔄 Hard Reset
             </button>
             <button class="btn btn-secondary" id="disconnectBtn" onclick="safeDisconnect()" disabled>
-                ❌ Odpojit
+                ❌ Disconnect
             </button>
             <button class="btn btn-secondary" onclick="clearLog()">
-                🗑️ Vymazat Log
+                🗑️ Clear log
             </button>
             <button class="btn btn-third" onclick="test()">
                 🧪 Test ESP
             </button>
             <button class="btn btn-fourth" onclick="flashAllVersions()">
-                🚀 Nahrát všechny verze
+                🚀 Flash all versions
             </button>
         </div>
 
         <!-- Log Section -->
         <div class="log-section">
-            <h3 style="margin-bottom: 10px;">Log konzole</h3>
+            <h3 style="margin-bottom: 10px;">Console log</h3>
             <div class="log-container" id="appLogContainer">
-                <div class="log-entry success" style="font-weight: bold">Připraveno k připojení ESP zařízení...</div>
+                <div class="log-entry success" style="font-weight: bold">Ready to connect ESP device...</div>
             </div>
         </div>
         <div class="log-section">
@@ -1020,17 +1019,17 @@
 <script type="module">
     // Check Web Serial API support
     if (!("serial" in navigator)) {
-        addLog('❌ Web Serial API není podporováno v tomto prohlížeči!', 'error');
-        addLog('⚠️ Použijte Chrome, Edge nebo Opera.', 'warning');
+        addLog('❌ Web Serial API is not supported in this browser!', 'error');
+        addLog('⚠️ Please use Chrome, Edge or Opera.', 'warning');
         document.getElementById('connectBtn').disabled = true;
 
         const mainContent = document.getElementById('mainContent');
         mainContent.innerHTML = `
         <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999;">
             <div style="background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
-                <h2 style="color: #e74c3c; margin-bottom: 20px;">❌ Web Serial API není podporováno</h2>
-                <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">Tento nástroj pro aktualizaci firmware ESP vyžaduje Web Serial API.</p>
-                <p style="color: #666; line-height: 1.6;">Prosím, použijte Chomium-based prohlížeč (Chrome, Edge nebo Opera) a znovu načtěte stránku.</p>
+                <h2 style="color: #e74c3c; margin-bottom: 20px;">❌ Web Serial API is not supported</h2>
+                <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">This ESP firmware update tool requires the Web Serial API.</p>
+                <p style="color: #666; line-height: 1.6;">Please use a Chromium-based browser (Chrome, Edge or Opera) and reload the page.</p>
             </div>
         </div>
         `;
@@ -1052,7 +1051,7 @@
     const Transport = esptool.Transport;
 
     if (!ESPLoader || !Transport) {
-        alert('❌ Nepodařilo se načíst knihovnu ESPTool.js. Zkontrolujte připojení k internetu a znovu načtěte stránku.');
+        alert('❌ Failed to load ESPTool.js library. Check your internet connection and reload the page.');
         throw new Error('ESPLoader or Transport not loaded');
     }
 
@@ -1127,18 +1126,18 @@
 
     async function test() {
         if (!connected) {
-            addLog('❌ Zařízení není připojeno!', 'error');
+            addLog('❌ Device is not connected!', 'error');
             return;
         }
 
         if (inBootMode) {
-            addLog('⚠️ ESP je v boot módu, provádím hard reset...', 'warning');
+            addLog('⚠️ ESP is in boot mode, performing hard reset...', 'warning');
             await hardReset();
             await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         try {
-            addLog('🧪 Zahajuji test komunikace...', 'info');
+            addLog('🧪 Starting communication test...', 'info');
 
             // Initialize serial
             if (!await initializeSerial()) {
@@ -1176,9 +1175,9 @@
 
 
             await new Promise(resolve => setTimeout(resolve, 4000));
-            addLog('✅ Test dokončen', 'success');
+            addLog('✅ Test completed', 'success');
         } catch (error) {
-            addLog(`❌ Chyba při testu: ${error.message}`, 'error');
+            addLog(`❌ Error during test: ${error.message}`, 'error');
         } finally {
             await stopSerialRead();
             await closeSerial();
@@ -1187,7 +1186,7 @@
 
     async function flashAllVersions() {
         if (!connected) {
-            addLog('❌ Zařízení není připojeno!', 'error');
+            addLog('❌ Device is not connected!', 'error');
             return;
         }
 
@@ -1215,7 +1214,7 @@
                 await flashFirmware();
                 await new Promise(resolve => setTimeout(resolve, 500)); // Wait between flashes
             } catch (error) {
-                endBuffer += `\n❌ Chyba při nahrávání verze [${i + 1}]: ${error.message}`;
+                endBuffer += `\n❌ Error flashing version [${i + 1}]: ${error.message}`;
                 endBuffer += '\n========================\n';
                 console.error(`Error flashing version [${i + 1}]:`, error);
             }
@@ -1223,13 +1222,13 @@
 
         await new Promise(resolve => setTimeout(resolve, 1500));
         console.log('All versions flashed.');
-        addLog('✅ Všechny verze byly nahrány.', 'success');
+        addLog('✅ All versions have been flashed.', 'success');
         console.log(endBuffer);
 
         await safeDisconnect();
     }
 
-    // Nová funkce pro kontrolu připravenosti k flashi
+    // New function for checking readiness for flashing
     function checkFlashReadiness() {
         if (!connected) {
             flashReady = false;
@@ -1248,18 +1247,18 @@
         if (isMerged && enabledFiles.length === 1 && enabledFiles[0] === 1) {
             // Merged mode: only file 1 needs to be valid
             isReady = fileValidation[1].valid;
-            addLog('📋 Režim: Merged firmware (1 soubor)', 'info');
+            addLog('📋 Mode: Merged firmware (1 file)', 'info');
         } else if (!isMerged && enabledFiles.length === 3) {
             // Three-file mode: all three files need to be valid
             isReady = fileValidation[1].valid && fileValidation[2].valid && fileValidation[3].valid;
-            addLog('📋 Režim: Standardní firmware (3 soubory)', 'info');
+            addLog('📋 Mode: Standard firmware (3 files)', 'info');
         } else {
             isReady = false;
             if (enabledFiles.length > 0) {
                 if (isMerged) {
-                    addLog('⚠️ Merged firmware detekován - deaktivujte ostatní soubory', 'warning');
+                    addLog('⚠️ Merged firmware detected - disable the other files', 'warning');
                 } else {
-                    addLog('⚠️ Pro standardní firmware potřebujete všechny 3 soubory', 'warning');
+                    addLog('⚠️ For standard firmware you need all 3 files', 'warning');
                 }
             }
         }
@@ -1268,7 +1267,7 @@
         updateFlashButton();
     }
 
-    // Nová funkce pro update flash tlačítka
+    // New function to update flash button
     function updateFlashButton() {
         const flashBtn = document.getElementById('flashBtn');
         const indicator = document.getElementById('flashReadyIndicator');
@@ -1276,24 +1275,22 @@
         if (connected && flashReady) {
             flashBtn.disabled = false;
             indicator.className = 'flash-ready-indicator ready';
-            indicator.textContent = '✓ Připraveno';
+            indicator.textContent = '✓ Ready';
         } else {
             flashBtn.disabled = true;
             indicator.className = 'flash-ready-indicator not-ready';
             if (!connected) {
-                indicator.textContent = '⊗ Nepřipojeno';
+                indicator.textContent = '⊗ Not connected';
             } else {
-                indicator.textContent = '⊗ Nepřipraveno';
+                indicator.textContent = '⊗ Not ready';
             }
         }
     }
 
-    // Add these functions after the existing helper functions
-
     // Initialize serial reader and writer
     async function initializeSerial() {
         if (!espTransport || !serialPort) {
-            throw new Error('Port není otevřený');
+            throw new Error('Port is not open');
         }
 
         try {
@@ -1306,10 +1303,10 @@
             writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
             serialWriter = textEncoder.writable.getWriter();
 
-            addLog('✅ Sériové čtení/zápis inicializováno', 'success');
+            addLog('✅ Serial read/write initialized', 'success');
             return true;
         } catch (error) {
-            addLog(`❌ Chyba inicializace serial I/O: ${error.message}`, 'error');
+            addLog(`❌ Error initializing serial I/O: ${error.message}`, 'error');
             return false;
         }
     }
@@ -1338,7 +1335,7 @@
             }
         } catch (error) {
             if (isReading) {
-                addLog(`❌ Chyba při čtení: ${error.message}`, 'error');
+                addLog(`❌ Error while reading: ${error.message}`, 'error');
             }
         }
     }
@@ -1437,7 +1434,7 @@
     // Write data to serial port
     async function writeSerial(data, addNewline = true) {
         if (!serialWriter) {
-            addLog('❌ Sériový port není připraven pro zápis', 'error');
+            addLog('❌ Serial port is not ready for writing', 'error');
             return false;
         }
 
@@ -1447,7 +1444,7 @@
             addLog(`📤 TX: ${data}`, 'machineIn', 'device');
             return true;
         } catch (error) {
-            addLog(`❌ Chyba při zápisu: ${error.message}`, 'error');
+            addLog(`❌ Error while writing: ${error.message}`, 'error');
             return false;
         }
     }
@@ -1485,7 +1482,7 @@
     // Send command and wait for response
     async function sendCommandAndWait(command, timeout = 5000, expectedResponse = null) {
         if (!serialWriter || !serialReader) {
-            addLog('❌ Sériový port není připraven', 'error');
+            addLog('❌ Serial port is not ready', 'error');
             return null;
         }
 
@@ -1534,19 +1531,19 @@
             }
 
             if (expectedResponse) {
-                addLog(`⚠️ Timeout při čekání na odpověď: ${expectedResponse}`, 'warning');
+                addLog(`⚠️ Timeout while waiting for response: ${expectedResponse}`, 'warning');
             }
 
             return responses.length > 0 ? responses : null;
 
         } catch (error) {
-            addLog(`❌ Chyba při komunikaci: ${error.message}`, 'error');
+            addLog(`❌ Communication error: ${error.message}`, 'error');
             return null;
         }
     }
 
     async function executePreFlashCommands() {
-        addLog('📋 Spouštím pre-flash příkazy...', 'info');
+        addLog('📋 Running pre-flash commands...', 'info');
         currentPhase = 'pre-flash';
 
         const commands = [
@@ -1562,12 +1559,12 @@
         let status = false;
         try {
             if (inBootMode) {
-                addLog('⚠️ ESP je v boot módu - hard reset...', 'warning');
+                addLog('⚠️ ESP is in boot mode - hard reset...', 'warning');
                 updatePreFlashProgress(0, commands.length);
                 await performHardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 updateBootModeStatus(false);
-                addLog('✅ ESP v normálním módu', 'success');
+                addLog('✅ ESP in normal mode', 'success');
             }
 
             for (let i = 0; i < commands.length; i++) {
@@ -1577,11 +1574,11 @@
             }
 
             updatePreFlashProgress(commands.length, commands.length);
-            addLog('✅ Pre-flash příkazy dokončeny', 'success');
+            addLog('✅ Pre-flash commands completed', 'success');
             status = true;
 
         } catch (error) {
-            addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
+            addLog(`❌ Error in pre-flash commands: ${error.message}`, 'error');
             status = false;
         } finally {
             await stopSerialRead();
@@ -1593,7 +1590,7 @@
 
     // Post-flash commands with pattern matching
     async function executePostFlashCommands() {
-        addLog('📋 Spouštím post-flash příkazy...', 'info');
+        addLog('📋 Running post-flash commands...', 'info');
         currentPhase = 'post-flash';
 
         const commands = [
@@ -1611,7 +1608,7 @@
             await new Promise(resolve => setTimeout(resolve, 500));
 
             if (inBootMode) {
-                addLog('⚠️ ESP je v boot módu - hard reset...', 'warning');
+                addLog('⚠️ ESP is in boot mode - hard reset...', 'warning');
                 await performHardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 updateBootModeStatus(false);
@@ -1630,11 +1627,11 @@
             await stopSerialRead();
             await closeSerial();
 
-            addLog('✅ Post-flash příkazy dokončeny', 'success');
+            addLog('✅ Post-flash commands completed', 'success');
             return true;
 
         } catch (error) {
-            addLog(`❌ Chyba post-flash příkazů: ${error.message}`, 'error');
+            addLog(`❌ Error in post-flash commands: ${error.message}`, 'error');
             await stopSerialRead();
             await closeSerial();
             return false;
@@ -1643,20 +1640,20 @@
 
     // Pre-flash commands with advanced pattern matching
     async function executePreFlashCommands1() {
-        addLog('📋 Spouštím pre-flash příkazy...', 'info');
+        addLog('📋 Running pre-flash commands...', 'info');
 
         let status = false;
         try {
             // Check if ESP is in boot mode
             if (inBootMode) {
-                addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
-                addLog('🔄 Provádím hard reset...', 'valid');
+                addLog('⚠️ ESP is in boot mode - first perform a hard reset for normal communication', 'warning');
+                addLog('🔄 Performing hard reset...', 'valid');
 
                 await performHardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
-                addLog('✅ ESP je nyní v normálním módu', 'success');
+                addLog('✅ ESP is now in normal mode', 'success');
             }
 
             // Now we can initialize serial communication
@@ -1707,11 +1704,11 @@
 
             await new Promise(resolve => setTimeout(resolve, 3000));
 
-            addLog('✅ Pre-flash příkazy dokončeny', 'success');
+            addLog('✅ Pre-flash commands completed', 'success');
             status = true;
 
         } catch (error) {
-            addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
+            addLog(`❌ Error in pre-flash commands: ${error.message}`, 'error');
             await stopSerialRead();
             await closeSerial();
             status = false;
@@ -1720,28 +1717,28 @@
 
             await stopSerialRead();
             await closeSerial();
-            return status;
         }
+        return status;
     }
 
 
     // Post-flash commands with pattern matching
     async function executePostFlashCommands1() {
-        addLog('📋 Spouštím post-flash příkazy...', 'info');
+        addLog('📋 Running post-flash commands...', 'info');
 
         try {
             await new Promise(resolve => setTimeout(resolve, 500)); // Wait
 
             // Check if ESP is in boot mode
             if (inBootMode) {
-                addLog('⚠️ ESP je v boot módu - nejprve proveďte hard reset pro normální komunikaci', 'warning');
-                addLog('🔄 Provádím hard reset...', 'valid');
+                addLog('⚠️ ESP is in boot mode - first perform a hard reset for normal communication', 'warning');
+                addLog('🔄 Performing hard reset...', 'valid');
 
                 await performHardReset();
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for ESP to boot
 
                 updateBootModeStatus(false);
-                addLog('✅ ESP je nyní v normálním módu', 'success');
+                addLog('✅ ESP is now in normal mode', 'success');
             }
 
             // Now we can initialize serial communication
@@ -1781,54 +1778,54 @@
             await stopSerialRead();
             await closeSerial();
 
-            addLog('✅ Post-flash příkazy dokončeny', 'success');
+            addLog('✅ Post-flash commands completed', 'success');
             return true;
 
         } catch (error) {
-            addLog(`❌ Chyba post-flash příkazů: ${error.message}`, 'error');
+            addLog(`❌ Error in post-flash commands: ${error.message}`, 'error');
             await stopSerialRead();
             await closeSerial();
             return false;
         }
     }
 
-    // // 1. Jednoduchý string
+    // // 1. Simple string
     // await sendCommandAndWait('AT', 1000, 'OK');
     //
     // // 2. RegExp
     // await sendCommandAndWait('AT+GMR', 2000, /version:\s*([0-9.]+)/);
     //
-    // // 3. Více možností (string)
+    // // 3. Multiple options (string)
     // await sendCommandAndWait('AT', 1000, ['OK', 'ok', 'OK\r\n']);
     //
-    // // 4. Více možností (regex)
+    // // 4. Multiple options (regex)
     // await sendCommandAndWait('AT+MAC?', 2000, [
     //     /MAC:\s*([0-9A-Fa-f:]{17})/,
     //     /MAC:\s*([0-9A-Fa-f-]{17})/,
     //     /([0-9A-Fa-f]{12})/
     // ]);
     //
-    // // 5. S pozicí
+    // // 5. With position
     // await sendCommandAndWait('AT+GMR', 2000, {
     //     string: 'OK',
-    //     position: 'last'  // Nebo 'first', nebo 0, 1, 2...
+    //     position: 'last'  // Or 'first', or 0, 1, 2...
     // });
     //
-    // // 6. Regex s pozicí a popisem
+    // // 6. Regex with position and description
     // await sendCommandAndWait('AT+STATUS', 2000, {
     //     regex: /STATUS:(\d+)/,
     //     position: 'any',
     //     description: 'Device status code'
     // });
     //
-    // // 7. Kombinace více podmínek
+    // // 7. Combination of multiple conditions
     // await sendCommandAndWait('AT+INFO', 3000, [
     //     {regex: /version:\s*([0-9.]+)/, position: 0},
     //     {string: 'OK', position: 'last'},
     //     {regex: /ERROR/i, description: 'Error response'}
     // ]);
     //
-    // // 8. Použití vrácených dat
+    // // 8. Using returned data
     // const result = await sendCommandAndWait('AT+MAC?', 2000, {
     //     regex: /MAC:\s*([0-9A-Fa-f:]{17})/
     // });
@@ -1839,9 +1836,10 @@
     //     console.info('All responses:', result.responses);
     // }
 
+
     // Pre-flash commands
     async function executePreFlashCommands2() {
-        addLog('📋 Spouštím pre-flash příkazy...', 'info');
+        addLog('📋 Running pre-flash commands...', 'info');
 
         try {
             // Initialize serial communication
@@ -1868,19 +1866,19 @@
             // await new Promise(resolve => setTimeout(resolve, 2000));
             // let result = await waitForStr('AT', 2000);
             // if (!result.success) {
-            //     addLog('⚠️ Zařízení neodpovídá na AT příkazy', 'warning');
+            //     addLog('⚠️ Device does not respond to AT commands', 'warning');
             // }
             //
             // Get MAC address with multiple format support
             // const mac = await getMacAddress(3000);
             // if (mac) {
-            //     addLog(`📌 MAC adresa: ${mac}`, 'success');
+            //     addLog(`📌 MAC address: ${mac}`, 'success');
             // }
             //
             // // Get version with multiple format support
             // const version = await getVersion(3000);
             // if (version) {
-            //     addLog(`📌 Verze firmware: ${version}`, 'success');
+            //     addLog(`📌 Firmware version: ${version}`, 'success');
             // }
 
             // Custom command with regex
@@ -1909,7 +1907,7 @@
             // );
             //
             // if (result.success && result.groups) {
-            //     addLog(`📌 SDK verze: ${result.groups[0]}`, 'success');
+            //     addLog(`📌 SDK version: ${result.groups[0]}`, 'success');
             // }
 
 
@@ -1938,11 +1936,11 @@
             await stopSerialRead();
             await closeSerial();
 
-            addLog('✅ Pre-flash příkazy dokončeny', 'success');
+            addLog('✅ Pre-flash commands completed', 'success');
             return true;
 
         } catch (error) {
-            addLog(`❌ Chyba pre-flash příkazů: ${error.message}`, 'error');
+            addLog(`❌ Error in pre-flash commands: ${error.message}`, 'error');
             await stopSerialRead();
             await closeSerial();
             return false;
@@ -1951,7 +1949,7 @@
 
     // Post-flash commands
     async function executePostFlashCommands2() {
-        addLog('📋 Spouštím post-flash příkazy...', 'info');
+        addLog('📋 Running post-flash commands...', 'info');
 
         try {
             // Wait for device to boot
@@ -1985,19 +1983,19 @@
             // );
             //
             // if (result.success) {
-            //     addLog('✅ Zařízení se úspěšně nabootovalo', 'success');
+            //     addLog('✅ Device booted successfully', 'success');
             // }
             //
             // // Test communication
             // result = await waitForStr('AT', 2000);
             // if (result.success) {
-            //     addLog('✅ Komunikace po flashi funguje', 'success');
+            //     addLog('✅ Communication after flash is working', 'success');
             // }
             //
             // // Verify new version
             // const version = await getVersion(3000);
             // if (version) {
-            //     addLog(`📌 Nová verze firmware: ${version}`, 'success');
+            //     addLog(`📌 New firmware version: ${version}`, 'success');
             // }
             //
             // // Save configuration (example)
@@ -2035,11 +2033,11 @@
             await stopSerialRead();
             await closeSerial();
 
-            addLog('✅ Post-flash příkazy dokončeny', 'success');
+            addLog('✅ Post-flash commands completed', 'success');
             return true;
 
         } catch (error) {
-            addLog(`❌ Chyba post-flash příkazů: ${error.message}`, 'error');
+            addLog(`❌ Error in post-flash commands: ${error.message}`, 'error');
             await stopSerialRead();
             await closeSerial();
             return false;
@@ -2057,9 +2055,9 @@
                 throw new Error('Manifest not found');
             }
             manifestData = await response.json();
-            addLog('✅ Manifest načten úspěšně', 'success');
+            addLog('✅ Manifest loaded successfully', 'success');
         } catch (error) {
-            addLog('⚠️ Manifest nenalezen, používám pouze Custom mód', 'warning');
+            addLog('⚠️ Manifest not found, using Custom mode only', 'warning');
             console.warn('Manifest load error:', error);
         } finally {
             populateVersionSelector();
@@ -2080,13 +2078,13 @@
     }
 
     function getPriority(label) {
-        const l = label.toLowerCase(); // ať to není case-sensitive
+        const l = label.toLowerCase(); // so it is not case-sensitive
 
         if (l.startsWith("default")) return 0; // 1. Default
         if (l.startsWith("stable")) return 1; // 2. Stable
         if (l.startsWith("current")) return 2; // 3. Current
         if (l.startsWith("latest")) return 3; // 4. Latest
-        return 4;                               // 5. ostatní
+        return 4;                               // 5. others
     }
 
     // Populate version selector
@@ -2106,10 +2104,10 @@
                 const pa = getPriority(a.label);
                 const pb = getPriority(b.label);
 
-                // nejdřív porovnáme priority
+                // first compare priorities
                 if (pa !== pb) return pa - pb;
 
-                // položky se stejnou prioritou se pak řadí abecedně
+                // items with the same priority are then sorted alphabetically
                 return a.label.localeCompare(b.label);
             });
 
@@ -2152,7 +2150,7 @@
         // Add custom option
         const customOption = document.createElement('option');
         customOption.value = 'custom';
-        customOption.textContent = 'Custom (vlastní soubory)';
+        customOption.textContent = 'Custom (custom files)';
         versionSelect.appendChild(customOption);
 
         // Set default selection
@@ -2213,11 +2211,11 @@
                 // Custom mode
                 currentMode = 'custom';
                 customFileActions.classList.remove('hidden');
-                statusBadge.innerText = 'Neznámé';
+                statusBadge.innerText = 'Unknown';
                 statusBadge.classList.add('status-unknown');
                 versionSelect.classList.add('status-unknown');
                 showFileItems(true);
-                addLog('📝 Přepnuto na Custom mód', 'info');
+                addLog('📝 Switched to Custom mode', 'info');
             } else {
                 // Manifest mode
                 currentMode = 'manifest';
@@ -2232,8 +2230,8 @@
                 const name = versionText[0];
 
                 addLog('_'.repeat(40));
-                addLog(`📑 Vybraná verze: ${name} (${versionLabel})`, 'info');
-                addLog(`📦 Načítám verzi: ${buildData?.name || 'Unknown'} (${buildData?.version})`, 'info');
+                addLog(`📑 Selected version: ${name} (${versionLabel})`, 'info');
+                addLog(`📦 Loading version: ${buildData?.name || 'Unknown'} (${buildData?.version})`, 'info');
 
                 if (buildData) {
                     await loadBuildFiles(buildData);
@@ -2241,8 +2239,8 @@
                     if (connected) setButtonsEnabled(true);
 
                 } else {
-                    addLog('❌ Verze nenalezena v manifestu', 'error');
-                    statusBadge.innerText = 'Neplatné';
+                    addLog('❌ Version not found in manifest', 'error');
+                    statusBadge.innerText = 'Invalid';
                     statusBadge.classList.add('status-error');
                     versionSelect.classList.add('status-error');
                     showManifestFileItem(1, 'Bootloader', false, false);
@@ -2265,7 +2263,7 @@
 
     async function loadBuildFiles(buildData) {
         if (!buildData.parts || !Array.isArray(buildData.parts)) {
-            addLog('❌ Neplatná struktura build dat', 'error');
+            addLog('❌ Invalid build data structure', 'error');
             return;
         }
 
@@ -2311,15 +2309,15 @@
 
                 await validateFile(fileIndex);
 
-                addLog(`Soubor ${fileIndex} načten: ${fileName}`, 'taken');
+                addLog(`File ${fileIndex} loaded: ${fileName}`, 'taken');
                 return true;
 
             } catch (error) {
                 if (error.message.includes('HTTP 404')) {
-                    addLog(`❌ Soubor ${fileIndex} nenalezen`, 'error');
+                    addLog(`❌ File ${fileIndex} not found`, 'error');
                     return null;
                 } else {
-                    addLog(`❌ Chyba při načítání souboru ${fileIndex}: ${error.message}`, 'error');
+                    addLog(`❌ Error loading file ${fileIndex}: ${error.message}`, 'error');
                 }
                 return false;
             }
@@ -2343,7 +2341,7 @@
                 if (fileIndex) {
                     allAccepted[fileIndex - 1] = await tryLoad(part, fileIndex);
                 } else {
-                    addLog(`⚠️ Neznámý typ části: ${type}`, 'warning');
+                    addLog(`⚠️ Unknown part type: ${type}`, 'warning');
                 }
             }
 
@@ -2360,18 +2358,18 @@
         await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to ensure validation states are updated
 
         if (allAccepted.every(v => v) && validFiles.every(v => v === true)) {
-            addLog('✅ Všechny soubory načteny úspěšně z manifestu', 'success');
-            statusBadge.innerText = 'Platné';
+            addLog('✅ All files successfully loaded from manifest', 'success');
+            statusBadge.innerText = 'Valid';
             statusBadge.classList.add('status-success');
             versionSelect.classList.add('status-success');
         } else if (allAccepted.some(v => v)) {
-            addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
-            statusBadge.innerText = 'Chyba';
+            addLog('⚠️ Some files were loaded with issues', 'warning');
+            statusBadge.innerText = 'Error';
             statusBadge.classList.add('status-warning');
             versionSelect.classList.add('status-warning');
         } else {
-            addLog('❌ Žádné soubory se nepodařilo načíst z manifestu', 'error');
-            statusBadge.innerText = 'Neplatné';
+            addLog('❌ No files could be loaded from manifest', 'error');
+            statusBadge.innerText = 'Invalid';
             statusBadge.classList.add('status-error');
             versionSelect.classList.add('status-error');
         }
@@ -2422,17 +2420,17 @@
             versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
             if (validFiles.every(v => v)) {
-                addLog('✅ Všechny soubory načteny úspěšně', 'success');
-                statusBadge.innerText = 'Platné';
+                addLog('✅ All files successfully loaded', 'success');
+                statusBadge.innerText = 'Valid';
                 statusBadge.classList.add('status-success');
                 versionSelect.classList.add('status-success');
             } else if (validFiles.some(v => v)) {
-                addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
-                statusBadge.innerText = 'Chyba';
+                addLog('⚠️ Some files were loaded with issues', 'warning');
+                statusBadge.innerText = 'Error';
                 statusBadge.classList.add('status-warning');
                 versionSelect.classList.add('status-warning');
             } else {
-                statusBadge.innerText = 'Neznámé';
+                statusBadge.innerText = 'Unknown';
                 statusBadge.classList.add('status-unknown');
                 versionSelect.classList.add('status-unknown');
             }
@@ -2453,18 +2451,18 @@
         const files = Array.from(folderInput.files);
 
         if (files.length === 0) {
-            addLog('⚠️ Nebyla vybrána žádná složka', 'warning');
+            addLog('⚠️ No folder selected', 'warning');
             return;
         }
 
-        addLog(`📁 Načítám soubory ze složky (${files.length} souborů)...`, 'info');
+        addLog(`📁 Loading files from folder (${files.length} files)...`, 'info');
 
         clearAllFiles();
 
         const mergedFile = files.find(f => f.name.includes('.merged.bin'));
 
         if (mergedFile) {
-            addLog('📦 Detekován merged firmware, ostatní soubory budou ignorovány', 'info');
+            addLog('📦 Merged firmware detected, other files will be ignored', 'info');
             const accepted = await loadFileToSlot(mergedFile, 1, 0x0000);
             validFiles = Array(3).fill(accepted);
         } else {
@@ -2477,7 +2475,7 @@
             if (bootloaderFile) validFiles[0] = await loadFileToSlot(bootloaderFile, 1, 0x0000);
 
             if (!bootloaderFile && !partitionsFile && !appFile) {
-                addLog('⚠️ Ve složce nebyly nalezeny platné firmware soubory', 'warning');
+                addLog('⚠️ No valid firmware files found in folder', 'warning');
             }
         }
 
@@ -2485,18 +2483,18 @@
         versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
         if (validFiles.every(v => v)) {
-            addLog('✅ Všechny soubory načteny úspěšně', 'success');
-            statusBadge.innerText = 'Platné';
+            addLog('✅ All files successfully loaded', 'success');
+            statusBadge.innerText = 'Valid';
             statusBadge.classList.add('status-success');
             versionSelect.classList.add('status-success');
         } else if (validFiles.some(v => v)) {
-            addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
-            statusBadge.innerText = 'Chyba';
+            addLog('⚠️ Some files were loaded with issues', 'warning');
+            statusBadge.innerText = 'Error';
             statusBadge.classList.add('status-warning');
             versionSelect.classList.add('status-warning');
         } else {
-            addLog('❌ Načítání souborů selhalo', 'error');
-            statusBadge.innerText = 'Neplatné';
+            addLog('❌ File loading failed', 'error');
+            statusBadge.innerText = 'Invalid';
             statusBadge.classList.add('status-error');
             versionSelect.classList.add('status-error');
         }
@@ -2521,10 +2519,10 @@
 
             await validateFile(slot);
 
-            addLog(`Soubor ${slot} načten: ${file.name}`, 'taken');
+            addLog(`File ${slot} loaded: ${file.name}`, 'taken');
             return true;
         } catch (error) {
-            addLog(`❌ Chyba při načítání souboru ${slot}: ${error.message}`, 'error');
+            addLog(`❌ Error loading file ${slot}: ${error.message}`, 'error');
             return false;
         }
     }
@@ -2554,7 +2552,7 @@
             fileValidation[i] = {valid: false, info: null};
         }
 
-        addLog('🗑️ Všechny soubory vymazány');
+        addLog('🗑️ All files cleared');
         checkFlashReadiness();
     }
 
@@ -2584,7 +2582,7 @@
 
     // Update ignored state for files 2 and 3
     function updateIgnoredState() {
-        // Zkontroluj, jestli je v prvním slotu merged firmware
+        // Check if there is merged firmware in the first slot
         const file1Input = document.getElementById('file1');
         const checkbox1 = document.getElementById('fileEnable1');
         const hasMerged = file1Input.files[0] &&
@@ -2599,14 +2597,14 @@
             const checkbox = document.getElementById(`fileEnable${i}`);
 
             if (hasMerged) {
-                // Merged detekován - nastav ignored pro soubory 2 a 3
+                // Merged detected - set ignored for files 2 and 3
                 fileItem.classList.add('ignored');
                 // fileItem.classList.remove('valid', 'invalid', 'empty');
                 validationBadge.classList.add('show', 'ignored');
                 validationBadge.classList.remove('valid', 'invalid', 'empty');
-                validationBadge.textContent = '⊘ Ignorováno';
+                validationBadge.textContent = '⊘ Ignored';
             } else {
-                // Není merged - odeber ignored a obnov původní stav
+                // No merged - remove ignored and restore original state
                 fileItem.classList.remove('ignored');
                 validationBadge.classList.remove('ignored');
                 validationBadge.classList.remove('show');
@@ -2619,18 +2617,19 @@
                         fileItem.classList.remove('invalid', 'empty');
                         validationBadge.classList.add('show', 'valid');
                         validationBadge.classList.remove('invalid', 'empty');
-                        validationBadge.textContent = '✅ Platný';
+                        validationBadge.textContent = '✅ Valid';
                     } else {
                         fileItem.classList.add('invalid');
                         fileItem.classList.remove('valid');
                         validationBadge.classList.add('show', 'invalid');
                         validationBadge.classList.remove('valid');
-                        validationBadge.textContent = '❌ Neplatný';
+                        validationBadge.textContent = '❌ Invalid';
                     }
                 }
             }
         }
     }
+
 
     // Validate file function
     async function validateFile(index) {
@@ -2650,7 +2649,7 @@
             return;
         }
 
-        addLog(`🔍 Validuji soubor ${index}: ${file.name}`, 'accepted');
+        addLog(`🔍 Validating file ${index}: ${file.name}`, 'accepted');
 
         const validationResult = {
             fileName: file.name,
@@ -2668,7 +2667,7 @@
 
         // Check file extension
         if (!validationResult.hasCorrectExtension) {
-            addLog(`❌ Soubor ${index} nemá příponu .bin`, 'error');
+            addLog(`❌ File ${index} does not have .bin extension`, 'error');
             showValidationResult(index, validationResult, false);
             updateIgnoredState();
             validFiles[index - 1] = false;
@@ -2677,7 +2676,7 @@
 
         // Check file size
         if (!validationResult.isSizeValid) {
-            addLog(`❌ Soubor ${index} má neplatnou velikost (${validationResult.formattedSize})`, 'error');
+            addLog(`❌ File ${index} has invalid size (${validationResult.formattedSize})`, 'error');
             showValidationResult(index, validationResult, false);
             updateIgnoredState();
             validFiles[index - 1] = false;
@@ -2722,7 +2721,7 @@
 
                         // If merged, other files should be warned
                         if (uploadedFiles.length > 1) {
-                            addLog('⚠️ Merged firmware detekován - ostatní soubory budou ignorovány', 'warning');
+                            addLog('⚠️ Merged firmware detected - other files will be ignored', 'warning');
                         }
                     } else {
                         // Not merged - expect bootloader
@@ -2742,18 +2741,18 @@
 
                 // Check extension match
                 if (isValid && !validationResult.hasExpectedExtension && validationResult.expectedExtension) {
-                    addLog(`⚠️ Soubor ${index} nemá očekávanou příponu (${validationResult.expectedExtension})`, 'warning');
+                    addLog(`⚠️ File ${index} does not have expected extension (${validationResult.expectedExtension})`, 'warning');
                     validFiles[index - 1] = false;
                 } else if (isValid && hasValidMagic) {
-                    addLog(`☑️ Soubor ${index} je platný ESP firmware`, 'valid');
+                    addLog(`☑️ File ${index} is a valid ESP firmware`, 'valid');
                     validFiles[index - 1] = true;
                     if (validationResult.isMerged && index === 1) {
-                        addLog(`ℹ️ Detekován merged firmware - pro flash potřebujete pouze tento soubor`, 'info');
+                        addLog(`ℹ️ Merged firmware detected - you only need this file to flash`, 'info');
                         validFiles = [true, true, true];
                     }
                 } else if (!hasValidMagic) {
-                    const expectedMagic = index === 2 ? '0xE9 nebo 0xAA' : '0xE9';
-                    addLog(`❌ Soubor ${index} nemá platný ESP magic byte (${expectedMagic})`, 'error');
+                    const expectedMagic = index === 2 ? '0xE9 or 0xAA' : '0xE9';
+                    addLog(`❌ File ${index} does not have a valid ESP magic byte (${expectedMagic})`, 'error');
                     validFiles[index - 1] = false;
                 }
 
@@ -2768,7 +2767,7 @@
             reader.readAsArrayBuffer(file.slice(0, 8));
 
         } catch (error) {
-            addLog(`❌ Chyba při validaci souboru ${index}: ${error.message}`, 'error');
+            addLog(`❌ Error while validating file ${index}: ${error.message}`, 'error');
             showValidationResult(index, validationResult, false);
             validFiles[index - 1] = false;
         }
@@ -2791,25 +2790,25 @@
         validationBadge.classList.add('show');
         validationBadge.classList.remove('valid', 'invalid', 'empty');
         validationBadge.classList.add(isValid ? 'valid' : 'invalid');
-        if (!isIgnored) validationBadge.textContent = isValid ? '✅ Platný' : '❌ Neplatný';
+        if (!isIgnored) validationBadge.textContent = isValid ? '✅ Valid' : '❌ Invalid';
 
         // Show file info
-        let infoHTML = '<div class="file-info-row"><div class="file-info-label">Název:</div><div class="file-info-value">' + result.fileName + '</div></div>';
-        infoHTML += '<div class="file-info-row"><div class="file-info-label">Velikost:</div><div class="file-info-value">' + result.formattedSize + '</div></div>';
-        infoHTML += '<div class="file-info-row"><div class="file-info-label">Upraveno:</div><div class="file-info-value">' + result.lastModified + '</div></div>';
+        let infoHTML = '<div class="file-info-row"><div class="file-info-label">Name:</div><div class="file-info-value">' + result.fileName + '</div></div>';
+        infoHTML += '<div class="file-info-row"><div class="file-info-label">Size:</div><div class="file-info-value">' + result.formattedSize + '</div></div>';
+        infoHTML += '<div class="file-info-row"><div class="file-info-label">Modified:</div><div class="file-info-value">' + result.lastModified + '</div></div>';
 
         if (result.magicByte) {
-            const expectedMagic = index === 2 ? '(0xE9 nebo 0xAA)' : '(0xE9)';
+            const expectedMagic = index === 2 ? '(0xE9 or 0xAA)' : '(0xE9)';
             const magicValid = index === 2 ? (result.magicByte === '0xE9' || result.magicByte === '0xAA') : result.magicByte === '0xE9';
             infoHTML += '<div class="file-info-row"><div class="file-info-label">Magic Byte:</div><div class="file-info-value">' + result.magicByte + ' ' + expectedMagic + (magicValid ? ' ✔️' : ' ❌') + '</div></div>';
         }
 
         if (result.segments !== null) {
-            infoHTML += '<div class="file-info-row"><div class="file-info-label">Segmenty:</div><div class="file-info-value">' + result.segments + '</div></div>';
+            infoHTML += '<div class="file-info-row"><div class="file-info-label">Segments:</div><div class="file-info-value">' + result.segments + '</div></div>';
         }
 
         if (result.expectedExtension) {
-            infoHTML += '<div class="file-info-row"><div class="file-info-label">Očekávaná přípona:</div><div class="file-info-value">' + result.expectedExtension + (result.hasExpectedExtension ? ' ✔️' : ' ❌') + '</div></div>';
+            infoHTML += '<div class="file-info-row"><div class="file-info-label">Expected extension:</div><div class="file-info-value">' + result.expectedExtension + (result.hasExpectedExtension ? ' ✔️' : ' ❌') + '</div></div>';
         }
 
         fileInfo.innerHTML = infoHTML;
@@ -2834,12 +2833,12 @@
             bootModeBadge.style.display = 'inline-block';
 
             if (isInBootMode) {
-                bootModeBadge.textContent = 'Boot mód';
+                bootModeBadge.textContent = 'Boot mode';
                 bootModeBadge.className = 'boot-mode-indicator boot';
                 bootModeWarning.classList.remove('active');
                 bootModeBtn.disabled = true;
             } else {
-                bootModeBadge.textContent = 'Normální mód';
+                bootModeBadge.textContent = 'Normal mode';
                 bootModeBadge.className = 'boot-mode-indicator normal';
                 bootModeWarning.classList.add('active');
                 bootModeBtn.disabled = false;
@@ -2898,17 +2897,17 @@
             versionSelect.classList.remove('status-success', 'status-warning', 'status-error', 'status-unknown');
 
             if (validFiles.every(v => v)) {
-                addLog('✅ Všechny soubory načteny úspěšně', 'success');
-                statusBadge.innerText = 'Platné';
+                addLog('✅ All files successfully loaded', 'success');
+                statusBadge.innerText = 'Valid';
                 statusBadge.classList.add('status-success');
                 versionSelect.classList.add('status-success');
             } else if (validFiles.some(v => v)) {
-                addLog('⚠️ Některé soubory byly načteny s problémy', 'warning');
-                statusBadge.innerText = 'Chyba';
+                addLog('⚠️ Some files were loaded with issues', 'warning');
+                statusBadge.innerText = 'Error';
                 statusBadge.classList.add('status-warning');
                 versionSelect.classList.add('status-warning');
             } else {
-                statusBadge.innerText = 'Neznámé';
+                statusBadge.innerText = 'Unknown';
                 statusBadge.classList.add('status-unknown');
                 versionSelect.classList.add('status-unknown');
             }
@@ -2930,7 +2929,7 @@
         const appLogContainer = document.getElementById('appLogContainer');
         const deviceLogContainer = document.getElementById('deviceLogContainer');
 
-        appLogContainer.innerHTML = '<div class="log-entry">Log vymazán...</div>';
+        appLogContainer.innerHTML = '<div class="log-entry">Log cleared...</div>';
         appLogContainer.innerHTML = '';
         deviceLogContainer.innerHTML = '';
 
@@ -2976,11 +2975,11 @@
         const overallProgress = calculateOverallProgress(phaseProgress);
         updateProgress({
             percentage: overallProgress,
-            state: `Pre-flash: příkaz ${completed}/${total}`
+            state: `Pre-flash: command ${completed}/${total}`
         });
     }
 
-    // Funkce pro update progressu post-flash příkazů
+    // Function to update progress of post-flash commands
     function updatePostFlashProgress(completed, total) {
         totalPostFlashCommands = total;
         completedPostFlashCommands = completed;
@@ -2988,11 +2987,11 @@
         const overallProgress = calculateOverallProgress(phaseProgress);
         updateProgress({
             percentage: overallProgress,
-            state: `Post-flash: příkaz ${completed}/${total}`
+            state: `Post-flash: command ${completed}/${total}`
         });
     }
 
-    // Funkce pro update progressu jednotlivých souborů
+    // Function to update progress of individual files
     function updateFileProgress(fileIndex, written, total) {
         const fileProgress = (written / total) * 100;
 
@@ -3016,7 +3015,7 @@
 
         updateProgress({
             percentage: overallProgress,
-            state: `Nahrávám soubor ${fileIndex}/${totalFilesToFlash}: ${Math.round(fileProgress)}%`
+            state: `Flashing file ${fileIndex}/${totalFilesToFlash}: ${Math.round(fileProgress)}%`
         });
     }
 
@@ -3050,7 +3049,7 @@
         }
     }
 
-    // Cache pro šířky textů
+    // Cache for text widths
     const textWidthCache = new Map();
     let lastTextContent = '';
     let lastTextWidth = 0;
@@ -3165,16 +3164,16 @@
     // Enter boot mode - reuses existing connection
     async function enterBootMode() {
         if (!connected || !serialPort) {
-            addLog('❌ ESP není připojeno!', 'error');
+            addLog('❌ ESP is not connected!', 'error');
             return;
         }
 
         try {
-            addLog('⚡ Přepínám do boot módu...', 'info');
+            addLog('⚡ Switching to boot mode...', 'info');
 
             // Close serial communication if active (normal mode)
             if (serialReader || serialWriter) {
-                addLog('Uzavírám normální komunikaci...', 'info');
+                addLog('Closing normal communication...', 'info');
                 await closeSerial();
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
@@ -3211,11 +3210,11 @@
             // Connect to chip - this will put it in boot mode
             espChip = await espLoader.main();
 
-            addLog('✅ ESP je nyní v boot módu!', 'success');
+            addLog('✅ ESP is now in boot mode!', 'success');
             updateBootModeStatus(true);
 
         } catch (error) {
-            addLog(`❌ Chyba při přepínání do boot módu: ${error.message}`, 'error');
+            addLog(`❌ Error while switching to boot mode: ${error.message}`, 'error');
             console.error(error);
         }
     }
@@ -3231,7 +3230,7 @@
                 portInfo.usbVendorId === lastPortInfo.usbVendorId &&
                 portInfo.usbProductId === lastPortInfo.usbProductId) {
 
-                addLog('🔌 Zařízení bylo znovu připojeno, pokouším se o opětovné připojení...', 'info');
+                addLog('🔌 Device was reconnected, attempting to reconnect...', 'info');
                 await new Promise(resolve => setTimeout(resolve, 100)); // Small delay before reconnect
                 // espConnect(port);
             }
@@ -3240,9 +3239,9 @@
         });
     }
 
-    // Globální proměnné pro retry logic
-    const CONNECTION_TIMEOUT = 15_000; // 15 sekund timeout
-    const MAX_RETRIES = 2; // Maximální počet pokusů
+    // Global variables for retry logic
+    const CONNECTION_TIMEOUT = 15_000; // 15 seconds timeout
+    const MAX_RETRIES = 2; // Maximum number of attempts
     let connectionAttempt = 0;
 
     let lastSerialPort = null; // TODO: persist in localStorage?
@@ -3275,7 +3274,7 @@
                 });
             }
 
-            addLog(`Pokus o připojení ${connectionAttempt}/${MAX_RETRIES}...`, 'info');
+            addLog(`Connection attempt ${connectionAttempt}/${MAX_RETRIES}...`, 'info');
 
             // Get USB info
             const portInfo = serialPort?.getInfo();
@@ -3285,12 +3284,12 @@
             chipInfo.productId = `0x${portInfo.usbProductId?.toString(16).padStart(4, '0')}` || '-';
 
             serialPort.addEventListener('disconnect', () => {
-                addLog('⚠️ Zařízení bylo odpojeno!', 'warning');
+                addLog('⚠️ Device was disconnected!', 'warning');
                 espDisconnect();
             }, {once: true});
 
             serialPort.addEventListener('connect', () => {
-                addLog('🔌 Zařízení bylo připojeno!', 'error');
+                addLog('🔌 Device was connected!', 'error');
                 espConnect(lastSerialPort); // TODO: verify port
             }, {once: true});
 
@@ -3307,7 +3306,7 @@
 
             espTransport = new Transport(serialPort, true);
 
-            addLog(`Otevírám sériový port s baudrate ${baudRate}...`, 'info');
+            addLog(`Opening serial port with baudrate ${baudRate}...`, 'info');
 
             // Create ESPLoader instance
             const loaderOptions = {
@@ -3328,7 +3327,7 @@
             espLoader = new ESPLoader(loaderOptions);
 
             // Connect to chip WITH TIMEOUT
-            addLog('Čekám na odpověď ESP...', 'info');
+            addLog('Waiting for ESP response...', 'info');
             espChip = await Promise.race([
                 espLoader.main(),
                 new Promise((_, reject) =>
@@ -3337,7 +3336,7 @@
             ]);
 
             chipInfo.chipType = espChip;
-            addLog(`✅ Připojeno k ${espChip}!`, 'success');
+            addLog(`✅ Connected to ${espChip}!`, 'success');
 
             // Check if in boot mode - if main() succeeded, we're in boot mode
             updateBootModeStatus(true);
@@ -3364,21 +3363,21 @@
         const isTimeout = error.message === 'Connection timeout';
 
         if (isTimeout) {
-            addLog(`⏱️ Timeout při připojování (${CONNECTION_TIMEOUT / 1000}s)`, 'warning');
+            addLog(`⏱️ Timeout while connecting (${CONNECTION_TIMEOUT / 1000}s)`, 'warning');
         } else if (error.name === 'NotFoundError') {
-            addLog('❌ Žádné zařízení nebylo vybráno.', 'error');
+            addLog('❌ No device was selected.', 'error');
             resetConnection();
             return;
         } else if (error.name === 'NotSupportedError') {
-            addLog('❌ Váš prohlížeč nepodporuje Web Serial API.', 'error');
+            addLog('❌ Your browser does not support the Web Serial API.', 'error');
             resetConnection();
             return;
         } else if (error.name === 'NetworkError') {
-            addLog('❌ Nelze otevřít sériový port. Zkontrolujte, zda není používán jinou aplikací.', 'error');
+            addLog('❌ Cannot open serial port. Check that it is not used by another application.', 'error');
             resetConnection();
             return;
         } else {
-            addLog(`❌ Chyba připojení: ${error.message}`, 'error');
+            addLog(`❌ Connection error: ${error.message}`, 'error');
         }
 
         console.error('Connection error:', error);
@@ -3386,22 +3385,22 @@
         // Retry logic
         if (connectionAttempt < MAX_RETRIES && serialPort) {
             addLog('═'.repeat(40), 'warning');
-            addLog('🔄 Pokus o hard reset a opětovné připojení...', 'warning');
+            addLog('🔄 Attempting hard reset and reconnect...', 'warning');
             addLog('═'.repeat(40), 'warning');
 
             try {
                 // Try to perform hard reset if we have esploader
                 if (espLoader && espTransport) {
-                    addLog('Provádím hard reset ESP...', 'info');
+                    addLog('Performing ESP hard reset...', 'info');
                     await performHardReset().catch(e => {
-                        addLog('⚠️ Hard reset selhal, pokračuji...', 'warning');
+                        addLog('⚠️ Hard reset failed, continuing...', 'warning');
                     });
 
                     // Wait for ESP to reset
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } else {
                     // If no esploader, try manual reset via DTR/RTS
-                    addLog('Pokus o manuální reset přes DTR/RTS...', 'info');
+                    addLog('Attempting manual reset via DTR/RTS...', 'info');
                     await manualReset(); // TODO: Handle failure
                     await hardReset();
                 }
@@ -3413,11 +3412,11 @@
                 await connectESPWithRetry();
 
             } catch (resetError) {
-                addLog(`❌ Chyba při resetu: ${resetError.message}`, 'error');
+                addLog(`❌ Error during reset: ${resetError.message}`, 'error');
 
                 // Last attempt without reset
                 if (connectionAttempt < MAX_RETRIES) {
-                    addLog('Zkouším připojení bez resetu...', 'warning');
+                    addLog('Trying to connect without reset...', 'warning');
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     await connectESPWithRetry();
                 } else {
@@ -3427,11 +3426,11 @@
         } else {
             // No more retries
             addLog('═'.repeat(40), 'error');
-            addLog('❌ Nepodařilo se připojit k ESP po všech pokusech.', 'error');
-            addLog('💡 Zkuste:', 'info');
-            addLog('  1. Odpojit a znovu připojit USB kabel', 'info');
-            addLog('  2. Stisknout RESET tlačítko na ESP', 'info');
-            addLog('  3. Zkontrolovat, zda ESP svítí', 'info');
+            addLog('❌ Failed to connect to ESP after all attempts.', 'error');
+            addLog('💡 Try:', 'info');
+            addLog('  1. Unplug and replug the USB cable', 'info');
+            addLog('  2. Press the RESET button on the ESP', 'info');
+            addLog('  3. Check if the ESP is powered on (LED on)', 'info');
             addLog('═'.repeat(40), 'error');
             resetConnection();
         }
@@ -3458,10 +3457,10 @@
             // DTR=1, RTS=1 -> Run
             await serialPort.setSignals({dataTerminalReady: true, requestToSend: true});
 
-            addLog('✅ Manuální reset proveden', 'success');
+            addLog('✅ Manual reset performed', 'success');
 
         } catch (error) {
-            addLog(`⚠️ Manuální reset selhal: ${error.message}`, 'warning');
+            addLog(`⚠️ Manual reset failed: ${error.message}`, 'warning');
             throw error;
         }
     }
@@ -3516,10 +3515,11 @@
         }
     }
 
+
     // Flash firmware
     async function flashFirmware() {
         if (!connected) {
-            addLog('❌ ESP není připojeno!', 'error');
+            addLog('❌ ESP is not connected!', 'error');
             return;
         }
 
@@ -3545,7 +3545,7 @@
                 currentPhase = 'pre-flash';
                 const preFlashSuccess = await executePreFlashCommands();
                 if (!preFlashSuccess) {
-                    addLog('⚠️ Pre-flash příkazy selhaly', 'warning');
+                    addLog('⚠️ Pre-flash commands failed', 'warning');
                 }
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
@@ -3564,12 +3564,12 @@
                     const addressInput = document.getElementById(`address${i}`);
 
                     if (!fileInput.files[0]) {
-                        addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                        addLog(`⚠️ File ${i} is not selected!`, 'warning');
                         return;
                     }
 
                     if (!fileValidation[i].valid) {
-                        addLog(`❌ Soubor ${i} není platný!`, 'error');
+                        addLog(`❌ File ${i} is not valid!`, 'error');
                         hasInvalidFiles = true;
                         continue;
                     }
@@ -3590,7 +3590,7 @@
             }
 
             if (hasInvalidFiles || fileArray.length === 0) {
-                addLog('❌ Nelze nahrát firmware!', 'error');
+                addLog('❌ Cannot upload firmware!', 'error');
                 return;
             }
 
@@ -3599,7 +3599,7 @@
                 await enterBootMode();
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 if (!inBootMode) {
-                    addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                    addLog('❌ Failed to enter boot mode!', 'error');
                     return;
                 }
             }
@@ -3628,7 +3628,7 @@
 
             await espLoader.writeFlash(flashOptions);
 
-            addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+            addLog('🎉 Upload completed successfully!', 'success');
             updateProgress({percentage: 87.5, state: 'Firmware uploaded!'});
 
             // POST-FLASH PHASE
@@ -3636,14 +3636,14 @@
                 currentPhase = 'post-flash';
                 const postFlashSuccess = await executePostFlashCommands();
                 if (!postFlashSuccess) {
-                    addLog('⚠️ Post-flash příkazy selhaly', 'warning');
+                    addLog('⚠️ Post-flash commands failed', 'warning');
                 }
             }
 
             success = true;
 
         } catch (error) {
-            addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+            addLog(`❌ Error while flashing: ${error.message}`, 'error');
             console.error(error);
         } finally {
             await performHardReset();
@@ -3661,18 +3661,18 @@
 
     async function flashFirmware1() {
         if (!connected) {
-            addLog('❌ ESP není připojeno!', 'error');
+            addLog('❌ ESP is not connected!', 'error');
             return;
         }
 
         // Check if in boot mode before flashing
         if (!inBootMode) {
-            addLog('⚠️ ESP není v boot módu! Přepínám do boot módu...', 'warning');
+            addLog('⚠️ ESP is not in boot mode! Switching to boot mode...', 'warning');
             await enterBootMode();
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             if (!inBootMode) {
-                addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                addLog('❌ Failed to enter boot mode!', 'error');
                 return;
             }
         }
@@ -3692,7 +3692,7 @@
                 if (checkbox.checked) {
                     // Skip files 2 and 3 if file 1 is merged
                     if (hasMergedFirmware && i > 1) {
-                        addLog(`ℹ️ Soubor ${i} ignorován (merged firmware detekován)`, 'info');
+                        addLog(`ℹ️ File ${i} ignored (merged firmware detected)`, 'info');
                         continue;
                     }
 
@@ -3700,13 +3700,13 @@
                     const addressInput = document.getElementById(`address${i}`);
 
                     if (!fileInput.files[0]) {
-                        addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                        addLog(`⚠️ File ${i} is not selected!`, 'warning');
                         return;
                     }
 
                     // Check validation
                     if (!fileValidation[i].valid) {
-                        addLog(`❌ Soubor ${i} není platný!`, 'error');
+                        addLog(`❌ File ${i} is not valid!`, 'error');
                         hasInvalidFiles = true;
                         continue;
                     }
@@ -3715,7 +3715,7 @@
                     const info = fileValidation[i].info;
                     if (!info.hasExpectedExtension && info.expectedExtension) {
                         hasWarnings = true;
-                        warnings.push(`Soubor ${i} nemá očekávanou příponu (${info.expectedExtension})`);
+                        warnings.push(`File ${i} does not have expected extension (${info.expectedExtension})`);
                     }
 
                     const file = fileInput.files[0];
@@ -3736,33 +3736,33 @@
                         address: addressDec
                     });
 
-                    addLog(`📁 Přidán soubor: ${file.name} (${uint8Data.length} bajtů) na adresu ${address} (${addressDec})`, 'info');
+                    addLog(`📁 Added file: ${file.name} (${uint8Data.length} bytes) at address ${address} (${addressDec})`, 'info');
                 }
             }
 
             // Block if invalid files
             if (hasInvalidFiles) {
-                addLog('❌ Nelze nahrát neplatné soubory!', 'error');
+                addLog('❌ Cannot upload invalid files!', 'error');
                 return;
             }
 
             if (fileArray.length === 0) {
-                addLog('⚠️ Nebyl vybrán žádný soubor!', 'warning');
+                addLog('⚠️ No file selected!', 'warning');
                 return;
             }
 
             // Show confirmation if there are warnings
             if (hasWarnings) {
-                const warningMessage = 'Varování:\n' + warnings.join('\n') + '\n\nChcete přesto pokračovat?';
+                const warningMessage = 'Warning:\n' + warnings.join('\n') + '\n\nDo you still want to continue?';
                 if (!confirm(warningMessage)) {
-                    addLog('⚠️ Nahrávání zrušeno uživatelem', 'warning');
+                    addLog('⚠️ Upload cancelled by user', 'warning');
                     return;
                 }
             }
             if (hasMergedFirmware) {
-                addLog(`🚀 Zahajuji nahrávání merged firmware...`, 'info');
+                addLog(`🚀 Starting upload of merged firmware...`, 'info');
             } else {
-                addLog(`🚀 Zahajuji nahrávání ${fileArray.length} soubor(ů)...`, 'info');
+                addLog(`🚀 Starting upload of ${fileArray.length} file(s)...`, 'info');
             }
 
             // Disable buttons during flashing
@@ -3782,25 +3782,25 @@
                 }
             };
 
-            addLog('📝 Mazání a příprava flash paměti...');
+            addLog('📝 Erasing and preparing flash memory...');
 
             // Write files to flash
             await espLoader.writeFlash(flashOptions);
 
-            addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+            addLog('🎉 Upload completed successfully!', 'success');
             updateProgress(100, 'Done!');
 
             await new Promise(resolve => setTimeout(resolve, 500));
 
         } catch (error) {
-            addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+            addLog(`❌ Error while flashing: ${error.message}`, 'error');
             console.error(error);
         } finally {
             // Auto hard reset after flash
-            addLog('🔄 Automatický hard reset...', 'valid');
+            addLog('🔄 Automatic hard reset...', 'valid');
 
             await performHardReset();
-            addLog('☑️ Hard reset proveden!', 'accepted');
+            addLog('☑️ Hard reset done!', 'accepted');
 
             setButtonsEnabled(true);
         }
@@ -3809,7 +3809,7 @@
     // Flash firmware
     async function flashFirmware2() {
         if (!connected) {
-            addLog('❌ ESP není připojeno!', 'error');
+            addLog('❌ ESP is not connected!', 'error');
             return;
         }
 
@@ -3831,7 +3831,7 @@
 
                 const preFlashSuccess = await executePreFlashCommands();
                 if (!preFlashSuccess) {
-                    addLog('⚠️ Pre-flash příkazy selhaly, pokračuji s flashováním...', 'warning');
+                    addLog('⚠️ Pre-flash commands failed, continuing with flashing...', 'warning');
                 }
 
                 // Wait a bit before flashing
@@ -3852,7 +3852,7 @@
                 if (checkbox.checked) {
                     // Skip files 2 and 3 if file 1 is merged
                     if (hasMergedFirmware && i > 1) {
-                        addLog(`ℹ️ Soubor ${i} ignorován (merged firmware detekován)`, 'info');
+                        addLog(`ℹ️ File ${i} ignored (merged firmware detected)`, 'info');
                         continue;
                     }
 
@@ -3860,13 +3860,13 @@
                     const addressInput = document.getElementById(`address${i}`);
 
                     if (!fileInput.files[0]) {
-                        addLog(`⚠️ Soubor ${i} není vybrán!`, 'warning');
+                        addLog(`⚠️ File ${i} is not selected!`, 'warning');
                         return;
                     }
 
                     // Check validation
                     if (!fileValidation[i].valid) {
-                        addLog(`❌ Soubor ${i} není platný!`, 'error');
+                        addLog(`❌ File ${i} is not valid!`, 'error');
                         hasInvalidFiles = true;
                         continue;
                     }
@@ -3875,7 +3875,7 @@
                     const info = fileValidation[i].info;
                     if (!info.hasExpectedExtension && info.expectedExtension) {
                         hasWarnings = true;
-                        warnings.push(`Soubor ${i} nemá očekávanou příponu (${info.expectedExtension})`);
+                        warnings.push(`File ${i} does not have expected extension (${info.expectedExtension})`);
                     }
 
                     const file = fileInput.files[0];
@@ -3896,38 +3896,38 @@
                         address: addressDec
                     });
 
-                    addLog(`📁 Přidán soubor: ${file.name} (${uint8Data.length} bajtů) na adresu ${address} (${addressDec})`, 'info');
+                    addLog(`📁 Added file: ${file.name} (${uint8Data.length} bytes) at address ${address} (${addressDec})`, 'info');
                 }
             }
 
             // Block if invalid files
             if (hasInvalidFiles) {
-                addLog('❌ Nelze nahrát neplatné soubory!', 'error');
+                addLog('❌ Cannot upload invalid files!', 'error');
                 return;
             }
 
             if (fileArray.length === 0) {
-                addLog('⚠️ Nebyl vybrán žádný soubor!', 'warning');
+                addLog('⚠️ No file selected!', 'warning');
                 return;
             }
 
             // Show confirmation if there are warnings
             if (hasWarnings) {
-                const warningMessage = 'Varování:\n' + warnings.join('\n') + '\n\nChcete přesto pokračovat?';
+                const warningMessage = 'Warning:\n' + warnings.join('\n') + '\n\nDo you still want to continue?';
                 if (!confirm(warningMessage)) {
-                    addLog('⚠️ Nahrávání zrušeno uživatelem', 'warning');
+                    addLog('⚠️ Upload cancelled by user', 'warning');
                     return;
                 }
             }
 
             // Check if in boot mode before flashing
             if (!inBootMode) {
-                addLog('⚠️ ESP není v boot módu! Přepínám do boot módu...', 'warning');
+                addLog('⚠️ ESP is not in boot mode! Switching to boot mode...', 'warning');
                 await enterBootMode();
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 if (!inBootMode) {
-                    addLog('❌ Nepodařilo se přejít do boot módu!', 'error');
+                    addLog('❌ Failed to enter boot mode!', 'error');
                     return;
                 }
             }
@@ -3938,9 +3938,9 @@
             addLog('═'.repeat(32), 'info');
 
             if (hasMergedFirmware) {
-                addLog(`🚀 Zahajuji nahrávání merged firmware...`, 'info');
+                addLog(`🚀 Starting upload of merged firmware...`, 'info');
             } else {
-                addLog(`🚀 Zahajuji nahrávání ${fileArray.length} soubor(ů)...`, 'info');
+                addLog(`🚀 Starting upload of ${fileArray.length} file(s)...`, 'info');
             }
 
             // Disable buttons during flashing
@@ -3960,13 +3960,13 @@
                 }
             };
 
-            addLog('📝 Mazání a příprava flash paměti...', 'info');
+            addLog('📝 Erasing and preparing flash memory...', 'info');
 
             // Write files to flash
             await espLoader.writeFlash(flashOptions);
 
             addLog('_'.repeat(40), 'info');
-            addLog('🎉 Nahrávání dokončeno úspěšně!', 'success');
+            addLog('🎉 Upload completed successfully!', 'success');
             updateProgress({percentage: 100, state: 'Firmware uploaded!'});
 
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -3980,20 +3980,20 @@
 
                 const postFlashSuccess = await executePostFlashCommands();
                 if (!postFlashSuccess) {
-                    addLog('⚠️ Post-flash příkazy selhaly', 'warning');
+                    addLog('⚠️ Post-flash commands failed', 'warning');
                 }
             }
 
             success = true;
 
         } catch (error) {
-            addLog(`❌ Chyba při nahrávání: ${error.message}`, 'error');
+            addLog(`❌ Error while flashing: ${error.message}`, 'error');
             console.error(error);
         } finally {
             // Auto hard reset after flash
-            addLog('🔄 Automatický hard reset...', 'valid');
+            addLog('🔄 Automatic hard reset...', 'valid');
             await performHardReset();
-            addLog('☑️ Hard reset proveden!', 'accepted');
+            addLog('☑️ Hard reset done!', 'accepted');
 
 
             addLog('═'.repeat(32), 'info');
@@ -4009,9 +4009,9 @@
         }
     }
 
-    // Robustní wrapper pro hard reset
+    // Robust wrapper for hard reset
     async function performHardReset({loader = espLoader, transport = espTransport, port = serialPort} = {}) {
-        // 1) pokud instance esploader má metodu hardReset, použij ji (zpětná kompatibilita)
+        // 1) if the esploader instance has a hardReset method, use it (backwards compatibility)
         try {
             if (loader && typeof loader.hardReset === 'function') {
                 console.debug('Using esploader.hardReset()');
@@ -4020,22 +4020,22 @@
             }
         } catch (err) {
             console.warn('esploader.hardReset() failed:', err);
-            // pokračuj do fallbacků
+            // continue to fallbacks
         }
 
-        // 2) zkus použít exportovaný HardReset (může být třída nebo funkce)
+        // 2) try to use exported HardReset (may be a class or a function)
         try {
             if (typeof HardReset !== 'undefined' && HardReset) {
                 console.debug('HardReset export is present, inspecting...');
 
-                // Vypsat do konzole, co to je
+                // Log to console what it is
                 console.dir(HardReset);
 
-                // Pokud je to třída (konstruktér), vytvoříme instanci s transportem
+                // If it is a class (constructor), create instance with transport
                 if (typeof HardReset === 'function') {
                     try {
                         const hrInstance = new HardReset(transport);
-                        // Najdeme vhodnou metodu na instanci
+                        // Find suitable method on instance
                         const possibleMethods = ['reset', 'run', 'perform', 'execute', 'do', 'start'];
                         for (const m of possibleMethods) {
                             if (typeof hrInstance[m] === 'function') {
@@ -4044,7 +4044,7 @@
                                 return true;
                             }
                         }
-                        // Pokud instance sama je volatelná (funkce), zkusíme ji zavolat
+                        // If instance itself is callable (function), try to call it
                         if (typeof hrInstance === 'function') {
                             const maybePromise = hrInstance();
                             if (maybePromise && typeof maybePromise.then === 'function') {
@@ -4052,7 +4052,7 @@
                                 return true;
                             }
                         }
-                        // Pokud nic z toho neexistuje, zkusíme jestli HardReset je funkce, ne konstruktor (call)
+                        // If none of that exists, try if HardReset is a function, not a constructor (call)
                         if (typeof HardReset === 'function') {
                             const res = HardReset(transport);
                             if (res && typeof res.then === 'function') {
@@ -4069,7 +4069,7 @@
             console.warn('Error while trying HardReset export:', err);
         }
 
-        // 3) zkus ClassicReset nebo CustomReset exporty (někdy jsou tam tyto utility)
+        // 3) try ClassicReset or CustomReset exports (sometimes these utilities are there)
         try {
             if (typeof ClassicReset !== 'undefined' && ClassicReset) {
                 console.debug('Trying ClassicReset with transport');
@@ -4084,7 +4084,7 @@
             }
             if (typeof CustomReset !== 'undefined' && CustomReset) {
                 console.debug('Trying CustomReset with transport');
-                const cr = new CustomReset(transport, /* maybe sequence */);
+                const cr = new CustomReset(transport /* maybe sequence */);
                 if (typeof cr.reset === 'function') {
                     await cr.reset();
                     return true;
@@ -4097,7 +4097,7 @@
             console.warn('Classic/Custom reset attempts failed:', err);
         }
 
-        // 4) Fallback: manuální reset přes Web Serial API (pokud máme serialPort a setSignals)
+        // 4) Fallback: manual reset via Web Serial API (if we have serialPort and setSignals)
         try {
             if (port && typeof port.setSignals === 'function') {
                 console.debug('Attempting manual reset via serialPort.setSignals()');
@@ -4107,19 +4107,19 @@
                 await port.setSignals({dataTerminalReady: true, requestToSend: false});
                 await delay(50);
                 await port.setSignals({dataTerminalReady: true, requestToSend: true});
-                await delay(2000); // čekáme, než zařízení naběhne
+                await delay(2000); // wait for device to boot
                 return true;
             }
         } catch (err) {
             console.warn('Manual serialPort.reset via setSignals failed:', err);
         }
 
-        // 5) Pokud nic nezabralo, selhání
+        // 5) If nothing worked, failure
         console.error('Hard reset failed: no available method succeeded.');
         return false;
     }
 
-    // Pomocná delay funkce
+    // Helper delay function
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -4127,12 +4127,12 @@
     // Hard reset ESP
     async function hardReset() {
         if (!connected) {
-            addLog('❌ ESP není připojeno!', 'error');
+            addLog('❌ ESP is not connected!', 'error');
             return;
         }
 
         try {
-            addLog('🔄 Provádím hard reset ESP...', 'valid');
+            addLog('🔄 Performing ESP hard reset...', 'valid');
 
             // Close serial if open
             if (serialReader || serialWriter) {
@@ -4140,17 +4140,17 @@
             }
 
             await performHardReset();
-            addLog('☑️ Hard reset proveden!', 'accepted');
+            addLog('☑️ Hard reset done!', 'accepted');
 
             // After reset, device is no longer in boot mode
             updateBootModeStatus(false);
 
             // Wait for ESP to boot
             await new Promise(resolve => setTimeout(resolve, 2000));
-            addLog('ℹ️ ESP by mělo být v normálním módu a připraveno ke komunikaci', 'info');
+            addLog('ℹ️ ESP should now be in normal mode and ready for communication', 'info');
 
         } catch (error) {
-            addLog(`❌ Chyba při resetu: ${error.message}`, 'error');
+            addLog(`❌ Error while resetting: ${error.message}`, 'error');
             console.error(error);
         }
     }
@@ -4179,24 +4179,24 @@
             // Auto hard reset before disconnect
             if (connected && espLoader) {
                 try {
-                    addLog('🔄 Hard reset před odpojením...', 'info');
+                    addLog('🔄 Hard reset before disconnecting...', 'info');
                     await performHardReset();
                     await new Promise(resolve => setTimeout(resolve, 500));
                 } catch (e) {
-                    addLog('⚠️ Hard reset se nezdařil', 'warning');
+                    addLog('⚠️ Hard reset failed', 'warning');
                 }
             }
 
             if (espTransport) {
-                addLog('❎ Odpojuji ESP...', 'success');
+                addLog('❎ Disconnecting ESP...', 'success');
                 await espTransport.disconnect();
                 await espTransport.waitForUnlock(1500);
             }
 
-            addLog('✅ Odpojeno', 'success');
+            addLog('✅ Disconnected', 'success');
 
         } catch (error) {
-            addLog(`❌ Chyba při odpojování: ${error.message}`, 'error');
+            addLog(`❌ Error while disconnecting: ${error.message}`, 'error');
             console.error(error);
         } finally {
             connected = false;
@@ -4221,14 +4221,14 @@
         const bootModeBtn = document.getElementById('bootModeBtn');
 
         if (isConnected) {
-            statusBadge.textContent = 'Připojeno';
+            statusBadge.textContent = 'Connected';
             statusBadge.className = 'status-badge connected';
             connectBtn.disabled = true;
             resetBtn.disabled = false;
             disconnectBtn.disabled = false;
             bootModeBtn.disabled = inBootMode;
         } else {
-            statusBadge.textContent = 'Odpojeno';
+            statusBadge.textContent = 'Disconnected';
             statusBadge.className = 'status-badge disconnected';
             connectBtn.disabled = false;
             flashBtn.disabled = true;
@@ -4253,5 +4253,6 @@
 <script>
 
 </script>
+
 </body>
 </html>
