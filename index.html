@@ -7788,6 +7788,7 @@
         if (!calibrationStatus) {
             const msg = "\n⚠️ Motors are not calibrated.";
             await lockMovementExcept(UI.calibrateBtn);
+            if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
             logAndConsoleMessage(msg);
             await endedMoving();
             alert(msg);
@@ -8003,6 +8004,7 @@
         machineOccupation = true;
         await lockMovement();
         await lockConnectionButtons(true);
+        if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
 
         await sendCommandGeneral('MC ENDSTOPS ENABLE');
         await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
@@ -8030,6 +8032,8 @@
         }
         if (calibrationStatus) await unlockMovement();
         if (!calibrationStatus) await lockMovementExcept(UI.calibrateBtn);
+        if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
+        machineOccupation = false;
         await lockConnectionButtons(true, connectionType);
     }
 
@@ -8155,6 +8159,7 @@
         machineOccupation = true;
         warnOnClose = true;
         startWatchdog(WATCHDOG_INTERVAL_MS);
+        if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
 
         const delay = toInteger(timeoutMs, "up");
         if (!isNumber(delay)) {
@@ -8225,7 +8230,6 @@
         }
 
         if (isConnected) sendCommandGeneral("MC STOP");
-        machineOccupation = false;
 
         warnOnClose = false;
         machineOccupation = false;
@@ -8235,6 +8239,7 @@
 
         if (calibrationStatus) unlockMovement();
         else if (!calibrationStatus && isConnected) lockMovementExcept(UI.calibrateBtn);
+        if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
         lockConnectionButtons(true, connectionType);
         unlockControls();
     }
@@ -8266,6 +8271,7 @@
             if (!calibrationStatus) {
                 const msg = "⚠️ Motors are not calibrated.";
                 await lockMovementExcept(UI.calibrateBtn);
+                if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
                 logAndConsoleMessage(msg, {consoleLevel: 'warn'});
                 endedMoving();
                 return;
@@ -9209,6 +9215,7 @@
                 // alert("📐 Machine is calibrated.\n\t🔃 Please restart the experiment.");
                 // } else {
                 await lockMovementExcept(UI.calibrateBtn);
+                if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
                 logAndConsoleMessage("❌ Calibration is required to start the experiment.", {
                     consoleLevel: 'error',
                     showAlert: true
@@ -13066,6 +13073,7 @@
 
         } finally {
             // signal.abort(); // Clean up
+            if (isPeerConnected) setDataToPeerDevice('connection', isConnected);
         }
 
         const isOldVersion = compareVersions(machineFirmware, "1.5.0") < 0;
@@ -13244,6 +13252,7 @@
 
         if (calibrationStatus) await unlockMovement();
         else await lockMovementExcept(UI.calibrateBtn);
+        if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
 
         abort(signal);
         const speed = (await getSpeed(2_000)) || 15;
@@ -13353,6 +13362,10 @@
             cancelAllPending();
             activeWatchDog = false;
             machineOccupation = false;
+            if (isPeerConnected) {
+                setDataToPeerDevice('status', getMachineState());
+                setDataToPeerDevice('connection', isConnected);
+            }
             isExperimentRunning = false;
             await saveAllInputsToLocalStorage(settingsInputsLoad, storageKeyIdle);
             await flushDB();
@@ -13536,6 +13549,7 @@
         } finally {
             serialPort = null;
             isConnected = false;
+            if (isPeerConnected) setDataToPeerDevice('connection', isConnected);
         }
 
         return errors;
@@ -13653,7 +13667,6 @@
         // serialReader = null;
         // serialPort = null;
 
-        isConnected = false;
         await disconnectSerial({override: true, verbose: false});
 
         // TODO: opravit;
@@ -13748,18 +13761,19 @@
     }
 
     async function isSerialConnected() {
+        let connected = false;
         if (!serialPort) {
-            isConnected = false;
-            return false;
+            connected = false;
         }
         try {
             await serialPort.getSignals();
-            isConnected = true;
-            return true;
+            connected = true;
         } catch (error) {
-            isConnected = false;
-            return false;
+            connected = false;
         }
+
+        isConnected = connected;
+        if (isPeerConnected) setDataToPeerDevice('connection', isConnected);
     }
 
     /////////////////////////////////////////////////////////////////
@@ -13921,6 +13935,8 @@
 
         isExperimentRunning = false;
         machineOccupation = false;
+        calibrationStatus = false;
+        if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
         UI.loadingLogContainer.style.background = "#323232";
 
         maxDataPoints = maxDataPointsIdle;
@@ -13953,8 +13969,6 @@
         loadcellErrRate = [];
         measurementErrRate = [];
         totalErrRate = [];
-
-        calibrationStatus = false;
 
         activeWatchDog = false;
 
@@ -14242,6 +14256,9 @@
     let calibrationStatus = false;
     let currentSpeed = null;
     let currentAcceleration = null;
+
+
+    const getMachineState = () => !isConnected ? undefined : (isExperimentRunning ? 0 : (!calibrationStatus ? null : machineOccupation));
 
     /////////////////////////////////////////////////////////////////
 
@@ -15248,6 +15265,7 @@
                         log('🧪 Test command received, sending back test response');
                         const now = new Date();
                         const latency = (now - cmd.timestamp) || NaN;
+                        console.info(`\t⏱️ P2P Latency: ${latency} ms`);
                         sendCommandPeer({type: 'test'});
                         break;
                     case 'cmd':
@@ -15269,6 +15287,7 @@
                                         lockControlAndMove();
                                         lockConnectionButtons(true);
                                         machineOccupation = true;
+                                        setData('status', machineOccupation);
                                         warnOnClose = true;
                                         startWatchdog(WATCHDOG_INTERVAL_MS);
                                         log('▶️ Starting moving in direction: ' + direction);
@@ -15346,7 +15365,7 @@
                         break;
                     case 'pingponginfo':
                         const interval = parseInt(cmd.value);
-                        log('⏲️ Setting pong interval to ' + interval + ' ms'); // TODO: implement interval change
+                        log('⏲️ Setting pong interval to ' + interval + ' ms'); // TODO: implement interval change and disconnection on timeout
                         break;
 
                     case 'request':
