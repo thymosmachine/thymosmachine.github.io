@@ -2543,6 +2543,14 @@
                                    value="1" data-unit="-" data-essence="count"
                                    required>
                         </div>
+
+                        <div class="input-group">
+                            <label for="inputBrutalMode">
+                                Experiment Brutal-mode:
+                            </label>
+                            <input type="checkbox" id="inputBrutalMode" value="brutalMode"
+                                   data-system="skip" data-essence="switch">
+                        </div>
                     </div>
                 </article>
 
@@ -8526,12 +8534,6 @@
                 }
             }
 
-            // === Save Data ===
-            if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
-                UI.experimentStageLabel.textContent = `Saving`;
-                await saveCSV();
-            }
-
             UI.experimentStageLabel.textContent = `Finalizing`;
 
             await console.info("\n☑️ Experiment finished.");
@@ -8598,6 +8600,13 @@
             await flushDB();
 
             await recomputeAll();
+
+
+            // === Save Data ===
+            if (getElementValue('inputAutoSave')?.toLowerCase().endsWith('after')) {
+                UI.experimentStageLabel.textContent = `Saving`;
+                await saveCSV();
+            }
 
             endedMoving();    // unlock UI and watchdog
             unlockMovement();
@@ -9423,6 +9432,7 @@
         };
     }
 
+    let doBrutalMove = false; // TODO: temporary
     async function processMeasurements(dataString) {
         const newData = parseData(dataString);
 
@@ -9560,16 +9570,30 @@
 
         // Handle speed checks and experiment stopping
         if (checkSpeed && (newData?.speed < (1 / 1e2) && newData?.time > 1)) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places // (timeVal - tareValues.time) > 1 second => handled in 'timeStepCheck'
-            measurement_limits.zero_speed.counter++;
+            if (doBrutalMove) {
+                const diff = roundDecimalFast((experimentEndLimits?.position - newData?.position), (precisionPosition + 2));
+                if (isValidInputNum(diff)) {
+                    sendCommandGeneral(`MC MOVEBY MACH ${diff * displacementSignCorrection}`); // small move to trigger movement
+                } else {
+                    endMeasuring(Math.max(delayMsAfterEndMeasurement / 4, 10), {
+                        ednStatus: 'zero speed [brutal-mode]',
+                        endText: "🛑 Experiment stopped due to zero speed [brutal-mode].",
+                        command: takePhotos ? "DSLR STOP CYCLIC" : '',
+                        immediateText: `⚠️ Invalid move distance calculated "${diff}", stopping experiment.`,
+                    });
+                }
+            } else {
+                measurement_limits.zero_speed.counter++;
 
-            if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
-                endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), {
-                    ednStatus: 'zero speed',
-                    endText: "🛑 Experiment stopped due to zero speed.",
-                    command: takePhotos ? "DSLR STOP CYCLIC" : '',
-                });
-                document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
-                UI.experimentStageLabel.textContent = `Stopped`;
+                if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
+                    endMeasuring(Math.max(delayMsAfterEndMeasurement / 2, 10), {
+                        ednStatus: 'zero speed',
+                        endText: "🛑 Experiment stopped due to zero speed.",
+                        command: takePhotos ? "DSLR STOP CYCLIC" : '',
+                    });
+                    document.documentElement.style.setProperty('--progressColor', 'var(--progressStoppedcolor)');
+                    UI.experimentStageLabel.textContent = `Stopped`;
+                }
             }
         } else {
             measurement_limits.zero_speed.counter = 0;
@@ -11745,18 +11769,24 @@
         } catch (e) {
             machineName = null;
             console.error('Name error:', e);
+            // TODO
+            machineName = "Thymos_Device";
         }
         try {
             machineID = await getMachineID(5_000) || "";
         } catch (e) {
             machineID = null;
             console.error('ID error:', e);
+            // TODO
+            machineID = 1;
         }
         try {
             machineFirmware = (await getFirmwareVersion(5_000) || "")?.toLowerCase().trim();
         } catch (e) {
             machineFirmware = null;
             console.error('Firmware error:', e);
+            // TODO
+            machineFirmware = "0.0.0";
         }
 
         if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
@@ -13225,6 +13255,8 @@
         $ID("convertCSV")?.addEventListener("click", async () => convertCSVtoXLSX_MATTES());
 
         $ID("clearCalculationsButton")?.addEventListener("click", async () => clearCalculations());
+
+        $ID("inputBrutalMode")?.addEventListener("change", (event) => doBrutalMove = event.target.checked);
 
         $ID("darkModeButton")?.addEventListener("click", async () => toggleDarkMode());
 
