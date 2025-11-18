@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./"/>
     <title>Atropos - Thymos Firmware Update</title>
+
+    <script>
+        fetch("./files/shared-header.html")
+            .then(res => res.text())
+            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+    </script>
+
     <style>
         * {
             margin: 0;
