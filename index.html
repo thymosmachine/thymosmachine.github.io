@@ -133,7 +133,7 @@
                         try {
                             const data = JSON.parse(localStorage.getItem(key));
                             if (data && data[selectorId]) {
-                                const levels = ['operator', 'admin', 'service', 'developer', 'god'];
+                                const levels = ['go', 'operator', 'admin', 'service', 'developer', 'god'];
                                 const element = $ID(selectorId);
                                 if (levels.some(level => level === data[selectorId])) {
                                     const level = 'expert';
@@ -3000,8 +3000,8 @@
                         <div class="input-group machineControlElement" data-system-level="100">
                             <label for="inputMachineName" style="min-width: max-content;">Machine name:</label>
                             <div style="display: flex; gap: 0;">
-                                <input data-input-type="intInput" type="text" id="inputMachineName"
-                                       placeholder="My Machine Name" value="" data-system="skip"
+                                <input type="text" id="inputMachineName"
+                                       placeholder="My Machine Name" value="" data-system="SKIP"
                                        data-essence="identification"
                                        style="height: 40px; width: 200px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
                                 <button id="sendMachineNameBtn"
@@ -3016,7 +3016,7 @@
                             <label for="inputMachineID" style="min-width: max-content;">Machine ID:</label>
                             <div style="display: flex; gap: 0;">
                                 <input data-input-type="intInput" type="text" id="inputMachineID"
-                                       placeholder="My Machine ID" value="" data-system="skip"
+                                       placeholder="My Machine ID" value="" data-system="SKIP"
                                        data-essence="identification"
                                        style="height: 40px; width: 200px; border-bottom-right-radius: 0; border-top-right-radius: 0; border-right: 0 solid transparent;">
                                 <button id="sendMachineIDBtn"
@@ -3087,7 +3087,6 @@
                                 <option value="emergency" disabled>
                                     &nbsp;🟪&nbsp;Emergency&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🛠️)
                                 </option>
-
                                 <option value="user" disabled> <!--TODO: implement-->
                                     &nbsp;🆔&nbsp;Logged User&nbsp;&nbsp;&nbsp;(🚧)
                                 </option>
@@ -3837,7 +3836,8 @@
         if (!isElement(el)) return null;
 
         let val = null;
-        if (!isUnavailable(el)) val = catchVal(el?.value?.trim(), null, isNonEmptyStr); // TODO: el.disabled, el.hidden
+        const isSystem = el?.dataset?.system?.trim() === 'SKIP';
+        if (!isUnavailable(el) || isSystem) val = catchVal(el?.value?.trim(), null, isNonEmptyStr); // TODO: el.disabled, el.hidden
         if (isNotEmpty(val)) return val;
 
         if (IS_DEBUGGING) console.info('Getting default value for', el.id);
@@ -4585,7 +4585,7 @@
     // =====================================================================
 
     const isSkippable = (el) => {
-        const datasetSys = el?.dataset.system;
+        const datasetSys = el?.dataset.system?.toLowerCase()?.trim();
         const elType = el?.type;
         return (
             !isElement(el) ||
@@ -6230,6 +6230,18 @@
             return;
         }
         const input = event.target; // Get the input element
+        if (!input || !input.id) {
+            console.error("Input element or its ID is not defined.");
+            return;
+        }
+        if (input.type !== "checkbox" && input.type !== "text" && input.type !== "number" && input.tagName.toLowerCase() !== "select") {
+            console.warn(`Input type '${input.type}' not supported for saving to localStorage.`);
+            return;
+        }
+        if (input.id === 'systemLevelSelect' && input.value === 'go') {
+            return;
+        }
+
         let formData = JSON.parse(localStorage.getItem(storage)) || {}; // Load the saved data
 
         // Save the input value to the formData object or select the checked state for checkboxes
@@ -6253,6 +6265,17 @@
         let formData = {};
 
         elements?.forEach(input => {
+            if (!input || !input.id) {
+                console.error("Input element or its ID is not defined.");
+                return;
+            }
+            if (input.type !== "checkbox" && input.type !== "text" && input.type !== "number" && input.tagName.toLowerCase() !== "select") {
+                console.warn(`Input type '${input.type}' not supported for saving to localStorage.`);
+                return;
+            }
+            if (input.id === 'systemLevelSelect' && input.value === 'go') {
+                return;
+            }
             formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
 
         });
@@ -6335,7 +6358,7 @@
                     const loadData = formData?.settingsLoad || {};
                     const sysData = formData?.settingsSys || {};
                     if (!IS_DEBUGGING) {
-                        const levels = ['operator', 'admin', 'service', 'developer', 'god'];
+                        const levels = ['go', 'operator', 'admin', 'service', 'developer', 'god'];
                         if (levels.some(level => level === sysData?.systemLevelSelect)) {
                             const level = 'expert';
                             sysData.systemLevelSelect = level;
@@ -12929,6 +12952,7 @@
 
             if (allowRawConnect && (serialPort?.connected && serialPort?.readable && serialPort?.writable)) {
                 isConnected = true;
+                allDone = true;
                 await updateConnectionStatus("connected", "serial");
             } else {
                 await disconnectSerial({override: true});
@@ -12962,35 +12986,39 @@
     async function handShake({signal = undefined} = {}) {
         abort(signal);
         try {
-            machineName = (await getMachineName(5_000) || "")?.trim();
+            machineName = (await getMachineName(2_000) || "")?.trim();
             abort(signal);
         } catch (e) {
             machineName = null;
             console.error('Name error:', e);
         }
         try {
-            machineID = await getMachineID(5_000) || "";
+            machineID = await getMachineID(2_000) || NaN;
             abort(signal);
         } catch (e) {
             machineID = null;
             console.error('ID error:', e);
         }
         try {
-            machineFirmware = (await getFirmwareVersion(5_000) || "")?.toLowerCase().trim();
+            machineFirmware = (await getFirmwareVersion(2_000) || "")?.toLowerCase().trim();
             abort(signal);
         } catch (e) {
             machineFirmware = null;
             console.error('Firmware error:', e);
         }
 
-        if (!(isOk(machineFirmware) && isOk(machineName) && isOk(machineID))) {
+        const isFirmwareOk = isOk(machineFirmware);
+        const isNameOk = isOk(machineName);
+        const isIDOk = isOk(machineID);
+
+        if (!(isFirmwareOk && isNameOk && isIDOk)) {
             if (IS_DEBUGGING) console.warn("Firmware, Name or ID not read correctly, retrying...");
-            if (IS_DEBUGGING) console.info(`\nFirmware:  ${machineFirmware} = ${isOk(machineFirmware)}\nName:  ${machineName} = ${isOk(machineName)}\nID:  ${machineID} = ${isOk(machineID)}\n`);
+            if (IS_DEBUGGING) console.info(`\nFirmware:  ${machineFirmware} = ${isFirmwareOk}\nName:  ${machineName} = ${isNameOk}\nID:  ${machineID} = ${isIDOk}\n`);
 
             abort(signal);
-            alert("\n⚠️ Device did not respond correctly.");
+            // alert("\n⚠️ Device did not respond correctly.");
             await logMessage("\n⚠️ Device did not respond correctly, rebooting and retrying...\n");
-            throw new Error("Device not responding");
+            // throw new Error("Device not responding");
             // start reconnect procedure
             // if (tryCount === 0) {
             //     abort(signal);
@@ -13030,28 +13058,45 @@
 
         abort(signal);
         // TODO: implement Name-based/ID-based (reconnection)
-        const machName = machineName?.toLowerCase();
-        if (!isOk(machName) || !isNonEmptyStr(machName) || machName.includes('unnamed')) {
-            machineName = 'Thymos_Device-' + Math.random().toString(36).substring(2, 10);
+
+        if (isNameOk) {
+            const machName = machineName?.toLowerCase();
+            if (!(isNonEmptyStr(machName) && isOk(machName) && !machName.includes('unnamed'))) {
+                machineName = 'Thymos_Device-' + Math.random().toString(36).substring(2, 10);
+                await setMachineName(machineName);
+            }
+        } else {
+            machineName = 'Unknown_Device';
             await setMachineName(machineName);
         }
-        if (machineID === 0) {
-            machineID = clamp(Math.ceil(Math.random() * 255), 1, 255) * -1;
+
+        if (isIDOk) {
+            if (machineID === 0) {
+                machineID = clamp(Math.ceil(Math.random() * 255), 1, 255) * -1;
+                await setMachineID(machineID, 1, {overRide: true});
+            }
+        } else {
+            machineID = -256;
             await setMachineID(machineID, 1, {overRide: true});
         }
 
         abort(signal);
-        const machineVersionStatus = compareVersions(machineFirmware, "1.2.7");
 
-        if (machineVersionStatus === 0) {
-            console.info("%c\n\t🔧\tFirmware is same as supported.", "color: gray; font-weight: bold;");
-        } else if (machineVersionStatus === 1) {
-            console.warn("%c\n\t🔧\tFirmware is newer than supported!", "color: red; font-weight: bold;");
+        if (isFirmwareOk) {
+            const machineVersionStatus = compareVersions(machineFirmware, "1.2.7")
+
+            if (machineVersionStatus === 0) {
+                console.info("%c\n\t🔧\tFirmware is same as supported.", "color: gray; font-weight: bold;");
+            } else if (machineVersionStatus === 1) {
+                console.warn("%c\n\t🔧\tFirmware is newer than supported!", "color: red; font-weight: bold;");
+            } else {
+                console.info("%c\n\t🔧\tFirmware is older than supported.", "color: orange; font-weight: bold;");
+                alert("\n⚠️ Firmware is older than supported!\n\n   Please consider updating the device firmware to ensure compatibility and access to the latest features.\n");
+                throw new Error("Firmware outdated");
+                // TODO: implement: confirm(.....) => automatic firmware update procedure
+            }
         } else {
-            console.info("%c\n\t🔧\tFirmware is older than supported.", "color: orange; font-weight: bold;");
-            alert("\n⚠️ Firmware is older than supported!\n\n   Please consider updating the device firmware to ensure compatibility and access to the latest features.\n");
-            throw new Error("Firmware outdated");
-            // TODO: implement: confirm(.....) => automatic firmware update procedure
+            machineFirmware = "0.0.0";
         }
 
         if (IS_DEBUGGING) console.info(`\n🤖 Machine Info:\n\t📛 Name: ${machineName}\n\t🆔 ID: ${machineID}\n\t📦 Firmware: ${machineFirmware}\n`);
@@ -14057,8 +14102,10 @@
 
         el.classList.toggle(((isNonEmptyStr(elLevel) && elLevel.endsWith('v') && !isType) ? 'invisible' : 'undisplayed'), !isVisible);
 
+        const isSystemSkipping = el?.dataset?.system?.trim() === 'SKIP';
         if (!isVisible && doBubbles === true) {
             $$('input', el)?.forEach(input => {
+                if (el.id === 'inputMachineID') console.log(111111111);
                 // input.value = '';
                 input.dispatchEvent(new Event("change", {bubbles: true}));
             });
@@ -14348,6 +14395,12 @@
             const selectedLevel = event.target.value.toLowerCase().trim();
             switch (selectedLevel) {
                 case 'go':
+                    if (isExperimentRunning || machineOccupation || !initialAllLoaded) {
+                        event.target.value = 'expert';
+                        console.warn("Cannot switch to 'Go' mode");
+                        event.target.dispatchEvent(new Event('change'));
+                        return;
+                    }
                     (async () => {
                         if (isConnected) await disconnectSerial({override: true, verbose: false});
                         await sleep(100);
@@ -14584,7 +14637,7 @@
 
             await disconnectSerial({override: true});
             await sleep(100);
-            window.location.href = `./update${IS_LOCAL ? '.html' : ''}`;
+            window.location.href = `./updater${IS_LOCAL ? '.html' : ''}`;
         });
 
         $ID("rebootButton")?.addEventListener("click", async () => await rebootDevice());
@@ -14616,6 +14669,18 @@
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
 
+                machNameInput?.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                await setMachineName(getInputValDef(machNameInput, ''));
+            }
+        });
+
+        machIDInput?.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                await setMachineID(getInputValDef(machIDInput, ''));
+            }
+        });
+
         $ID("inputAppInterval")?.addEventListener("change", async (event) => (!isExperimentRunning && isConnected) ? await sendCommandGeneral(`DATA SET INTERVAL ${getInputNumDefAbsInt(event.target.value, 5_000)}`) : null);
 
         $ID("recomputeAllBtn")?.addEventListener("click", async () => recomputeAllCalculations());
@@ -14643,19 +14708,6 @@
                 event.target.value = num;
                 await sleep(3_500);
                 if (isOk(machineID)) event.target.value = machineID;
-            }
-        });
-
-
-        machNameInput?.addEventListener("keydown", async (event) => {
-            if (event.key === "Enter") {
-                await setMachineName(getInputValDef(machNameInput, ''));
-            }
-        });
-
-        machIDInput?.addEventListener("keydown", async (event) => {
-            if (event.key === "Enter") {
-                await setMachineID(getInputValDef(machIDInput, ''));
             }
         });
 
