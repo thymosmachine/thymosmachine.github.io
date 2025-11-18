@@ -565,20 +565,20 @@
             <div class="slider-container">
                 <div class="control-label">
                     <span>Speed</span>
-                    <span id="speedValue">15.00</span>
+                    <span id="speedValue">0.00</span>
                 </div>
                 <label for="movementSpeed">
-                    <input type="range" id="movementSpeed" min="0.01" max="25" value="15" step="0.01">
+                    <input type="range" id="movementSpeed" min="0.01" max="25" value="0" step="0.01">
                 </label>
             </div>
 
             <div class="slider-container">
                 <div class="control-label">
                     <span>Acceleration</span>
-                    <span id="accelerationValue">100.00</span>
+                    <span id="accelerationValue">0.00</span>
                 </div>
                 <label for="movementAcceleration">
-                    <input type="range" id="movementAcceleration" min="10" max="200" value="100" step="0.01">
+                    <input type="range" id="movementAcceleration" min="10" max="200" value="0" step="0.01">
                 </label>
             </div>
         </div>
@@ -832,6 +832,36 @@
         window.location.href = './';
     });
 
+    let pongTime = null;
+    let latencyMs = null;
+    const pingIntervalTime = Math.ceil(60 * 1_000 * 1.111111); // =
+
+    let pingInterval = null;
+    let pongInterval = null;
+
+    function startPingPong() {
+        pongTime = Date.now();
+        const latency = latencyMs * 1.2 || 0;
+        pingInterval = setInterval(() => {
+            sendCommand('ping');
+        }, Math.floor((pingIntervalTime * 0.9) - latency));
+
+        pongInterval = setInterval(() => {
+            checkPongInterval();
+        }, pingIntervalTime);
+    }
+
+    function checkPongInterval() {
+        if (pongTime) {
+            const time = Date.now();
+            const latency = time - pongTime;
+            if (latency > pingIntervalTime) {
+                showError('Connection lost (ping timeout), disconnecting...');
+                disconnectFromHost();
+            }
+        }
+    }
+
     // WebRTC connection
     connectBtn.addEventListener('click', () => {
         // Protection against multiple connections
@@ -854,7 +884,6 @@
         peer = new Peer();
 
         peer.on('open', (id) => {
-            console.log('My ID:', id);
             conn = peer.connect(hostId);
 
             conn.on('open', () => {
@@ -881,43 +910,124 @@
                     positionChart = createChart("positionChart", ["Position (mm)", "Force 1", "Force 2", "Force 3"], "Force-Position", "Position [mm]", "Force [N]");
                 }, 100);
 
+                setTimeout(() => {
+                    sendCommand('test');
+                }, 300);
 
                 setTimeout(() => {
-                    requestData('name,id,connection,status');
+                    requestData('name,id,connection,status,watchdog,speed,accel');
                 }, 600);
+
+                startPingPong();
             });
 
             conn.on('data', (msg) => {
-                console.log('Received:', msg);
                 if (!msg?.type) return;
 
                 switch (msg?.type?.toLowerCase().trim()) {
-                    case 'chartdata':
-                        updateChart(msg.data);
-                        break;
-                    case 'chartdatabatch':
-                        if (Array.isArray(msg.data)) {
-                            msg.data.forEach(item => updateChart(item));
+                    case 'test':
+                        console.info('Test message from host:', msg.value);
+                        const now = Date.now();
+                        const latency = (now - msg.timestamp) || NaN;
+                        if (isNumSafe(latency)) {
+                            console.info(`Latency: ${latency} ms`);
+                        } else {
+                            console.warn('Invalid latency value');
+                            sendCommand('test');
                         }
                         break;
-                    case 'name':
-                        statusDiv.textContent = `Connected to ${msg.value}`;
-                        console.info('Host Machine Name:', msg.value);
+                    case 'measurement':
+                        switch (msg.value?.toLowerCase().trim()) {
+                            case 'chartdata':
+                                updateChart(msg.data);
+                                break;
+                            case 'chartdatabatch':
+                                if (Array.isArray(msg.data)) {
+                                    msg.data.forEach(item => updateChart(item));
+                                }
+                                break;
+
+                            default:
+                                console.warn('Unknown measurement response type:', msg.value, ' Ignoring:', msg);
+                                return;
+                        }
                         break;
-                    case 'id':
-                        console.info('Host Machine ID:', msg.value);
+                    case 'pong':
+                        // Respond to ping
+                        pongTime = Date.now();
                         break;
-                    case 'connection':
-                        console.info('Connection Info:', msg.value);
+                    case 'info':
+                        switch (msg.value?.toLowerCase().trim()) {
+                            case 'name':
+                                statusDiv.textContent = `Connected to ${msg.data}`;
+                                console.info('Host Machine Name:', msg.data);
+                                break;
+                            case 'id':
+                                console.info('Host Machine ID:', msg.data);
+                                break;
+                            case 'connection':
+                                console.info('Connection Info:', msg.data);
+                                break;
+                            case 'status':
+                                console.info('Machine Status:', msg.data);
+                                break;
+                            case 'watchdog':
+                                console.info('Watchdog Info:', msg.data);
+                                const I = parseInt(msg.data);
+                                if (!isNumSafe(I)) {
+                                    showError('Watchdog triggered, disconnecting...');
+                                    disconnectFromHost();
+                                }
+                                const latency = latencyMs * 1.2 || 0;
+                                pressInterval = Math.max(Math.max(msg.data * 0.75, Math.floor(I * 0.9) - latency), 1);
+                                break;
+                            case 'position':
+                                console.info('Machine Position:', msg.data);
+                                break;
+                            case 'speed':
+                                console.info('Machine Speed:', msg.data);
+                                const S = parseFloat(msg.data);
+                                if (!isNumSafe(S)) {
+                                    console.warn('Invalid speed value received:', msg.data);
+                                    break;
+                                }
+                                const valS = S.toFixed(2);
+                                speedSlider.value = valS;
+                                speedValue.textContent = valS;
+                                break;
+                            case 'accel':
+                                console.info('Machine Acceleration:', msg.data);
+                                const A = parseFloat(msg.data);
+                                if (!isNumSafe(A)) {
+                                    console.warn('Invalid acceleration value received:', msg.data);
+                                    break;
+                                }
+                                const valA = A.toFixed(2);
+                                accelSlider.value = valA;
+                                accelValue.textContent = valA;
+                                break;
+
+                            default:
+                                console.warn('Unknown info response type:', msg.type, ' Ignoring:', msg);
+                                return;
+                        }
                         break;
-                    case 'status':
-                        console.info('Machine Status:', msg.value);
+                    case 'request':
+                        switch (msg.value?.toLowerCase().trim()) {
+                            case 'pingponginfo':
+                                sendCommand('pingponginfo', pingIntervalTime);
+                                break;
+                            default:
+                                console.warn('Unknown request response type:', msg.value);
+                                return;
+                        }
                         break;
                     case 'error':
                         showError(msg.value || 'Unknown error from host');
                         break;
                     default:
                         console.warn('Unknown message type:', msg.type);
+                        return;
                 }
             });
 
@@ -942,6 +1052,13 @@
             console.warn('Not connected');
             return;
         }
+
+        pressInterval = null;
+        pongTime = null;
+        clearInterval(pingInterval);
+        clearInterval(pongInterval);
+        pingInterval = null;
+        pongInterval = null;
 
         if (conn) {
             conn.close();
@@ -984,45 +1101,66 @@
             return;
         }
         if (conn && conn.open) {
-            const message = value !== null ? {command, value} : {command};
+            const message = value !== null ? {type: command, value: value} : {type: command};
+
+            if (!('timestamp' in additional)) message.timestamp = Date.now();
+
             if (isDict(additional)) {
                 Object.assign(message, additional);
             }
+
             conn.send(message);
-            console.log('Sent:', message);
         }
     }
 
     // Button controls with long press
+    let pressInterval = null;
+
     function setupButton(btnId, command, additional = undefined) {
+        let isHolding = false;
+
         const btn = $ID(btnId);
         let intervalTimer = null;
 
         const startPress = () => {
-            if (!isConnected) return;
-            sendCommand(command, 'start', additional);
+            if (!isConnected || !pressInterval) return;
+            if (isHolding) return;
+            isHolding = true;
+
+            if (isDict(additional)) {
+                Object.assign(additional, {data: 'start'});
+            } else {
+                additional = {data: 'start'};
+            }
+            sendCommand('cmd', command, additional);
+
             intervalTimer = setInterval(() => {
-                sendCommand(command, 'ping');
-            }, 200);
+                sendCommand('cmd', command, {data: 'beat'});
+            }, pressInterval);
         };
 
         const endPress = () => {
+            if (!isHolding) return;
+            isHolding = false;
+
             if (intervalTimer) {
                 clearInterval(intervalTimer);
                 intervalTimer = null;
             }
             if (isConnected) {
-                sendCommand(command, 'stop');
+                sendCommand('cmd', command, {data: 'softstop'});
             }
         };
 
         btn.addEventListener('mousedown', startPress);
         btn.addEventListener('mouseup', endPress);
-        btn.addEventListener('mouseleave', endPress);
+        btn.addEventListener('mouseleave', () => {
+            if (isHolding) endPress();
+        });
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
             startPress();
-        });
+        }, {passive: true});
         btn.addEventListener('touchend', (e) => {
             e.preventDefault();
             endPress();
@@ -1042,7 +1180,7 @@
                 showError('Not connected to host');
                 return;
             }
-            sendCommand(command, undefined, additional);
+            sendCommand('cmd', command, additional);
         });
         btn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
@@ -1050,15 +1188,17 @@
     function requestData(type) {
         if (!isConnected) return;
         const types = String(type).split(',').map(t => t.trim()).filter(t => t);
-        sendCommand('request', types);
+        for (let t of types) {
+            sendCommand('request', t);
+        }
     }
 
     // Setup all controls
-    setupButton('moveMachineUP', 'move', {direction: 'up'});
-    setupButton('moveMachineDOWN', 'move', {direction: 'down'});
+    setupButton('moveMachineUP', 'move', {dir: 'up'});
+    setupButton('moveMachineDOWN', 'move', {dir: 'down'});
     setupSimpleButton('startExperiment', 'experiment', {action: 'start'});
     setupSimpleButton('stopMachine', 'experiment', {action: 'stop'});
-    setupSimpleButton('returnPositionExperimentBtn', 'move', {direction: 'return'});
+    setupSimpleButton('returnPositionExperimentBtn', 'move', {data: 'return'});
     setupSimpleButton('calibrateBtn', 'calibrate');
 
     // Sliders
@@ -1073,7 +1213,7 @@
         clearTimeout(speedTimeout);
         speedTimeout = setTimeout(() => {
             if (isConnected) {
-                sendCommand('setSpeed', parseFloat(e.target.value));
+                sendCommand('cmd', 'speed', {data: parseFloat(e.target.value)});
             }
         }, 200);
     });
@@ -1084,7 +1224,7 @@
         clearTimeout(accelTimeout);
         accelTimeout = setTimeout(() => {
             if (isConnected) {
-                sendCommand('setAcceleration', parseFloat(e.target.value));
+                sendCommand('cmd', 'accel', {data: parseFloat(e.target.value)});
             }
         }, 200);
     });

@@ -7998,6 +7998,41 @@
         });
     }
 
+    async function calibrateMachine() {
+        calibrationStatus = false;
+        machineOccupation = true;
+        await lockMovement();
+        await lockConnectionButtons(true);
+
+        await sendCommandGeneral('MC ENDSTOPS ENABLE');
+        await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
+        await sendCommandGeneral('MC CALIBRATE');
+
+        let confirmCalibrationCount = 0;
+        // maximal 1 minute
+        const maxConfirmCalCount = 60 / 2.5;
+
+        while (!calibrationStatus && isConnected && machineOccupation === true) {
+            await sleep(2_500);
+            calibrationStatus = await getCalibrationStatus(500);
+            if (!isConnected) {
+                calibrationStatus = false;
+                logAndConsoleMessage("⚠️ Serial connection lost during calibration.", {consoleLevel: 'warn'});
+                break;
+            }
+            if (confirmCalibrationCount > maxConfirmCalCount) {
+                calibrationStatus = false;
+                await logMessage("❌ Calibration timeout reached. Please check the machine.\n\tMotors are not calibrated.");
+                console.error("❌ Calibration timeout.\n\tCalibration failed.");
+                break;
+            }
+            confirmCalibrationCount++;
+        }
+        if (calibrationStatus) await unlockMovement();
+        if (!calibrationStatus) await lockMovementExcept(UI.calibrateBtn);
+        await lockConnectionButtons(true, connectionType);
+    }
+
     function enableInputsAndLabelsIn(root) {
         root.querySelectorAll?.("input[disabled]")?.forEach(inp => {
             inp.disabled = false;
@@ -8075,7 +8110,7 @@
     }
 
     // ------- Watchdog (běží jen při pohybu) -------
-    function startWatchdog(intervalMs = WATCHDOG_INTERVAL_MS) {
+    function startWatchdog(intervalMs = WATCHDOG_INTERVAL_MS, ignoreTimer = false) {
         const interval = Math.round(Math.max(100, Number(intervalMs) || WATCHDOG_INTERVAL_MS));
         if (watchdogTimer) return; // už běží
 
@@ -8087,6 +8122,8 @@
         sendCommandGeneral(`MISC SET WATCHDOG_INTERVAL ${hwInterval}`);
         sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${1}`);
         if (IS_DEBUGGING) console.info("\t🐕 Watchdog is active.");
+
+        if (ignoreTimer) return;
 
         watchdogTimer = setInterval(() => {
             // posílej SYSWR pouze když je to smysluplné
@@ -8151,6 +8188,7 @@
     function setSpeedUI(speed) {
         UI.speedSlider.value = speed;
         UI.speedLabel.value = `${speed.toFixed(2)}`;
+        if (isPeerConnected) setDataToPeerDevice('speed', speed);
     }
 
     function setAcceleration(acceleration, updateCurrent = true, timeOut = 1) {
@@ -8168,6 +8206,7 @@
     function setAccelerationUI(acceleration) {
         UI.accelerationSlider.value = acceleration;
         UI.accelerationLabel.value = `${acceleration.toFixed(2)}`;
+        if (isPeerConnected) setDataToPeerDevice('accel', acceleration);
     }
 
     function setSpeedAndAcceleration(speed, acceleration, updateCurrent = true, timeOut = 2,) {
@@ -8307,6 +8346,10 @@
                 case 'user':
                     endColor = 'var(--progressError-color)';
                     reason = "user stop";
+                    break;
+                case 'peer':
+                    endColor = 'var(--progressError-color)';
+                    reason = "peer stop";
                     break;
                 case 'machine':
                     endColor = 'var(--progressWarning-color)';
@@ -10845,6 +10888,10 @@
             return;
         }
 
+        if (isPeerConnected) {
+            // Send data to peer device
+            sendDataToPeerDevice(data);
+        }
         if (liveUpdate || overRide) {
             // const lastPos = positionDataChart[positionDataChart.length - 1]
             // const deltaPos = Math.abs(data.position - lastPos);
@@ -14179,6 +14226,8 @@
 
     let connectionType = null; // 'serial' | 'bluetooth' | 'wifi' | null
 
+    let isPeerConnected = false;
+
     let initialAllLoaded = false;
     let initialPageLoaded = false;
     let initialDataLoaded = false;
@@ -14810,42 +14859,7 @@
         UI.moveUp50Btn.addEventListener("click", async () => moveBy(-50));  // TODO: problém s rychlostmi na konci a zrychlením
         UI.moveDown50Btn.addEventListener("click", async () => moveBy(50));  // TODO: problém s rychlostmi na konci a zrychlením
 
-
-        UI.calibrateBtn.addEventListener("click", async () => {
-            calibrationStatus = false;
-            machineOccupation = true;
-            await lockMovement();
-            await lockConnectionButtons(true);
-
-            await sendCommandGeneral('MC ENDSTOPS ENABLE');
-            await sendCommandGeneral(`MISC SET WATCHDOG_ENABLED ${0}`);
-            await sendCommandGeneral('MC CALIBRATE');
-
-            let confirmCalibrationCount = 0;
-            // maximal 1 minute
-            const maxConfirmCalCount = 60 / 2.5;
-
-            while (!calibrationStatus && isConnected && machineOccupation === true) {
-                await sleep(2_500);
-                calibrationStatus = await getCalibrationStatus(500);
-                if (!isConnected) {
-                    calibrationStatus = false;
-                    logAndConsoleMessage("⚠️ Serial connection lost during calibration.", {consoleLevel: 'warn'});
-                    break;
-                }
-                if (confirmCalibrationCount > maxConfirmCalCount) {
-                    calibrationStatus = false;
-                    await logMessage("❌ Calibration timeout reached. Please check the machine.\n\tMotors are not calibrated.");
-                    console.error("❌ Calibration timeout.\n\tCalibration failed.");
-                    break;
-                }
-                confirmCalibrationCount++;
-            }
-            if (calibrationStatus) await unlockMovement();
-            if (!calibrationStatus) await lockMovementExcept(UI.calibrateBtn);
-            await lockConnectionButtons(true, connectionType);
-        });
-
+        UI.calibrateBtn.addEventListener("click", async () => calibrateMachine());
 
         // Set both elements' limits to match
         [[UI.speedSlider, UI.speedLabel], [UI.accelerationSlider, UI.accelerationLabel]]?.forEach(pair => {
@@ -15059,6 +15073,7 @@
 </script>
 
 <script>
+
     async function waitForPeerJSLoad() {
         return new Promise((resolve, reject) => {
             const maxWaitTime = 10000; // 10 seconds
@@ -15095,7 +15110,6 @@
         const statusDiv = document.getElementById('hostStatus');
         const hostIdDiv = document.getElementById('hostId');
         const logDiv = document.getElementById('log');
-        const dot = document.getElementById('dot');
         const copyBtn = document.getElementById('copyHostId');
         const disconnectBtn = document.getElementById('hostDisconnect');
         const btnWrapper = document.getElementById('hostButtonsWrapper');
@@ -15126,7 +15140,6 @@
         }
 
         const myId = generateId();
-        console.info('\t🎭 Generated Host ID: ' + myId);
 
         peer = new Peer(myId, {
             debug: 2
@@ -15136,7 +15149,7 @@
 
         peer.on('open', (id) => {
             peerOpened = true;
-            console.log('🌐 Peer connection opened with ID: ' + id);
+            console.info('🎭 Peer connection opened with ID: ' + id);
             hostIdDiv.textContent = id;
             copyBtn.style.display = 'inline-flex';
             statusDiv.className = 'status ready';
@@ -15166,21 +15179,19 @@
             });
         });
 
+        let messageCount = 0;
+        const maxMessages = 10;
+
         function log(msg) {
             const time = new Date().toLocaleTimeString();
             logDiv.innerHTML += `<div style="color: var(--gray-700);">[${time}] ${msg}</div>`;
             logDiv.scrollTop = logDiv.scrollHeight;
+            messageCount++;
+            if (messageCount > maxMessages) {
+                logDiv.innerHTML = logDiv.innerHTML.split('\n').slice(1).join('\n');
+                messageCount--;
+            }
         }
-
-        function updateDot() {
-            const simWidth = document.getElementById('joystickSim').offsetWidth;
-            const simHeight = document.getElementById('joystickSim').offsetHeight;
-            let cx = (simWidth / 2) + pos.x * 10 - 12;
-            let cy = (simHeight / 2) - pos.y * 10 - 12;
-            dot.style.left = cx + 'px';
-            dot.style.top = cy + 'px';
-        }
-
 
         disconnectBtn.addEventListener('click', () => {
             if (conn) {
@@ -15193,6 +15204,27 @@
             log('🔌 Disconnected by user');
         });
 
+        function sendCommandPeer(command) {
+            if (conn && conn.open && isPeerConnected) {
+                if (!('timestamp' in command)) command.timestamp = Date.now();
+                conn.send(command);
+            } else {
+                log('❌ Cannot send command, not connected');
+            }
+        }
+
+        window.sendDataToPeerDevice = sendChartData; // make it globally accessible
+        window.setDataToPeerDevice = setData; // make it globally accessible
+
+        function sendChartData(data) {
+            sendCommandPeer({type: 'measurement', value: 'chartData', data: data});
+        }
+
+        function setData(key, value) {
+            const command = {type: 'info', value: key, data: value};
+            sendCommandPeer(command);
+        }
+
         peer.on('connection', (connection) => {
             conn = connection;
             log('📞 Incoming connection from: ' + conn.peer);
@@ -15204,68 +15236,164 @@
                 statusDiv.className = 'status connected';
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Connected to Controller</span>';
                 btnWrapper.style.display = 'inline-flex';
+                isPeerConnected = true;
             });
 
             conn.on('data', (cmd) => {
-                if (typeof cmd === 'string') {
-                    log('📩 ' + cmd);
+                if (!cmd?.type) return;
+                log('📩 ' + cmd?.type + '; ' + cmd?.value + '; ' + cmd?.data);
 
-                    if (cmd === 'LEFT') pos.x = clampPos(pos.x - 1);
-                    else if (cmd === 'RIGHT') pos.x = clampPos(pos.x + 1);
-                    else if (cmd === 'UP') pos.y = clampPos(pos.y + 1);
-                    else if (cmd === 'DOWN') pos.y = clampPos(pos.y - 1);
+                switch (cmd.type?.toLowerCase().trim()) {
+                    case 'test':
+                        log('🧪 Test command received, sending back test response');
+                        const now = new Date();
+                        const latency = (now - cmd.timestamp) || NaN;
+                        sendCommandPeer({type: 'test'});
+                        break;
+                    case 'cmd':
+                        switch (cmd.value?.toLowerCase().trim()) {
 
-                    updateDot();
-                    updateChart();
+                            case 'move':
+                                const value = cmd.data?.toLowerCase().trim();
+                                log('\t🚚 Move command: ' + value);
 
-                    if (conn && conn.open) {
-                        conn.send({
-                            type: 'position',
-                            x: pos.x,
-                            y: pos.y,
-                            time: new Date().toLocaleTimeString()
-                        });
-                    }
-                } else {
-                    if (!cmd?.command) return;
-                    const command = cmd.command?.toLowerCase().trim();
+                                switch (value) {
+                                    case 'start':
+                                        const direction = cmd.dir?.toLowerCase().trim();
+                                        if (direction !== 'up' && direction !== 'down') {
+                                            log('❓ Invalid move direction: ' + direction);
+                                            console.warn('❓ Invalid move direction: ' + direction);
+                                            return;
+                                        }
+                                        if (machineOccupation) return; // is already moving
+                                        lockControlAndMove();
+                                        lockConnectionButtons(true);
+                                        machineOccupation = true;
+                                        warnOnClose = true;
+                                        startWatchdog(WATCHDOG_INTERVAL_MS);
+                                        log('▶️ Starting moving in direction: ' + direction);
+                                        sendCommandGeneral(`MC ${direction === 'up' ? 'HOME' : 'END'}`);
+                                        break;
+                                    case 'beat':
+                                        log('💓 Got Heartbeat signal');
+                                        if (isConnected && activeWatchDog && machineOccupation)
+                                            sendCommandGeneral("SYSWR");
+                                        break;
+                                    case 'return':
+                                        log('↩️ Returning to home position');
+                                        moveToOriginalPosition();
+                                        break;
+                                    case 'softstop':
+                                        log('⏹️ Stopping moving');
+                                        softStopMachine();
+                                        break;
+                                    case 'stop':
+                                        log('🛑 Stopping machine');
+                                        stopMachine('peer');
+                                        break;
 
-                    log('📩 ' + command);
-                    if (command === 'move') {
-                        const value = cmd.value?.toLowerCase().trim();
-                        log('\t🚚 Move command: ' + value);
-                        if (value === 'start') {
-                            const direction = cmd.direction?.toLowerCase().trim();
-                            log('▶️ Starting moving in direction: ' + direction);
-                        } else if (value === 'ping') {
-                            log('🏓 Ping received, sending pong back');
-                            if (conn && conn.open) {
-                                conn.send({type: 'pong', timestamp: Date.now()});
-                            }
-                        } else if (value === 'return') {
-                            log('↩️ Returning to home position');
-                        } else {
-                            log('⏹️ Stopping moving');
+                                    default:
+                                        log('❓ Unknown move command value: ' + value);
+                                        return;
+                                }
+                                break;
+
+                            case 'experiment':
+                                const action = cmd.action?.toLowerCase().trim();
+                                log('\t🔬 Experiment command: ' + action);
+                                if (action === 'start') {
+                                    log('🧪 Starting experiment run');
+                                    startExperiment();
+                                } else if (action === 'stop') {
+                                    log('🛑 Stopping experiment run');
+                                    stopMachine('peer');
+                                }
+                                break;
+
+                            case 'calibrate':
+                                log('⚙️ Starting calibration procedure');
+                                calibrateMachine();
+                                break;
+
+                            case 'speed':
+                                const speed = parseFloat(cmd.data);
+                                if (isNaN(speed) || speed <= 0) {
+                                    log('❓ Invalid speed value: ' + cmd.data);
+                                    return;
+                                }
+                                log('🏎️ Setting speed to ' + speed + ' mm/s');
+                                setSpeed(speed);
+                                break;
+                            case 'accel':
+                                const accel = parseFloat(cmd.data);
+                                if (isNaN(accel) || accel <= 0) {
+                                    log('❓ Invalid acceleration value: ' + cmd.data);
+                                    return;
+                                }
+                                log('⚡ Setting acceleration to ' + accel + ' mm/s²');
+                                setAcceleration(accel);
+                                break;
+
+                            default:
+                                log('❓ Unknown cmd value: ' + cmd.value + ' Ignoring:', cmd);
+                                return;
                         }
-                    } else if (command === 'experiment') {
-                        const action = cmd.action?.toLowerCase().trim();
-                        log('\t🔬 Experiment command: ' + action);
-                        if (action === 'start') {
-                            log('🧪 Starting experiment run');
-                            runExperiment();
-                        } else if (action === 'stop') {
-                            log('🛑 Stopping experiment run');
-                            if (intervalId) {
-                                clearInterval(intervalId);
-                                intervalId = null;
-                            }
-                        }
-                    } else if (command === 'calibrate') {
-                        log('⚙️ Starting calibration procedure');
-                    } else {
-                        log('❓ Unknown command received: ' + command);
-                    }
+                        break;
 
+                    case 'ping':
+                        log('🏓 Ping received, sending pong');
+                        sendCommandPeer({type: 'pong'});
+                        break;
+                    case 'pingponginfo':
+                        const interval = parseInt(cmd.value);
+                        log('⏲️ Setting pong interval to ' + interval + ' ms'); // TODO: implement interval change
+                        break;
+
+                    case 'request':
+
+                        switch (cmd.value?.toLowerCase().trim()) {
+                            case 'watchdog':
+                                log('🐶 Watchdog request');
+                                sendCommandPeer({type: 'info', value: 'watchdog', data: WATCHDOG_INTERVAL_MS});
+                                break;
+                            case 'name':
+                                log('📝 Name request');
+                                sendCommandPeer({type: 'info', value: 'name', data: machineName});
+                                break;
+                            case 'id':
+                                log('🆔 ID request');
+                                sendCommandPeer({type: 'info', value: 'id', data: machineID});
+                                break;
+                            case 'status':
+                                log('📊 Status request');
+                                sendCommandPeer({type: 'info', value: 'status', data: machineOccupation});
+                                break;
+                            case 'connection':
+                                log('🔗 Connection request');
+                                sendCommandPeer({type: 'info', value: 'connection', data: isConnected});
+                                break;
+                            case 'position':
+                                log('📍 Position request');
+                                sendCommandPeer({type: 'info', value: 'position', data: 0}); //currentPosition
+                                break;
+                            case 'speed':
+                                log('🏎️ Speed request');
+                                sendCommandPeer({type: 'info', value: 'speed', data: currentSpeed});
+                                break;
+                            case 'accel':
+                                log('⚡ Acceleration request');
+                                sendCommandPeer({type: 'info', value: 'accel', data: currentAcceleration});
+                                break;
+
+                            default:
+                                log('❓ Unknown request type: ' + cmd.type + ' Ignoring:', cmd);
+                                return;
+                        }
+                        break;
+
+                    default:
+                        log('❓ Unknown command received: ' + cmd.command);
+                        return;
                 }
             });
 
@@ -15275,6 +15403,7 @@
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
                 btnWrapper.style.display = 'none';
                 conn = null;
+                isPeerConnected = false;
             });
         });
     }
