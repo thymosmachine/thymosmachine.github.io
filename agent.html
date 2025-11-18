@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <base href="./"/>
     <title>Klóthó - Remote Control</title>
+
+    <script>
+        fetch("./files/shared-header.html")
+            .then(res => res.text())
+            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+    </script>
+
     <link rel="stylesheet" href="packages/external/uplot/uPlot.min.css">
     <script defer src="packages/external/uplot/uPlot.iife.min.js"></script>
     <script defer src="./packages/external/p2p/peerjs.min.js"></script>
