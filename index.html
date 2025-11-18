@@ -1819,11 +1819,55 @@
 
 
         .status-icon {
-            width: 20px;
-            height: 20px;
-            aspect-ratio: 1/1;
+            --status-size: 20px;
+            width: var(--status-size);
+            height: var(--status-size); /* fallback pokud aspect-ratio není podporováno */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center; /* centrování obsahu (ikony/SVG) */
+            vertical-align: middle;
             border-radius: 50%;
-            display: inline-block;
+            box-sizing: border-box;
+            overflow: hidden; /* zabrání vykukujícím elementům */
+            background: transparent;
+            color: inherit; /* umožní barvu řídit rodič */
+            pointer-events: none; /* pokud má být dekorativní; změňte na auto pokud interaktivní */
+        }
+
+        /* horizontal line */
+        .lined,
+        .crossed {
+            position: relative; /* parent must be positioned for absolute children */
+        }
+
+        .lined::before,
+        .crossed::before,
+        .crossed::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 60%;
+            height: calc(20px * 0.14);
+            background: white;
+            border-radius: 50px;
+            transform-origin: center;
+            transform: translate(-50%, -50%); /* center the bar */
+            pointer-events: none;
+        }
+
+        /* single centered horizontal line */
+        .lined::before {
+            /* already centered by translate above */
+        }
+
+        /* two crossing lines (X) centered */
+        .crossed::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .crossed::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
         }
 
         .status.waiting .status-icon {
@@ -2071,7 +2115,7 @@
         <!-- Connection Section -->
         <article class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div class="status waiting" id="appStatus">
-                <span class="status-icon"></span>
+                <span class="status-icon lined"></span>
                 <span id="connectionStatus">Idle</span>
             </div>
             <div class="inlineDiv" style="    flex-wrap: wrap;">
@@ -2086,29 +2130,29 @@
                             <option value="" hidden>—— Select ——</option>
                             <option value="none" hidden>—— None ——</option>
                             <option value="0" hidden>—— None ——</option>
-                            <option value="50">50</option>
-                            <option value="75">75</option>
-                            <option value="110">110</option>
-                            <option value="134">134</option>
-                            <option value="150">150</option>
-                            <option value="200">200</option>
-                            <option value="300">300</option>
-                            <option value="600">600</option>
-                            <option value="1200">1200</option>
-                            <option value="1800">1800</option>
-                            <option value="2400">2400</option>
-                            <option value="4800">4800</option>
-                            <option value="9600">9600</option>
-                            <option value="19200">19200</option>
-                            <option value="38400">38400</option>
-                            <option value="57600">57600</option>
-                            <option value="76800">76800</option>
+                            <option value="50" data-system-level="700">50</option>
+                            <option value="75" data-system-level="700">75</option>
+                            <option value="110" data-system-level="700">110</option>
+                            <option value="134" data-system-level="700">134</option>
+                            <option value="150" data-system-level="700">150</option>
+                            <option value="200" data-system-level="700">200</option>
+                            <option value="300" data-system-level="700">300</option>
+                            <option value="600" data-system-level="700">600</option>
+                            <option value="1200" data-system-level="700">1200</option>
+                            <option value="1800" data-system-level="700">1800</option>
+                            <option value="2400" data-system-level="700">2400</option>
+                            <option value="4800" data-system-level="700">4800</option>
+                            <option value="9600" data-system-level="700">9600</option>
+                            <option value="19200" data-system-level="700">19200</option>
+                            <option value="38400" data-system-level="700">38400</option>
+                            <option value="57600" data-system-level="700">57600</option>
+                            <option value="76800" data-system-level="700">76800</option>
                             <option value="115200">115200</option>
                             <option value="230400">230400</option>
                             <option value="460800">460800</option>
-                            <option value="576000">576000</option>
+                            <option value="576000" data-system-level="700">576000</option>
                             <option value="921600" selected>921600</option>
-                            <option value="4147200">4147200</option>
+                            <option value="4147200" data-system-level="700">4147200</option>
                         </select>
                     </div>
                 </div>
@@ -2415,7 +2459,7 @@
                           data-system="skip"></textarea>
             </div>
 
-            <button id="convertCSV" class="controlElement">
+            <button id="convertCSV" class="controlElement" data-system-level="10v">
                 📊 Convert CSV files to XLSX (MATTES)
             </button>
 
@@ -2426,7 +2470,9 @@
             </div>
 
             <div>
-                <button type="button" id="btnLoadSettings" class="controlElement">🗃️ Load experiment data (CSV)</button>
+                <button type="button" id="btnLoadSettings" class="controlElement" data-system-level="10v">
+                    🗃️ Load experiment data (CSV)
+                </button>
                 <div hidden>
                     <span id="loadedFileName" aria-live="polite"></span>
                     <input type="file" id="appFileInput" accept=".csv,text/csv">
@@ -2440,8 +2486,8 @@
 
         <!--            </div>-->
 
-        <h3>📑 Experiment Results:</h3>
-        <section class="openingContainer insetShadow">
+        <h3 data-system-level="10">📑 Experiment Results:</h3>
+        <section class="openingContainer insetShadow" data-system-level="10">
             <button id="resultsContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="resultsContainer" class="sizeableContainer controlElement">
                 <h4>✏️ Calculation inputs:</h4>
@@ -2818,28 +2864,33 @@
                                 <option value="Option-UP-POS-BASIC" data-essence="move_up">
                                     &nbsp;UP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔺
                                 </option>
-                                <option value="Option-UP-POS-Ten" disabled data-essence="tensile">
+                                <option value="Option-UP-POS-Ten" disabled data-essence="tensile"
+                                        data-system-level="10">
                                     &nbsp;TENSION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                                 </option>
-                                <option value="Option-UP-POS-InB" data-essence="internal_bond">
+                                <option value="Option-UP-POS-InB" data-essence="internal_bond"
+                                        data-system-level="10">
                                     &nbsp;INTERNAL BOND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏫
                                 </option>
                                 <option value="Option-DOWN-POS-BASIC" data-essence="move_down" selected>
                                     &nbsp;DOWN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔻
                                 </option>
-                                <option value="Option-UP-POS-Com" disabled data-essence="compression">
+                                <option value="Option-UP-POS-Com" disabled data-essence="compression"
+                                        data-system-level="10">
                                     &nbsp;COMPRESION&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                                 </option>
-                                <option value="Option-DOWN-POS-Flx" data-essence="flexural">
+                                <option value="Option-DOWN-POS-Flx" data-essence="flexural"
+                                        data-system-level="10">
                                     &nbsp;FLEXURAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⏬
                                 </option>
-                                <option value="Option-DOWN-POS-HBr" data-essence="hardness_br">
+                                <option value="Option-DOWN-POS-HBr" data-essence="hardness_br"
+                                        data-system-level="10">
                                     &nbsp;HARDNESS (Brinell)&nbsp;⏬
                                 </option>
                             </select>
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group" data-system-level="10">
                             <label for="inputLoadLimitDropPercent">Force drop limit<span class="units-text"></span>:
                             </label>
                             <input data-input-type="floatInput" type="number" id="inputLoadLimitDropPercent"
@@ -2849,7 +2900,7 @@
                         </div>
 
 
-                        <div class="input-group">
+                        <div class="input-group" data-system-level="10">
                             <label for="inputTakePhotos">Take photos: </label>
                             <input type="checkbox" id="inputTakePhotos" class="expInput" value="takePhotos"
                                    data-essence="switch">
@@ -2862,7 +2913,7 @@
                         </div>
 
 
-                        <div class="input-group">
+                        <div class="input-group" data-system-level="10">
                             <label for="inputLoadLimitDropValue">Force drop limit<span class="units-text"></span>:
                             </label>
                             <input data-input-type="floatInput" type="number" id="inputLoadLimitDropValue"
@@ -2879,7 +2930,7 @@
                                    data-essence="speed" required>
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group" data-system-level="10">
                             <label for="inputDataInterval">Data Interval<span class="units-text"></span>: </label>
                             <input data-input-type="intInput" type="number" id="inputDataInterval" class="expInput"
                                    value="30000" min="10000" step="any" max="100000000" data-unit="µs"
@@ -3063,8 +3114,8 @@
                                 <option value="go">
                                     &nbsp;➡️&nbsp;Go Mode
                                 </option>
-                                <option value="minimal" disabled> <!--TODO: implement-->
-                                    &nbsp;⏹️&nbsp;Minimal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(🔜)
+                                <option value="minimal">
+                                    &nbsp;⏹️&nbsp;Minimal&nbsp;
                                 </option>
                                 <option value="basic" selected>
                                     &nbsp;🟦&nbsp;Basic
@@ -3225,7 +3276,7 @@
                             </select>
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group" data-system-level="10">
                             <label for="inputAutoSave">
                                 Save data to CSV automatically:
                             </label>
@@ -3248,7 +3299,7 @@
                             </select>
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group" data-system-level="10">
                             <label for="inputClearCalculations">
                                 Clear calculation inputs at the start of each experiment:
                             </label>
@@ -3285,7 +3336,7 @@
                         </button>
 
                         <button id="reportButton" class="controlBtn controlElement prohibited"
-                                style="color: var(--stopEpx-color);">
+                                style="color: var(--stopEpx-color);" data-system-level="10">
                             🐞 Report bug
                         </button>
 
@@ -3333,8 +3384,8 @@
         </section>
 
         <!-- Device Console Output Section -->
-        <h3>📋 Device Console:</h3>
-        <section class="openingContainer insetShadow">
+        <h3 data-system-level="10">📋 Device Console:</h3>
+        <section class="openingContainer insetShadow" data-system-level="10">
             <button id="consoleContainerOpenBtn" class="openingContainerBtn">🔽</button>
             <div id="consoleContainer" class="sizeableContainer">
                 <div id="consoleWrapper">
@@ -7577,7 +7628,15 @@
                 serialWriter = serialPort.writable.getWriter();
             }
 
-            await serialWriter.write(txtE.encode(text + "\n"));
+            const commands = text.split('\n');
+
+            for (let cmd of commands) {
+                const str = cmd.replace(/\r/g, '').trim(); // Remove any carriage return characters
+
+                if (str === '') continue; // Skip empty commands
+
+                await serialWriter.write(txtE.encode(str + '\n'));
+            }
 
             return true;
         } catch (error) {
@@ -14100,12 +14159,11 @@
 
         const isVisible = isType && isLevel;
 
-        el.classList.toggle(((isNonEmptyStr(elLevel) && elLevel.endsWith('v') && !isType) ? 'invisible' : 'undisplayed'), !isVisible);
+        el.classList.toggle(((isNonEmptyStr(elLevel) && elLevel?.endsWith('v')) ? 'invisible' : 'undisplayed'), !isVisible);
 
-        const isSystemSkipping = el?.dataset?.system?.trim() === 'SKIP';
         if (!isVisible && doBubbles === true) {
             $$('input', el)?.forEach(input => {
-                if (el.id === 'inputMachineID') console.log(111111111);
+                if (input?.dataset?.system === 'SKIP') return;
                 // input.value = '';
                 input.dispatchEvent(new Event("change", {bubbles: true}));
             });
@@ -14669,7 +14727,7 @@
         $ID("sendMachineNameBtn")?.addEventListener("click", async () => setMachineName(getInputValDef(machNameInput, '')));
         $ID("sendMachineIDBtn")?.addEventListener("click", async () => setMachineID(getInputValDef(machIDInput, '')));
 
-                machNameInput?.addEventListener("keydown", async (event) => {
+        machNameInput?.addEventListener("keydown", async (event) => {
             if (event.key === "Enter") {
                 await setMachineName(getInputValDef(machNameInput, ''));
             }
@@ -15082,7 +15140,7 @@
             hostIdDiv.textContent = id;
             copyBtn.style.display = 'inline-flex';
             statusDiv.className = 'status ready';
-            statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your Token</span>';
+            statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready – Share your Token</span>';
             log('✅ Your Host ID: ' + id);
         });
 
