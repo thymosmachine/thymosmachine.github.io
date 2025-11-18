@@ -827,6 +827,23 @@
         }
     }
 
+    function lockControlButtons(lock = undefined) {
+        let list = '#startExperiment, #returnPositionExperimentBtn, #moveMachineUP, #moveMachineDOWN, #movementSpeed, #movementAcceleration';
+        if (lock === null) { // Connected, uncalibrated
+            list += ', #stopMachine';
+            lock = true;
+        } else if (lock === undefined) { // Disconnected - full
+            list += ', #, calibrateBtn, #calibrateBtn';
+            lock = true;
+        } else if (lock === 0) { // Experiment running
+            list += ', #calibrateBtn';
+            lock = true;
+        }
+        $$(list).forEach(elem => {
+            elem.disabled = !!lock;
+        });
+    }
+
     document.getElementById('returnToMoiraBtn').addEventListener('click', () => {
         // Go back to index.html page (main page)
         window.location.href = './';
@@ -834,7 +851,7 @@
 
     let pongTime = null;
     let latencyMs = null;
-    const pingIntervalTime = Math.ceil(60 * 1_000 * 1.111111); // =
+    const pingIntervalTime = Math.ceil(60 * 1_000 * 1.111111); // = 66_666 ms (~60 seconds with some margin) = 1.111111 minutes
 
     let pingInterval = null;
     let pongInterval = null;
@@ -861,6 +878,8 @@
             }
         }
     }
+
+    let MACHINE = {name: '', id: ''};
 
     // WebRTC connection
     connectBtn.addEventListener('click', () => {
@@ -892,6 +911,10 @@
                 statusDiv.className = 'status connected';
                 controlPanel.style.display = 'block';
 
+                MACHINE.name = '';
+                MACHINE.id = '';
+                lockControlButtons(undefined);
+
                 // Change button to disconnect
                 connectBtn.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -915,7 +938,7 @@
                 }, 300);
 
                 setTimeout(() => {
-                    requestData('name,id,connection,status,watchdog,speed,accel');
+                    requestData('name, id, connection, watchdog, speed, accel, status');
                 }, 600);
 
                 startPingPong();
@@ -930,7 +953,8 @@
                         const now = Date.now();
                         const latency = (now - msg.timestamp) || NaN;
                         if (isNumSafe(latency)) {
-                            console.info(`Latency: ${latency} ms`);
+                            console.info(`\t⏱️ P2P Latency: ${latency} ms`);
+                            latencyMs = latency;
                         } else {
                             console.warn('Invalid latency value');
                             sendCommand('test');
@@ -959,17 +983,31 @@
                     case 'info':
                         switch (msg.value?.toLowerCase().trim()) {
                             case 'name':
-                                statusDiv.textContent = `Connected to ${msg.data}`;
+                                MACHINE.name = String(msg.data || '').toUpperCase().trim();
+                                if (MACHINE.name) {
+                                    let displayName = MACHINE.name;
+                                    if (MACHINE.id) displayName += ` (${MACHINE.id})`;
+                                    statusDiv.textContent = `Connected to ${displayName}`;
+                                }
                                 console.info('Host Machine Name:', msg.data);
                                 break;
                             case 'id':
+                                MACHINE.id = String(msg.data || '').toUpperCase().trim();
+                                if (MACHINE.id) {
+                                    let displayName = `DEVICE-${MACHINE.id}`;
+                                    if (MACHINE.name) displayName = `${MACHINE.name} (${MACHINE.id})`;
+                                    statusDiv.textContent = `Connected to ${displayName}`;
+                                }
                                 console.info('Host Machine ID:', msg.data);
                                 break;
                             case 'connection':
                                 console.info('Connection Info:', msg.data);
+                                if (msg.data === false) lockControlButtons(undefined);
+                                else lockControlButtons(null);
                                 break;
                             case 'status':
                                 console.info('Machine Status:', msg.data);
+                                lockControlButtons(msg.data);
                                 break;
                             case 'watchdog':
                                 console.info('Watchdog Info:', msg.data);
@@ -978,8 +1016,8 @@
                                     showError('Watchdog triggered, disconnecting...');
                                     disconnectFromHost();
                                 }
-                                const latency = latencyMs * 1.2 || 0;
-                                pressInterval = Math.max(Math.max(msg.data * 0.75, Math.floor(I * 0.9) - latency), 1);
+                                const latency = Math.max(latencyMs * 1.2 || 0, 50);
+                                pressInterval = Math.max(Math.max(msg.data * 0.75, Math.floor(I * 0.85)) - latency, 100);
                                 break;
                             case 'position':
                                 console.info('Machine Position:', msg.data);
@@ -1059,6 +1097,11 @@
         clearInterval(pongInterval);
         pingInterval = null;
         pongInterval = null;
+
+        MACHINE.name = '';
+        MACHINE.id = '';
+
+        lockControlButtons(undefined);
 
         if (conn) {
             conn.close();
