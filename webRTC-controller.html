@@ -1271,44 +1271,47 @@
                     }
                 } else {
                     if (!cmd?.command) return;
-                    const command = cmd.command?.toLowerCase().trim();
 
-                    log('📩 ' + command);
-                    if (command === 'move') {
-                        const value = cmd.value?.toLowerCase().trim();
-                        log('\t🚚 Move command: ' + value);
-                        if (value === 'start') {
-                            const direction = cmd.direction?.toLowerCase().trim();
-                            log('▶️ Starting moving in direction: ' + direction);
-                        } else if (value === 'ping') {
-                            log('🏓 Ping received, sending pong back');
-                            if (conn && conn.open) {
-                                conn.send({type: 'pong', timestamp: Date.now()});
+                    log('📩 ' + cmd.command);
+                    switch (cmd.command?.toLowerCase().trim()) {
+                        case 'move':
+                            const value = cmd.value?.toLowerCase().trim();
+                            log('\t🚚 Move command: ' + value);
+                            if (value === 'start') {
+                                const direction = cmd.direction?.toLowerCase().trim();
+                                log('▶️ Starting moving in direction: ' + direction);
+                            } else if (value === 'ping') {
+                                log('🏓 Ping received, sending pong back');
+                                if (conn && conn.open) {
+                                    conn.send({type: 'pong', timestamp: Date.now()});
+                                }
+                            } else if (value === 'return') {
+                                log('↩️ Returning to home position');
+                            } else {
+                                log('⏹️ Stopping moving');
                             }
-                        } else if (value === 'return') {
-                            log('↩️ Returning to home position');
-                        } else {
-                            log('⏹️ Stopping moving');
-                        }
-                    } else if (command === 'experiment') {
-                        const action = cmd.action?.toLowerCase().trim();
-                        log('\t🔬 Experiment command: ' + action);
-                        if (action === 'start') {
-                            log('🧪 Starting experiment run');
-                            runExperiment();
-                        } else if (action === 'stop') {
-                            log('🛑 Stopping experiment run');
-                            if (intervalId) {
-                                clearInterval(intervalId);
-                                intervalId = null;
+                            break;
+                        case 'experiment':
+                            const action = cmd.action?.toLowerCase().trim();
+                            log('\t🔬 Experiment command: ' + action);
+                            if (action === 'start') {
+                                log('🧪 Starting experiment run');
+                                runExperiment();
+                            } else if (action === 'stop') {
+                                log('🛑 Stopping experiment run');
+                                if (intervalId) {
+                                    clearInterval(intervalId);
+                                    intervalId = null;
+                                }
                             }
-                        }
-                    } else if (command === 'calibrate') {
-                        log('⚙️ Starting calibration procedure');
-                    } else {
-                        log('❓ Unknown command received: ' + command);
+                            break;
+                        case 'calibrate':
+                            log('⚙️ Starting calibration procedure');
+                            break;
+                        default:
+                            log('❓ Unknown command received: ' + cmd.command);
+                            return;
                     }
-
                 }
             });
 

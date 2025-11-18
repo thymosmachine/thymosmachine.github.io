@@ -880,11 +880,45 @@
                     timeChart = createChart("timeChart", ["Time (s)", "Force 1", "Force 2", "Force 3"], "Force-Time", "Time [s]", "Force [N]");
                     positionChart = createChart("positionChart", ["Position (mm)", "Force 1", "Force 2", "Force 3"], "Force-Position", "Position [mm]", "Force [N]");
                 }, 100);
+
+
+                setTimeout(() => {
+                    requestData('name,id,connection,status');
+                }, 600);
             });
 
-            conn.on('data', (data) => {
-                console.log('Received:', data);
-                updateChart(data);
+            conn.on('data', (msg) => {
+                console.log('Received:', msg);
+                if (!msg?.type) return;
+
+                switch (msg?.type?.toLowerCase().trim()) {
+                    case 'chartdata':
+                        updateChart(msg.data);
+                        break;
+                    case 'chartdatabatch':
+                        if (Array.isArray(msg.data)) {
+                            msg.data.forEach(item => updateChart(item));
+                        }
+                        break;
+                    case 'name':
+                        statusDiv.textContent = `Connected to ${msg.value}`;
+                        console.info('Host Machine Name:', msg.value);
+                        break;
+                    case 'id':
+                        console.info('Host Machine ID:', msg.value);
+                        break;
+                    case 'connection':
+                        console.info('Connection Info:', msg.value);
+                        break;
+                    case 'status':
+                        console.info('Machine Status:', msg.value);
+                        break;
+                    case 'error':
+                        showError(msg.value || 'Unknown error from host');
+                        break;
+                    default:
+                        console.warn('Unknown message type:', msg.type);
+                }
             });
 
             conn.on('close', () => {
@@ -1011,6 +1045,12 @@
             sendCommand(command, undefined, additional);
         });
         btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    function requestData(type) {
+        if (!isConnected) return;
+        const types = String(type).split(',').map(t => t.trim()).filter(t => t);
+        sendCommand('request', types);
     }
 
     // Setup all controls
