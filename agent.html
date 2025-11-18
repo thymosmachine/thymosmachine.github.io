@@ -828,20 +828,32 @@
     }
 
     function lockControlButtons(lock = undefined) {
-        let list = '#startExperiment, #returnPositionExperimentBtn, #moveMachineUP, #moveMachineDOWN, #movementSpeed, #movementAcceleration';
-        if (lock === null) { // Connected, uncalibrated
-            list += ', #stopMachine';
-            lock = true;
-        } else if (lock === undefined) { // Disconnected - full
-            list += ', #, calibrateBtn, #calibrateBtn';
-            lock = true;
-        } else if (lock === 0) { // Experiment running
-            list += ', #calibrateBtn';
-            lock = true;
-        }
-        $$(list).forEach(elem => {
-            elem.disabled = !!lock;
-        });
+        // undefined    - Disconnected
+        // null         - Connected, uncalibrated
+        // false        - Connected, calibrated, idle
+        // true         - Connected, calibrated, locked
+        // 0            - Connected, calibrated, experiment running
+
+        // let list = '#startExperiment, #stopMachine, #calibrateBtn, #returnPositionExperimentBtn, #moveMachineUP, #moveMachineDOWN, #movementSpeed, #movementAcceleration';
+        //
+        // $$(list).forEach(elem => {
+        //     elem.disabled = lock;
+        // });
+        // if (lock === undefined) {
+        //     destroyCharts();
+        // } else if (lock === null) {
+        //     $ID('calibrateBtn').disabled = false;
+        //     $ID('stopMachine').disabled = true;
+        // } else if (lock === false) {
+        //     $ID('calibrateBtn').disabled = false;
+        //     $ID('stopMachine').disabled = false;
+        // } else if (lock === true) {
+        //     $ID('calibrateBtn').disabled = true;
+        //     $ID('stopMachine').disabled = true;
+        // } else if (lock === 0) {
+        //     $ID('calibrateBtn').disabled = true;
+        //     $ID('startExperiment').disabled = true;
+        // }
     }
 
     document.getElementById('returnToMoiraBtn').addEventListener('click', () => {

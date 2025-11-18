@@ -15287,7 +15287,7 @@
                                         lockControlAndMove();
                                         lockConnectionButtons(true);
                                         machineOccupation = true;
-                                        setData('status', machineOccupation);
+                                        setData('status', getMachineState());
                                         warnOnClose = true;
                                         startWatchdog(WATCHDOG_INTERVAL_MS);
                                         log('▶️ Starting moving in direction: ' + direction);
