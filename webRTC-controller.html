@@ -978,7 +978,7 @@
             };
 
             try {
-                conn.send(dataPacket);
+                sendCommand(dataPacket);
                 console.log('Data sent:', dataPacket);
                 return true;
             } catch (error) {
@@ -1040,7 +1040,7 @@
             };
 
             try {
-                conn.send(batchData);
+                sendCommand(batchData);
                 console.log(`Sent batch of ${dataBuffer.length} data points`);
                 dataBuffer = [];
             } catch (error) {
@@ -1221,6 +1221,16 @@
             chart.update();
         }
 
+        function sendCommand(command) {
+            if (conn && conn.open) {
+                if (!('timestamp' in command)) command.timestamp = Date.now();
+                conn.send(command);
+                log('📤 ' + command);
+            } else {
+                log('❌ Cannot send command, not connected');
+            }
+        }
+
         const clampPos = (value) => {
             return Math.max(-12, Math.min(12, value));
         };
@@ -1262,7 +1272,7 @@
                     updateChart();
 
                     if (conn && conn.open) {
-                        conn.send({
+                        sendCommand({
                             type: 'position',
                             x: pos.x,
                             y: pos.y,
@@ -1270,44 +1280,118 @@
                         });
                     }
                 } else {
-                    if (!cmd?.command) return;
+                    if (!cmd?.type) return;
 
-                    log('📩 ' + cmd.command);
-                    switch (cmd.command?.toLowerCase().trim()) {
-                        case 'move':
-                            const value = cmd.value?.toLowerCase().trim();
-                            log('\t🚚 Move command: ' + value);
-                            if (value === 'start') {
-                                const direction = cmd.direction?.toLowerCase().trim();
-                                log('▶️ Starting moving in direction: ' + direction);
-                            } else if (value === 'ping') {
-                                log('🏓 Ping received, sending pong back');
-                                if (conn && conn.open) {
-                                    conn.send({type: 'pong', timestamp: Date.now()});
-                                }
-                            } else if (value === 'return') {
-                                log('↩️ Returning to home position');
-                            } else {
-                                log('⏹️ Stopping moving');
+                    log('📩 ' + cmd.type);
+                    switch (cmd.type?.toLowerCase().trim()) {
+                        case 'cmd':
+                            switch (cmd.value?.toLowerCase().trim()) {
+
+                                case 'move':
+                                    const value = cmd.data?.toLowerCase().trim();
+                                    log('\t🚚 Move command: ' + value);
+
+                                    switch (value) {
+                                        case 'start':
+                                            log('▶️ Starting moving in direction: ' + cmd.dir);
+                                            break;
+                                        case 'beat':
+                                            log('💓 Got Heartbeat signal');
+                                            break;
+                                        case 'return':
+                                            log('↩️ Returning to home position');
+                                            break;
+                                        case 'stop':
+                                            log('⏹️ Stopping moving');
+                                            break;
+
+                                        default:
+                                            log('❓ Unknown move command value: ' + value);
+                                            return;
+                                    }
+                                    break;
+
+                                case 'experiment':
+                                    const action = cmd.action?.toLowerCase().trim();
+                                    log('\t🔬 Experiment command: ' + action);
+                                    if (action === 'start') {
+                                        log('🧪 Starting experiment run');
+                                        runExperiment();
+                                    } else if (action === 'stop') {
+                                        log('🛑 Stopping experiment run');
+                                        if (intervalId) {
+                                            clearInterval(intervalId);
+                                            intervalId = null;
+                                        }
+                                    }
+                                    break;
+
+                                case 'calibrate':
+                                    log('⚙️ Starting calibration procedure');
+                                    break;
+
+                                case 'setspped':
+                                    const speed = parseFloat(cmd.data);
+                                    if (isNaN(speed) || speed <= 0) {
+                                        log('❓ Invalid speed value: ' + cmd.data);
+                                        return;
+                                    }
+                                    log('🏎️ Setting speed to ' + speed + ' mm/s');
+                                    break;
+                                case 'setaccel':
+                                    const accel = parseFloat(cmd.data);
+                                    if (isNaN(accel) || accel <= 0) {
+                                        log('❓ Invalid acceleration value: ' + cmd.data);
+                                        return;
+                                    }
+                                    log('⚡ Setting acceleration to ' + accel + ' mm/s²');
+                                    break;
+
+                                default:
+                                    log('❓ Unknown cmd value: ' + cmd.value + ' Ignoring:', cmd);
+                                    return;
                             }
                             break;
-                        case 'experiment':
-                            const action = cmd.action?.toLowerCase().trim();
-                            log('\t🔬 Experiment command: ' + action);
-                            if (action === 'start') {
-                                log('🧪 Starting experiment run');
-                                runExperiment();
-                            } else if (action === 'stop') {
-                                log('🛑 Stopping experiment run');
-                                if (intervalId) {
-                                    clearInterval(intervalId);
-                                    intervalId = null;
-                                }
+
+                        case 'ping':
+                            log('🏓 Ping received, sending pong');
+                            sendCommand({type: 'pong'});
+                            break;
+                        case 'pingponginfo':
+                            const interval = parseInt(cmd.value);
+                            log('⏲️ Setting pong interval to ' + interval + ' ms'); // TODO: implement interval change
+                            break;
+
+                        case 'request':
+
+                            switch (cmd.value?.toLowerCase().trim()) {
+                                case 'watchdog':
+                                    log('🐶 Watchdog request');
+                                    sendCommand({type: 'info', value: 'watchdog', data: 1_000}); // TODO: dynamic watchdog value
+                                    break;
+                                case 'name':
+                                    log('📝 Name request');
+                                    sendCommand({type: 'info', value: 'name', data: 'Device XYZ'}); // TODO: dynamic name
+                                    break;
+                                case 'id':
+                                    log('🆔 ID request');
+                                    sendCommand({type: 'info', value: 'id', data: 'Device ID'}); // TODO: dynamic ID
+                                    break;
+                                case 'status':
+                                    log('📊 Status request');
+                                    sendCommand({type: 'info', value: 'status', data: 'Moving'}); // TODO: dynamic status
+                                    break;
+                                case 'connection':
+                                    log('🔗 Connection request');
+                                    sendCommand({type: 'info', value: 'connection', data: 'on'}); // TODO: dynamic connection status
+                                    break;
+
+                                default:
+                                    log('❓ Unknown request type: ' + cmd.type + ' Ignoring:', cmd);
+                                    return;
                             }
                             break;
-                        case 'calibrate':
-                            log('⚙️ Starting calibration procedure');
-                            break;
+
                         default:
                             log('❓ Unknown command received: ' + cmd.command);
                             return;
@@ -1461,7 +1545,7 @@
         document.querySelectorAll('#controllerSection .control-btn').forEach(btn => {
             btn.onclick = () => {
                 if (conn && conn.open) {
-                    conn.send(btn.dataset.code);
+                    sendCommand(btn.dataset.code);
                     controllerLog('📤 Sent: ' + btn.dataset.code);
                 } else {
                     showError('Not connected to host yet!');
@@ -1533,7 +1617,7 @@
                     else if (dy < -10) cmd = 'UP';
                 }
                 if (cmd) {
-                    conn.send(cmd);
+                    sendCommand(cmd);
                     controllerLog('🕹️ ' + cmd);
                 }
             }
