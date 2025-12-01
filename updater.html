@@ -2478,8 +2478,14 @@
     }
 
     function compareVersions(a, b) {
-        const pa = a.version.split('.').map(Number);
-        const pb = b.version.split('.').map(Number);
+        let va = a.version;
+        let vb = b.version;
+
+        if (va.startsWith('v')) va = va.slice(1);
+        if (vb.startsWith('v')) vb = vb.slice(1);
+
+        const pa = va.split('.').map(Number);
+        const pb = vb.split('.').map(Number);
 
         for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
             const na = pa[i] || 0;
@@ -2508,6 +2514,7 @@
             const divider = document.createElement('option');
             divider.disabled = true;
             divider.textContent = symbol.repeat(count);
+            divider.value = 'divider_' + Math.random().toString(36).substring(2, 10);
             return divider;
         };
 
@@ -2515,6 +2522,7 @@
             const spacer = document.createElement('option');
             spacer.disabled = true;
             spacer.textContent = '';
+            spacer.value = 'spacer' + Math.random().toString(36).substring(2, 10);
             return spacer;
         };
 
@@ -2539,7 +2547,7 @@
                     if (!item.version) return; // Skip invalid entries
                     if (!item.name) item.name = `Unnamed Build`;
                     const option = document.createElement('option');
-                    option.value = `set_${index}`; // Use index instead of version
+                    option.value = `set_${index}`.trim().toLowerCase(); // Use index instead of version
                     option.textContent = `${item.label} (${item.version})`;
                     option.dataset.version = item.version; // Store version in data attribute
                     versionSelect.appendChild(option);
@@ -2556,7 +2564,7 @@
                     if (!build.version) build.version = `?.?.?`;
                     if (!build.name) build.name = `Build`;
                     const option = document.createElement('option');
-                    option.value = `build_${index}`; // Use index instead of version
+                    option.value = `build_${index}`.trim().toLowerCase(); // Use index instead of version
                     option.textContent = `${build.name} (${build.version})`;
                     option.dataset.version = build.version; // Store version in data attribute
                     versionSelect.appendChild(option);
@@ -2608,7 +2616,7 @@
         }
 
         if (defaultIndex && defaultIndex !== -1) {
-            versionSelect.value = `set_${defaultIndex}`;
+            versionSelect.value = `set_${defaultIndex}`.trim().toLowerCase();
         }
 
         handleVersionChange();
