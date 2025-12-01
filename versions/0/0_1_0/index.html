@@ -14376,7 +14376,6 @@
         let selected = false;
         Array.from(versionSelect.options).forEach(option => {
             const optionVersion = option.dataset?.versionPath || null;
-            console.log(option.value, selected)
             if (selected === false && optionVersion && currentURL.includes(optionVersion.split('/versions/')[1])) {
                 option.selected = true;
                 selected = true;
