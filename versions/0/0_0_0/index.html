@@ -1,0 +1,3655 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <base href="../../../"/>
+
+
+    <script>
+        fetch("./shared-header.html")
+            .then(res => res.text())
+            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+    </script>
+
+
+    <script src="./packages/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+    <link rel="stylesheet" href="./packages/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
+    <script src="./packages/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
+
+
+    <title>Moira Control - Thymos</title>
+    <style>
+        :root {
+            --blue-color: #007bff;
+            --blue-light-color: #4CA2FF;
+            --green-color: #28a745;
+            --green-light-color: #68C17C;
+            --red-color: #dc3545;
+            --red-light-color: #E6717C;
+            --orange-color: #ffc107;
+            --cyan-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+            --dark-color: #343a40;
+        }
+
+        /* General styling for the body */
+        body {
+            font-family: Arial, sans-serif;
+            height: 100%;
+            width: 98%;
+            background: white;
+        }
+
+        /* Button styling for spacing and cursor behavior */
+        button {
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: 1px solid darkgray;
+            font-size: 14px;
+        }
+
+        /* Styling for textAreas used for user input */
+        textarea {
+            resize: none; /* Disables resizing */
+            overflow: auto;
+            font-size: 16px;
+            font-family: monospace;
+        }
+
+        /* Disabled elements styling */
+        .prohibited, .disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            user-select: none !important; /* Disables text selection */
+            -webkit-user-select: none !important; /* Safari */
+            -moz-user-select: none !important; /* Firefox */
+            -ms-user-select: none !important; /* IE/Edge */
+            pointer-events: none !important; /* Prevents interaction */
+            tab-index: -1 !important;
+            outline: none !important;
+        }
+
+        #settingContainer {
+            display: grid;
+            grid-template-columns: 1fr; /* One column */
+            width: 95%;
+            padding: 0 15px 15px;
+            justify-self: center;
+            justify-content: center;
+        }
+
+        .sizeableContainer {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.5s ease, opacity 0.45s; /* Animation */
+        }
+
+        #experimentSettingsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(470px, 1fr)); /* Dynamic grid */
+            gap: 10px; /* Space between inputs */
+            /*justify-self: center;*/
+            overflow: hidden;
+            width: 100%;
+        }
+
+
+        #machineSettingsWrapper {
+            display: flex;
+            gap: 10px; /* Space between inputs */
+            justify-self: center;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        #appSettingsWrapper {
+            display: flex;
+            gap: 10px; /* Space between inputs */
+            justify-self: center;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Space between inputs and labels */
+            white-space: nowrap; /* Prevents wrapping */
+
+        }
+
+        .input-group label {
+            flex-shrink: 0; /* Prevents shrinking */
+            text-align: right;
+            width: max-content; /* Label width */
+            min-width: 250px;
+        }
+
+        .input-group input {
+            height: 25px;
+        }
+
+        .input-group input[type="number"] {
+            flex-grow: 1; /* Input will grow if there is space */
+            justify-self: left;
+            max-width: 220px;
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.5); /* Scale the checkbox to 1.5 */
+            margin: 5px; /* Space around the checkbox */
+        }
+
+        h3 {
+            position: relative;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            align-self: flex-start;
+        }
+
+        h4 {
+            position: relative;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+
+        hr {
+            width: 100%;
+            margin: 20px auto;
+            border: 1px solid gray;
+        }
+
+
+        .headerContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            margin-left: 20px;
+        }
+
+        .statusContainer {
+            gap: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .graphContainer {
+            display: flex;
+            flex-direction: column;
+            margin-top: 50px;
+            align-items: center;
+            width: 95%;
+            justify-self: center;
+        }
+
+        #usbContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #inputNumBaudRate {
+            width: 148px;
+            height: 33px;
+            border-radius: 10px;
+            padding: 5px;
+            border: 1px solid darkgray;
+            background: #f0f0f0;
+            text-align: center;
+        }
+
+        #connectionStatus {
+            font-weight: bold;
+            color: gray;
+        }
+
+        .graphBtnWrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        #connectBtnUSB {
+            padding: 5px;
+            height: 45px;
+            width: 160px;
+        }
+
+        .btnGraph {
+            display: flex;
+            min-width: 100px;
+            height: 50px;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #thymosLogo {
+            width: 50px;
+            height: 50px;
+        }
+
+        #chartsContainer {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 400px;
+            margin-top: 10px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            border: 1px solid lightgrey;
+        }
+
+        .chartWrapper {
+            width: 49%;
+            height: 400px;
+        }
+
+        .machineControlContainer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btnControlWrapper {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controlBtn {
+            display: flex;
+            height: 50px;
+            min-width: 100px;
+            width: 170px;
+            max-width: 200px;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #startExperiment {
+            background: lightblue;
+        }
+
+        #stopMachine {
+            background: lightpink;
+        }
+
+        #returnPositionExperimentBtn {
+            background: lightgrey;
+        }
+
+        #autoReturnPositionExperiment {
+            display: flex;
+            height: 50px;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #experimentProgress {
+            flex-grow: 1;
+            max-width: 450px;
+            min-width: 50px;
+            height: 20px;
+        }
+
+        #progressWrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            width: 100%;
+            max-width: 650px;
+            min-width: 50px;
+        }
+
+        .experimentContainer {
+            display: flex;
+            flex-direction: column;
+            padding: 5px;
+            gap: 10px;
+            left: 0;
+            justify-self: center;
+            align-items: center;
+        }
+
+        #experimentInputsWrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+
+        #experimentInputsContainer {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            max-width: 1220px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            gap: 10px;
+            justify-items: left;
+        }
+
+        #experimentType {
+            width: calc(100% - 20px);
+            height: 24px;
+            padding: 10px;
+            border: none;
+            background: lightgray;
+            border-radius: 10px;
+        }
+
+        #experimentDesc {
+            width: calc(100% - 20px);
+            height: 32px;
+            padding: 10px;
+            border: none;
+            background: lightgray;
+            border-radius: 10px;
+        }
+
+        #experimentBtnsWrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #saveData {
+            width: 150px;
+            height: 44px;
+        }
+
+        #convertCSV {
+            width: 150px;
+            height: 52px;
+        }
+
+        #settingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            background: lightgray;
+            border-radius: calc(1px + 10px);
+            border: 1px solid darkgray
+        }
+
+        #openSettingsContainer {
+            padding: 10px;
+        }
+
+        #loadSettingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #experimentDirectionDropdown {
+            width: 227.2px;
+            height: 30.2px;
+        }
+
+        #inputPhotoIntervalLabel {
+            min-width: max-content;
+        }
+
+        #inputPhotoInterval {
+            max-width: 50px;
+        }
+
+        #machineSettingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #appSettingsContainer {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #clearStorageButton {
+            padding: 20px;
+        }
+
+        #consoleWrapper {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            background: lightgray;
+            border-radius: calc(1px + 10px);
+            border: 1px solid darkgray
+        }
+
+        #openConsoleContainer {
+            padding: 10px;
+        }
+
+        #consoleContainer {
+            padding: 10px;
+        }
+
+        #logWrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        #regularLog {
+            max-width: 1200px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            height: 200px;
+            background: darkgray;
+            margin: 0;
+            border-radius: 10px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        #loadingLog {
+            max-width: 1200px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            height: 80px;
+            background: #323232;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 0;
+        }
+
+        #logContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #logBtnWrapper {
+            display: grid;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logBtn {
+            width: 150px
+        }
+
+        #commandWrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            height: 40px;
+            padding: 0 10px 10px;
+        }
+
+        #commandInput {
+            max-width: 1200px;
+            min-width: 300px;
+            width: calc(100vw - 200px);
+            padding: 10px;
+            height: calc(100% - 20px);
+            border: none;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="headerContainer">
+    <img id="thymosLogo" src="./images/favicon/web-app-manifest-512x512.png" alt="thymos">
+    <h2>THYMOS - Moira controller</h2>
+</div>
+
+<div class="statusContainer">
+    <!-- USB Connection Section -->
+    <div id="usbContainer">
+        <button id="connectBtnUSB">🔌 Connect via USB</button>
+        <label for="inputNumBaudRate" class="prohibited">Baud-Rate:
+            <input data-inputType="intInput" type="number" id="inputNumBaudRate" placeholder="Baud-Rate"
+                   value="921600" min="1" data-type="int" class="prohibited">
+        </label>
+    </div>
+    <div id="connectionStatus"> 🔴 Disconnected</div>
+</div>
+
+<!-- Graph Display Section -->
+
+<div class="graphContainer">
+    <h3>📈 Graphs:</h3>
+    <div class="graphBtnWrapper">
+        <button class="btnGraph" id="toggleLive"> ▶️ Activate Charts</button>
+        <button class="btnGraph" onclick="clearCharts()">🧹 Clear Charts</button>
+        <button class="btnGraph" onclick="refreshCharts()">🔄 Refresh Charts</button>
+    </div>
+    <div id="chartsContainer">
+        <div id="timeChart" class="chartWrapper"></div>
+        <div id="distanceChart" class="chartWrapper"></div>
+
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="machineControlContainer">
+        <div class="btnControlWrapper">
+            <!-- Start Experiment Button -->
+            <button id="startExperiment" class="controlBtn"> ⚡ Start Experiment</button>
+
+            <!-- Stop Experiment Button -->
+            <button id="stopMachine" class="controlBtn"> 🛑 Stop Machine</button>
+
+            <!-- Return to original position Button -->
+            <button id="returnPositionExperimentBtn" onclick="moveToOriginalPosition()" class="controlBtn disabled"> ↩️
+                Return to original position
+            </button>
+
+            <!-- Automatic returning to original position Checkmark -->
+            <label for="autoReturnPositionExperiment">↕️ Auto-return to original position:</label>
+            <input type="checkbox" id="autoReturnPositionExperiment">
+
+        </div>
+
+        <!-- Experiment Progress -->
+        <div id="progressWrapper">
+            <label for="experimentProgress">Experiment Progress:</label>
+            <progress id="experimentProgress" value="0" max="100"></progress>
+
+        </div>
+    </div>
+</div>
+
+
+<div class="experimentContainer">
+    <h3>📝 Experiment options:</h3>
+    <div id="experimentInputsWrapper">
+        <div id="experimentInputsContainer">
+
+            <label for="experimentType">🧪 Experiment Name: </label>
+            <input type="text" id="experimentType" placeholder="Experiment name (mandatory) ...">
+            <label for="experimentDesc">📄 Experiment description: </label>
+            <input id="experimentDesc" placeholder="Short description of the experiment (optional)...">
+            <label for="storagePath">📁 Handpick the folder: </label>
+            <div><input type="checkbox" id="storagePath" onchange="toggleDirectorySelector()"> (Default folder:
+                Downloads)
+            </div>
+        </div>
+
+
+        <div id="experimentBtnsWrapper">
+            <button id="saveData">💾 Save single CSV</button>
+            <button id="convertCSV" onclick="convertCSVtoXLSX_MATTES()">
+                📊 Convert CSV files to XLSX (MATTES)
+            </button>
+
+        </div>
+    </div>
+
+
+    <!-- Experiment Parameter Inputs -->
+    <h3>⚙️ Settings:</h3>
+    <div id="settingsContainer">
+        <button id="openSettingsContainer">🔽</button>
+        <div id="settingContainer" class="sizeableContainer">
+
+
+            <h4>🛠️ Loading settings:</h4>
+            <div id="loadSettingsContainer">
+                <div id="experimentSettingsContainer">
+                    <div class="input-group">
+                        <label for="inputDistance">Distance (mm): </label>
+                        <input data-inputType="floatInput" type="number" id="inputDistance" value="20" min="0"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="experimentDirectionDropdown" class="prohibited">Direction: </label>
+                        <select id="experimentDirectionDropdown" class="prohibited">
+                            <option value="Option-DOWN"> DOWN ⏬ </option>
+                            <option value="Option-UP"> UP    ⏫ </option>
+                        </select>
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputLoadLimitDropPercent">Force drop limit (%): </label>
+                        <input data-inputType="floatInput" type="number" id="inputLoadLimitDropPercent" value="30"
+                               min="0"
+                               max="100">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputTakePhotos">Take photos: </label>
+                        <input type="checkbox" id="inputTakePhotos">
+                        <label id="inputPhotoIntervalLabel" for="inputPhotoInterval">Photo Interval (s): </label>
+                        <input class="disabled" data-inputType="floatInput" type="number" id="inputPhotoInterval"
+                               value="1"
+                               min="0" step="any"
+                               max="100000000">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputLoadLimitDropValue">Force drop limit (N): </label>
+                        <input data-inputType="floatInput" type="number" id="inputLoadLimitDropValue" value="5" min="0"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+
+                    <div class="input-group">
+                        <label for="inputSpeedForward">Loading speed (mm/s): </label>
+                        <input data-inputType="floatInput" type="number" id="inputSpeedForward" value="1" min="0"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group"> <!-- TODO minimum na 10000 -->
+                        <label for="inputDataInterval">Data Interval (µs): </label>
+                        <input data-inputType="floatInput" type="number" id="inputDataInterval" value="30000"
+                               min="10000"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="inputSpeedBackward" class="prohibited">Returning speed (mm/s): </label>
+                        <input data-inputType="floatInput" type="number" id="inputSpeedBackward" class="prohibited"
+                               value="25"
+                               min="0.000001"
+                               step="any"
+                               max="100000000">
+                    </div>
+
+                </div>
+            </div>
+
+            <hr>
+
+            <h4>📟 Machine settings:</h4>
+            <div id="machineSettingsContainer">
+                <div id="machineSettingsWrapper">
+
+                    <div class="input-group">
+                        <label for="inputLoadcellCapacity">Loadcell Capacity (kg): </label>
+                        <input data-inputType="intInput" type="number" id="inputLoadcellCapacity" value="1000"
+                               step="any"
+                               min="0.000001" max="100000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="inputLoadcellOutput">Loadcell Rated Output (mV/V): </label>
+                        <input data-inputType="floatInput" type="number" id="inputLoadcellOutput" value="2.0" step="any"
+                               min="0.000001"
+                               max="100000000">
+                    </div>
+
+                </div>
+            </div>
+
+            <hr>
+
+            <h4>🕹️ App settings:</h4>
+            <div id="appSettingsContainer">
+                <div id="appSettingsWrapper">
+
+                    <button id="clearStorageButton" onclick="clearLocalStorage()">🔁 Restart app
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Output Section -->
+    <h3>📑 Device Output:</h3>
+    <div id="consoleWrapper">
+        <button id="openConsoleContainer">🔽</button>
+        <div id="consoleContainer" class="sizeableContainer">
+            <div id="logWrapper">
+                <div id="logContainer">
+                    <pre id="regularLog"> </pre>
+                    <pre id="loadingLog"> </pre>
+                </div>
+
+                <!-- Log Control Buttons -->
+                <div id="logBtnWrapper">
+                    <button id="toggleScrollBtn" class="logBtn">📌 Auto-scroll: ON</button>
+                    <button id="toggleLineLockBtn" onclick="lineLock()" class="logBtn prohibited">🔒 Fix Scroll: ON
+                    </button>
+                    <button onclick="clearLog()" class="logBtn">🗑️ Clear Log</button>
+
+                </div>
+            </div>
+
+            <div id="commandWrapper">
+                <div>
+                    <label for="commandInput"></label>
+                    <textarea id="commandInput" placeholder="Enter command..."></textarea>
+                </div>
+                <button id="sendButton" class="logBtn">📡 Send Command</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<script>
+    const softwareVersion = "0.0.1";
+
+
+    // serviceWorkerRegistration();
+
+    async function serviceWorkerRegistration() {
+
+        if ('serviceWorker' in navigator) {
+            console.log('☑️ Service Worker is supported.');
+
+            navigator.serviceWorker.getRegistration()
+                .then(reg => {
+                    const match = reg && reg.active && reg.active.scriptURL.includes('service-worker.js');
+
+                    if (match) {
+                        // serviceWorkerRegistrationStatus = true;
+                        console.log('✅ Service worker is registered:', reg);
+                    } else {
+                        navigator.serviceWorker.register('service-worker.js').then(function (registration) {
+                            console.log('🆕 Service Worker was registered', registration);
+                        }).catch(function (error) {
+                            console.log('❌ Registration failed.', error);
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('⚠️ Error checking service worker registration:', err);
+                });
+        } else {
+            console.log('🚫 Service Worker is not supported.');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 10));  // Stop
+
+        // console.log(serviceWorkerRegistrationStatus);
+        // if (!serviceWorkerRegistrationStatus) window.location.reload();
+    }
+
+    const storageKey = "formData"; // Key in localStorage
+
+    // /////// Log Settings /////////
+
+    isMeasuring = false;// Tracks whether the device is currently measuring
+    let isAutoScroll = true;// Enables automatic scrolling of log output
+    let isLineLimit = true;// Limits the number of stored log lines
+    let isLineLocker = true;// Locks the view at a fixed position when scrolling is disabled
+    let logContentMaxLines = 10000;// Maximum number of log lines to keep in memory
+    let isScrolledToBottom = true;// Tracks whether the user has scrolled to the bottom of the log
+    let logCount = 0; // Counter for received messages
+    const logContentLines = []; // Array storing the log content
+    let parsedData = {time: NaN, distance: NaN, value: NaN, load: [NaN, NaN, NaN], photoIndex: NaN}; // Last data log
+
+
+    // /////// Live Data Update and Chart Configuration /////////
+
+    // Live update flag (disabled by default)
+    let liveUpdate = false;
+    let liveUpdatePaused = false;
+
+    // Maximum number of data points displayed in the charts
+    // let maxDataPoints = 10e10000000000000;
+
+    let isReadingSerial = false;
+
+
+    let dataFormat = null; // Data format for parsing incoming data
+    let waitingForDataFormat = false; // Flag for waiting for data format response
+    let onDataMatch = null; // Callback function for data matching
+
+
+    // /////// Experiment Configuration /////////
+    let loadLimitDropPercent = 0;
+    let loadLimitDropValue = 0;
+    let zero_speed_counter = 0;
+    let startPosition = 0;
+    let experimentEndPosition = 0;
+
+    let isExperimentRunning = false;
+    let stopExperiment = false;
+    let machineOccupation = false;
+
+    let measureForces = null;
+    let takeMeasurements = false;
+    let meanForces = [0, 0, 0];
+
+
+    // /////// UI Elements /////////
+    const UI = {
+        regularLogContainer: document.getElementById("regularLog"),// Reference to the log display container
+        loadingLogContainer: document.getElementById("loadingLog"),// Reference to the loading log display container
+        toggleScrollBtn: document.getElementById("toggleScrollBtn"), // Button to toggle automatic scrolling
+        lineLockBtn: document.getElementById("toggleLineLockBtn"), // Button to lock the log view
+        commandInput: document.getElementById('commandInput'),// Input elements for command entry and settings
+        sendButton: document.getElementById('sendButton'),// Input elements for command entry and settings
+        chartsLiveButton: document.getElementById('toggleLive'),// Input elements for command entry and settings
+        connectionStatus: document.getElementById("connectionStatus"), // Display for connection status
+        USB: document.getElementById("connectBtnUSB"), // Button to connect via USB
+        progressBar: document.getElementById("experimentProgress"), // Progress bar for experiment status
+        timeChartContainer: document.getElementById("timeChart"),
+        distanceChartContainer: document.getElementById("distanceChart"),
+        chartsContainer: document.getElementById("chartsContainer"),
+        autoReturnPosition: document.getElementById("autoReturnPositionExperiment"),
+    };
+
+    // Connection status messages and colors
+    const connectionStates = {
+        connected: {text: "🟢 Connected", color: "green"},
+        reconnecting: {text: "🟠 Reconnecting...", color: "orange"},
+        disconnected: {text: "🔴 Disconnected", color: "red"}
+    };
+
+
+    // /////// Event Listeners for UI Buttons /////////
+    // These were commented out, but they could be used to attach click events
+
+
+    document.getElementById("openSettingsContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "settingContainer"));
+    document.getElementById("openConsoleContainer").addEventListener("click", (event) => controlContainer(event.currentTarget, "consoleContainer"));
+
+
+    // /////// Auto-scroll Toggle /////////
+    UI.toggleScrollBtn.addEventListener("click", () => {
+        isAutoScroll = !isAutoScroll;
+        UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
+        UI.toggleScrollBtn.textContent = `📌 Auto-scroll: ${isAutoScroll ? "ON" : "OFF"}`;
+        if (isAutoScroll) {
+            UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
+        }
+
+    });
+
+
+    // Detects manual scrolling by the user
+    UI.regularLogContainer.addEventListener("scroll", () => {
+        isScrolledToBottom = checkScrolledToBottom();
+
+        if (!isScrolledToBottom) {
+            isAutoScroll = false;
+            UI.toggleScrollBtn.textContent = "📌 Auto-scroll: OFF";
+        } else {
+            isAutoScroll = true;
+            UI.toggleScrollBtn.textContent = "📌 Auto-scroll: ON";
+            isLineLocker = true;
+            UI.lineLockBtn.textContent = "🔒 Fix Scroll: ON";
+            UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight
+        }
+        UI.toggleScrollBtn.classList.toggle("active", isAutoScroll);
+    });
+
+
+    function controlContainer(btn, containerID) {
+        const container = document.getElementById(containerID);
+
+        if (window.getComputedStyle(container).maxHeight === "0px") {
+            container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
+            container.style.opacity = 1;
+            btn.textContent = "🔼";
+        } else {
+            container.style.maxHeight = 0; // Close the container
+            container.style.opacity = 0;
+            btn.textContent = "🔽";
+        }
+    }
+
+    // /////// Log Control Functions /////////
+
+    // Toggles whether the log view is locked at a specific position
+    function lineLock() {
+        isLineLocker = !isLineLocker;
+        if (isLineLocker) {
+            UI.lineLockBtn.textContent = "🔒 Fix Scroll: ON";
+        } else {
+            UI.lineLockBtn.textContent = "🔓 Fix Scroll: OFF";
+        }
+    }
+
+    // Clears the log completely
+    function clearLog() {
+        logContentLines.length = 0;
+        logCount = 0;
+        UI.regularLogContainer.textContent = "";
+    }
+
+
+    // /////// Input Validation and Adjustment /////////
+
+    // Ensures user input is within valid min/max range
+    function checkInput(element, valueType) {
+        if (!element) return;
+
+
+        // Validate input: if empty, set to a minimum or 0
+        if (element.value.trim() === "") {
+            element.value = element.min !== "" ? element.min : 0;
+        } else {
+            if (valueType === "floatInput") {
+                element.value = parseFloat(element.value);
+            } else if (valueType === "intInput") {
+                element.value = parseInt(element.value, 10);
+            }
+
+            // Enforce min/max constraints
+            if (element.min && parseFloat(element.value) < parseFloat(element.min)) {
+                element.value = element.min;
+            }
+            if (element.max && parseFloat(element.value) > parseFloat(element.max)) {
+                element.value = element.max;
+            }
+        }
+
+        element.dispatchEvent(new Event("change", {bubbles: true}));
+    }
+
+    // Attaches validation checks to numeric inputs
+    document.querySelectorAll("input[type=number]").forEach(input => {
+        input.addEventListener("blur", () => checkInput(input, input.dataset.inputType));
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                checkInput(event.target, event.target.dataset.inputType);
+                event.target.blur();
+            }
+        });
+    });
+
+
+    // /////// Command Input Handling /////////
+
+    // Listens for Enter key in the command input field and sends command
+    UI.commandInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendCommand(UI.commandInput.value.trim());
+        }
+    });
+
+    // Sends command when clicking the send-button
+    UI.sendButton.addEventListener('click', () => {
+        if (!serialPort) return;
+        sendCommand(UI.commandInput.value.trim());
+    });
+
+    // /////// Auto-scroll Detection /////////
+
+    // Checks if the user is scrolled to the bottom of the log
+    function checkScrolledToBottom(scrollTop = UI.regularLogContainer.scrollTop, clientHeight = UI.regularLogContainer.clientHeight, scrollHeight = UI.regularLogContainer.scrollHeight) {
+        return Math.abs(scrollTop + clientHeight - scrollHeight) < 2;
+    }
+
+    function updateConnectionStatus(status, type = null) {
+        if (!connectionStates[status]) return;
+        UI.connectionStatus.innerHTML = `${connectionStates[status].text} ${type ? `via ${type}` : ""}`;
+        UI.connectionStatus.style.color = connectionStates[status].color;
+    }
+
+
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+
+    // /////// IndexedDB Database Configuration /////////
+
+
+    const DB_NAME = "SerialPortData";// Database name
+    const STORE_NAME = "LastLog";// Store name for saving log entries
+    let db;// Database instance
+
+    // /////// Opening IndexedDB /////////
+
+    /**
+     * Opens the IndexedDB database and initializes it if needed.
+     */
+    async function openDB() {
+        let request = indexedDB.open(DB_NAME, 1);
+
+        request.onupgradeneeded = function (event) {
+            db = event.target.result;
+
+            // Creates a new object store with an auto-incremented key
+            db.createObjectStore(STORE_NAME, {keyPath: "id", autoIncrement: true});
+            console.log("✅ IndexedDB created");
+        };
+
+        request.onsuccess = function (event) {
+            db = event.target.result;
+            console.log("✅ IndexedDB opened");
+            checkExistingLog();
+        };
+    }
+
+    // /////// Checking for Existing Log Entries /////////
+
+    /**
+     * Checks if there are existing log entries in IndexedDB.
+     * If logs exist, prompts the user to either save or delete them.
+     */
+    function checkExistingLog() {
+        let transaction = db.transaction(STORE_NAME, "readonly");
+        let store = transaction.objectStore(STORE_NAME);
+        let request = store.count();
+
+        request.onsuccess = function () {
+            loadDataFromDBToChart(false)
+
+            if (request.result > 0) {
+                if (confirm("🔄 Old log exists. Save it or delete?\nOK = Save\nCancel = Delete and create new")) {
+                    saveCSV();
+                }
+            }
+        };
+    }
+
+    // /////// Clearing the Database Log /////////
+
+    /**
+     * Clears all log entries from IndexedDB.
+     */
+    function clearDBLog() {
+        let transaction = db.transaction(STORE_NAME, "readwrite");
+        let store = transaction.objectStore(STORE_NAME);
+        store.clear().onsuccess = () => console.log("🗑️ Old log deleted.");
+    }
+
+    // /////// Adding Data to the Log /////////
+
+    /**
+     * Adds a new data entry to IndexedDB.
+     *@param {Object} data - The data object to be stored.
+     */
+    function addDataToLog(data) {
+        let transaction = db.transaction(STORE_NAME, "readwrite");
+        let store = transaction.objectStore(STORE_NAME);
+
+        // 📌 Adds the object with an auto-generated key
+        store.add(data);
+    }
+
+    // /////// Saving Log to File /////////
+
+    /**
+     * Saves the stored log entries from IndexedDB to a downloadable CSV file.
+     */
+    // Event listener for the save button
+    document.getElementById("saveData").addEventListener("click", saveCSV);
+
+
+    let handFolderSelect = false;
+
+    function toggleDirectorySelector() {
+        handFolderSelect = !handFolderSelect;
+    }
+
+
+    async function saveCSV() {
+        let dirHandle = null;
+        const experimentType = document.getElementById("experimentType").value.trim();
+        const experimentDesc = document.getElementById("experimentDesc").value.trim();
+        const delimiter = ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
+
+        handFolderSelect = document.getElementById("storagePath").checked;
+
+        if (!experimentType) {
+            alert("Unable to save the data.\n    Please enter the experiment type.");
+            return;
+        }
+
+        const fileName = `${experimentType}.csv`;
+
+        let fileHandle;
+        if (handFolderSelect) {
+            try {
+                dirHandle = await window.showDirectoryPicker(); // User selects a folder
+            } catch (error) {
+                console.error("❌ Folder selection canceled or error occurred:", error);
+                return;
+            }
+            fileHandle = await dirHandle.getFileHandle(fileName, {create: true});
+
+        } else {
+            fileHandle = {name: `${fileName}`}; // Simulated save outside File System Access API
+        }
+
+        let transaction = db.transaction(STORE_NAME, "readonly");
+        let store = transaction.objectStore(STORE_NAME);
+        let request = store.getAll();
+
+        request.onsuccess = async function () {
+            let dataEntries = request.result;
+
+            if (!dataEntries || dataEntries.length === 0) {
+                console.warn("⚠️ No data to save.");
+                alert("⚠️ No data to save. Ensure experiment has been run.");
+                return;
+            }
+
+            const experimentInfo = dataEntries[0];
+
+            const header = `Time [s]${delimiter}Distance [mm]${delimiter}Speed [mm/s]${delimiter}Loadcell 1 [N]${delimiter}Loadcell 2 [N]${delimiter}Loadcell 3 [N]${delimiter}Photo Index\n`;
+            let content = `Date:${delimiter}${experimentInfo.experimentDate}${delimiter}Loading speed (mm/s):${delimiter}${experimentInfo.loadSpeed}${delimiter}Load distance (mm):${delimiter}${experimentInfo.loadDistance}${delimiter}Loadcell capacity (kg):${delimiter}${experimentInfo.loadcellCapacity}${delimiter}Software version:${delimiter}${softwareVersion} ${delimiter}Firmware version:${delimiter}${machineFirmware} \nDescription:${delimiter}${experimentDesc}\n${header}`;
+
+            dataEntries.shift(); // Skip the first entry (initial values)
+
+            dataEntries.forEach(entry => {
+                const time = isNaN(entry.time) ? "" : entry.time;
+                const distance = isNaN(entry.distance) ? "" : entry.distance;
+                const speed = isNaN(entry.speed) ? "" : entry.speed;
+
+                // Ensure `load` exists and is an array
+                const load1 = (entry.load && !isNaN(entry.load[0])) ? entry.load[0] : "";
+                const load2 = (entry.load && !isNaN(entry.load[1])) ? entry.load[1] : "";
+                const load3 = (entry.load && !isNaN(entry.load[2])) ? entry.load[2] : "";
+
+                // Ensure `photoIndex` is properly handled
+                const photoIndex = isNaN(entry.photoIndex) ? "" : entry.photoIndex;
+
+                content += `${roundDecimal(time, 6)}${delimiter}${roundDecimal(distance, 4)}${delimiter}${roundDecimal(speed, 2)}${delimiter}${roundDecimal(load1, 2)}${delimiter}${roundDecimal(load2, 2)}${delimiter}${roundDecimal(load3, 2)}${delimiter}${photoIndex}\n`;
+            });
+
+            if (handFolderSelect) {
+                // Save file to the selected folder using File System Access API
+                const writable = await fileHandle.createWritable();
+                await writable.write(`\uFEFF${content}`); // Add BOM for correct UTF-8 encoding
+                await writable.close();
+            } else {
+                // Simulated file download (browsers don't allow direct writes)
+                const blob = new Blob([`\uFEFF${content}`], {type: "text/csv;charset=utf-8"});
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = fileHandle.name.split("/").pop();
+                link.click();
+            }
+
+            console.log(`✅ Data saved to file: ${fileName}`);
+
+            // Clear IndexedDB after saving
+            let deleteTransaction = db.transaction(STORE_NAME, "readwrite");
+            let deleteStore = deleteTransaction.objectStore(STORE_NAME);
+            deleteStore.clear().onsuccess = () => console.log("🗑️ Data from IndexedDB cleared after saving.");
+        };
+    }
+
+
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+
+    // /////// Serial Connection Variables /////////
+
+    // Variables for handling serial (USB) communication
+    let serialPort, serialWriter, serialReader;
+
+    // Connection status flags
+    let isConnected = false;
+    let isSerial = false;
+
+    // Reconnection attempts for serial connection
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    let isReconnecting = false;
+
+    // /////// Serial Connection Handling /////////
+
+    UI.USB.addEventListener("click", startSerial);
+
+    /**
+     * Starts the Serial (USB) connection by opening the database and initiating the connection.
+     */
+    async function startSerial() {
+        if (isConnected) {
+            await disconnectSerial();
+        } else {
+            console.log("🚀 Starting application...");
+            await connectSerial();
+
+        }
+
+    }
+
+
+    // /////// Sending Commands /////////
+
+    /**
+     * Sends a command to the connected device.
+     * Works with Serial (USB) connection;
+     * @param {string} command - The command string to send.
+     * @param timeOut
+     */
+    async function sendCommand(command, timeOut = 1) {
+        if (!isConnected || !serialPort?.writable) {
+            await logMessage("\n⚠️ No device is connected or port is unavailable!");
+            return;
+        }
+
+        if (command.includes(" NaN")) {
+            await logMessage("\n⚠️ Command contains 'NaN' values. Please check the input.");
+            console.error("⚠️ Command contains 'NaN' values. Please check the input.");
+            alert("⚠️ Aborted command due to 'NaN' values in the input.");
+            return;
+        }
+
+        try {
+            const encoder = new TextEncoder();
+
+            //  Ensure a writer exists before writing
+            if (!serialWriter) {
+                serialWriter = serialPort.writable.getWriter();
+            }
+
+            await serialWriter.write(encoder.encode(command + "\n"));
+
+            console.log("Sent:", command);
+            await logMessage("📤 Command sent: " + command);
+            await new Promise(resolve => setTimeout(resolve, timeOut));  // Stop for at least 1 ms
+
+        } catch (error) {
+            await handleError(error, "sendCommand");
+        }
+    }
+
+    // /////// Logging Messages /////////
+
+    // Global array for storing log messages in memory for display on the canvas
+    // let logs = [];
+
+    // // /////// Canvas DPI Adjustment /////////
+    // function adjustCanvasDPI(canvas) {
+    //     const ctx = canvas.getContext('2d', {willReadFrequently: true}); // Optimized for frequent reading
+    //     const dpi = (window.devicePixelRatio || 1) * 1.5;
+    //
+    //     // Get the size of the canvas in CSS pixels.
+    //     const width = canvas.clientWidth;
+    //     const height = canvas.clientHeight;
+    //
+    //     // Store the current transformation matrix
+    //     const savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    //
+    //     // Scale the canvas up by the device pixel ratio
+    //     canvas.width = width * dpi;
+    //     canvas.height = height * dpi;
+    //     ctx.scale(dpi, dpi);
+    //
+    //     // Restore the old transformation matrix
+    //     ctx.putImageData(savedImageData, 0, 0);
+    //
+    //     // Redraw the text on the canvas
+    //     redrawCanvasText();
+    //
+    //     console.log(`🎨 Canvas DPI changed: ${dpi}`);
+    // }
+    //
+    // // Redraws the text on the canvas
+    // function redrawCanvasText() {
+    //     const ctx = UI.loadingLogContainer.getContext('2d');
+    //     ctx.clearRect(0, 0, UI.loadingLogContainer.width, UI.loadingLogContainer.height);
+    //
+    //     ctx.font = '14px monospace';
+    //     ctx.textBaseline = 'top';
+    //
+    //     const lineHeight = 16;
+    //     const visibleLines = Math.floor(UI.loadingLogContainer.clientHeight / lineHeight);
+    //     let scrollOffset = Math.max(0, logs.length - visibleLines);
+    //
+    //     for (let i = scrollOffset; i < logs.length; i++) {
+    //         let msg = logs[i];
+    //
+    //         // 🔥 Change color to yellow if a message starts with "ds" (case-insensitive)
+    //         if (msg.toLowerCase().startsWith("ds")) {
+    //             ctx.fillStyle = 'yellow';
+    //         } else {
+    //             ctx.fillStyle = 'white';
+    //         }
+    //
+    //         ctx.fillText(msg, 5, (i - scrollOffset + 0.5) * lineHeight);
+    //     }
+    // }
+    //
+    // // Function to log measurements to the canvas
+    // function logMeasurements(msg) {
+    //     if (!msg || typeof msg !== 'string') return;
+    //
+    //     logs.push(msg);
+    //     if (logs.length > 100) logs.shift(); // Keep only the last 100 messages
+    //
+    //     redrawCanvasText();
+    // }
+    //
+    // // Initial DPI adjustment for the canvas
+    // adjustCanvasDPI(UI.loadingLogContainer);
+    //
+    // // Event listener for resizing the window and adjusting the canvas DPI
+    // window.addEventListener("resize", () => adjustCanvasDPI(UI.loadingLogContainer));
+
+
+    const visibleLines = Math.floor(UI.loadingLogContainer.clientHeight / 16);
+    UI.loadingLogContainer.style.fontStyle = "14px monospace";
+    UI.loadingLogContainer.style.overflow = "hidden";
+
+    function logMeasurements(msg) {
+        if (!msg || typeof msg !== 'string') return;
+
+        // Check if a message starts with "ds" and apply yellow color, else use white
+        let formattedMsg = msg.toLowerCase().startsWith("ds")
+            ? `<span style="color:yellow;">${msg}</span>` // Highlight DSLR data
+            : `<span style="color:white;">${msg}</span>`; // Normal log
+
+        // Append the formatted message directly
+        UI.loadingLogContainer.innerHTML += formattedMsg + "<br>";
+
+        // Auto-scroll to the bottom for the latest logs
+        UI.loadingLogContainer.scrollTop = UI.loadingLogContainer.scrollHeight;
+
+        // Limit logs to 100 lines for performance
+        let lines = UI.loadingLogContainer.innerHTML.split("<br>");
+        if (lines.length > visibleLines) {
+            UI.loadingLogContainer.innerHTML = lines.slice(lines.length - visibleLines).join("<br>");
+        }
+    }
+
+
+    function roundDecimal(num, decimalPlace) {
+        return Math.round(num * Math.pow(10, decimalPlace)) / Math.pow(10, decimalPlace);
+    }
+
+
+    // Logs a message to the regular log container
+    const logLineHeight = 1.2 * parseInt(UI.regularLogContainer.style.fontSize)
+
+    function logMessage(msg) {
+        if (!msg) return;
+
+        logCount++;
+        isScrolledToBottom = checkScrolledToBottom();
+
+        while (isLineLimit && (logCount >= logContentMaxLines)) {
+            logContentLines.shift();
+
+            logCount--;
+        }
+
+        // if (isLineLocker) {
+        //     UI.regularLogContainer.scrollTop -= logLineHeight; // UI.regularLogContainer.scrollHeight / logContentLines.length; // logCount;
+        // }
+
+        if (isAutoScroll) {
+            UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
+        }
+
+        logContentLines.push(msg);
+        UI.regularLogContainer.textContent = logContentLines.join("\n");
+
+        if (isScrolledToBottom) {
+            UI.regularLogContainer.scrollTop = UI.regularLogContainer.scrollHeight;
+        }
+    }
+
+    // /////// Loading Commands from JSON /////////
+
+    /**
+     * Loads commands from an external JSON file and creates buttons for each command.
+     */
+    async function loadCommands() {
+        try {
+            const response = await fetch("commands.json");
+            const commands = await response.json();
+
+            for (const [name, command] of Object.entries(commands)) {
+                const btn = document.createElement("button");
+                btn.innerText = name;
+                btn.onclick = () => sendFunction(name, command);
+                // document.getElementById("buttons").appendChild(btn);
+            }
+        } catch (error) {
+            await handleError(error, "loadCommands");
+        }
+    }
+
+
+    /////////////////////////////////////////////////////////////////
+
+    const serialFunctionGetPorts = async () => {
+        try {
+            const ports = await navigator.serial.getPorts();
+            return ports.length ? ports : null;
+        } catch (error) {
+            console.error("Error getting serial ports:", error);
+            return null;
+        }
+    };
+
+    const serialFunctionRequestPort = async () => {
+        try {
+            return await navigator.serial.requestPort();
+        } catch (error) {
+            if (error.name === "NotFoundError") {
+                console.warn("⚠️ No port selected.");
+                await logMessage("\n⚠️ No port selected.");
+                return null;
+            } else {
+                throw new Error("Error requesting serial port:", error);
+            }
+        }
+    };
+
+
+    function checkAllPorts() {
+        let thymosPorts = [];
+        navigator.serial.getPorts().then(ports => {
+            ports.forEach(port => {
+                if (port.manufacturer === "Thymos") {
+                    thymosPorts.push(port);
+                }
+            });
+
+
+            return port
+        }).catch(_ => {
+            return null
+        });
+    }
+
+
+    // /////// Serial (USB) Connection to ESP /////////
+
+    /**
+     * Establishes a connection with the ESP device via USB.
+     */
+    async function connectSerial() {
+        isSerial = true;
+        try {
+            const ports = await serialFunctionGetPorts();
+            console.log("🔍 Searching for available ports...", ports);
+            if (ports && ports.length === 1) {
+                serialPort = ports[0];
+                await openPort(serialPort);
+            } else {
+                if (ports && ports.length > 1) {
+                    console.log("Multiple ports found. Select one.");
+                    // serialPort = checkAllPorts();
+
+                    for (let port of ports) {
+                        await port.close();
+                    }
+                } else {
+                    console.log("No previously connected devices found.");
+                }
+                if (!serialPort) serialPort = await serialFunctionRequestPort();
+                if (serialPort === null) return;
+                await openPort(serialPort);
+            }
+        } catch (error) {
+
+            await handleError(error, "connectSerial");
+            isSerial = false;
+            isConnected = false;
+            await disconnectSerial(true);
+
+        }
+    }
+
+    /**
+     * Opens a serial port for communication.
+     *  SerialPort => comPort - The selected serial port.
+     */
+    let machineFirmware = null;
+
+    async function openPort(comPort, retry = false) {
+        try {
+            if (!comPort) {
+                console.error("⚠️ No available port.");
+                await logMessage("\n⚠️ No available port.");
+                return;
+            }
+
+            // If the port is already open, close it first
+            if (comPort.opened) {
+                console.log("🔌 Closing existing port...");
+                await comPort.close();
+            }
+
+            console.log("🔌 Opening new port...");
+            await comPort.open({baudRate: parseInt(document.getElementById("inputNumBaudRate").value)});
+
+            // Get the writer and reader for the port after opening
+            if (serialWriter) {
+                serialWriter.releaseLock();
+                serialWriter = null;
+            }
+
+            serialWriter = comPort.writable.getWriter(); // 🔥  writer
+            serialReader = comPort.readable.getReader(); // 🔥  reader
+
+
+            isConnected = true;
+            reconnectAttempts = 0;
+
+
+            await checkSerialSignals(comPort);
+
+            await setSerialSignals(comPort, true, false); // Set DTR to true and RTS to false
+
+            readSerial();
+
+            await updateConnectionStatus("connected", "USB");
+            UI.USB.innerText = "❌ Disconnect ESP (USB)";
+            await logMessage("\n✅ Connected to ESP via USB\n");
+
+            machineFirmware = await getFirmwareVersion();
+
+        } catch (error) {
+            if (!(error.name === "InvalidStateError" && retry)) {
+                await handleError(error, "openPort");
+                await disconnectSerial(true);
+            }
+        }
+    }
+
+
+    async function checkSerialSignals(port) {
+        if (!port) return;
+
+        try {
+            const signals = await port.getSignals();
+            console.log("📡 Serial port signals...");
+            console.log("\t🚦 Signals:", signals);
+        } catch (error) {
+            console.error("❌ Error reading serial signals:", error);
+        }
+    }
+
+
+    async function setSerialSignals(port, dtrState, rtsState, brkState) {
+        if (!port) return;
+
+        try {
+            await port.setSignals({
+                dataTerminalReady: dtrState,
+                requestToSend: rtsState,
+                break: brkState
+            });
+
+            console.log(`✅ DTR: ${dtrState}, RTS: ${rtsState}, BRK: ${brkState}`);
+        } catch (error) {
+            console.error("❌ Error setting serial signals:", error);
+        }
+    }
+
+
+    /**
+     * Disconnects from the ESP device via USB.
+     */
+    async function disconnectSerial(override = false) {
+        if (!override && !isConnected) {
+            console.warn("⚠️ Port is not connected.");
+            return;
+        }
+
+        try {
+            try {
+                await sendCommand("MC STOP"); // Stop data collection
+                await sendCommand("DSLR STOP CYCLIC");
+                await sendCommand("DATAC 0"); // Stop data collection
+            } catch (error) {
+                console.warn("⚠️ Error stopping data collection:", error);
+            } finally {
+                machineOccupation = false;
+                stopExperiment = true;
+                isExperimentRunning = false;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+            // Stop data reading before releasing the reader
+            if (serialReader) {
+                console.log("📌 Stopping data reading...");
+                try {
+                    await serialReader.cancel(); // Cancel reading safely
+                } catch (err) {
+                    console.warn("⚠️ Error canceling reader:", err);
+                }
+                serialReader.releaseLock(); // Release reader lock
+                serialReader = null;
+            }
+
+            // Release the writer before closing the port
+            if (serialWriter) {
+                console.log("📌 Releasing writer...");
+                serialWriter.releaseLock();
+                serialWriter = null;
+            }
+
+            // Now close the port safely
+            if (serialPort) {
+                console.log("📌 Closing serial port...");
+                await serialPort.close();
+                serialPort = null;
+            }
+
+            await logMessage("✖️ Disconnected from ESP\n\n");
+
+            console.log("✅ Disconnected successfully.");
+        } catch (error) {
+            console.error("❌ disconnectSerial error:", error);
+        } finally {
+            await resetValues();
+        }
+    }
+
+
+    function resetValues() {
+        parsedData = {time: NaN, distance: NaN, value: NaN, load: [NaN, NaN, NaN], photoIndex: NaN};
+        liveUpdate = false
+
+
+        UI.USB.innerText = "🔌 Connect via USB";
+        updateConnectionStatus("disconnected");
+
+        isExperimentRunning = false;
+        stopExperiment = true;
+        machineOccupation = false;
+        UI.loadingLogContainer.style.background = "#323232";
+        experimentEndPosition = 0;
+        startTime = null;
+        pendingDSLR = null;
+        dataCount = null;
+        maxLoad = [null, null, null];
+        measureForces = [[], [], []];
+        meanForces = [0, 0, 0];
+
+        isSerial = false;
+        isConnected = false;
+        serialPort = null;
+        serialReader = null;
+        serialWriter = null;
+        reconnectAttempts = 0;
+    }
+
+
+    // /////// Reading Data from ESP /////////
+
+    /**
+     * Reads incoming data from the ESP device over a serial connection.
+     */
+
+
+    async function readSerial() {
+        isReadingSerial = true;
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        if (!serialPort.readable) {
+            await logMessage("\n❌ Port is unavailable.\n");
+            return;
+        }
+
+        if (serialReader) {
+            try {
+                serialReader.releaseLock(); // Ensure only one active reader
+            } catch (err) {
+                console.error("Reader lock error:", err);
+            }
+        }
+
+        serialReader = serialPort.readable.getReader(); // Get a reader only once
+
+        try {
+            while (isConnected) {
+                const {value, done} = await serialReader.read();
+                if (done) break; // Stop loop if the stream is closed
+
+                buffer += decoder.decode(value, {stream: true});
+
+                let lastNewline = buffer.lastIndexOf("\n");
+                if (lastNewline !== -1) {
+                    let dataChunk = buffer.slice(0, lastNewline).split("\n");
+                    buffer = buffer.slice(lastNewline + 1);
+
+                    await processMeasurements(dataChunk);
+                }
+            }
+        } catch (error) {
+            await handleError(error, "readSerial"); // Handle any errors
+        } finally {
+            if (serialReader) {
+                await serialReader.cancel(); //  Immediately stop reading !!!!
+                await stopMachine();
+                serialReader.releaseLock();
+
+
+            }
+            await logMessage("\n✅ Reading stopped.\n");
+        }
+    }
+
+    async function attemptReconnect() {
+        await disconnectSerial(true);
+        return; // #TODO => fix reconnecting
+
+        if (isConnected || isReconnecting) {
+            console.warn("🚨 Reconnect aborted - Already connected or disconnect was expected.");
+            // reconnectAttempts = 0;
+            return;
+        }
+
+        if (reconnectAttempts >= maxReconnectAttempts) {
+            console.warn("⚠️ Stopping auto-reconnect. Maximum attempts reached.");
+            await logMessage("\n⚠️ Stopping auto-reconnect.\n");
+            isReconnecting = false;
+            await disconnectSerial();
+            await resetValues();
+            return;
+        }
+
+        isReconnecting = true;
+        reconnectAttempts++;
+        UI.USB.innerText = "🔄 Reconnecting...";
+        await updateConnectionStatus("reconnecting");
+        await logMessage(`\n🔄 Attempting reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
+
+        try {
+            if (isSerial) {
+                await openPort(serialPort, true);
+                new Error("Reconnect failed");
+            }
+
+            if (isConnected) {
+                console.log("✅ Reconnected successfully!");
+            } else {
+                new Error("Reconnect failed");
+            }
+        } catch (error) {
+            console.warn("⚠️ Reconnection failed:", error);
+            await logMessage("\n❌ Reconnection failed: " + error);
+
+            if (reconnectAttempts < maxReconnectAttempts) {
+                setTimeout(() => {
+                    isReconnecting = false; //  Allow another reconnection attempt
+                    attemptReconnect();
+                }, 3000);
+            } else {
+                console.warn("⚠️ Max reconnect attempts reached. Stopping.");
+                await logMessage("\n❌ Max reconnect attempts reached. Stopping.\n");
+                await resetValues();
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////////////////////
+
+
+    // /////// Optimized Measurement Processing /////////
+
+    /**
+     * Processes incoming measurement data.
+     * @param {Array} dataChunk - An array of measurement data lines.
+     */
+
+    //     let messageCount = 0;
+    // let lastLogTime = Date.now();
+    async function processMeasurements(dataChunk) {
+        if (!dataChunk.length) return;
+
+        for (let line of dataChunk) {
+            let msg = line.trim();
+
+
+            // 🔎 Wait for a specific data format to match
+            if (waitingForDataFormat && dataFormat !== null) {
+                let match = msg.match(dataFormat);
+
+                if (match) {
+                    console.log("✅ Response match:", msg);
+
+                    // If a callback is set, process the matched data
+                    if (onDataMatch) {
+                        onDataMatch(match);
+                        onDataMatch = null; // Reset callback
+                    }
+
+                    waitingForDataFormat = false; // Reset the format
+                    dataFormat = null; // Reset the format
+                    continue;
+                }
+            }
+
+
+            if (msg.startsWith("DS")) {
+                await parseData(msg);
+            } else {
+                await logMessage("📩\t" + msg);
+            }
+
+            // // Increment the message counter
+            // messageCount++;
+        }
+
+        // // Log the message count every second
+        // let now = Date.now();
+        // if (now - lastLogTime >= 1000) {
+        //     console.log(`📡 Messages per second: ${messageCount}`);
+        //     messageCount = 0; // Reset the counter
+        //     lastLogTime = now; // Actualize the last log time
+        // }
+    }
+
+
+    function timeStepCheck(previous, current, stepSize, tolerance = null) {
+        if (!tolerance) {
+            tolerance = stepSize * 0.1; // set default tolerance to 10% of step size
+        }
+        if (current >= previous) {
+            const actualStep = current - previous;
+            if ((stepSize - tolerance) <= actualStep && actualStep <= (stepSize + tolerance)) {
+                return current;
+            }
+        }
+        console.warn("⚠️ Step size mismatch:\n\tprevious:", previous, " current: ", current);
+        return previous + stepSize;
+    }
+
+
+    let maxLoad = [null, null, null];
+
+
+    // /////// Data Parsing /////////
+    function interpolateDSLRData(dslrEvent, nextData, prevData) {
+        if (!prevData || !nextData || !dslrEvent) {
+            console.log("⚠️ No valid data for interpolation.");
+            return;
+        }
+
+        const dslrTime = roundDecimal(dslrEvent.time - startTime, 6);
+
+        const photoIndex = dslrEvent.photoIndex;
+
+        // Ensure valid data for interpolation
+        if (prevData.time >= nextData.time) {
+            console.error("⚠️ Not enough data for interpolation.");
+            return;
+        }
+
+        let interpolatedData;
+
+        if ((prevData.time <= dslrTime) && (dslrTime <= nextData.time)) {
+            // Linear interpolation factor
+            const t1 = prevData.time, t2 = nextData.time;
+            const factor = (dslrTime - t1) / (t2 - t1);
+
+            const interpolatedDistance = roundDecimal(prevData.distance + factor * (nextData.distance - prevData.distance), 4);
+            const interpolatedSpeed = roundDecimal(prevData.speed + factor * (nextData.speed - prevData.speed), 2);
+            const interpolatedLoad = prevData.load.map((val, i) => roundDecimal(val + factor * (nextData.load[i] - val), 2));
+
+            interpolatedData = {
+                time: dslrTime,
+                distance: interpolatedDistance,
+                speed: interpolatedSpeed,
+                load: interpolatedLoad,
+                photoIndex: photoIndex // Store DSLR photo order
+            };
+
+        } else {
+            console.error("⚠️ Invalid interpolation range.");
+
+            interpolatedData = {
+                time: roundDecimal((prevData.time + nextData.time) / 2, 6),
+                distance: roundDecimal((prevData.distance + nextData.distance) / 2, 4),
+                speed: roundDecimal((prevData.speed + nextData.speed) / 2, 2),
+                load: prevData.load.map((val, i) => roundDecimal((val + nextData.load[i]) / 2, 2)),
+                photoIndex: photoIndex // Store DSLR photo order
+            };
+        }
+        dataCount++;
+        aggregatedDataBetweenSteps.push(interpolatedData);
+        pendingDSLR = null;
+
+
+        // Log interpolated data
+        // logMeasurements(`${Math.round(dslrEvent.time * 10e6)},${(interpolatedDistance + startPosition).toFixed(4)},${interpolatedSpeed.toFixed(2)},${interpolatedLoad[0].toFixed(2)},${interpolatedLoad[1].toFixed(2)},${interpolatedLoad[2].toFixed(2)},    ${photoIndex}`);
+        addDataToLog(interpolatedData);
+
+        addMarker(timeChart, markersTime, interpolatedData.time);
+        addMarker(distanceChart, markersDist, interpolatedData.distance);
+    }
+
+
+    /**
+     * Parses raw measurement data into a structured object.
+     * @param {string} dataString - The raw data string received from ESP.
+     * @returns {Object} - Parsed data object containing time, distance, value, and load values.
+     */
+
+    let pendingDSLR = null; // Store DSLR event until the next data arrives
+    let dataCount = null;
+    let dataChartInterval = 1; // Interval for live chart update
+    let startTime = null;
+
+    let isDelayed = false;
+
+    // let firstPhoto = 0;
+
+
+    function calculateAverageParsedData(parsedDataList) {
+        const totalEntries = parsedDataList.length;
+
+        if (totalEntries === 0) return {
+            time: 0,
+            distance: 0,
+            load: [0, 0, 0]
+        }; // Return zero values if no data
+
+        let sumTime = 0;
+        let sumDistance = 0;
+        let sumLoad = [0, 0, 0]; // Empty list of `load` values
+
+        parsedDataList.forEach(data => {
+            sumTime += data.time;
+            sumDistance += data.distance;
+
+            // Sum all values in `load` list
+            data.load.forEach((value, index) => {
+                sumLoad[index] += value;
+            });
+        });
+
+        return {
+            time: roundDecimal(sumTime / totalEntries, 6),
+            distance: roundDecimal(sumDistance / totalEntries, 4),
+            load: sumLoad.map(value => roundDecimal(value / totalEntries, 2)) // Average of `load` list values (per index)
+        };
+    }
+
+
+    function delayData() {
+        if (isDelayed) return;
+
+        isDelayed = true;
+        new Promise(resolve => setTimeout(() => {
+            isDelayed = false;
+            resolve(); // Call resolve() po 1000 ms
+        }, 1000)); // Delay 1 second
+
+
+    }
+
+
+    let aggregatedDataBetweenSteps = [];
+    let minimumZeroSpeedCount = 2;
+    let directionCorrection = 0;
+    let forceDirectionCorrection = -1;
+
+    async function parseData(dataString) { // #TODO => move string handle to 'processMeasurements'
+        if (!takeMeasurements && !isExperimentRunning && !isDelayed) {
+            await logMeasurements(dataString);
+            return;
+        }
+
+        dataString = dataString.substring(2);
+        const parts = dataString.split(",");
+
+        // Detect DSLR shoot event
+        if (takePhotos && dataString.startsWith("LR shoot:")) {
+            const [dslrTime, photoIndex] = dataString.split(":")[1].split(",");
+            pendingDSLR = {time: parseFloat(dslrTime) * 1e-3, photoIndex: parseInt(photoIndex) - 1};
+            await logMeasurements("Photo" + dataString.substring(2));
+            return;
+        }
+
+        if (parts.length !== 6) {
+            await logMessage("🌡️ DS" + dataString);
+            return;
+        } else {
+            await logMeasurements(dataString);
+        }
+
+        // Common parsing logic
+        // let loadVal = parts.slice(3).map(num => isNaN(parseFloat(num)) ? 0 : roundDecimal(parseFloat(num) * forceDirectionCorrection, 2)); // Load cell values
+        let loadVal = parts.slice(3).map(parseFloat);
+
+        if (takeMeasurements) {
+            loadVal.forEach((value, index) => measureForces[index].push(value * forceDirectionCorrection)); // Handle takeMeasurements
+            return;
+        }
+
+
+        let timeVal = roundDecimal(parseFloat(parts[0]) * 1e-6, 6); // Convert microseconds to seconds
+        let distVal = roundDecimal(parseFloat(parts[1]) * directionCorrection, 4); // Distance value
+        const speedVal = roundDecimal(parseFloat(parts[2]), 2); // Speed value
+
+
+        // Handle regular data (not DSLR)
+        if (startTime === null) {
+            startTime = timeVal;
+            timeVal = 0;
+        } else { // TODO => check if this is correct (step must be same), must be bigger than 0, process as UINT, process as FLOAT in export/saving and charts, BIGINT???
+            timeVal = await timeStepCheck(parsedData.time, timeVal - startTime, dataInterval_us * 1e-6);
+        }
+        distVal -= startPosition;
+        loadVal = loadVal.map((value, index) => roundDecimal((value * forceDirectionCorrection) - meanForces[index], 2));
+
+
+        const newData = {time: timeVal, distance: distVal, speed: speedVal, load: loadVal, photoIndex: NaN};
+
+        // If a pending DSLR timestamp exists, interpolate values
+        if (takePhotos && pendingDSLR) {
+            await interpolateDSLRData(pendingDSLR, newData, parsedData);
+        }
+
+        // Handle speed checks and experiment stopping
+        if (speedVal < 0.01 && !isDelayed && (timeVal - startTime) > 2) { // speedVal < 0.01 m/s <= speed value is limited to 2 decimal places
+            zero_speed_counter++;
+            if (zero_speed_counter > minimumZeroSpeedCount) {
+                console.log("🛑 Experiment stopped due to zero speed.");
+                await logMessage("🛑 Experiment stopped due to zero speed.");
+                stopExperiment = true;
+            }
+        } else {
+            zero_speed_counter = 0;
+        }
+
+        // Handle load cell limit checks
+        for (let i = 0; i < 3; i++) {
+            if (Math.abs(loadVal[i]) > maxLoad[i]) maxLoad[i] = Math.abs(loadVal[i]);
+            if (maxLoad[i] && !isDelayed) {
+                if (Math.abs(loadVal[i] * loadLimitDropPercent) < maxLoad[i] && (maxLoad[i] - Math.abs(loadVal[i])) > loadLimitDropValue) {
+                    // await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100 ms
+                    stopExperiment = true;
+                    console.log(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
+                    await logMessage(`🛑 Experiment stopped due to load cell ${i + 1} drop.`);
+                    break; // Stop checking other load cells if one fails
+                }
+            }
+        }
+
+        await addDataToLog(newData);
+        parsedData = newData;
+
+        // Update Progress Bar
+        const progress = distVal / experimentEndPosition * 100;
+        if (progress >= 100 && !isDelayed) {
+            stopExperiment = true;
+            console.log("🏁 Experiment finished.");
+            await logMessage("🏁 Experiment finished.");
+        }
+        UI.progressBar.value = Math.min(Math.max(0, progress), 100);
+
+
+        // Live chart update
+        dataCount++;
+        aggregatedDataBetweenSteps.push(parsedData);
+        if (liveUpdate) {
+            if (dataChartInterval === 1) {
+                await updateChart(parsedData);
+            } else if (dataCount % dataChartInterval === 0) {
+                await updateChart(calculateAverageParsedData(aggregatedDataBetweenSteps));
+            }
+        }
+        if (dataCount % dataChartInterval === 0) {
+            aggregatedDataBetweenSteps.length = 0;
+        }
+
+
+        // Stop experiment and reset
+        if (stopExperiment && !isDelayed) {
+            console.log("🛑 Experiment stopped.");
+            isExperimentRunning = false;
+            UI.loadingLogContainer.style.background = "#323232";
+            dataCount = null;
+            await delayData();
+        }
+    }
+
+
+    // /////// Command Handling /////////
+
+    /**
+     * Sends a command to the ESP device.
+     * If the command is for reading a specific load cell, it replaces the placeholder with the selected ID.
+     * @param {string} name - The command name.
+     * @param {string} inputCommand - The raw command string.
+     */
+    async function sendFunction(name, inputCommand) {
+        let command;
+
+        if (name === "read Loadcell[#]") {
+            let loadcellId = parseInt(document.getElementById("inputNumLoadID").value);
+            command = replaceVariables(inputCommand, {loadcellId: loadcellId});
+        } else {
+            command = inputCommand;
+        }
+
+        await sendCommand(command);
+    }
+
+    // /////// Template Variable Replacement /////////
+
+    /**
+     * Replaces variables inside a command template with actual values.
+     * @param {string} template - The command template containing placeholders.
+     * @param {Object} variables - An object mapping variable names to their actual values.
+     * @returns {string} - The command string with replaced values.
+     */
+    function replaceVariables(template, variables) {
+        return template.replace(/{{(.*?)}}/g, (match, key) => variables[key.trim()] || match);
+    }
+
+
+    /////////////////////////////////////////////////////////////////
+
+
+    // /////// Page Initialization /////////
+
+    /**
+     * Runs when the page loads.
+     * - Logs a message to the console.
+     * - Loads available commands from the JSON file.
+     */
+    window.onload = async () => {
+        console.log("Page loaded");
+        await openDB();
+        // await loadCommands();
+    };
+
+
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+
+    // /////// Toggle Live Update /////////
+    function chartUpdate() {
+        if (!liveUpdate) loadDataFromDBToChart(!liveUpdate);
+
+        liveUpdate = !liveUpdate;
+
+        UI.chartsLiveButton.textContent = liveUpdate ? "⏸️ Disable Charts" : "▶️ Activate Charts";
+        UI.chartsContainer.style.background = liveUpdate ? "transparent" : "#f5f5f5";
+    }
+
+
+    let isPageVisible = true; // Visibility status of the page
+    let hideTimeout = null; // Timeout for hiding the page
+    const MIN_HIDE_TIME = 20_000; // 20 seconds
+
+    // Event listener for page visibility change
+    document.addEventListener("visibilitychange", () => {
+        if (!liveUpdate && !isExperimentRunning) return;
+
+        isPageVisible = !document.hidden;
+
+        if (!isPageVisible) {
+            console.log("⏸️ Page is hidden.");
+            if (liveUpdate && !liveUpdatePaused) {
+                console.log("⏸️ Pause live update of charts.");
+                liveUpdatePaused = true;
+                liveUpdate = false;
+            }
+
+            // 🕒 Set timeout for hiding the page
+            hideTimeout = setTimeout(() => {
+                if (!isPageVisible) {
+                    console.log("⏳ Page is hidden longer than 10+ seconds. Hiding...");
+                }
+            }, MIN_HIDE_TIME);
+
+        } else {
+            if (hideTimeout) {
+                clearTimeout(hideTimeout); // Clear the hide timeout
+                hideTimeout = null;
+            }
+
+            console.log("🔄 Page is visible");
+            if (liveUpdatePaused) {
+                console.log("🔄 Resuming live update of charts.");
+                loadDataFromDBToChart(true);
+                liveUpdatePaused = false;
+                liveUpdate = true;
+            }
+        }
+    });
+
+
+    function aggregateData(dataEntries, chunkSize, timeData, distanceData, loadcellData, overflowData) {
+        if (!chunkSize) chunkSize = 1;
+
+        if (chunkSize === 1) {
+            // If chunkSize = 1, no aggregation is needed (1:1 mapping)
+            for (let i = 0; i < dataEntries.length; i++) {
+                let entry = dataEntries[i];
+                timeData[i] = entry.time;
+                distanceData[i] = entry.distance;
+                loadcellData[0][i] = entry.load[0];
+                loadcellData[1][i] = entry.load[1];
+                loadcellData[2][i] = entry.load[2];
+            }
+            return;
+        }
+
+        let fullChunks = Math.floor(dataEntries.length / chunkSize) * chunkSize;
+        let chunkCount = Math.floor(dataEntries.length / chunkSize); // Block count
+        let remainderStart = fullChunks; // First index of data
+
+        // Predefine arrays size to match the new chunk count
+        timeData.length = chunkCount;
+        distanceData.length = chunkCount;
+        loadcellData[0].length = chunkCount;
+        loadcellData[1].length = chunkCount;
+        loadcellData[2].length = chunkCount;
+
+        let sumTime = 0, sumDistance = 0;
+        let sumLoad0 = 0, sumLoad1 = 0, sumLoad2 = 0;
+        let count = 0, chunkIndex = 0;
+
+        for (let i = 0; i < fullChunks; i++) {
+            let entry = dataEntries[i];
+            sumTime += entry.time;
+            sumDistance += entry.distance;
+            sumLoad0 += entry.load[0];
+            sumLoad1 += entry.load[1];
+            sumLoad2 += entry.load[2];
+            count++;
+
+            if (count === chunkSize) {
+                let invCount = 1 / count; // Inverse count: quicker than '%' division operation
+                timeData[chunkIndex] = sumTime * invCount;
+                distanceData[chunkIndex] = sumDistance * invCount;
+                loadcellData[0][chunkIndex] = sumLoad0 * invCount;
+                loadcellData[1][chunkIndex] = sumLoad1 * invCount;
+                loadcellData[2][chunkIndex] = sumLoad2 * invCount;
+
+                sumTime = sumDistance = 0;
+                sumLoad0 = sumLoad1 = sumLoad2 = 0;
+                count = 0;
+                chunkIndex++;
+            }
+        }
+
+        // Add remaining data to overflow array
+        // console.log("Overflow: ", dataEntries.length - remainderStart);
+        for (let i = remainderStart; i < dataEntries.length; i++) {
+            let entry = dataEntries[i];
+            overflowData.push({
+                time: entry.time,
+                distance: entry.distance,
+                load: [entry.load[0], entry.load[1], entry.load[2]]
+            });
+        }
+    }
+
+
+    async function loadDataFromDBToChart(stateAtEnd = false) {
+        if (!db) {
+            console.error("⚠️ IndexedDB is not available (not opened).");
+            return;
+        }
+
+        liveUpdate = false;
+
+        await clearCharts();
+
+        console.log("🔄 Loading data from IndexedDB to charts...");
+
+        let transaction = db.transaction(STORE_NAME, "readonly");
+        let store = transaction.objectStore(STORE_NAME);
+        let request = store.getAll();
+
+        request.onsuccess = function () {
+            let dataEntries = request.result;
+            if (!dataEntries || dataEntries.length === 0) {
+                console.warn("⚠️ No data to load.");
+                return;
+            } else if (dataEntries.length < 3) {
+                console.warn("⚠️ Not enough data to load.");
+                return;
+            }
+
+            // remove first element from entry
+            dataEntries.shift();
+
+
+            console.log(`📉 Loaded ${dataEntries.length} data points`);
+
+
+            // // ⏩ **Use `filter` to reduce the number of data points**
+            // const filteredEntries = dataEntries.filter((_, index) => index % dataChartInterval === 0);
+            //
+            // // ⏩ **Use `map` to extract specific data fields**
+            // timeData = filteredEntries.map(entry => entry.time);
+            // distanceData = filteredEntries.map(entry => entry.distance);
+            // loadcellData[0] = filteredEntries.map(entry => entry.load[0]);
+            // loadcellData[1] = filteredEntries.map(entry => entry.load[1]);
+            // loadcellData[2] = filteredEntries.map(entry => entry.load[2]);
+
+            aggregateData(dataEntries, dataChartInterval, timeData, distanceData, loadcellData, aggregatedDataBetweenSteps);
+
+            dataEntries.forEach(entry => {
+                if (!isNaN(entry.photoIndex)) {
+                    markersTime.push(entry.time); // Add `time` value to markersTime list
+                }
+            });
+
+            dataEntries.forEach(entry => {
+                if (!isNaN(entry.photoIndex)) {
+                    markersDist.push(entry.distance); // Add `distance` value to markersTime list
+                }
+            });
+
+            timeChart.setData([timeData, ...loadcellData]);
+            distanceChart.setData([distanceData, ...loadcellData]);
+
+            timeChart.setScale("x", {min: timeData[0], max: timeData[timeData.length - 1]});
+            distanceChart.setScale("x", {min: distanceData[0], max: distanceData[distanceData.length - 1]});
+            timeChart.setScale("y", {min: Math.min(...loadcellData.flat()), max: Math.max(...loadcellData.flat())});
+            distanceChart.setScale("y", {
+                min: Math.min(...loadcellData.flat()),
+                max: Math.max(...loadcellData.flat())
+            });
+
+            // 🔄 Redraw graphs
+            // timeChart.redraw();
+            // distanceChart.redraw();
+
+            liveUpdate = stateAtEnd;
+
+            console.log("✅ Graph data loaded successfully.");
+        };
+    }
+
+
+    // Attach live update toggle to button
+    UI.chartsLiveButton.addEventListener("click", chartUpdate);
+
+
+    // /////// uPlot Chart Initialization /////////
+
+    function addMarker(uplotInstance, list, xValue) {
+        list.push(xValue); // Add marker to the list
+        // uplotInstance.redraw(); // Redraw graph
+    }
+
+    // Store dataset
+    let timeData = [];
+    let distanceData = [];
+    let loadcellData = [[], [], []];
+
+
+    const markersTime = []; // List of time markers
+    const markersDist = []; // List of distance markers
+
+
+    function createChart(containerID, marker, seriesLabels, title = "Graph", labelX = "", labelY = "") {
+        // Get the container element
+        let container = document.getElementById(containerID);
+        if (!container) {
+            console.error(`❌ Error: container s ID "${containerID}" not found.`);
+            return null;
+        }
+
+
+        const markerPlugin = {
+            hooks: {
+                draw: (u) => {
+                    const ctx = u.ctx;
+                    ctx.save();
+                    ctx.fillStyle = "darkorange"; // Marker color
+
+                    marker.forEach(xValue => {
+                        // let xPixel = Math.round(u.valToPos(xValue, "x", true)); // Rounding X coordinate
+                        // let yPixel = Math.round(u.valToPos(0, "y", true)); // Rounding Y coordinate
+
+                        // TODO: Check if this is correct (rounding needed?)
+                        let xPixel = u.valToPos(xValue, "x", true); // Rounding X coordinate
+                        let yPixel = u.valToPos(0, "y", true); // Rounding Y coordinate
+
+                        ctx.beginPath();
+                        ctx.arc(xPixel, yPixel, 3.5, 0, 2 * Math.PI); // Marker point size: 3.5 px
+                        ctx.fill();
+                    });
+
+                    ctx.restore();
+                }
+            }
+        };
+
+        // Get the container dimensions
+        let width = container.clientWidth || 400; // Default width if container is empty
+        let height = container.clientHeight || 300; // Default height if container is empty
+
+        // Configurations for uPlot chart
+        const options = {
+            title: title,
+            width: width,
+            height: height,
+            axes: [
+                {
+                    label: labelX, // Axis label X
+                },
+                {
+                    label: labelY, // Axis label Y
+                }
+            ],
+            scales: {
+                x: {time: false},
+                y: {auto: true}
+            },
+            series: seriesLabels.map((label, index) => ({
+                label: label,
+                stroke: index === 0 ? "black" : ["red", "blue", "green"][index - 1] || "gray"
+            })),
+            plugins: [markerPlugin],
+        };
+
+        // Create the uPlot chart
+        let chart = new uPlot(options, [[], ...seriesLabels.slice(1).map(() => [])], container);
+
+        // Dynamic resizing of the chart
+        window.addEventListener("resize", () => {
+            let newWidth = container.clientWidth || 400;
+            let newHeight = container.clientHeight || 300;
+            chart.setSize({width: newWidth, height: newHeight});
+            UI.chartsContainer.style.height = getChartHeightIncludingLegend() + "px";
+        });
+
+        return chart;
+    }
+
+    // Initialization of uPlot charts
+    let timeChart = createChart("timeChart", markersTime, ["Time (s)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Time Graph", "Time [s]", "Force [N]");
+    let distanceChart = createChart("distanceChart", markersDist, ["Distance (mm)", "Loadcell 1", "Loadcell 2", "Loadcell 3"], "Distance Graph", "Displacement [mm]", "Force [N]");
+
+    function getChartHeightIncludingLegend() {
+        let charts = document.querySelectorAll(".uplot");
+        let maxHeight = 0;
+
+        charts.forEach(chart => {
+            maxHeight = Math.max(maxHeight, chart.clientHeight);
+        });
+
+        return maxHeight;
+
+    }
+
+
+    // /////// Chart Update Function /////////
+
+    /**
+     * Updates the charts with new data.
+     */
+    function updateChart(data) {
+
+        // Check if the data is valid (not NaN)
+        if (isNaN(data.time) || isNaN(data.distance) || data.load.some(isNaN)) {
+            return;
+        }
+
+        // Add new data points
+        timeData.push(data.time);
+        distanceData.push(data.distance);
+        loadcellData[0].push(data.load[0]);
+        loadcellData[1].push(data.load[1]);
+        loadcellData[2].push(data.load[2]);
+
+        // Maintain max data points
+        // if (timeData.length > maxDataPoints) {
+        //     timeData.shift();
+        //     distanceData.shift();
+        //     loadcellData.forEach(dataset => dataset.shift());
+        // }
+
+
+        // Update charts
+        timeChart.setData([timeData, ...loadcellData]);
+        distanceChart.setData([distanceData, ...loadcellData]);
+    }
+
+    function refreshCharts() {
+        loadDataFromDBToChart(liveUpdate);
+        timeChart.redraw();
+        distanceChart.redraw();
+    }
+
+    async function clearCharts() {
+        // Reset axis X and Y
+        await timeChart.setScale("x", {min: 0, max: 1e-10});
+        await distanceChart.setScale("x", {min: 0, max: 1e-10});
+
+        timeData.length = 0;
+        distanceData.length = 0;
+        markersTime.length = 0;
+        markersDist.length = 0;
+        loadcellData.forEach(dataset => dataset.length = 0);
+        await timeChart.setData([[], [], [], []]);
+        await distanceChart.setData([[], [], [], []]);
+
+        await timeChart.setScale("y", {min: 0, max: 1e-10});
+        await distanceChart.setScale("y", {min: 0, max: 1e-10});
+
+
+        console.log("🧹 Distance chart cleared!");
+    }
+
+
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+
+    async function handleError(error, context = "Unknown") {
+
+
+        // 📌 Connection Errors Handling Identifiers
+        const connectionErrors = [
+            "NetworkError",
+            "The device was lost.",
+            "The port is no longer available."
+        ];
+
+        if (connectionErrors.some(msg => error.message.includes(msg)) || error.name === "NetworkError") {
+            console.warn("⚠️ Connection lost! Attempting to reconnect...");
+            isConnected = false;
+            await attemptReconnect();
+        } else {
+            console.error(`❌ ${context} error:`, error);
+            await logMessage(`❌ ${context} error: ${error}`);
+        }
+
+    }
+
+
+    function getPromisedValue(command, format, valueIndex, timeout = 5000) {
+        return new Promise((resolve) => {
+            setExpectedDataFormat(format, (match) => {
+                let value = match[valueIndex];
+                resolve(value); // Resolve with the value
+            });
+
+            sendCommand(command);
+
+            // ⏳ Timeout in case no data is received
+            if (timeout && timeout > 0) {
+                setTimeout(() => {
+                    if (waitingForDataFormat) {
+                        waitingForDataFormat = false;
+                        dataFormat = null;
+                        resolve(null); // Return null instead of rejecting
+                    }
+                }, timeout); // Timeout after specified time (e.g., 5 seconds)
+            }
+        });
+    }
+
+
+    function setExpectedDataFormat(regexPattern, callback) {
+        waitingForDataFormat = true;
+        dataFormat = new RegExp(regexPattern);
+        onDataMatch = callback;
+        console.log(`🔍 Waiting for data in format: ${regexPattern}`);
+    }
+
+
+    // === Firmware version ===
+    async function getFirmwareVersion(timeOut = 1000) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const version = `${await getPromisedValue("MISC GET LIBINFO", /Firmware:\s*([^,]+)/, 1, timeOut)}`;
+
+            if (!version) {
+                throw new Error("Position is not a number.");
+            }
+            console.log(`📦 Firmware version: ${version}`);
+            return version;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Firmware version not received.", error);
+        }
+    }
+
+    // === Measure Position ===
+    async function measurePosition(timeOut = 2000) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const position = parseFloat(await getPromisedValue("MC GET POS", /^Motor position:\s(-?\d+(\.\d+)?)\smm$/, 1, timeOut));
+
+            if (!position || isNaN(position)) {
+                throw new Error("Position is not a number.");
+            }
+            console.log(`📌 Current position: ${position} mm`);
+            return position;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Position not received.", error);
+        }
+    }
+
+    // === Get Calibration Status ===
+    let calibrationStatus = false;
+
+    async function getCalibrationStatus(timeOut = 2000) { // 30000
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            return await getPromisedValue("MC GET ISCALIBRATED", /^Motors calibrated:\s(Yes|No)$/, 1, timeOut) === "Yes";
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Calibration status not received.", error);
+        }
+    }
+
+
+    async function getSpeed(timeOut = 2000) { // 30000
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const speed = parseFloat(await getPromisedValue("MC GET SPEED", /Motor speed:\s(-?\d+(\.\d+)?)\smm\/s/, 1, timeOut));
+            if (!speed || isNaN(speed)) {
+                throw new Error("Speed is not a number.");
+            }
+            console.log(`🚅 Current speed: ${speed} mm/s`);
+            return speed;
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Speed not received.", error);
+        }
+    }
+
+
+    async function getAcceleration(timeOut = 2000) { // 30000
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            const acceleration = parseFloat(await getPromisedValue("MC GET ACCEl", /Motor acceleration:\s(-?\d+(\.\d+)?)\smm\/s\^2/, 1, timeOut));
+            if (!acceleration || isNaN(acceleration)) {
+                throw new Error("Acceleration is not a number.");
+            }
+            console.log(`🚝 Current acceleration: ${acceleration} mm/s²`);
+            return acceleration
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Acceleration not received.", error);
+        }
+    }
+
+    async function isMoving(timeOut = 100) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            return await getPromisedValue("MC GET RUNNING", /Motor running:\s[01]/, 1, timeOut) === "1";
+        } catch (error) {
+            console.error(error.message);
+            throw new Error("Moving status not received.", error);
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+    // === Experiment Data Saving ===
+    document.getElementById("startExperiment").addEventListener('click', startExperiment);
+
+    document.getElementById("stopMachine").addEventListener('click', stopMachine);
+
+    document.getElementById("inputLoadLimitDropPercent").addEventListener('change', (event) => {
+        loadLimitDropPercent = 1 - parseFloat(event.target.value) / 100;
+    });
+    document.getElementById("inputLoadLimitDropValue").addEventListener('change', (event) => {
+        loadLimitDropValue = parseFloat(event.target.value);
+    });
+
+    // #TODO do better disabeling of elements //////////////////////////////////////////////////
+    document.querySelectorAll('.prohibited').forEach(element => {
+        element.readOnly = true;
+        element.tabindex = -1;
+
+        element.addEventListener("selectstart", e => e.preventDefault());
+        element.addEventListener("mousedown", e => e.preventDefault());
+        element.addEventListener("keydown", e => e.preventDefault());
+    })
+
+    document.getElementById("inputTakePhotos").addEventListener('change', (event) => {
+        if (event.target.checked) {
+            // disable photo interval input
+            document.getElementById("inputPhotoInterval").classList.remove("disabled");
+            document.getElementById("inputPhotoInterval").readOnly = false;
+            document.getElementById("inputPhotoInterval").tabIndex = 1;
+
+            // disable photo interval input label
+            document.querySelector(`label[for='${"inputPhotoInterval"}']`).classList.remove("disabled");
+        } else {
+            // disable photo interval input
+            document.getElementById("inputPhotoInterval").classList.add("disabled");
+            document.getElementById("inputPhotoInterval").readOnly = true;
+            document.getElementById("inputPhotoInterval").tabIndex = -1;
+            // disable photo interval input label
+            document.querySelector(`label[for='${"inputPhotoInterval"}']`).classList.add("disabled");
+        }
+    });
+
+    function calculateStep(frequencyMicroseconds, updateIntervalMs = 200, minimum = 1) {
+        return Math.max(1, minimum, Math.ceil((updateIntervalMs * 1000) / frequencyMicroseconds));
+    }
+
+    function stopMachine() {
+        isExperimentRunning = false;
+        stopExperiment = true;
+        machineOccupation = false;
+        UI.progressBar.value = 0;
+        sendCommand("MC STOP");
+        sendCommand("DSLR STOP CYCLIC");
+        sendCommand("DATAC 0");
+        if (currentSpeed) sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+    }
+
+
+    let speedForward_mmps = 0;
+    let currentSpeed = null;
+    let currentAcceleration = null;
+    let takePhotos = false;
+    let dataInterval_us = null;
+
+    async function startExperiment() {
+
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+
+        if (isExperimentRunning || machineOccupation) {
+            console.warn("⚠️ Experiment is already running.");
+            await logMessage("⚠️ Experiment is already running.");
+            return;
+        }
+
+        try {
+            machineOccupation = true;
+
+            // === Retrieve Parameters from Inputs ===
+            const distance_mm = Math.max(parseFloat(document.getElementById("inputDistance").value), 0);
+            directionCorrection = document.getElementById("experimentDirectionDropdown").value.toLowerCase().includes("down") ? 1 : -1;
+            speedForward_mmps = Math.max(parseFloat(document.getElementById("inputSpeedForward").value), 0);
+            // const speedBackward_mmps = parseFloat(document.getElementById("inputSpeedBackward").value);
+            const photoInterval_ms = Math.max(parseFloat(document.getElementById("inputPhotoInterval").value) * 1000, 0);
+            dataInterval_us = Math.max(parseInt(document.getElementById("inputDataInterval").value), 1);
+            const loadcellCapacity = Math.max(parseInt(document.getElementById("inputLoadcellCapacity").value), 0);
+            const loadcellOutput = Math.max(parseFloat(document.getElementById("inputLoadcellOutput").value), 0);
+            takePhotos = document.getElementById("inputTakePhotos").checked;
+            loadLimitDropPercent = 1 - Math.max(parseFloat(document.getElementById("inputLoadLimitDropPercent").value), 0) / 100;
+            loadLimitDropValue = Math.max(parseFloat(document.getElementById("inputLoadLimitDropValue").value), 0);
+
+            // === System Limits ===
+            const minDistance = 1e-4;
+            const minFSpeed = 1e-4;
+            const minPhotoInt = 1e-6;
+            const minLoadCap = 1e-4;
+            const minLoadOut = 1e-4;
+
+
+            if (takePhotos) {
+                if (photoInterval_ms <= minPhotoInt) {
+                    console.warn(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    await logMessage(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    machineOccupation = false;
+                    alert(`⚠️ Photo interval must be greater than ${minPhotoInt} mm.`);
+                    return;
+                }
+
+                if (photoInterval_ms * 1000 < dataInterval_us) {
+                    console.warn("⚠️ Photo interval must be bigger than data interval.");
+                    await logMessage("⚠️ Photo interval must be bigger than data interval.");
+                    await logMessage(`❗ Changing data interval from ${dataInterval_us} to ${photoInterval_ms * 1000} µs ❗`);
+                    dataInterval_us = photoInterval_ms * 1000;
+                    document.getElementById("inputDataInterval").value = dataInterval_us;
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+
+            if (distance_mm <= minDistance) {
+                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                machineOccupation = false;
+                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                return;
+            } else if (speedForward_mmps <= minFSpeed) {
+                console.warn(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                await logMessage(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                machineOccupation = false;
+                alert(`⚠️ Distance must be greater than ${minDistance} mm.`);
+                return;
+            } else if (loadcellCapacity <= minLoadCap) {
+                console.warn(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                await logMessage(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                machineOccupation = false;
+                alert(`⚠️ Load cell capacity must be greater than ${minLoadCap} N.`);
+                return;
+            } else if (loadcellOutput <= minLoadOut) {
+                console.warn(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                await logMessage(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                machineOccupation = false;
+                alert(`⚠️ Load cell output must be greater than ${minLoadOut} mV/V.`);
+                return;
+            }
+
+
+            dataChartInterval = calculateStep(dataInterval_us, 200, 1);
+            minimumZeroSpeedCount = calculateStep(dataInterval_us, 50, 2);
+            aggregatedDataBetweenSteps = [];
+            dataCount = 0;
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+
+            calibrationStatus = await getCalibrationStatus(2000);
+            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            if (!calibrationStatus) {
+                if (confirm("⚠️ Motor is not calibrated. Calibrate the motor?\n\nOK = Calibrate\tCancel = Not Calibrate")) {
+                    let confirmCalibrationCount = 0;
+
+                    await logMessage("⚠️ Motor is not calibrated. Calibrating the motor...");
+                    console.warn("⚠️ Motor is not calibrated. Calibrating the motor...");
+                    await sendCommand('MC CALIBRATE');
+                    await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+
+                    while (!calibrationStatus) {
+                        await new Promise(resolve => setTimeout(resolve, 2500)); // Stop for 2000 ms
+                        calibrationStatus = await getCalibrationStatus(500);
+
+                        // log time
+                        // console.log("🕒 Time: ", new Date().toLocaleTimeString());
+
+                        if (confirmCalibrationCount > 50) {
+                            await logMessage("❌ Calibration timeout reached. Please check the motor.\n\tMotors are not calibrated.");
+                            console.error("❌ Calibration timeout. Please check the motor.\n\tMotors are not calibrated.");
+                            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+                        } else {
+                            confirmCalibrationCount++;
+                        }
+                    }
+
+                    console.log("📐 Motors are calibrated.");
+                    await logMessage("📐 Motors are calibrated.\n\t🔃 Please restart the experiment.");
+                    alert("📐 Motors are calibrated.\n\t🔃 Please restart the experiment.");
+                } else {
+                    await logMessage("❌ Calibration is required to start the experiment.");
+                    console.error("❌ Calibration is required to start the experiment.");
+                    alert("❌ Calibration is required to start the experiment.");
+                }
+
+                machineOccupation = false;
+                isExperimentRunning = false;
+                stopExperiment = true;
+                return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+            await clearDBLog();
+            await clearCharts();
+
+            if (!liveUpdate) await chartUpdate();
+
+            await new Promise(resolve => setTimeout(resolve, 10)); // Stop for 1 ms
+
+
+            UI.loadingLogContainer.style.background = "black";
+
+
+            // await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
+            // console.log("🚀 Starting experiment...");
+            //
+            // isExperimentRunning = true;
+            // stopExperiment = false;
+            //
+            // // === Progress Bar Setup ===
+            // UI.progressBar.value = 0;
+            // experimentEndPosition = distance_mm; // The total distance to be moved
+            // startTime = null;
+            // maxLoad = [null, null, null];
+            // // firstPhoto = 0;
+            // measureForces = [[], [], []];
+            // meanForces = [0, 0, 0];
+            //
+            // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+            //
+            //
+            // // === Load Cell Configuration ===
+            // for (let i = 0; i < 3; i++) {
+            //     await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
+            //     await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //     await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
+            //     await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // }
+            //
+            // // === Prepare Motor ===
+            // await sendCommand('MC STOP');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            //
+            // // === Prepare Data Collection ===
+            // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+            //
+            // startPosition = await measurePosition();
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            //
+            // await sendCommand('DSLR RESET COUNTERS');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // await sendCommand('DSLR SHOOT');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // await sendCommand('DATA SET INTERVAL 2000');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // await sendCommand('DATAC 1');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // takeMeasurements = true;
+            //
+            // await new Promise(resolve => setTimeout(resolve, 5000)); // Stop for 1 s
+            //
+            // takeMeasurements = false;
+            // await sendCommand('DATAC 0');
+            //
+            // meanForces = await measureForces.map(force => Math.round(force.reduce((a, b) => a + b, 0) / force.length * 100000) / 100000);
+            // measureForces = [[], [], []];
+            // await addDataToLog({
+            //     time: 0,
+            //     distance: 0,
+            //     speed: 0,
+            //     load: [0, 0, 0],
+            //     photoIndex: 0 // Store DSLR photo order
+            // });
+            // await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+            //
+            // // === Enable Data Streaming and DSLR Shooting ===
+            // await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`);
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // await sendCommand('DATAC 1');
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            // if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
+            // await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+            //
+            // // === Move Forward ===
+            // console.log("➡️ Moving forward...");
+            // await sendCommand(`MC MOVEBY USER ${distance_mm}`);
+
+
+            await logMessage(`\n🎯 Starting experiment ${takePhotos ? "with photos 📸" : ""}`);
+            console.log("🚀 Starting experiment...");
+
+
+            // === Progress Bar Setup ===
+            UI.progressBar.value = 0;
+            experimentEndPosition = distance_mm; // The total distance to be moved
+            startTime = null;
+            maxLoad = [null, null, null];
+            // firstPhoto = 0;
+            measureForces = [[], [], []];
+            meanForces = [0, 0, 0];
+            markersTime.length = 0;
+            markersDist.length = 0;
+
+
+            currentSpeed = await getSpeed();
+            currentAcceleration = await getAcceleration();
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+
+            // === Load Cell Configuration ===
+            for (let i = 0; i < 3; i++) {
+                await sendCommand(`LC SET CAP ${i} ${loadcellCapacity}`);
+                await sendCommand(`LC SET RO ${i} ${loadcellOutput}`);
+            }
+
+            // === Prepare Motor ===
+            await sendCommand("MC STOP");
+            await sendCommand(`MC SET ACCELMM ${200}`);
+            await sendCommand(`MC SET SPEEDMM ${speedForward_mmps}`);
+
+
+            // === Prepare Data Collection ===
+            startPosition = roundDecimal(parseFloat(await measurePosition()), 4);
+            document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
+            document.getElementById("returnPositionExperimentBtn").readOnly = false;
+            document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
+            document.getElementById("returnPositionExperimentBtn").textContent = `↩️ Return to original position: ${startPosition} mm`;
+            await new Promise(resolve => setTimeout(resolve, 1)); // Stop for 1 ms
+
+
+            if (takePhotos) {
+                await sendCommand('DSLR RESET COUNTERS', 2);
+                await sendCommand('DSLR SHOOT');
+            }
+
+            await addDataToLog({
+                experimentDate: new Date().toLocaleString(),
+                loadDirection: directionCorrection,
+                loadDistance: distance_mm,
+                loadSpeed: speedForward_mmps,
+                loadcellCapacity: loadcellCapacity,
+                loadcellType: NaN,
+            });
+
+
+            pendingDSLR = null;
+            parsedData = {
+                time: 0,
+                distance: 0,
+                speed: 0,
+                load: [0, 0, 0],
+                photoIndex: takePhotos ? 0 : NaN // Store DSLR photo order
+            };
+            await addDataToLog(parsedData);
+            if (takePhotos) {
+                markersTime.push(0);
+                markersDist.push(0);
+            }
+            await updateChart(parsedData);
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 1 ms
+
+
+            await sendCommand('DATA SET INTERVAL 2000');
+            takeMeasurements = true;
+
+
+            await sendCommand("DATAC 1");
+
+            // Take measurements for one second
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Stop for 1 s
+
+
+            takeMeasurements = false;
+            await sendCommand("DATAC 0");
+            meanForces = measureForces.map(force => roundDecimal(force.reduce((a, b) => a + b, 0) / force.length, 2));
+            measureForces = [[], [], []];
+
+            await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+
+            startTime = null;
+            isExperimentRunning = true;
+            stopExperiment = false;
+            isDelayed = false;
+
+
+            // === Enable Data Streaming and DSLR Shooting ===
+            await sendCommand(`DATA SET INTERVAL ${dataInterval_us}`);
+            await sendCommand("DATAC 1");
+            if (takePhotos) await sendCommand(`DSLR START CYCLIC ${photoInterval_ms}`);
+
+            // === Move Forward ===
+            console.log("➡️ Moving forward...");
+            await sendCommand(`MC MOVEBY USER ${distance_mm * directionCorrection}`);
+
+
+            // === Ensure Serial Reading is Running ===
+            if (!isReadingSerial) {
+                isReadingSerial = true;
+                readSerial();
+            }
+
+            // === Data Collection Loop ===
+            while (isExperimentRunning) {
+                await new Promise(resolve => setTimeout(resolve, 200)); // Prevents excessive CPU usage
+            }
+
+
+            isExperimentRunning = false;
+            stopExperiment = true;
+
+            await sendCommand('MC STOP');
+
+            // === Stop Data Streaming and DSLR Shooting ===
+            await sendCommand('DSLR STOP CYCLIC');
+            await sendCommand('DATAC 0');
+
+
+            await sendCommand(`MC SET SPEEDMM ${currentSpeed}`);
+            await sendCommand(`MC SET ACCELMM ${currentAcceleration}`);
+
+            // === Move Back ===
+            if (UI.autoReturnPosition.checked) {
+                await moveToOriginalPosition(currentSpeed, currentAcceleration);
+            }
+
+
+            machineOccupation = false;
+
+
+            // === Save Data ===
+            console.log("💾 Saving data...");
+            await saveCSV();
+
+
+            UI.loadingLogContainer.style.background = "#323232";
+            console.log("✅ Experiment completed.");
+            await showNotification("Experiment Finished", "The experiment has been completed successfully.");
+
+        } catch (error) {
+            await handleError(error, "Experiment");
+            alert("❌ Experiment failed. Please check the logs and machine.");
+
+        } finally {
+            machineOccupation = false;
+            isExperimentRunning = false;
+            stopExperiment = true;
+        }
+    }
+
+
+    async function moveToOriginalPosition(speed, acceleration) {
+        calibrationStatus = false;
+        calibrationStatus = await getCalibrationStatus(1000);
+        await new Promise(resolve => setTimeout(resolve, 50)); // Stop for 1 ms
+
+        if (!calibrationStatus) {
+            console.warn("⚠️ Motor is not calibrated. Cannot return to the original position.");
+            await logMessage("⚠️ Motor is not calibrated. Cannot return to the original position.");
+            return;
+        }
+
+        const endPosition = roundDecimal(parseFloat(await measurePosition()), 4);
+
+        if (!endPosition || !startPosition || startPosition === 0) {
+            document.getElementById("returnPositionExperimentBtn").classList.add("disabled");
+            document.getElementById("returnPositionExperimentBtn").readOnly = true;
+            document.getElementById("returnPositionExperimentBtn").tabIndex = -1;
+            return;
+        } else {
+            document.getElementById("returnPositionExperimentBtn").classList.remove("disabled");
+            document.getElementById("returnPositionExperimentBtn").readOnly = false;
+            document.getElementById("returnPositionExperimentBtn").tabIndex = 1;
+        }
+
+        if (Math.abs(startPosition - endPosition) < 1e-2) {
+            console.log("🚩 Already at the original position.");
+            return;
+        }
+
+        if (!speed) speed = await getSpeed();
+        if (!acceleration) acceleration = await getAcceleration();
+        await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+
+        console.log("⬅️ Moving backward...");
+        const movingSpeed = 25;
+
+        await sendCommand(`MC SET ACCELMM ${200}`);
+        await sendCommand(`MC SET SPEEDMM ${movingSpeed}`);
+
+        await new Promise(resolve => setTimeout(resolve, 5)); // Stop for 5 ms
+        await sendCommand(`MC MOVEBY USER ${startPosition - endPosition}`);
+
+
+        await new Promise(resolve => setTimeout(resolve, (((Math.abs(startPosition - endPosition) / movingSpeed) * 1000) + 200))); // Wait
+
+        // TODO: Check if this is working correctly (not needed here?)
+        // while (!await isMoving()) {
+        //     await new Promise(resolve => setTimeout(resolve, 200)); // Prevents excessive CPU usage
+        // }
+
+        console.log("🚩 Returning to original position completed.");
+        await sendCommand(`MC SET SPEEDMM ${speed}`, 2);
+        await sendCommand(`MC SET ACCELMM ${acceleration}`, 2);
+    }
+
+
+    // Function Clear `localStorage`
+    function clearLocalStorage() {
+        setSerialSignals(serialPort, true, true);
+
+
+        disconnectSerial();
+
+        new Promise(resolve => setTimeout(resolve, 200)); // Wait (200 ms)
+
+        localStorage.removeItem(storageKey); // Remove the saved data
+        console.log("LocalStorage cleared.");
+
+        window.location.reload();
+
+
+    }
+
+
+    let notificationsAllowed = false;
+
+    function showNotification(title = "Notification", message = "This is a notification.") {
+        if (!("Notification" in window)) {
+            alert("Your browser does not support notifications.");
+            return;
+        }
+
+        if (notificationsAllowed) {
+            // Show notification immediately
+            new Notification(title, {body: message});
+        } else {
+            // Request permission if not yet granted
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    notificationsAllowed = true;
+                    new Notification(title, {body: message});
+                } else {
+                    alert("Notifications were not allowed.");
+                }
+            });
+        }
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                notificationsAllowed = true;
+            }
+        });
+
+
+        // Function to save ONE input to localStorage
+        function saveInputToLocalStorage(event) {
+            const input = event.target; // Get the input element
+            let formData = JSON.parse(localStorage.getItem(storageKey)) || {}; // Load the saved data
+
+            // Save the input value to the formData object or select the checked state for checkboxes
+            formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
+
+            localStorage.setItem(storageKey, JSON.stringify(formData)); // Save the updated data
+        }
+
+
+        // Function to save ALL inputs to localStorage
+        function saveAllInputsToLocalStorage() {
+            let formData = {};
+
+            optionsElements.forEach(input => {
+                formData[input.id] = (input.type === "checkbox") ? input.checked : input.value;
+            });
+
+            localStorage.setItem(storageKey, JSON.stringify(formData));
+            console.log("All data saved to localStorage.");
+        }
+
+
+        // Function to load inputs from localStorage
+        function loadInputsFromLocalStorage() {
+            const formData = JSON.parse(localStorage.getItem(storageKey)) || {}; // Load the saved data
+            if (!formData) saveAllInputsToLocalStorage();
+            optionsElements.forEach(input => {
+                if (formData.hasOwnProperty(input.id)) {
+                    if (input.type === "checkbox") {
+                        input.checked = formData[input.id]; // Restore the checkbox state
+                    } else {
+                        input.value = formData[input.id]; // Restore the input value
+                    }
+
+                    // Trigger change event to update the UI
+                    input.dispatchEvent(new Event("change", {bubbles: true}));
+                    input.dispatchEvent(new Event("input", {bubbles: true}));
+                    input.dispatchEvent(new Event("blur", {bubbles: true}));
+                }
+            });
+        }
+
+
+        const optionsElements = document.querySelectorAll("input, select");
+
+        // Listen for changes in all inputs
+        optionsElements.forEach(input => {
+            input.addEventListener("change", saveInputToLocalStorage);
+        });
+
+        // Load saved data when the page loads
+        loadInputsFromLocalStorage();
+        UI.chartsContainer.style.height = getChartHeightIncludingLegend() + "px";
+    });
+
+
+    async function convertCSVtoXLSX_MATTES() {
+        const input = document.createElement('input');
+
+        const mattesMaxLines = 20_000; // Maximum number of lines in one file
+
+        input.type = 'file';
+        input.accept = '.csv';
+        input.multiple = true; // Allow multiple file selection
+        input.onchange = async function (event) {
+            let files = Array.from(event.target.files); // Convert FileList to Array
+            if (!files.length) {
+                alert("❌ No files selected.");
+                return;
+            } else {
+                files.sort((a, b) => {
+                    let nameA = a.name.toLowerCase();
+                    let nameB = b.name.toLowerCase();
+
+                    // Regular expression to extract the base name and optional index
+                    let regex = /(.*?)(?:\s\((\d+)\))?\.csv$/;
+
+                    let matchA = nameA.match(regex);
+                    let matchB = nameB.match(regex);
+
+                    if (!matchA || !matchB) return 0; // Skip if no match
+
+                    let baseA = matchA[1]; // Base name
+                    let indexA = matchA[2] ? parseInt(matchA[2]) : -1; // Index (if present) or -1
+
+                    let baseB = matchB[1];
+                    let indexB = matchB[2] ? parseInt(matchB[2]) : -1;
+
+                    // Sort by base name first
+                    if (baseA !== baseB) return baseA.localeCompare(baseB);
+
+                    // Sort by index if base names are the same
+                    if (indexA === -1) return -1;
+                    if (indexB === -1) return 1;
+
+                    // Sort by index
+                    return indexA - indexB;
+                });
+
+                console.log("📂 Sorted files:", files.map(f => f.name)); // Log sorted file names
+            }
+
+            let wb = XLSX.utils.book_new(); // Create a new Excel workbook
+            let sheetName = ("P-" + files[0].name.replace(/\.csv$/, "").replace(/\s*\(\d+\)\s*$/, "").trim()).slice(0, 31); // Sheet name
+            let formattedData = [];
+            let columnOffset = 0; // Column shift for each section
+            let fileIndexData = [["File Order", "File Name"]]; // Second sheet data
+
+            let fileCount = 0;
+            for (let file of files) {
+                fileCount++;
+                const text = await file.text(); // Read file content
+                const isMoira = text.startsWith("Date:"); // Check if the file is from MOIRA
+                const isMatlab = !isMoira && text.startsWith("Timestamp_us"); // Check if the file is from MATLAB
+
+                if (!isMoira && !isMatlab) {
+                    logMessage(`❓ Unknown file format: ${file.name}`);
+                    console.warn(`❓ Unknown file format: ${file.name}`);
+                }
+
+                // const delimiter = isMatlab ? "," : ";"; // Delimiter for CSV file "\t" = tab, "," = comma, ";" = semicolon
+
+                const delimiters = [";", ",", "\t"];
+
+                let rows = text.split("\n"); // Split text into lines
+
+
+                if (rows.length <= 3) {  // Skip if the file has no data
+                    logMessage(`❌ Not enough data in file: ${file.name}`);
+                    console.warn(`❌ Not enough data in file: ${file.name}`);
+                    fileCount--;
+                    continue;
+                }
+
+                rows.shift(); // Skip the first row (Header or Date and Info)
+                if (isMoira) {
+                    rows.shift(); // Skip the second row (Description)
+                    rows.shift(); // Skip the third row (Header)
+                } // Skip the second row if not from MATLAB => from MOIRA
+
+
+                const testLine = rows[Math.ceil(rows.length / 2)]; // data line of CSV file
+                let delimiter = null; // Delimiter of data in CSV file
+
+                for (const separator of delimiters) {
+                    const parts = testLine.split(separator);
+                    if (parts.length >= 7) {
+                        delimiter = separator;
+                        break; // Found the delimiter
+                    }
+                }
+                if (!delimiter) {
+                    logMessage(`❌ Delimiter not found in file: ${file.name}`);
+                    console.warn(`❌ Delimiter not found in file: ${file.name}`);
+                    fileCount--;
+                    continue;
+                }
+
+                rows = rows.map(row => row.split(delimiter)); // Parse CSV lines into an array
+
+                let maxTries = 10;
+                let validRowFound = false;
+
+                while (maxTries-- > 0 && rows.length > 0) {
+                    const firstRow = rows[0];
+                    const values = firstRow.slice(0, 6).map(val => parseFloat(val));
+
+                    if (!firstRow || values.length < 6) {
+                        rows.shift();
+                        continue;
+                    }
+
+                    const allValid = values.every(val => !isNaN(val));
+
+                    if (allValid) {
+                        validRowFound = true;
+                        break; // Found a valid row
+                    } else {
+                        rows.shift(); // Remove the first row
+                    }
+                }
+
+                if (!validRowFound) {
+                    logMessage(`❌ No valid data found in file: ${file.name}`);
+                    console.warn("❌ No valid data found in file:", file.name);
+                    fileCount--;
+                    continue;
+                }
+
+
+                let shift = 0; // Displacement (mm)
+                let force = 0; // Force (N)
+                let time = 0; // Time (s)
+                let deformation = 0; // Deformation (mm)
+
+
+                const firstTime = parseFloat(rows[0][0]) || 0; // First time value
+                const firstShift = parseFloat(rows[0][1]) || 0; // First shift value
+                const firstForce = (parseFloat(rows[0][3]) || 0) + (parseFloat(rows[0][4]) || 0) + (parseFloat(rows[0][5]) || 0); // First force value
+
+
+                const originalLength = rows.length; // Original number of rows
+
+                if (isMoira) {
+                    rows = rows.filter(row => row[6] === ""); // Filter out rows of taken photos
+                }
+
+                const dataSize = rows.length; // Number of rows in one file
+
+
+                if (dataSize === 0) {
+                    logMessage(`❌ No data found in file: ${file.name}`);
+                    console.warn("❌ No data found in file:", file.name);
+                    fileCount--;
+                    continue;
+                }
+
+
+                console.log(file.name, ": 📊 Rows in file:", originalLength, "📦 Rows to process:", dataSize);
+
+
+                if (dataSize > mattesMaxLines) {
+                    // Data (rows) reduction
+                    const step = Math.ceil(dataSize / mattesMaxLines);
+                    rows = rows.filter((_, i) => i % step === 0);
+
+                    logMessage(`❗ Too many lines in file: ${file.name} (${dataSize} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataSize} -> ${rows.length} lines\n\tData step: ${step}`);
+                    console.log(`❗ Too many lines in file: ${file.name} (${dataSize} > ${mattesMaxLines})\n\tData (rows) reduction: ${dataSize} -> ${rows.length} lines\n\tData step: ${step}`);
+                }
+
+
+                // let firstShiftAbove1 = null; // Track first shift where force > 1 N (for deformation calculation)
+
+                fileIndexData.push([fileCount, file.name.replace(".csv", "")]);
+
+                // Define headers for this section
+                let sectionHeader1 = [], sectionHeader2 = [], sectionHeader3 = [], sectionHeader4 = [];
+                sectionHeader1[columnOffset] = fileCount; // Section number
+                sectionHeader2[columnOffset] = "Measured values from testing machine";
+                sectionHeader3[columnOffset] = "Time";
+                sectionHeader3[columnOffset + 1] = "Total distance covered by loading pin";
+                sectionHeader3[columnOffset + 2] = "Force";
+                sectionHeader3[columnOffset + 3] = "Deformation from F > 1N";
+                sectionHeader4[columnOffset] = "s";
+                sectionHeader4[columnOffset + 1] = "mm";
+                sectionHeader4[columnOffset + 2] = "N";
+                sectionHeader4[columnOffset + 3] = "mm";
+
+                // Ensure headers are fully added for every section
+                if (formattedData.length === 0) {
+                    formattedData.push(sectionHeader1, sectionHeader2, sectionHeader3, sectionHeader4);
+                } else {
+                    formattedData[0][columnOffset] = sectionHeader1[columnOffset];
+                    formattedData[1][columnOffset] = sectionHeader2[columnOffset];
+                    formattedData[2][columnOffset] = sectionHeader3[columnOffset];
+                    formattedData[3][columnOffset] = sectionHeader4[columnOffset];
+
+                    // Ensure other section headers also extend fully in the new columns
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 1; j <= 3; j++) {
+                            formattedData[i][columnOffset + j] = [sectionHeader1, sectionHeader2, sectionHeader3, sectionHeader4][i][columnOffset + j];
+                        }
+                    }
+                }
+
+                // Add data to the section
+                for (let row = 0; row < dataSize; row++) {
+                    let index = row;
+                    let dataRow = formattedData[row + 3] || [];
+
+                    if (index < rows.length) {
+                        let entry = rows[index];
+                        if (entry.length >= 6) {
+                            if (!entry[0]) continue; // Skip empty rows
+
+
+                            time = ((parseFloat(entry[0]) - firstTime) * (isMatlab ? 1e-6 : 1)) || 0; // Time (s)
+
+
+                            force = (parseFloat(entry[3]) || 0) + (parseFloat(entry[4]) || 0) + (parseFloat(entry[5]) || 0) - firstForce; // Force sum
+
+                            // if (firstShiftAbove1 === null && force >= 1) firstShiftAbove1 = shift; // Save first shift above 1 N
+
+                            shift = parseFloat(entry[1]) - firstShift || 0; // Displacement (mm)
+
+
+                            // deformation = (firstShiftAbove1 === null) ? 0 : (shift - firstShiftAbove1); // Calculate deformation
+                            deformation = shift; // Calculate deformation
+
+                            dataRow[columnOffset] = roundDecimal(time, 6);
+                            dataRow[columnOffset + 1] = roundDecimal(shift, 4);
+                            dataRow[columnOffset + 2] = roundDecimal(force, 2);
+                            dataRow[columnOffset + 3] = roundDecimal(deformation, 4);
+                        }
+                    }
+                    formattedData[row + 3] = dataRow;
+                }
+
+                columnOffset += 5; // Shift by 4 columns + 1 empty column
+            }
+
+            // Create the first sheet with data
+            let ws = XLSX.utils.aoa_to_sheet(formattedData); // Convert data to Excel sheet
+            XLSX.utils.book_append_sheet(wb, ws, sheetName); // Append a sheet to workbook
+
+            // Create the second sheet with file order index
+            let wsIndex = XLSX.utils.aoa_to_sheet(fileIndexData);  // Convert data to Excel sheet
+            XLSX.utils.book_append_sheet(wb, wsIndex, "File Order"); // Append a sheet to workbook
+
+            // Save the file
+            XLSX.writeFile(wb, "merged_data.xlsx");
+            console.log("✅ Excel file created.");
+        };
+
+        input.click(); // Open file selection dialog
+    }
+
+
+    // TODO : get data from ESP
+    // async function handleFirmwareBlock(lines) {
+    //     console.log("📦 Firmware block received:");
+    //     for (const line of lines) {
+    //         console.log("   ➤", line);
+    //         await logMessage("🔧 " + line);
+    //     }
+    //
+    //     // můžeš zde třeba extrahovat verze, validovat atd.
+    // }
+
+
+    //TODO : random generator
+    //         if (Math.random() < 0.01) {
+    //             timeVal = timeVal * 100;
+    //             console.log("🎲 Náhodné číslo:", timeVal);
+    //         } else {
+    //             console.log("🚫 Žádné číslo tentokrát.");
+    //         }
+
+
+</script>
+
+</body>
+</html>

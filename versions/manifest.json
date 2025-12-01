@@ -1,0 +1,29 @@
+{
+  "name": "MOIRA UPDATER – THYMOS",
+  "version": "1.0.0",
+  "homepage": "https://www.thymos.cz",
+  "set": [
+    {
+      "label": "Latest",
+      "version": "0.1.0"
+    }
+  ],
+
+  "builds": [
+    {
+      "name": "Alpha",
+      "version": "0.0.0",
+        "path": "./versions/0/0_0_0/"
+    },
+    {
+      "name": "Beta",
+      "version": "0.0.1",
+      "path": "./versions/0/0_0_1/"
+    },
+    {
+      "name": "Gamma",
+      "version": "0.1.0",
+      "path": "./versions/0/0_1_0/"
+    }
+  ]
+}
