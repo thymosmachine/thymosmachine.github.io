@@ -17,6 +17,11 @@
     },
     {
       "name": "Beta",
+      "version": "0.0.1",
+      "path": "./versions/0/0_0_1/"
+    },
+    {
+      "name": "Gamma",
       "version": "0.1.0",
       "path": "./versions/0/0_1_0/"
     }
