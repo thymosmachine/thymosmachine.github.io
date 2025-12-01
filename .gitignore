@@ -18,7 +18,13 @@
 *.iso
 
 
+# Ignoruj všechny PNG soubory
 *.png
+# Ale neignoruj PNG soubory ve složce images/favicon
+!images/favicon/
+!images/favicon/*.png
+# Rekurzivní ignorování PNG souborů ve složce images/favicon
+!images/favicon/**/*.png
 
 
 # Ignorovat moduly NODE.JS
