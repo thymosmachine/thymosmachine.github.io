@@ -2,9 +2,17 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Dynamically set BASE href -->
+    <base id="dynamicBase" href="../../../">
 
-    <base href="../../../"/>
+    <script>
+        // If not loaded by fetch, set base href to current directory
+        if (typeof window._loadedByFetch === "boolean" && window._loadedByFetch === true) {
+            document.getElementById("dynamicBase").setAttribute("href", "./");
+        }
+    </script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
     <title>Moira Control - Thymos</title>
@@ -17,7 +25,7 @@
     </script>
 
 
-        <script src="packages/external/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+    <script src="packages/external/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
     <link rel="stylesheet" href="packages/external/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
     <script src="packages/external/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
 

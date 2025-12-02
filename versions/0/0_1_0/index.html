@@ -2,12 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Dynamically set BASE href -->
+    <base id="dynamicBase" href="../../../">
+
+    <script>
+        // If not loaded by fetch, set base href to current directory
+        if (typeof window._loadedByFetch === "boolean" && window._loadedByFetch === true) {
+            document.getElementById("dynamicBase").setAttribute("href", "./");
+        }
+    </script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
     <title>Moira controller</title>
 
     <!--<meta name="site-root" content="/project/">-->
     <!--<html data-root="/project/">-->
     <!--<base href="/project/">-->
-    <base href="../../../"/>
+
 
     <!--
           __  __       _                          __ _
@@ -14372,9 +14385,9 @@
         }
 
         // Set current selection
-        const currentURL = window.location.href;
+        const currentURL = window._loadedPath || window.location.href;
         let selected = false;
-        Array.from(versionSelect.options).forEach(option => {
+        Array.from(versionSelect?.options).forEach(option => {
             const optionVersion = option.dataset?.versionPath || null;
             if (selected === false && optionVersion && currentURL.includes(optionVersion.split('/versions/')[1])) {
                 option.selected = true;
@@ -14450,8 +14463,9 @@
             versionURL = `./versions/${versionURL}`;
         }
 
+        const currentURL = window._loadedPath || window.location.href;
 
-        if (window.location.href.includes(versionURL.split('/versions/')[1])) {
+        if (currentURL.includes(versionURL.split('/versions/')[1])) {
             console.log('✅ Already on the latest version:', version);
             return;
         }
@@ -14486,7 +14500,44 @@
 
 
         console.log('➡️ Redirecting to version:', version, versionURL);
-        window.location.href = versionURL;
+
+        const style = 'redirect'; // 'redirect' | 'replace' | 'fetch'
+
+        switch (style) {
+            case 'redirect':
+                window._loadedByFetch = false;
+
+                window.location.href = versionURL;
+                break;
+            case 'replace':
+                window._loadedByFetch = false;
+
+                window.location.replace(versionURL);
+                break;
+            case 'fetch':
+            default:
+                window._loadedByFetch = true;
+
+                fetch(versionURL)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        // complete replacement of the current document
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Failed to load the latest version. Redirecting instead.');
+                        window.location.href = versionURL;
+                    });
+                break;
+        }
     }
 
 

@@ -7,6 +7,9 @@
     <base href="./"/>
 
     <script>
+        const style = 'fetch'; // 'redirect' | 'replace' | 'fetch'
+
+
         fetch("./files/shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
@@ -154,8 +157,43 @@
 
 
         console.log('➡️ Redirecting to version:', version, versionURL);
-        window.location.href = versionURL;
 
+        switch (style) {
+            case 'redirect':
+                window._loadedByFetch = false;
+
+                window.location.href = versionURL;
+                break;
+            case 'replace':
+                window._loadedByFetch = false;
+
+                window.location.replace(versionURL);
+                break;
+            case 'fetch':
+            default:
+                window._loadedByFetch = true;
+                window._loadedPath = versionURL;
+
+                fetch(versionURL)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        // complete replacement of the current document
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Failed to load the latest version. Redirecting instead.');
+                        window.location.href = versionURL;
+                    });
+                break;
+        }
     }
 
 
