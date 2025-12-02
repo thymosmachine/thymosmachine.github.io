@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <base href="./"/>
+
     <title>Klóthó - Remote Control</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <script>
         fetch("./files/shared-header.html")
@@ -11,8 +14,8 @@
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
 
-    <link rel="stylesheet" href="packages/external/uplot/uPlot.min.css">
-    <script defer src="packages/external/uplot/uPlot.iife.min.js"></script>
+    <link rel="stylesheet" href="./packages/external/uplot/uPlot.min.css">
+    <script defer src="./packages/external/uplot/uPlot.iife.min.js"></script>
     <script defer src="./packages/external/p2p/peerjs.min.js"></script>
     <style>
         :root {
@@ -251,6 +254,11 @@
         .btn-secondary {
             background: var(--gray-200);
             color: var(--gray-700);
+        }
+
+        .btn-third {
+            background: var(--secondary);
+            color: white;
         }
 
         .btn-large {
@@ -531,6 +539,18 @@
                     Calibrate
                 </button>
             </div>
+            <div class="button-grid-3">
+                <span></span>
+                <button class="btn btn-third" id="measureBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M3 17h2v-7H3v7zm4 0h2v-4H7v4zm4 0h2v-10h-2v10zm4 0h2v-2h-2v2zm4 0h2v-5h-2v5z"/>
+                        <rect fill="none" stroke="currentColor" stroke-width="3" x="3.5" y="3.5" width="17" height="17" rx="4" ry="4"/>
+                    </svg>
+                    Measure Data
+                </button>
+                <span></span>
+            </div>
+
         </div>
 
         <div class="card">
@@ -881,13 +901,11 @@
     }
 
     function checkPongInterval() {
-        if (pongTime) {
-            const time = Date.now();
-            const latency = time - pongTime;
-            if (latency > pingIntervalTime) {
-                showError('Connection lost (ping timeout), disconnecting...');
-                disconnectFromHost();
-            }
+        const time = Date.now();
+        const latency = time - pongTime;
+        if (!(pongTime && latency <= pingIntervalTime)) {
+            showError('Connection lost (ping timeout), disconnecting...');
+            disconnectFromHost();
         }
     }
 
@@ -989,7 +1007,7 @@
                         }
                         break;
                     case 'pong':
-                        // Respond to ping
+                        // Respond to pong
                         pongTime = Date.now();
                         break;
                     case 'info':
@@ -1255,6 +1273,7 @@
     setupSimpleButton('stopMachine', 'experiment', {action: 'stop'});
     setupSimpleButton('returnPositionExperimentBtn', 'move', {data: 'return'});
     setupSimpleButton('calibrateBtn', 'calibrate');
+    setupSimpleButton('measureBtn', 'chart', {action: 'toggle'});
 
     // Sliders
     const speedSlider = $ID('movementSpeed');
