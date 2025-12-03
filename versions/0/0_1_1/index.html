@@ -59,10 +59,10 @@
         console.info(`%c\n\nMoira Controller - Thymos\n`, "color: #007bff; font-size: 20px; font-weight: bold;");
         console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
-+
-        fetch("./files/shared-header.html")
-            .then(res => res.text())
-            .then(html => document.head.insertAdjacentHTML("beforeend", html));
+        +
+            fetch("./files/shared-header.html")
+                .then(res => res.text())
+                .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
 
     <!-- External libraries: -->
@@ -8233,7 +8233,7 @@
 
     function setSpeedUI(speed) {
         UI.speedSlider.value = speed;
-        UI.speedLabel.value = `${speed.toFixed(2)}`;
+        UI.speedLabel.value = `${speed.toFixed(precisionSpeedSys)}`;
         if (isPeerConnected) setDataToPeerDevice('speed', speed);
     }
 
@@ -8251,7 +8251,7 @@
 
     function setAccelerationUI(acceleration) {
         UI.accelerationSlider.value = acceleration;
-        UI.accelerationLabel.value = `${acceleration.toFixed(2)}`;
+        UI.accelerationLabel.value = `${acceleration.toFixed(precisionAccelSys)}`;
         if (isPeerConnected) setDataToPeerDevice('accel', acceleration);
     }
 
@@ -15261,17 +15261,19 @@
 
 
         // Sliders
-        UI.speedSlider.addEventListener("input", () => {
-            currentSpeed = roundDecimalFast(getInputNumDef(UI.speedSlider.value, 15), precisionSpeedSys);
+        UI.speedSlider.addEventListener("input", (event) => {
+            currentSpeed = roundDecimalFast(getInputNumDef(event.target.value, 15), precisionSpeedSys);
             UI.speedLabel.value = `${currentSpeed.toFixed(precisionSpeedSys)}`;
         });
-        UI.speedSlider.addEventListener("change", async () => isConnected ? sendCommandGeneral(`MC SET SPEEDMM ${UI.speedSlider.value}`) : null);
+        UI.speedSlider.addEventListener("change", async (event) =>
+            isConnected ? setSpeed(roundDecimalFast(getInputNumDef(event.target.value, 15), precisionSpeedSys)) : null);
 
-        UI.accelerationSlider.addEventListener("input", () => {
-            currentAcceleration = roundDecimalFast(getInputNumDef(UI.accelerationSlider.value, 150), precisionAccelSys);
+        UI.accelerationSlider.addEventListener("input", (event) => {
+            currentAcceleration = roundDecimalFast(getInputNumDef(event.target.value, 150), precisionAccelSys);
             UI.accelerationLabel.value = currentAcceleration.toFixed(precisionAccelSys);
         });
-        UI.accelerationSlider.addEventListener("change", async () => isConnected ? sendCommandGeneral(`MC SET ACCELMM ${UI.accelerationSlider.value}`) : null);
+        UI.accelerationSlider.addEventListener("change", async (event) =>
+            isConnected ? setAcceleration(roundDecimalFast(getInputNumDef(event.target.value, 150), precisionAccelSys)) : null);
 
         // pouze ty .data-eq, které mají data-eq-type
         const experiment_result_elements = $$("[data-eq-type]");
