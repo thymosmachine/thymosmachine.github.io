@@ -24,6 +24,10 @@
 
 
 <script>
+    console.info(`%c\n\nMoira Controller\n`, "color: #007bff; font-size: 14px; font-weight: bold; font-style: italic; font-family: Arial, sans-serif; text-decoration: underline;");
+</script>
+
+<script>
     const logContainer = document.getElementById('errorInfo');
 
 
@@ -123,32 +127,32 @@
         }
 
         if (window.location.href.includes(versionURL)) {
-            console.log('✅ Already on the latest version:', version);
+            console.info('✅ Already on the latest version:', version);
             return;
         }
 
         if (window.location.href.includes('/versions/')) {
-            console.log('ℹ️ Redirecting from another version to the latest version:', version);
+            console.info('ℹ️ Redirecting from another version to the latest version:', version);
         } else {
-            console.log('ℹ️ Redirecting to the latest version:', version);
+            console.info('ℹ️ Redirecting to the latest version:', version);
         }
 
         // if (window.location.href.includes('?')) {
-        //     console.log('ℹ️ Preserving query parameters during redirect.');
+        //     console.info('ℹ️ Preserving query parameters during redirect.');
         //     const queryParams = window.location.href.split('?')[1];
         //     window.location.href = `./versions/${version}?${queryParams}`;
         //     return;
         // }
         //
         // if (window.location.href.includes('#')) {
-        //     console.log('ℹ️ Preserving hash fragment during redirect.');
+        //     console.info('ℹ️ Preserving hash fragment during redirect.');
         //     const hashFragment = window.location.href.split('#')[1];
         //     window.location.href = `./versions/${version}#${hashFragment}`;
         //     return;
         // }
         //
         // if (window.location.href.includes('?') && window.location.href.includes('#')) {
-        //     console.log('ℹ️ Preserving both query parameters and hash fragment during redirect.');
+        //     console.info('ℹ️ Preserving both query parameters and hash fragment during redirect.');
         //     const queryParams = window.location.href.split('?')[1].split('#')[0];
         //     const hashFragment = window.location.href.split('#')[1];
         //     window.location.href = `./versions/${version}?${queryParams}#${hashFragment}`;
@@ -156,7 +160,7 @@
         // }
 
 
-        console.log('➡️ Redirecting to version:', version, versionURL);
+        console.info('➡️ Redirecting to version:', version, versionURL);
 
         switch (style) {
             case 'redirect':
