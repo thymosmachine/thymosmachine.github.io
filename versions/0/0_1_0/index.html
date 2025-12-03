@@ -2,9 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Dynamically set BASE href -->
+    <base id="dynamicBase" href="../../../">
+
+    <script>
+        // If not loaded by fetch, set base href to current directory
+        if (typeof window._loadedByFetch === "boolean" && window._loadedByFetch === true) {
+            document.getElementById("dynamicBase").setAttribute("href", "./");
+        }
+    </script>
+
+
     <title>Moira controller</title>
 
-    <base href="../../../"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!--
           __  __       _                          __ _
@@ -35,29 +46,32 @@
         console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
 
-        fetch("./shared-header.html")
+        fetch("./files/shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
     </script>
 
     <!-- External libraries: -->
     <!-- uPlot -->
-    <link rel="stylesheet" href="./packages/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
-    <script defer src="./packages/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
+    <link rel="stylesheet" href="./packages/external/uplot/uPlot.min.css"> <!-- Add uPlot CSS for styling -->
+    <script defer src="./packages/external/uplot/uPlot.iife.min.js"></script> <!-- Add uPlot JavaScript -->
 
     <!-- XLSX -->
-    <script async src="./packages/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
+    <script async src="./packages/external/xlsx/xlsx.full.min.js"></script> <!-- Add XLSX (MS Excel) JavaScript -->
     <!--    <script async src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>-->
 
     <!-- ZIP -->
-    <!--    <script async src="packages/zip/jszip.min.js"></script> &lt;!&ndash; Add JSZip JavaScript &ndash;&gt;-->
-    <script async src="./packages/zip/pako.min.js"></script> <!-- Add Pako JavaScript (for DEFLATE) -->
+    <!--    <script async src="packages/external/zip/jszip.min.js"></script> &lt;!&ndash; Add JSZip JavaScript &ndash;&gt;-->
+    <script async src="./packages/external/zip/pako.min.js"></script> <!-- Add Pako JavaScript (for DEFLATE) -->
+
+    <!-- P2P -->
+    <script defer src="./packages/external/p2p/peerjs.min.js"></script>
 
     <!-- KaTeX -->
     <!-- source: "https://cdn.jsdelivr.net/npm/katex@0.16.9/" -->
-    <link rel="stylesheet" href="./packages/katex/katex.min.css">
-    <script defer src="./packages/katex/katex.min.js"></script>
-    <script defer src="./packages/katex/auto-render.min.js"></script>
+    <link rel="stylesheet" href="./packages/external/katex/katex.min.css">
+    <script defer src="./packages/external/katex/katex.min.js"></script>
+    <script defer src="./packages/external/katex/auto-render.min.js"></script>
     <script>
         // automatic rendering: inline \( … \) a $ … $, block \[ … \]
         document.addEventListener("DOMContentLoaded", function () {
@@ -203,7 +217,7 @@
             const ctrl = new AbortController();
             const t = setTimeout(() => ctrl.abort(), timeout);
             try {
-                const res = await fetch(`/ping.txt?ts=${Date.now()}`, {
+                const res = await fetch(`./files/ping.txt?ts=${Date.now()}`, {
                     method: 'HEAD',
                     cache: 'no-store',
                     signal: ctrl.signal
@@ -258,7 +272,7 @@
 
             try {
                 // Try to load the latest version of the app from the latest.txt [server]
-                fetch(`./latest.txt?ts=${Date.now()}`, {
+                fetch(`./files/latest.txt?ts=${Date.now()}`, {
                     cache: "no-store"
                 })
                     .then(response => {
@@ -8438,7 +8452,9 @@
             await sendCommandGeneral(`MC MOVEBY MACH ${distance_mm * displacementSignCorrection}`);
 
             if (doCycles) {
-                let cycle = 1n;
+                const oneBigInt = toBigInt(1);
+
+                let cycle = oneBigInt;
                 const isInfinite = isInfinity(cyclesCount);
                 const totCyclesLabel = isInfinite ? "∞" : cyclesCount;
                 const movementIntervalMs = computeMotionTime(distance_mm, speedForward_mmps, 200) + 5;
@@ -8500,7 +8516,7 @@
 
                     // u konečného režimu dekrementuj, u ∞ nesahej na cyclesCount
                     if (!isInfinite) cyclesCount--;
-                    cycle += 1n;
+                    cycle += oneBigInt;
 
                     // loguj po každém kroku jen u konečného režimu (∞ řeší minuteLogger)
                     if (!isInfinite) {
