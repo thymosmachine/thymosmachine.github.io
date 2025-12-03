@@ -5,7 +5,7 @@
   "set": [
     {
       "label": "Latest",
-      "version": "0.1.0"
+      "version": "0.1.1"
     }
   ],
 
@@ -24,6 +24,11 @@
       "name": "Gamma",
       "version": "0.1.0",
       "path": "./versions/0/0_1_0/"
+    },
+    {
+      "name": "Release",
+      "version": "0.1.1",
+      "path": "./versions/0/0_1_1/"
     }
   ]
 }
