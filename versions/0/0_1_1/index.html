@@ -59,7 +59,7 @@
         console.info(`%c\n\nMoira Controller - Thymos\n`, "color: #007bff; font-size: 20px; font-weight: bold;");
         console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
-
++
         fetch("./files/shared-header.html")
             .then(res => res.text())
             .then(html => document.head.insertAdjacentHTML("beforeend", html));
@@ -229,17 +229,16 @@
             }
         }
 
+        async function initDebugging() {
+
+            IS_DEBUGGING = await checkDebugFlag() // find "debug.txt" in the main directory
+
+            unblockDebugging(IS_DEBUGGING);
+        }
+
         let IS_DEBUGGING = false;
         const IS_LOCAL = isLocalhost();
-
-        (async () =>
-                IS_DEBUGGING = await checkDebugFlag() // find "debug.txt" in the main directory
-        )().then(() =>
-            window.addEventListener('load', () =>
-                unblockDebugging(IS_DEBUGGING)
-            ));
-
-
+        initDebugging();
     </script>
 
     <!--    <script type="text/plain" src="./scripts/appState.js"></script>-->
@@ -347,7 +346,7 @@
         }
 
         // is online?
-        document.addEventListener("DOMContentLoaded", async () => { // TODO: do async or window.onload ?
+        window.addEventListener("load", async () => {
             reallyOnline = await hasInternet();
             if (reallyOnline) {
                 console.info("%c📶 Ping successful. User is Online! 🌐", "color: blue; font-weight: bold;");
@@ -3061,6 +3060,16 @@
                                    min="0" max="Infinity" value="1" data-unit="-"
                                    data-input-type="intInput, customNumber" data-essence="count" required>
                         </div>
+
+
+                        <div class="input-group" data-system-level="100">
+                            <label for="inputBrutalMode">
+                                Experiment Brutal-mode:
+                            </label>
+                            <input type="checkbox" id="inputBrutalMode" value="brutalMode"
+                                   data-system="skip" data-essence="switch">
+                        </div>
+
                     </div>
                 </article>
 
@@ -3358,14 +3367,6 @@
                                 Raw connection:
                             </label>
                             <input type="checkbox" id="inputRawConnection" value="rawConnection"
-                                   data-system="skip" data-essence="switch">
-                        </div>
-
-                        <div class="input-group" data-system-level="300">
-                            <label for="inputBrutalMode">
-                                Experiment Brutal-mode:
-                            </label>
-                            <input type="checkbox" id="inputBrutalMode" value="brutalMode"
                                    data-system="skip" data-essence="switch">
                         </div>
 
