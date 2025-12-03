@@ -8340,9 +8340,11 @@
             const movingTime =
                 Math.ceil(convertUnits(computeMotionTime(distance, speed, acceleration), timeUnitMove, timeUnitSys) + 155);
 
-            await beganMoving(movingTime);  // without timeout — we will calculate and set it below
+            await beganMoving(movingTime);
 
             await sendMoveCommand(`MC MOVEBY MACH ${distance}`);
+
+            await sleep(movingTime);
 
         } catch (e) {
             console.error("Error during moveBy:", e);
@@ -13261,7 +13263,7 @@
         }
 
         abort(signal);
-        if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_Device_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
+        if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
         else storageKeyLoad = storageKeyIdle;
 
         // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou

@@ -11888,7 +11888,7 @@
             userChoiceSave = confirm("\n✅ Connected successfully!\n\nDo you want to SAVE current settings to this device?\n\n   CLICK 'OK' TO SAVE SETTINGS ON DISCONNECT\n   CLICK 'CANCEL' TO NOT SAVE SETTINGS");
         }
 
-        if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_Device_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
+        if (saveSelected === 'yes_save' || saveSelected === 'no_save' || userChoiceSave === true) storageKeyLoad = `${storageKeyBase}_${machineName}[${machineID}]`.trim().replaceAll(" ", "_");
         else storageKeyLoad = storageKeyIdle;
 
         // TODO: zdvojené (respektive ztrojené) posílání rychlosti a zrychlení, vyřešit třeba pomocí lepšího použití 'isConnected' nebo jinou logikou
