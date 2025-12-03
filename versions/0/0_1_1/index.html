@@ -8908,6 +8908,7 @@
         // === System Limits ===
         const minDistance = 5e-3;
         const minFSpeed = 0.025; // TODO: check this
+        const minSpeed = 1e-4;
         const maxFSpeed = 25;
         const minInt = 5e-6;
         const minLoadCap = 5e-4;
@@ -9016,30 +9017,30 @@
                     holdForceTimeMs = convertUnits(getInputNumDefAbsFlt("inputEndDelay", NaN), holdForceUnit, timeUnitSys, {precision: 0});
                     experimentHoldConstantForce = true;
 
-                    const basicPICId = "inputResponseCoefPI";
-                    const isPICComplex = isUnavailable($ID(basicPICId));
+                    const basicPICId = "inputResponseCoef";
+                    const isPICComplex = isUnavailable($ID(basicPICId + 'PI'));
                     if (isPICComplex) {
-                        const respKp = getInputNumDefAbsFlt(basicPICId.replace('PI', 'Kp'), NaN);
-                        const respKi = getInputNumDefAbsFlt(basicPICId.replace('PI', 'Ki'), NaN);
+                        const respKp = getInputNumDefAbsFlt(basicPICId + 'Kp', NaN);
+                        const respKi = getInputNumDefAbsFlt(basicPICId + 'Ki', NaN);
                         responsiveness.Kp = respKp;
                         responsiveness.Ki = respKi;
                     } else {
-                        const respCoef = getInputNumDefAbsFlt(basicPICId, NaN);
+                        const respCoef = getInputNumDefAbsFlt(basicPICId + 'PI', NaN);
                         responsiveness.Kp = respCoef;
                         responsiveness.Ki = respCoef;
                     }
 
-                    const basicPISId = "inputResponseCoefMinS";
+                    const basicPISId = "inputResponseCoef";
                     const isPISComplex = isUnavailable($ID(basicPISId));
                     if (isPISComplex) {
-                        const respMinS = getInputNumDefAbsFlt(basicPISId, NaN);
-                        const respMaxS = getInputNumDefAbsFlt(basicPISId.replace('MinS', 'MaxS'), NaN);
-                        const respAcc = getInputNumDefAbsFlt(basicPISId.replace('MinS', 'Accel'), NaN);
-                        responsiveness.minSpeed = clamp(respMinS, 1e-4, respMaxS - 1e-5);
+                        const respMinS = getInputNumDefAbsFlt(basicPISId + 'MinS', NaN);
+                        const respMaxS = getInputNumDefAbsFlt(basicPISId + 'MaxS', NaN);
+                        const respAcc = getInputNumDefAbsFlt(basicPISId + 'Accel', NaN);
+                        responsiveness.minSpeed = clamp(respMinS, minSpeed, respMaxS - 1e-5);
                         responsiveness.maxSpeed = clamp(respMaxS, respMinS + 1e-5, maxFSpeed);
                         responsiveness.accel = respAcc >= 200 ? null : clamp(respAcc, 1, 200);
                     } else {
-                        responsiveness.minSpeed = Math.min(minFSpeed, 5e-4);
+                        responsiveness.minSpeed = minSpeed;// Math.max(minFSpeed, 5e-4);
                         responsiveness.maxSpeed = clamp(Math.max(minFSpeed * 5 / 2, speedForward_mmps * 4 / 5), minFSpeed + 1e-5, speedForward_mmps); // minFSpeed * 3 / 2, speedForward_mmps * 2 / 3);
                         responsiveness.accel = 25;
                     }
