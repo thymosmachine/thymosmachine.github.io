@@ -9059,15 +9059,22 @@
 
 
             experimentEndLimits = {position: null, force: totalErrRate, time: null};
+            measurement_limits.error.limit = 0;
 
             UI.experimentStageLabel.textContent = `Approaching`;
 
 
             await sleep(50);
             let lastMoveBackDistance = maxPosition_mm;
+            const maxTime = convertUnits(5, 'minutes', 'milliseconds');
 
-            for (const set of approachSets) {
-                let {speed, accel, distance} = set;
+            let index = 0;
+            const approachSettings = approachSets.length;
+
+
+            const startTime = Date.now();
+            while (index < approachSettings) {
+                let {speed, accel, distance} = approachSets[index];
 
                 await sendCommandGeneral("DATAC 0");
                 isApproaching = false;
@@ -9078,8 +9085,10 @@
                     throwInternalError("Position measurement error before approach.");
                 }
 
+                tareValues.time = null;
                 experimentEndLimits.position = Math.min(maxPosition_mm, distance * 1.1 + tareValues.position);
                 experimentEndLimits.time = computeMotionTime(lastMoveBackDistance, speed, accel) + 150;
+                measurement_limits.error.counter = 0;
 
                 await sleep(10);
 
@@ -9094,6 +9103,26 @@
 
                 while (isApproaching) {
                     await sleep(1_000); // Prevents excessive CPU usage
+                }
+
+                if (isNull(isApproaching)) {
+                    throwInternalError("Approach was interrupted due to an error.");
+                    break;
+                }
+
+                if (measurement_limits.error.counter > measurement_limits.error.limit) {
+                    index = Math.max(0, index - 1); // go back to previous setting
+                } else {
+                    index++;
+                }
+
+                const time = Date.now();
+                if (time - startTime > maxTime) {
+                    console.warn("\n⚠️ Approach time exceeded maximum allowed duration.");
+                    await logMessage("⚠️ Approach time exceeded maximum allowed duration.");
+                    alert("⚠️ Approach time exceeded maximum allowed duration.");
+                    throwInternalError("Approach time exceeded.");
+                    break;
                 }
 
                 await sleep(50);
@@ -9992,7 +10021,7 @@
                         speed: newData?.speed
                     });
                     await sendStopAllMeasuring();
-                    isApproaching = false;
+                    isApproaching = null;
                 }
                 return;
             } else {
@@ -10011,6 +10040,7 @@
 
             if (newData?.time >= experimentEndLimits.time) {
                 await sendStopAllMeasuring();
+                measurement_limits.error.counter++;
                 isApproaching = false;
                 console.info("ℹ️ Approaching ended: time limit reached.");
                 logMessage("ℹ️ Approaching ended: time limit reached.");
@@ -10019,13 +10049,14 @@
 
             if (newData?.position >= experimentEndLimits.position) {
                 await sendStopAllMeasuring();
+                measurement_limits.error.counter++;
                 isApproaching = false;
                 console.info("ℹ️ Approaching ended: position limit reached.");
                 logMessage("ℹ️ Approaching ended: position limit reached.");
                 return;
             }
 
-            if (newData?.speed < (1 / 1e2) && newData?.time > 1) {
+            if (newData?.speed < (1 / 1e2) && newData?.time > 0.5) {
                 measurement_limits.zero_speed.counter++;
                 if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
 
@@ -10035,6 +10066,7 @@
                         logMessage("⚠️ Approaching stopped: global measurement limit reached.");
                         await sendStopAllMeasuring();
                         isApproaching = false;
+                        measurement_limits.error.counter++;
                         return;
                     } else {
                         sendCommandGeneral(`MC END`);
