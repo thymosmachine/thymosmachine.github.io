@@ -7193,12 +7193,47 @@
         unlockControls();
     }
 
-    function speedFromDistance(goal, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
-        const d = Math.max(0, Math.abs(toNumber(goal)) || 0);
+
+    function speedFromDist(dist, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
+        const d = Math.max(0, Math.abs(toNumber(dist)) || 0);
         const t = Math.min(1, d / dMax);              // 0..1
         const v = sMin + (sMax - sMin) * t;           // linear 1..25
         return roundDecimalFast(v, 2);                // float f.2
     }
+
+    function speedFromDistAndTime(dist, time = 4, sMin = 1, sMax = 25, acc = 200) {
+        const d = Math.max(0, Math.abs(toNumber(dist)) || 0);
+        const t = Math.max(0, toNumber(time) || 0);
+        const a = Math.max(0, toNumber(acc) || 0);
+
+        if (d === 0 || t === 0) {
+            return 0;
+        }
+
+        let v;
+
+        if (0 < a && a < 1e3) {
+            // minimal possible time for given distance and acceleration (triangular profile)
+            const tTri = 2 * Math.sqrt(d / a);
+
+            if (t >= tTri) {
+                // direct formula from d = v*t - v^2/a
+                const disc = a * a * t * t - 4 * a * d;   // discriminant
+                const sqrtDisc = Math.sqrt(Math.max(0, disc));
+                v = (a * t - sqrtDisc) / 2;               // smaller root
+            } else {
+                // desired time is less than physical minimum → use maximum
+                v = sMax;
+            }
+        } else {
+            // without acceleration, fall back to original linear estimate
+            v = d / t;
+        }
+
+        v = clamp(v, sMin, sMax);
+        return roundDecimalFast(v, 2);
+    }
+
 
     async function moveBy(distance, {requiredSpeed = null, requiredAcceleration = null, overRide = false} = {}) {
         if (!isConnected) return;
@@ -7225,7 +7260,7 @@
             currentAcceleration = (await getAcceleration()) || 150;
 
             const acceleration = requiredAcceleration || 100; // mm/s²
-            const speed = requiredSpeed || await speedFromDistance(distance, acceleration, 0.5, 25); // mm/s
+            const speed = requiredSpeed || await speedFromDistAndTime(distance, 3, 0.5, 25, acceleration); // mm/s
 
             if (!speed || !acceleration) {
                 console.warn("\n⚠️ Invalid speed or acceleration values.");
