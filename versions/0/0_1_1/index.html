@@ -15207,6 +15207,8 @@
 
     let lastTitle = document.title;
 
+    let allowKeyboardMovement = true;
+
 
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
@@ -15545,6 +15547,8 @@
             if (systemLevel < 300) consoleLine.classList.toggle('disabled', (isDisabled(machineElements[0]) || isDisabled(controlElements[0])));
             else if (systemLevel < 700) consoleLine.classList.toggle('disabled', isDisabled(controlElements[0]));
             else consoleLine.classList.remove('disabled');
+
+            allowKeyboardMovement = getInputVal("inputKeyboardMovement");
         });
 
 
@@ -15788,40 +15792,111 @@
             }
         });
 
-
+        // ===== Movement controls =====
         function attachHoldHandlers(element, onStart) {
+            if (!element || typeof onStart !== 'function') {
+                console.warn("attachHoldHandlers: Invalid parameters:", element, onStart);
+                return;
+            }
+
             let isHolding = false;
+            let elementType = element?.tagName?.toLowerCase();
+            const isHTML = isHTMLElement(element) || isElement(element);
+
+
+            if (!isHTML && isNonEmptyStr(element)) elementType = element.toLowerCase();
+            else return;
+
+
+            function isFormElement(el) {
+                if (!el) return false;
+
+                if (el instanceof HTMLTextAreaElement) return true;
+                if (el instanceof HTMLSelectElement) return true;
+
+                if (el instanceof HTMLInputElement) {
+                    // typy inputů, kde má šipka nějaký vlastní smysl
+                    const typesWithArrows = [
+                        "text", "search", "password", "email", "url",
+                        "number", "range", "date", "time", "month", "week"
+                    ];
+                    return typesWithArrows.includes(el.type);
+                }
+
+                return el.isContentEditable;
+            }
+
+            function isFormElementFast(el) {
+                return (
+                    el.tagName === "INPUT" ||
+                    el.tagName === "TEXTAREA" ||
+                    el.tagName === "SELECT" ||
+                    el.isContentEditable
+                );
+            }
 
             const start = async () => {
                 if (isHolding) return;
                 isHolding = true;
-                lockMovementExcept(element);  // zamkni vše krom právě držného
-                await beganMoving();          // spustí watchdog
+                if (isHTML) lockMovementExcept(element);    // lock other controls
+                await beganMoving();                        // start watchdog
                 onStart();
             };
 
             const stop = async () => {
                 if (!isHolding) return;
                 isHolding = false;
-                await softStopMachine();          // po puštění zastav a ukonči pohyb
+                await softStopMachine();                    // stop movement and stop watchdog
             };
 
-            // Myš
-            element.addEventListener("mousedown", start);
-            element.addEventListener("mouseup", stop);
-            element.addEventListener("mouseleave", () => {
-                if (isHolding) stop();
-            });
+            if (elementType === 'button') {
+                // Mouse
+                element.addEventListener("mousedown", start);
+                element.addEventListener("mouseup", stop);
+                element.addEventListener("mouseleave", () => {
+                    if (isHolding) stop();
+                });
 
-            // Dotyk
-            element.addEventListener("touchstart", start, {passive: true});
-            element.addEventListener("touchend", stop);
-            element.addEventListener("touchcancel", stop);
+                // Toutch
+                element.addEventListener("touchstart", start, {passive: true});
+                element.addEventListener("touchend", stop);
+                element.addEventListener("touchcancel", stop);
+
+            } else if (elementType === 'arrowup' || elementType === 'arrowdown') {
+                // Keyboard
+                document.addEventListener("keydown", async (e) => {
+                    if (allowKeyboardMovement && e.key.toLowerCase() === elementType) {
+
+                        if (!isConnected || isFormElementFast(e.target)) return; // arrow keys are used for input navigation
+
+                        e.preventDefault();
+                        await start();
+                    }
+                });
+
+                document.addEventListener("keyup", async (e) => {
+                    if (e.key.toLowerCase() === elementType) {
+
+                        if (!isConnected || isFormElementFast(e.target)) return; // arrow keys are used for input navigation
+
+                        e.preventDefault();
+                        await stop();
+                    }
+                });
+            } else {
+                console.warn("attachHoldHandlers: Unsupported element type:", elementType, element);
+            }
         }
 
 
         attachHoldHandlers($ID("moveMachineUP"), async () => sendMoveCommand("MC HOME")); // TODO: problém s rychlostmi na konci
         attachHoldHandlers($ID("moveMachineDOWN"), async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
+        attachHoldHandlers('ArrowUp', async () => sendMoveCommand("MC HOME"));
+        attachHoldHandlers('ArrowDown', async () => sendMoveCommand("MC END"));
+
+        $ID("inputKeyboardMovement").addEventListener("change", (event) => {
+            allowKeyboardMovement = event.target.checked;
+        });
 
         document.addEventListener("keydown", (e) => {
             const arrowKeys = ["ArrowUp", "ArrowDown"];
