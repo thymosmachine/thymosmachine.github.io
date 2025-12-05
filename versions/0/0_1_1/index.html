@@ -15823,6 +15823,17 @@
         attachHoldHandlers($ID("moveMachineUP"), async () => sendMoveCommand("MC HOME")); // TODO: problém s rychlostmi na konci
         attachHoldHandlers($ID("moveMachineDOWN"), async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
 
+        document.addEventListener("keydown", (e) => {
+            const arrowKeys = ["ArrowUp", "ArrowDown"];
+
+            if (!arrowKeys.includes(e.key)) return;
+
+            const el = e.target;
+
+            // zakázat šipky pro prvky které mění hodnotu (select, range, number)
+            if (el instanceof HTMLSelectElement) e.preventDefault();
+
+        });
 
         UI.returnBtn.addEventListener("click", async () => moveToOriginalPosition());
 
