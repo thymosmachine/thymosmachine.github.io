@@ -15824,7 +15824,7 @@
         attachHoldHandlers($ID("moveMachineDOWN"), async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
 
 
-        UI.returnBtn.addEventListener('click', async () => moveToOriginalPosition());
+        UI.returnBtn.addEventListener("click", async () => moveToOriginalPosition());
 
         $ID("moveUp50").addEventListener("click", async () => moveBy(-50));  // TODO: problém s rychlostmi na konci a zrychlením
         $ID("moveDown50").addEventListener("click", async () => moveBy(50));  // TODO: problém s rychlostmi na konci a zrychlením
