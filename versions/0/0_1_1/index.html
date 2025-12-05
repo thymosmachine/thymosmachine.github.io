@@ -2444,13 +2444,18 @@
                                style="height: 10px; flex-direction: row; flex-grow: 1; border-radius: var(--radius); touch-action: none;">
                     </div>
                     <button id="moveToBtn"
-                            class="movementControlElement machineControlElement controlBtn controllerBtn">➡️ Move
+                            class="movementControlElement machineControlElement controlBtn controllerBtn">
+                        ➡️ Move
                     </button>
 
                 </div>
                 <button id="setUserZeroBtn"
                         class="movementControlElement machineControlElement controlBtn controllerBtn prohibited">
                     🎯 Set Zero
+                </button>
+                <button id="approachBtn"
+                        class="movementControlElement machineControlElement controlBtn controllerBtn prohibited">
+                    ⏭️ Approach
                 </button>
                 <button id="calibrateBtn"
                         class="movementControlElement machineControlElement controlBtn controllerBtn">
@@ -4282,7 +4287,7 @@
     const getStrFixedValue = (x, dec = "none") => getValue(x, dec, true);
     const getStrValue = (x, dec = "none") => ((n => Number.isNaN(n) ? "N/A" : String(n))(getNumValue(x, dec)));
     const getCustomStrValue = (x, dec = "none", decSym = '.', writeSign = false, fixed = false, customError = "N/A") => {
-        const v = fixed ? getStrFixedValue(x, dec) : getStrValue(x, dec);
+        const v = String(fixed ? getStrFixedValue(x, dec) : getStrValue(x, dec));
         if (v === "N/A") return customError;
         let s = v;
         if (!(v === "Infinity" || v === "-Infinity")) s = decimalSymbol(v, decSym);
@@ -7631,6 +7636,7 @@
         photoDataChart = [];
         forceDataChart = Array(loadCellNum).fill(null).map(() => []);
         dataCount = 0;
+        aggregatedDataBetweenSteps = [];
 
         await timeChart.setData(Array(loadCellNum + 1 + 1).fill(null).map(() => []));
         await positionChart.setData(Array(loadCellNum + 1 + 1).fill(null).map(() => []));
@@ -8285,11 +8291,44 @@
         unlockControls();
     }
 
-    function speedFromDistance(goal, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
-        const d = Math.max(0, Math.abs(toNumber(goal)) || 0);
+    function speedFromDist(dist, dMax = 100, sMin = 1, sMax = 25) { // 25 už od 100 mm
+        const d = Math.max(0, Math.abs(toNumber(dist)) || 0);
         const t = Math.min(1, d / dMax);              // 0..1
         const v = sMin + (sMax - sMin) * t;           // linear 1..25
         return roundDecimalFast(v, 2);                // float f.2
+    }
+
+    function speedFromDistAndTime(dist, time = 4, sMin = 1, sMax = 25, acc = 200) {
+        const d = Math.max(0, Math.abs(toNumber(dist)) || 0);
+        const t = Math.max(0, toNumber(time) || 0);
+        const a = Math.max(0, toNumber(acc) || 0);
+
+        if (d === 0 || t === 0) {
+            return 0;
+        }
+
+        let v;
+
+        if (0 < a && a < 1e3) {
+            // minimal possible time for given distance and acceleration (triangular profile)
+            const tTri = 2 * Math.sqrt(d / a);
+
+            if (t >= tTri) {
+                // direct formula from d = v*t - v^2/a
+                const disc = a * a * t * t - 4 * a * d;   // discriminant
+                const sqrtDisc = Math.sqrt(Math.max(0, disc));
+                v = (a * t - sqrtDisc) / 2;               // smaller root
+            } else {
+                // desired time is less than physical minimum → use maximum
+                v = sMax;
+            }
+        } else {
+            // without acceleration, fall back to original linear estimate
+            v = d / t;
+        }
+
+        v = clamp(v, sMin, sMax);
+        return roundDecimalFast(v, 2);
     }
 
     async function moveBy(distance, {
@@ -8324,7 +8363,7 @@
             }
 
             const acceleration = requiredAcceleration || 100; // mm/s²
-            const speed = requiredSpeed || await speedFromDistance(distance, acceleration, 0.5, 25); // mm/s
+            const speed = requiredSpeed || await speedFromDistAndTime(distance, 3, 0.5, 25, acceleration); // mm/s
 
             if (!speed || !acceleration) {
                 console.warn("\n⚠️ Invalid speed or acceleration values.");
@@ -8661,6 +8700,14 @@
     let checkSpeed = true;
     let isExperimentRunning = false;
     let machineOccupation = false;
+    let isApproaching = false;
+
+    const approachSets = [
+        {speed: 15, accel: 15, distance: 10},
+        {speed: 5, accel: 10, distance: 5},
+        {speed: 1, accel: 5, distance: 1},
+        {speed: 0.1, accel: 1, distance: 0.01},
+    ]
 
     let maxForces = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null);
 
@@ -8715,6 +8762,8 @@
         zero_speed: {counter: 0, limit: 2},
         over_limitForce: {counter: 0, limit: 2},
         invalid_data: {counter: 0, limit: 2},
+        global: {counter: 0, limit: 2},
+        error: {counter: 0, limit: 2},
     };
 
 </script>
@@ -9311,6 +9360,7 @@
             forceDataChart = Array(loadcellCount).fill(null).map(() => []);
             photoDataChart = [];
             dataCount = 0;
+            aggregatedDataBetweenSteps = [];
 
 
             measurementParts = {
@@ -9326,14 +9376,15 @@
             dataChartInterval = calculateStep(dataInterval_us, 150, 1);
             const minimumConditionCount = calculateStep(dataInterval_us, 50, 3);
 
-            aggregatedDataBetweenSteps = [];
             dataCount = 0;
+            aggregatedDataBetweenSteps = [];
 
             Object.values(measurement_limits).forEach(v => {
                 v.counter = 0;
                 v.limit = minimumConditionCount;
             });
             measurement_limits.over_limitForce.limit = calculateStep(dataInterval_us, 10, 2);
+            measurement_limits.error.limit = 1;
 
             if (doCycles) {
                 experimentEndLimits = {position: null, force: null, time: null};
@@ -9531,6 +9582,7 @@
             forceDataChart = Array(loadcellCount).fill(null).map(() => []);
             photoDataChart = [];
             dataCount = 0;
+            aggregatedDataBetweenSteps = [];
 
             await clearCharts();
 
@@ -9817,6 +9869,7 @@
 
         } catch
             (error) {
+            await sendStopAllMeasuring();
 
             if (internalError) {
                 await setChartsStates();
@@ -9832,6 +9885,7 @@
                 forceDataChart = Array(loadCellNum).fill(null).map(() => []);
                 photoDataChart = [];
                 dataCount = 0;
+                aggregatedDataBetweenSteps = [];
             } else {
                 await updateLogById(0, {logStatus: "error"});
             }
@@ -9891,6 +9945,474 @@
             await console.groupEnd();
 
             UI.experimentStageLabel.textContent = `Idle`;
+        }
+    }
+
+
+    async function approach(speed, accel) {
+
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+
+        if (isExperimentRunning) {
+            console.warn("⚠️ Experiment is running.");
+            await logMessage("⚠️ Experiment is running.");
+            return;
+        }
+
+        if (!isApproaching && machineOccupation) {
+            console.warn("⚠️ Machine is busy by another process.");
+            await logMessage("⚠️ Machine is busy by another process.");
+            return;
+        }
+
+        if (!isNum(speed) || speed <= 0) {
+            console.warn("⚠️ Approach speed is not defined properly.");
+            await logMessage("⚠️ Approach speed is not defined properly.");
+            return;
+        }
+        if (!isNum(accel) || accel <= 0) {
+            console.warn("⚠️ Approach acceleration is not defined properly.");
+            await logMessage("⚠️ Approach acceleration is not defined properly.");
+            return;
+        }
+
+        isApproaching = true;
+
+        await sendStopAllMeasuring();
+
+
+        await setSpeedAndAcceleration(speed, accel, false);
+
+
+        await sendCommandGeneral("DATAC 1");
+
+        // === Move Forward ===
+        console.info("➡️ Approaching sample...");
+        await sendCommandGeneral(`MC MOVEBY MACH ${tareValues.position}`);
+    }
+
+
+    async function approachSample() {
+
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+
+        if (isExperimentRunning) {
+            console.warn("⚠️ Experiment is running.");
+            await logMessage("⚠️ Experiment is running.");
+            return;
+        }
+
+        if (machineOccupation) {
+            console.warn("⚠️ Machine is already busy by another process.");
+            await logMessage("⚠️ Machine is already busy by another process.");
+            return;
+        }
+
+        if (isApproaching) {
+            console.warn("⚠️ Already approaching.");
+            await logMessage("⚠️ Already approaching.");
+            return;
+        }
+
+
+        // === System Limits ===
+        const minLoadCap = 5e-4;
+        const minLoadOut = 5e-4;
+
+        let internalError = false;
+        const throwInternalError = (msg) => {
+            internalError = true;
+            throw new Error(msg);
+        };
+
+        try {
+            UI.experimentStageLabel.textContent = `Initializing`;
+
+            await lockMovement();
+            await beganMoving();
+            await lockConnectionButtons(true);
+
+
+            if (!isNum(loadCellNum)) throwInternalError(`Total Loadcell count is not defined: ${loadCellNum}`);
+            const loadcellCount = loadCellNum;
+
+            // === Retrieve Parameters from Inputs ===
+            const dataInterval_us = 5_000;
+            expControl = 'position';
+            const maxPosition_mm = await getMachineLimitPosition() - 5;
+
+            parsedData = {
+                time: null,
+                position: null,
+                speed: null,
+                force: Array(loadcellCount).fill(null),
+                photoIndex: null
+            };
+
+            loadcellsInfo = {
+                presentLoadcells: Array(loadcellCount).fill(false),
+                loadcellsIDX: [],
+                capacities: Array(loadcellCount).fill(null),
+                outputs: Array(loadcellCount).fill(null)
+            };
+            loadcellErrRate = [];
+            measurementErrRate = [];
+            totalErrRate = [];
+
+
+            const basicLCCapId = "inputLoadcellCapacity";
+            const basicLCOutId = "inputLoadcellOutput";
+            const isLCComplex = isUnavailable($ID(basicLCCapId));
+            if (isLCComplex) {
+                for (let i = 0; i < loadcellCount; i++) {
+                    const active = $ID(`activateLoadcell${i + 1}`).checked;
+                    if (active === true) {
+                        loadcellsInfo.loadcellsIDX.push(i)
+                        loadcellsInfo.presentLoadcells[i] = true;
+                        loadcellsInfo.capacities[i] = getInputNumDefAbsInt(`${basicLCCapId}${i + 1}`, NaN);
+                        loadcellsInfo.outputs[i] = getInputNumDefAbsInt(`${basicLCOutId}${i + 1}`, NaN);
+                    }
+                }
+            } else {
+                const loadcellCapacity = getInputNumDefAbsInt(basicLCCapId, NaN);
+                const loadcellOutput = getInputNumDefAbsFlt(basicLCOutId, NaN);
+
+                loadcellsInfo.presentLoadcells = Array(loadcellCount).fill(true);
+                loadcellsInfo.loadcellsIDX = Array.from({length: loadcellCount}, (_, i) => i);
+                loadcellsInfo.capacities = Array(loadcellCount).fill(loadcellCapacity);
+                loadcellsInfo.outputs = Array(loadcellCount).fill(loadcellOutput);
+            }
+
+            calibrationStatus = await getCalibrationStatus(2_000);
+
+            // =================================
+            // ======= Input Validations =======
+            // =================================
+            if (!isArr(loadcellsInfo.loadcellsIDX) || loadcellsInfo.loadcellsIDX.length === 0) {
+                console.warn(`\n⚠️ At least one loadcell must be activated.`);
+                await logMessage(`⚠️ At least one loadcell must be activated.`);
+                alert(`⚠️ At least one loadcell must be activated.`);
+                throwInternalError("Loadcell activation error");
+            }
+            if (!isArr(loadcellsInfo.capacities) || loadcellsInfo.capacities.every(cap => !isNum(cap))) {
+                console.warn(`\n⚠️ At least one loadcell must be activated with valid capacity.`);
+                await logMessage(`⚠️ At least one loadcell must be activated with valid capacity.`);
+                alert(`⚠️ At least one loadcell must be activated with valid capacity.`);
+                throwInternalError("Loadcell activation error");
+            } else if (loadcellsInfo.capacities.some(cap => isNum(cap) && cap < minLoadCap)) {
+                console.warn(`\n⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
+                await logMessage(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
+                alert(`⚠️ Loadcell capacity must be greater than ${minLoadCap} kg.`);
+                throwInternalError("Loadcell capacity error");
+            }
+            if (!isArr(loadcellsInfo.outputs) || loadcellsInfo.outputs.every(out => !isNum(out))) {
+                console.warn(`\n⚠️ At least one loadcell must be activated with valid output.`);
+                await logMessage(`⚠️ At least one loadcell must be activated with valid output.`);
+                alert(`⚠️ At least one loadcell must be activated with valid output.`);
+                throwInternalError("Loadcell activation error");
+            } else if (loadcellsInfo.outputs.some(out => isNum(out) && out < minLoadOut)) {
+                console.warn(`\n⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
+                await logMessage(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
+                alert(`⚠️ Loadcell output must be greater than ${minLoadOut} mV/V.`);
+                throwInternalError("Loadcell output error");
+            }
+            if (!isNum(maxPosition_mm) || maxPosition_mm <= 0) {
+                console.warn(`\n⚠️ Machine maximum position limit is not defined properly.`);
+                await logMessage(`⚠️ Machine maximum position limit is not defined properly.`);
+                alert(`⚠️ Machine maximum position limit is not defined properly.`);
+                throwInternalError("Machine position limit error");
+            }
+
+            if (isEmptyStr(expControl)) throwInternalError("Experiment control is not set.");
+            if (isUndefined(experimentEndLimits[expControl])) throwInternalError(`Experiment end limit for ${expControl} is not set.`);
+            if (isUndefined(parsedData[expControl])) throwInternalError(`Parsed data for ${expControl} is not available.`);
+            if (!hasRequiredParsedKeys(experimentEndLimits, parsedData)) throwInternalError("Experiment end limits are not properly set.");
+
+
+            if (!calibrationStatus) {
+                await lockMovementExcept(UI.calibrateBtn);
+                await logMessage("❌ Calibration is required to start the experiment.");
+                console.error("❌ Calibration is required to start the experiment.");
+                alert("❌ Calibration is required to start the experiment.");
+                // }
+                throwInternalError("Calibration is required to start the experiment.");
+            }
+            // =================================
+            // =================================
+
+
+            await logMessage(`\n☄️ Starting approach to sample`);
+            await console.info("☄️ Starting approach to sample...");
+
+            if (liveUpdate) await chartUpdate();
+            await sleep(5);
+
+
+            // === Progress Bar Setup ===
+            document.documentElement.style.setProperty('--progressColor', 'var(--progressPrimary-color)');
+            experimentProgress = 0
+            UI.progressBar.value = 0;
+            UI.progressLabel.textContent = ``;
+
+            // === Reset Variables ===
+            tareValues.time = null;
+            tareValues.position = null;
+            tareValues.force = Array(loadcellCount).fill(0);
+            measureForces = Array(loadcellCount).fill(null).map(() => []);
+            endMeasurement = false;
+            clearTimeout(endMeasurementCounter)
+            endMeasurementCounter = null;
+
+            measurementParts = {
+                length: null,
+                time: [0],
+                position: [1],
+                speed: [2],
+                force: [3, 4, 5],
+            };
+
+            const minimumConditionCount = calculateStep(dataInterval_us, 50, 3);
+            Object.values(measurement_limits).forEach(v => {
+                v.counter = 0;
+                v.limit = minimumConditionCount;
+            });
+            measurement_limits.global.limit = calculateStep(dataInterval_us, 1_000, 2);
+            measurement_limits.error.limit = 1;
+
+            measurementParts.length = getMeasurementPartsLength(measurementParts);
+
+            dataCount = 0;
+            aggregatedDataBetweenSteps = [];
+
+            currentSpeed = (await getSpeed()) || 15;
+            currentAcceleration = (await getAcceleration()) || 150;
+
+            // === LoadCell Configuration ===
+            for (let i = 0; i < loadcellCount; i++) {
+                if (isNull(loadcellsInfo.capacities[i]) || isNull(loadcellsInfo.outputs[i])) continue;
+                await sendCommandGeneral(`LC SET CAP ${i} ${loadcellsInfo.capacities[i]}`);
+                await sendCommandGeneral(`LC SET RO ${i} ${loadcellsInfo.outputs[i]}`);
+            }
+
+            // === Prepare Machine ===
+            await sendStopAllMeasuring();
+
+            // === Prepare Data Collection ===
+            loadSignCorrections = Array(loadcellCount).fill(1);
+            for (let i = 0; i < loadcellCount; i++) {
+                if (loadcellsInfo.capacities[i] <= 50) loadSignCorrections[i] *= -1; // Reverse direction if loadcell capacity is less than or equal to 50 N
+            }
+
+            UI.experimentStageLabel.textContent = `Tarring`;
+
+            await sendCommandGeneral('DATA SET INTERVAL 5000');
+
+            for (let i = 0; i < loadcellCount; i++) {
+                await sendCommandGeneral(`LC TARE ${i}`);
+            }
+
+            await sleep(1_500); // Wait for 1.5 second between taring loadcells
+
+            // --- 1) Take measurements ---
+            takeMeasurements = true;
+            await sendCommandGeneral("DATAC 1");
+
+
+            // Take measurements for 1.5 second
+            await sleep(1_500); // Wait
+
+
+            await sendCommandGeneral("DATAC 0", 10);
+            takeMeasurements = false;
+
+
+            // --- 2) Mean forces ---
+            tareValues.force = meanND(measureForces, 1).map(force => roundDecimalFast(force, precisionForce)); // TODO: zbytečné
+
+            // --- 3) Analysis ---
+            const forceAnalysis = await analyzeForces(measureForces);  // TODO: Implement and save present/used loadcells to the experiment log and use it when loading form DB and when loading CSV
+            console.info("Force analysis:");
+            console.table(forceAnalysis);
+
+            // --- 4) Valid fields ---
+            const validFields = await forceAnalysis.filter(r => !r.allInvalid);
+
+            // indexes of valid fields => present Loadcells indexes
+            const presentLC = forceAnalysis.flatMap((r, i) => r.allInvalid ? [] : i);
+
+            if (!isLCComplex) {
+                loadcellsInfo.presentLoadcells = forceAnalysis.map(r => !r.allInvalid);
+                loadcellsInfo.loadcellsIDX = presentLC;
+            }
+
+            // --- 5) Check for errors ---
+            // If more one force is not eaqule to zero, than Stop and Alert
+            if (validFields.length === 0 || (isLCComplex && loadcellsInfo.loadcellsIDX.length === 0)) {
+                console.warn("\n⚠️ No loadcell is connected.");
+                await logMessage("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                alert("⚠️ No loadcell is connected. Please check the loadcell connection and try again.");
+                throwInternalError("No loadcell connected");
+            }
+            if (isLCComplex) {
+                if (!loadcellsInfo.loadcellsIDX.every(lc => presentLC.includes(lc))) {
+                    console.warn("\n⚠️ Activated Loadcell in the App does not match detected loadcells in Machine.");
+                    await logMessage("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
+                    alert("⚠️ Not all selected loadcells are connected. Please check the loadcell connections and try again.");
+                    throwInternalError("Not all selected loadcells are connected");
+                }
+            }
+
+            // --- 6) Valid dispersion ---
+            const diffs = validFields.flatMap(({
+                                                   min, max
+                                               }) => (isNum(min) && isNum(max)) ? [max - min] : []);
+            console.info("\nValid dispersions:", diffs);
+
+            // --- 7) Error rates ---
+            for (let i = 0; i < loadcellCount; i++) {
+                measurementErrRate[i] = await roundDecimalFast(diffs[i], precisionForce);
+                console.info(`\n\t\tLC ${i}: 🎰 Measurement error rate:`, measurementErrRate[i], "N");
+
+
+                loadcellErrRate[i] = (loadcellsInfo.capacities[i] * 9.81) / 2_000; // 0.05% of the capacity
+                console.info(`\n\t\tLC ${i}: 🎰 Loadcell error rate:`, loadcellErrRate[i], "N");
+
+                // --- 8) Final error rate ---
+                const alpha = 0.65; // Weighting factor between measurement and loadcell error rates
+                totalErrRate[i] = alpha * measurementErrRate[i] + (1 - alpha) * loadcellErrRate[i];
+                console.info(`\n\tLC ${i}: 🎲 Final error rate:`, totalErrRate[i], "N");
+                await logMessage(`\tLC ${i}: 🎲 Set error rate: ${totalErrRate[i]} N`);
+            }
+
+            const err = mean1D(totalErrRate); // TODO: dle sledovaných sil
+
+            // --- 9) Clear force fields ---
+            measureForces = Array(loadcellCount).fill(null).map(() => []);
+
+
+            // ==================================
+            // ==================================
+
+
+            // === Enable Data Streaming and DSLR Shooting ===
+            await sendCommandGeneral(`DATA SET INTERVAL ${dataInterval_us}`, 5);
+
+
+            experimentEndLimits = {position: null, force: totalErrRate, time: null};
+            measurement_limits.error.limit = 0;
+
+            UI.experimentStageLabel.textContent = `Approaching`;
+
+
+            await sleep(50);
+            let lastMoveBackDistance = maxPosition_mm;
+            const maxTime = convertUnits(5, 'minutes', 'milliseconds');
+
+            let index = 0;
+            const approachSettings = approachSets.length;
+
+
+            const startTime = Date.now();
+            while (index < approachSettings) {
+                let {speed, accel, distance} = approachSets[index];
+
+                await sendCommandGeneral("DATAC 0");
+                isApproaching = false;
+
+                tareValues.position = await measurePosition();
+
+                if (!isNum(tareValues.position)) {
+                    throwInternalError("Position measurement error before approach.");
+                }
+
+                tareValues.time = null;
+                experimentEndLimits.position = Math.min(maxPosition_mm, distance * 1.1 + tareValues.position);
+                experimentEndLimits.time = computeMotionTime(lastMoveBackDistance, speed, accel) + 150;
+                measurement_limits.error.counter = 0;
+
+                await sleep(10);
+
+                lastMoveBackDistance = distance;
+
+                await approach(speed, accel); // approach slowly
+
+                if (!isApproaching) {
+                    throwInternalError("Approach command was not accepted.");
+                    break;
+                }
+
+                while (isApproaching) {
+                    await sleep(1_000); // Prevents excessive CPU usage
+                }
+
+                await sendCommandGeneral(`MC STOP`);
+
+                if (isNull(isApproaching)) {
+                    throwInternalError("Approach was interrupted due to an error.");
+                    break;
+                }
+
+                if (measurement_limits.error.counter > measurement_limits.error.limit) {
+                    index = Math.max(0, index - 1); // go back to previous setting
+                } else {
+                    index++;
+                }
+
+                const time = Date.now();
+                if (time - startTime > maxTime) {
+                    console.warn("\n⚠️ Approach time exceeded maximum allowed duration.");
+                    await logMessage("⚠️ Approach time exceeded maximum allowed duration.");
+                    alert("⚠️ Approach time exceeded maximum allowed duration.");
+                    throwInternalError("Approach time exceeded.");
+                    break;
+                }
+
+                await sleep(50);
+            }
+
+            isApproaching = false;
+
+            // === Stop Data Streaming and DSLR Shooting ===
+            await sendStopAllMeasuring();
+
+            UI.experimentStageLabel.textContent = `Approached`;
+
+            await logMessage("⏏️ Approach stopped.");
+            await console.info("\n☑️ Approach finished.");
+
+        } catch (error) {
+            await sendStopAllMeasuring();
+
+            if (liveUpdate) await chartUpdate();
+
+            await handleError(error, "Approach Sample");
+            await showNotification("Approach Interrupted",
+                "An error occurred during the approach. Please check the logs and machine.");
+            await alert(`Approach to Sample Interrupted\n     ❌ Approach failed. Please check the logs and machine.\n\n     Error: ${error.message || error}`);
+
+        } finally {
+            await sendStopAllMeasuring();
+
+            for (let i = 0; i < loadCellNumMax; i++) {
+                await sendCommandGeneral(`LC TARE RESET ${i}`);
+            }
+
+            UI.experimentStageLabel.textContent = `Idle`;
+            maxDataPoints = maxDataPointsIdle;
+            isApproaching = false;
+
+            await sleep(100);
+
+            endedMoving();    // unlock UI and watchdog
+            unlockMovement();
         }
     }
 
@@ -10384,6 +10906,29 @@
         }
     }
 
+    async function getMachineLimitPosition(timeOut = 2_000) {
+        if (!isConnected) {
+            console.warn("⚠️ ESP is not connected!");
+            await logMessage("⚠️ ESP is not connected!");
+            return;
+        }
+        try {
+            if (debugging) logMessage(" 📢\tGet machine limit position...");
+
+            const limitPos = toNumber(await getPromisedValue("MC GET LIMIT POS", /Limit position:\s(-?\d+(\.\d+)?)\smm/, 1, timeOut), true);
+            // const limitPos = parseFloat(await getPromisedValue("MC GET LIMIT POS", /S0:([+-]?\d+\.\d{4})/, 1, timeOut));
+            if (!isNum(limitPos)) {
+                throw new Error(`Limit position is not a number: ${limitPos}`);
+            }
+            console.info("\n\t📏 Machine limit position:", limitPos, "mm");
+
+            return roundDecimalFast(limitPos, precisionPosition);
+        } catch (error) {
+            console.error(error.message);
+            throw new Error(`Machine limit position not received. ${error}`);
+        }
+    }
+
     async function isMoving(timeOut = 100) {
         if (!isConnected) {
             logAndConsoleMessage("⚠️ ESP is not connected!", {consoleLevel: 'warn'});
@@ -10694,6 +11239,90 @@
 
         if (takeMeasurements) { // Handle takeMeasurements
             newData.force?.forEach((value, index) => (loadcellsInfo.presentLoadcells[index] && isNumSafe(value)) ? measureForces[index].push(value) : null);  // Collect force data for calibration
+            return;
+        }
+
+        if (isApproaching) { // Handle approaching
+            if (!isNum(newData?.time) || !isNum(newData?.position) || !isNum(newData?.speed)) {
+                measurement_limits.invalid_data.counter++;
+
+                if (measurement_limits.invalid_data.counter > measurement_limits.invalid_data.limit) {
+                    console.warn("⚠️ Invalid data received during approaching:", {
+                        time: newData?.time,
+                        position: newData?.position,
+                        speed: newData?.speed
+                    });
+                    await sendStopAllMeasuring();
+                    isApproaching = null;
+                }
+                return;
+            } else {
+                measurement_limits.invalid_data.counter = 0;
+            }
+
+
+            if (!isNum(tareValues.time)) {
+                tareValues.time = newData?.time;
+                newData.time = 0.000_000;
+            } else {
+                const corrected = timeStepCheck(catchVal(lastAcceptedTime, parsedData.time, isNum), (newData?.time - tareValues.time), (dataInterval_us * timeConversionDATAC));
+                newData.time = roundDecimalFast(corrected, precisionTime);
+
+            }
+
+            if (newData?.time >= experimentEndLimits.time) {
+                await sendStopAllMeasuring();
+                measurement_limits.error.counter++;
+                isApproaching = false;
+                console.info("ℹ️ Approaching ended: time limit reached.");
+                logMessage("ℹ️ Approaching ended: time limit reached.");
+                return;
+            }
+
+            if (newData?.position >= experimentEndLimits.position) {
+                await sendStopAllMeasuring();
+                measurement_limits.error.counter++;
+                isApproaching = false;
+                console.info("ℹ️ Approaching ended: position limit reached.");
+                logMessage("ℹ️ Approaching ended: position limit reached.");
+                return;
+            }
+
+            if (newData?.speed < (1 / 1e2) && newData?.time > 0.5) {
+                measurement_limits.zero_speed.counter++;
+                if (measurement_limits.zero_speed.counter > measurement_limits.zero_speed.limit) {
+
+                    measurement_limits.global.counter++;
+                    if (measurement_limits.global.counter > measurement_limits.global.limit) {
+                        console.warn("⚠️ Approaching stopped: global measurement limit reached.");
+                        logMessage("⚠️ Approaching stopped: global measurement limit reached.");
+                        await sendStopAllMeasuring();
+                        isApproaching = false;
+                        measurement_limits.error.counter++;
+                        return;
+                    } else {
+                        sendCommandGeneral(`MC END`);
+                        console.warn("⚠️ Approaching stopped: zero speed limit reached, Moving to end position.");
+                        logMessage("⚠️ Approaching stopped: zero speed limit reached, Moving to end position.");
+                    }
+                }
+            } else {
+                measurement_limits.zero_speed.counter = 0;
+            }
+
+            if (newData?.force?.some((v, i) =>
+                (isNum(v) && isNum(experimentEndLimits.force[i])) && v >= (experimentEndLimits.force[i] * 1.05))) {
+                await sendStopAllMeasuring();
+                const returnAcceleration = 100;
+                const returnSpeed = speedFromDistAndTime(tareValues.position, 2, 0.01, 25, returnAcceleration);
+                const returnTime = Math.ceil((computeMotionTime(tareValues.position, returnSpeed, returnAcceleration) * 1_000) + 150);
+                await setSpeedAndAcceleration(returnSpeed, returnAcceleration, false);
+                await sendCommandGeneral(`MC MOVEBY MACH ${tareValues.position * -1}`); // move slightly away from the sample
+                await sleep(returnTime);
+                isApproaching = false;
+                return;
+            }
+
             return;
         }
 
@@ -13046,7 +13675,7 @@
         await logMessage("\n");
 
         await sendCommandGeneral("MC STOP"); // Stop movement
-        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 1), (IS_DEBUGGING ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', timeUnitMach)))}`); // Stop data collection
+        await sendCommandGeneral(`DATA SET INTERVAL ${Math.ceil(clamp(getInputNumDefAbsInt("inputAppInterval", 100), (IS_DEBUGGING ? 1 : maxDataPointsIdle * 5_000), convertUnits(2, 'min', timeUnitMach)))}`);
         await sendCommandGeneral("DSLR STOP CYCLIC"); // Stop DSLR cyclic
 
         await logMessage("\n");
@@ -13969,6 +14598,7 @@
 
         isExperimentRunning = false;
         machineOccupation = false;
+        isApproaching = false;
         calibrationStatus = false;
         if (isPeerConnected) setDataToPeerDevice('status', getMachineState());
         UI.loadingLogContainer.style.background = "#323232";
@@ -14073,6 +14703,7 @@
         forceDataChart = Array(catchVal(loadCellNum, 0, isNumSafe)).fill(null).map(() => []);
         photoDataChart = [];
         dataCount = 0;
+        aggregatedDataBetweenSteps = [];
 
         // Experiment parameters
         // --------------------------------
@@ -14652,23 +15283,18 @@
             progressLabel: $ID("experimentProgressLabel"), // Label for progress percentage
             experimentStageLabel: $ID("experimentStage"), // Label for current experiment stage
 
-            timeChartContainer: $ID("timeChart"),
-            positionChartContainer: $ID("positionChart"),
+            // timeChartContainer: $ID("timeChart"),
+            // positionChartContainer: $ID("positionChart"),
             chartsContainer: $ID("chartsContainer"),
 
             autoReturnPosition: $ID("autoReturnPositionExperiment"),
-            autoReturnPositionLabel: $ID("autoReturnPositionExperimentLabel"),
-
-            moveUpBtn: $ID("moveMachineUP"), // Button to move the device up
-            moveDownBtn: $ID("moveMachineDOWN"), // Button to move the device down
-            moveUp50Btn: $ID("moveUp50"), // Button to move the device up
-            moveDown50Btn: $ID("moveDown50"), // Button to move the device down
+            // autoReturnPositionLabel: $ID("autoReturnPositionExperimentLabel"),
 
             returnBtn: $ID("returnPositionExperimentBtn"), // Button to return to the starting position
 
 
-            moveToBtn: $ID("moveToBtn"), // Button to move to a specific position
-            moveToInput: $ID("moveToInput"), // Input field for target position
+            // moveToBtn: $ID("moveToBtn"), // Button to move to a specific position
+            // moveToInput: $ID("moveToInput"), // Input field for target position
 
             calibrateBtn: $ID("calibrateBtn"), // Button to calibrate the device
 
@@ -14780,7 +15406,6 @@
 
 
         // ===== Ovládací logika tlačítka =====
-        const btnLoadCSV = $ID("btnLoadSettings");
         const inputLoadCSV = $ID("appFileInput");
 
         inputLoadCSV.addEventListener("change", async (e) => {
@@ -14791,7 +15416,7 @@
             inputLoadCSV.value = ""; // reset pro další výběr stejného souboru
         });
 
-        btnLoadCSV.addEventListener("click", async () => {
+        $ID("btnLoadSettings").addEventListener("click", async () => {
             if (isExperimentRunning) return;
             if ("showOpenFilePicker" in window) {
                 try {
@@ -15032,8 +15657,6 @@
 
         $ID("clearChartBtn")?.addEventListener("click", async () => clearCharts());
 
-        // TODO:  $$$("saveChartBtn")?.addEventListener("click", async () => saveChartsAsPNG());
-
         $ID("reloadChartBtn")?.addEventListener("click", async () => reloadCharts());
 
         $ID("convertCSV")?.addEventListener("click", async () => convertCSVtoXLSX_MATTES());
@@ -15061,9 +15684,7 @@
 
         $ID("aboutButton")?.addEventListener("click", async () => window.open(`./about${IS_LOCAL ? '.html' : ''}`, '_blank', 'noopener,noreferrer'));
 
-        $ID("versionSelect")?.addEventListener("change", async (event) => {
-            changeVersion(event.target.value);
-        });
+        $ID("versionSelect")?.addEventListener("change", async (event) => changeVersion(event.target.value));
 
         $ID("updateMachButton")?.addEventListener("click", async () => {
             // const preloadScreen = $ID("preloadScreen");
@@ -15180,16 +15801,18 @@
         }
 
 
-        attachHoldHandlers(UI.moveUpBtn, async () => sendMoveCommand("MC HOME")); // TODO: problém s rychlostmi na konci
-        attachHoldHandlers(UI.moveDownBtn, async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
+        attachHoldHandlers($ID("moveMachineUP"), async () => sendMoveCommand("MC HOME")); // TODO: problém s rychlostmi na konci
+        attachHoldHandlers($ID("moveMachineDOWN"), async () => sendMoveCommand("MC END")); // TODO: problém s rychlostmi na konci
 
 
         UI.returnBtn.addEventListener('click', async () => moveToOriginalPosition());
 
-        UI.moveUp50Btn.addEventListener("click", async () => moveBy(-50));  // TODO: problém s rychlostmi na konci a zrychlením
-        UI.moveDown50Btn.addEventListener("click", async () => moveBy(50));  // TODO: problém s rychlostmi na konci a zrychlením
+        $ID("moveUp50").addEventListener("click", async () => moveBy(-50));  // TODO: problém s rychlostmi na konci a zrychlením
+        $ID("moveDown50").addEventListener("click", async () => moveBy(50));  // TODO: problém s rychlostmi na konci a zrychlením
 
         UI.calibrateBtn.addEventListener("click", async () => calibrateMachine());
+
+        $ID("approachBtn").addEventListener("click", async () => approachSample());
 
         // Set both elements' limits to match
         [[UI.speedSlider, UI.speedLabel], [UI.accelerationSlider, UI.accelerationLabel]]?.forEach(pair => {
@@ -15322,7 +15945,7 @@
      */
     window.onload = async () => {
 
-        while (!(initialPageLoaded && initialDataLoaded)) await sleep(200); // TODO: add timeout
+        while (!(initialPageLoaded && initialDataLoaded)) await sleep(250);
 
         // await loadCommands();
 
