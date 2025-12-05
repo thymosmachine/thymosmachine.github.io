@@ -15722,8 +15722,11 @@
                 const outLabel = $(`label[for="inputLoadcellOutput${i}"]`);
                 activate(capInput, capLabel, isActive);
                 activate(outInput, outLabel, isActive);
-                if (timeChart) timeChart.setSeries(i, {show: isActive});
-                if (positionChart) positionChart.setSeries(i, {show: isActive});
+                const container = event.target.closest('.input-group');
+                if (systemLevel >= toNumber(container.dataset.systemLevel, false)) {
+                    if (timeChart) timeChart.setSeries(i, {show: isActive});
+                    if (positionChart) positionChart.setSeries(i, {show: isActive});
+                }
             });
         }
 
