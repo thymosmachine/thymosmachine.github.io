@@ -14944,6 +14944,7 @@
 
         el.classList.toggle(((isNonEmptyStr(elLevel) && elLevel?.endsWith('v')) ? 'invisible' : 'undisplayed'), !isVisible);
 
+        // dispatch change events for inputs inside hidden elements
         if (!isVisible && doBubbles === true) {
             $$('input', el)?.forEach(input => {
                 if (input?.dataset?.system === 'SKIP') return;
@@ -14952,6 +14953,7 @@
             });
         }
 
+        // check if element is an opening container
         if (!isVisible) {
             const openingContainer = el.classList.contains('openingContainer');
             if (openingContainer) {
@@ -14960,6 +14962,27 @@
                     const name = container.id;
                     const btn = $ID(name + "OpenBtn");
                     controlContainer(btn, container, false, {immediate: true});// zavři bez animace
+                }
+            }
+        }
+
+        // check if element is an option in a select
+        if (!isVisible && el.tagName.toLowerCase() === 'option') {
+            const parentSelect = el.parentElement;
+            if (parentSelect && parentSelect.tagName.toLowerCase() === 'select') {
+                if (parentSelect.value === el.value) {
+                    const validOption = Array.from(parentSelect.options).find(o => o !== el && o.value !== '' && o.value.toLowerCase() !== 'none');
+                    if (validOption) {
+                        parentSelect.value = validOption.value;
+                    } else {
+                        const noneOption = Array.from(parentSelect.options).find(o => o.value === '' || o.value.toLowerCase() === 'none');
+                        if (noneOption) {
+                            parentSelect.value = noneOption.value;
+                        } else {
+                            parentSelect.value = ''; // fallback to empty
+                        }
+                    }
+                    parentSelect.dispatchEvent(new Event("change", {bubbles: true}));
                 }
             }
         }
