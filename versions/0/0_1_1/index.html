@@ -6150,25 +6150,32 @@
     }
 
 
-    function controlContainer(btn, container) {
+    function controlContainer(btn, container, visibility = undefined, {immediate = false} = {}) {
         if (!container || !btn) return;
 
-        if (window.getComputedStyle(container).maxHeight === "0px") {
+        const isClosed = isBool(visibility) ? visibility : window.getComputedStyle(container).maxHeight === "0px";
+
+        if (isClosed) { // Open the container
             container.style.display = 'block';
             container.style.visibility = 'visible';
             container.style.contentVisibility = 'unset';
             container.style.maxHeight = container.scrollHeight + "px"; // Open the container and get real height
             container.style.opacity = "1";
             btn.textContent = "🔼";
-        } else {
-            container.style.maxHeight = "0"; // Close the container
+
+        } else { // Close the container
+            container.style.maxHeight = "0";
             container.style.opacity = "0";
             btn.textContent = "🔽";
-            container.addEventListener('transitionend', () => {
+
+            const hideContent = () => {
                 container.style.visibility = 'hidden';
                 container.style.display = 'none';
                 container.style.contentVisibility = 'auto';
-            }, {once: true});
+            };
+
+            if (immediate) hideContent();
+            else container.addEventListener('transitionend', () => hideContent, {once: true});
         }
     }
 
@@ -14893,6 +14900,18 @@
                 // input.value = '';
                 input.dispatchEvent(new Event("change", {bubbles: true}));
             });
+        }
+
+        if (!isVisible) {
+            const openingContainer = el.classList.contains('openingContainer');
+            if (openingContainer) {
+                const container = el.querySelector('.sizeableContainer');
+                if (container && !container.classList.contains('undisplayed')) {
+                    const name = container.id;
+                    const btn = $ID(name + "OpenBtn");
+                    controlContainer(btn, container, false, {immediate: true});// zavři bez animace
+                }
+            }
         }
     }
 </script>
