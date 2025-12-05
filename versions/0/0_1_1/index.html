@@ -3942,7 +3942,29 @@
     const getElementValue = (id) => {
         const el = getElement(id);
         if (!isElement(el)) return null;
-        return catchVal(el?.value?.trim(), null, isNonEmptyStr);
+
+        let v = null;
+        const tagName = String(el?.tagName?.toLowerCase());
+        if (tagName === 'input') {
+            const inputType = (el.type || '').toLowerCase();
+            if (inputType === 'checkbox') {
+                v = el.checked;
+            } else if (inputType === 'radio') {
+                const radios = document.getElementsByName(el.name);
+                for (let radio of radios) {
+                    if (radio.checked) {
+                        v = radio.value.trim();
+                        break;
+                    }
+                }
+            } else {
+                v = el?.value?.trim();
+            }
+        } else if (tagName === 'select' || tagName === 'textarea') {
+            v = el?.value?.trim();
+        }
+
+        return catchVal(v, null, or(isNonEmptyStr, isBool));
     }
 
     const getInputVal = (id) => {
@@ -3950,9 +3972,10 @@
         const el = getElement(id);
         if (!isElement(el)) return null;
 
-        let val = null;
+        let val = undefined;
         const isSystem = el?.dataset?.system?.trim() === 'SKIP';
-        if (!isUnavailable(el) || isSystem) val = catchVal(el?.value?.trim(), null, isNonEmptyStr); // TODO: el.disabled, el.hidden
+        if (!isUnavailable(el) || isSystem) val = getElementValue(el); // TODO: el.disabled, el.hidden
+        if (isNull(val)) return null;
         if (isNotEmpty(val)) return val;
 
         if (IS_DEBUGGING) console.info('Getting default value for', el.id);
