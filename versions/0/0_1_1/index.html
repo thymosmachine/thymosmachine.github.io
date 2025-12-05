@@ -16102,8 +16102,8 @@
         }, 15_100);
 
         function generateId() {
-            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.toUpperCase();
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789'.toUpperCase(); // no 0 to avoid confusion with O
             let id = 'MT-';
             id += letters[Math.floor(Math.random() * letters.length)];
             for (let i = 0; i < 5; i++) {
