@@ -6765,7 +6765,7 @@
 
     function checkDescription({text = getElementValue("experimentDesc"), set = false} = {}) {
         if (!isNonEmptyStr(String(text))) return "";
-        const cleanedDesc = String(text)?.replace(/(\r\n|\n|\r)/gm, " ").replace(/§.*§;/gm, "").trim() || "";
+        const cleanedDesc = String(text)?.replace(/(\r\n|\n|\r)/gm, " ").replace(/§[^§]*§/g, "").trim() || "";
         if (set) $ID("experimentDesc").value = cleanedDesc || "";
         return cleanedDesc;
     }
@@ -9673,10 +9673,10 @@
             await addDataToLog({
                 status: "initialized",
                 expSettings: settings,
-                experimentName: getElementValue("experimentName"),
+                experimentName: catchVal(getElementValue("experimentName"), "Unnamed Experiment", isOk),
                 experimentLabel: experimentLabel?.trim(),
-                experimentCounter: getElementValue("experimentCount"),
-                experimentDescription: getElementValue("experimentDesc"),
+                experimentCounter: catchVal(getElementValue("experimentCount"), 0, isNumSafe),
+                experimentDescription: catchVal(getElementValue("experimentDesc"), "", isAny),
                 experimentDate: (new Date().toLocaleString())?.replaceAll(". ", "."),
                 loadDirection: doCycles ? 0 : displacementSignCorrection,
                 loadDistance: distance_mm,
