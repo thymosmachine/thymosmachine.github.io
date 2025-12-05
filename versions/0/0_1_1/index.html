@@ -7877,6 +7877,8 @@
 <script>
 
     async function sendMoveCommand(command, pauseMs = 1) {
+        if (!isConnected) return;
+
         // check calibration status before moving
         calibrationStatus = await getCalibrationStatus(2_000);
 
@@ -8245,6 +8247,8 @@
     // ------- Movement -------
     async function beganMoving(timeoutMs = NaN) {
         if (machineOccupation) return; // is already moving
+        if (!isConnected) return;
+
         lockConnectionButtons(true);
         lockControls();
 
@@ -8514,21 +8518,22 @@
         if (isConnected) {
             setAcceleration(200, false); // Set acceleration to 200 mm/s²
             sendStopAllMeasuring();
-        }
 
-        sendCommandGeneral("MC STOP");
-        console.info("\t🛑 Movement stopped.");
+            sendCommandGeneral("MC STOP");
+            console.info("\t🛑 Movement stopped.");
+        }
 
         endedMoving();
     }
 
 
     async function softStopMachine() {
-        setAcceleration(200, false); // Set acceleration to 200 mm/s²
+        if (isConnected) {
 
-        await rampSpeed(currentSpeed, 0.1);
+            setAcceleration(200, false); // Set acceleration to 200 mm/s²
 
-        endedMoving();
+            await rampSpeed(currentSpeed, 0.1);
+        }
 
         if (isExperimentRunning) {
             await endMeasuring(0, {
@@ -8539,6 +8544,8 @@
             UI.experimentStageLabel.textContent = `Stopped`;
             document.documentElement.style.setProperty('--progressColor', 'var(--progressError-color)');
         }
+
+        endedMoving();
     }
 
     /**
