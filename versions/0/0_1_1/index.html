@@ -12207,19 +12207,19 @@
 
 
         const expNum = parseInt(getElementValue("experimentCount")) || 0;
-        const experimentName = getElementValue("experimentName");
+        const experimentName = getElementValue("experimentName")?.trim()?.replace(/\s+/g, "_") || "";
         const experimentDesc = checkDescription();
-
-        handFolderSelect = $ID("storagePath").checked || false;
 
         if (!experimentName) {
             alert("Unable to save the data.\n    Please enter the Experiment name.");
             return;
         }
 
+        handFolderSelect = $ID("storagePath").checked || false;
+
         let experimentCount
         if (expNum) {
-            experimentCount = `_${expNum.toString().padStart(3, "0")}`;
+            experimentCount = `-${expNum.toString().padStart(3, "0")}`;
         } else {
             experimentCount = "";
         }
