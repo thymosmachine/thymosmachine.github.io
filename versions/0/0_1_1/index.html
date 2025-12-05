@@ -11846,10 +11846,10 @@
             let val;
             if (el.type === "checkbox") val = !!el.checked;
             else if (el.type === "number") val = el.value === "" ? null : toNumber(el.value);
-            else if (el.tagName === "SELECT") val = el.value;
+            else if (el.tagName.toLowerCase() === "select") val = el.value;
             else val = el.value;
 
-            const essence = (el?.tagName === "SELECT") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
+            const essence = (el?.tagName.toLowerCase() === "select") ? ((el.selectedOptions[0]?.dataset.essence) ? el.selectedOptions[0]?.dataset.essence : el?.dataset.essence) : el?.dataset.essence;
 
             const value = isInvalidValue(val, {considerFalse: false}) ? "N/A" : (isStr(val) ? val.replace('∞', "Inf").replace('ꝏ', "Inf").replace('ထ', "Inf").replace('Ꝏ', "Inf").replace('±', '').replace(/[–—−]/g, '-').trim() : val);
             inputs[key] = {
