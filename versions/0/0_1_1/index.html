@@ -3923,6 +3923,18 @@
         }
     };
 
+    const and = (fn1, fn2) => {
+        return function (...args) {
+            return fn1.apply(this, args) && fn2.apply(this, args);
+        }
+    };
+
+    const or = (fn1, fn2) => {
+        return function (...args) {
+            return fn1.apply(this, args) || fn2.apply(this, args);
+        }
+    };
+
     const getElement = (id) => {
         return isElement(id) ? id : $ID(String(id));
     }
