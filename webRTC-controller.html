@@ -646,6 +646,28 @@
                 <canvas id="hostChart"></canvas>
             </div>
         </div>
+
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M17 10.5V7c0-1.1-.9-2-2-2H5C3.9 5 3 5.9 3 7v8c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-3.5l4 4v-9l-4 4z"/>
+                </svg>
+                Live Camera
+            </h3>
+            <div class="button-group" style="margin-bottom: 12px; justify-content: flex-end;">
+                <button class="btn btn-secondary" id="hostStopCameraBtn" style="display: none;">
+                    Stop Video
+                </button>
+            </div>
+
+            <video id="hostVideo"
+                   autoplay
+                   playsinline
+                   style="width: 100%; max-height: 360px; background: black; border-radius: 12px;">
+                <!-- controls = "controls of video (play,fullscreen,...)" -->
+            </video>
+        </div>
+
     </div>
 
     <div id="controllerSection" class="section">
@@ -754,6 +776,36 @@
                 <canvas id="controllerChart"></canvas>
             </div>
         </div>
+
+        <div class="card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-1.99.9-1.99 2L2 19c0 1.1.89 2 1.99 2H20c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 14H4V7h4.05l1.83-2h4.24l1.83 2H20v12z"/>
+                    <circle cx="12" cy="13" r="3.5"/>
+                </svg>
+                Camera (send to Host)
+            </h3>
+
+            <div class="button-group" style="margin-bottom: 12px; flex-wrap: wrap;">
+                <label for="cameraSelect"></label><select id="cameraSelect"
+                                                          style="flex: 1 1 180px; padding: 8px 12px; border-radius: 8px;
+                   border: 1px solid var(--gray-300); min-width: 160px;">
+                <option value="" disabled selected>Loading cameras…</option>
+            </select>
+
+                <button class="btn btn-primary" id="startCameraBtn" disabled>
+                    Start Camera Stream
+                </button>
+            </div>
+
+            <video id="controllerPreview"
+                   autoplay
+                   playsinline
+                   muted
+                   style="width: 100%; max-height: 240px; background: black; border-radius: 12px;">
+            </video>
+        </div>
+
     </div>
 </div>
 
@@ -940,6 +992,10 @@
         const dot = document.getElementById('dot');
         const copyBtn = document.getElementById('copyHostId');
         const disconnectBtn = document.getElementById('hostDisconnect');
+
+        const hostVideoEl = document.getElementById('hostVideo');
+        const hostStopCameraBtn = document.getElementById('hostStopCameraBtn');
+        let currentMediaCall = null;
 
         let pos = {x: 0, y: 0};
         let conn = null;
@@ -1140,6 +1196,45 @@
             debug: 2
         });
 
+        // ---- MEDIA: přijímání video streamu z controlleru ----
+        peer.on('call', (call) => {
+            log('📽️ Incoming media call from: ' + call.peer);
+
+            // Host jen přijímá, neodesílá vlastní stream
+            call.answer(null);
+
+            currentMediaCall = call;
+
+            if (hostStopCameraBtn) {
+                hostStopCameraBtn.style.display = 'inline-flex';
+            }
+
+            call.on('stream', (remoteStream) => {
+                log('🎥 Media stream received');
+                if (hostVideoEl) {
+                    hostVideoEl.srcObject = remoteStream;
+                    hostVideoEl.play().catch(() => {
+                    });
+                }
+            });
+
+            call.on('close', () => {
+                log('📴 Media call closed');
+                if (hostVideoEl) {
+                    hostVideoEl.srcObject = null;
+                }
+                if (hostStopCameraBtn) {
+                    hostStopCameraBtn.style.display = 'none';
+                }
+                currentMediaCall = null;
+            });
+
+            call.on('error', (err) => {
+                log('❌ Media call error: ' + err);
+            });
+        });
+
+
         peer.on('open', (id) => {
             hostIdDiv.textContent = id;
             copyBtn.style.display = 'inline-flex';
@@ -1235,16 +1330,44 @@
             return Math.max(-12, Math.min(12, value));
         };
 
+        if (hostStopCameraBtn) {
+            hostStopCameraBtn.addEventListener('click', () => {
+                if (currentMediaCall) {
+                    currentMediaCall.close(); // tím se spustí call.on('close')
+                    currentMediaCall = null;
+                }
+                if (hostVideoEl) {
+                    hostVideoEl.srcObject = null;
+                }
+                hostStopCameraBtn.style.display = 'none';
+                log('🛑 Host stopped video stream');
+            });
+        }
+
+
         disconnectBtn.addEventListener('click', () => {
             if (conn) {
                 conn.close();
                 conn = null;
             }
+
+            if (currentMediaCall) {
+                currentMediaCall.close();
+                currentMediaCall = null;
+            }
+            if (hostVideoEl) {
+                hostVideoEl.srcObject = null;
+            }
+            if (hostStopCameraBtn) {
+                hostStopCameraBtn.style.display = 'none';
+            }
+
             disconnectBtn.style.display = 'none';
             statusDiv.className = 'status ready';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
             log('🔌 Disconnected by user');
         });
+
 
         peer.on('connection', (connection) => {
             conn = connection;
@@ -1421,6 +1544,14 @@
 
         let conn = null;
 
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const previewVideoEl = document.getElementById('controllerPreview');
+        const cameraSelect = document.getElementById('cameraSelect');
+
+        let localStream = null;
+        let mediaCall = null;
+        let isStreaming = false;
+
         Chart.getChart('controllerChart')?.destroy();
         const ctx = document.getElementById('controllerChart').getContext('2d');
         const data = {
@@ -1454,6 +1585,11 @@
             console.log('My Controller ID:', id);
             statusDiv.className = 'status ready';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready to connect</span>';
+
+            if (startCameraBtn) {
+                startCameraBtn.disabled = false;
+            }
+            listCameras();
         });
 
         peer.on('error', (err) => {
@@ -1527,11 +1663,15 @@
             });
         };
 
+
         disconnectBtn.addEventListener('click', () => {
             if (conn) {
                 conn.close();
                 conn = null;
             }
+
+            stopCamera();
+
             controllerLog('🔌 Disconnected by user');
             statusDiv.className = 'status ready';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready to connect</span>';
@@ -1664,8 +1804,383 @@
             resetJoystick();
         };
 
+
+        async function listCameras() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                controllerLog('⚠️ enumerateDevices not supported');
+                if (cameraSelect) {
+                    cameraSelect.innerHTML = '<option value="">No camera selection</option>';
+                    cameraSelect.disabled = true;
+                }
+                return;
+            }
+
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoInputs = devices.filter(d => d.kind === 'videoinput');
+
+                if (!cameraSelect) return;
+
+                cameraSelect.innerHTML = '';
+                if (videoInputs.length === 0) {
+                    cameraSelect.innerHTML = '<option value="">No cameras found</option>';
+                    cameraSelect.disabled = true;
+                    return;
+                }
+
+                videoInputs.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                cameraSelect.disabled = false;
+            } catch (err) {
+                console.error(err);
+                controllerLog('⚠️ Cannot list cameras: ' + err.message);
+                if (cameraSelect) {
+                    cameraSelect.innerHTML = '<option value="">Camera error</option>';
+                    cameraSelect.disabled = true;
+                }
+            }
+        }
+
+        async function startCameraAndCallHost(deviceId) {
+            if (!conn || !conn.open) {
+                showError('Not connected to host yet!');
+                return;
+            }
+
+            // když už něco běží, nejdřív stop
+            if (mediaCall) {
+                mediaCall.close();
+                mediaCall = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+
+            try {
+                const constraints = {
+                    video: deviceId
+                        ? {deviceId: {exact: deviceId}}
+                        : {facingMode: "environment"},
+                    audio: false
+                };
+
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // po prvním getUserMedia zkus znovu načíst seznam kamer (kvůli labelům)
+                listCameras().catch(() => {
+                });
+
+                // Lokální náhled na telefonu
+                if (previewVideoEl) {
+                    previewVideoEl.srcObject = localStream;
+                    await previewVideoEl.play().catch(() => {
+                    });
+                }
+
+                const hostId = getTokenValue();
+                controllerLog('📞 Starting media call to ' + hostId);
+
+                mediaCall = peer.call(hostId, localStream);
+
+                mediaCall.on('stream', (remoteStream) => {
+                    // host neposílá zpět, takže spíš jen info
+                    controllerLog('ℹ️ Remote media stream (host) received (not used)');
+                });
+
+                mediaCall.on('close', () => {
+                    controllerLog('📴 Media call closed');
+                    mediaCall = null;
+                    isStreaming = false;
+                    if (startCameraBtn) {
+                        startCameraBtn.textContent = 'Start Camera Stream';
+                        startCameraBtn.classList.remove('btn-danger');
+                        startCameraBtn.classList.add('btn-primary');
+                    }
+                });
+
+                mediaCall.on('error', (err) => {
+                    controllerLog('❌ Media call error: ' + err);
+                });
+
+                isStreaming = true;
+                if (startCameraBtn) {
+                    startCameraBtn.textContent = 'Stop Camera Stream';
+                    startCameraBtn.classList.remove('btn-primary');
+                    startCameraBtn.classList.add('btn-danger');
+                }
+
+            } catch (err) {
+                console.error(err);
+                controllerLog('❌ Camera error: ' + err.message);
+                showError('Cannot access camera: ' + err.message);
+            }
+        }
+
+        function stopCamera() {
+            if (mediaCall) {
+                mediaCall.close();
+                mediaCall = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            if (previewVideoEl) {
+                previewVideoEl.srcObject = null;
+            }
+            isStreaming = false;
+            if (startCameraBtn) {
+                startCameraBtn.textContent = 'Start Camera Stream';
+                startCameraBtn.classList.remove('btn-danger');
+                startCameraBtn.classList.add('btn-primary');
+            }
+            controllerLog('🛑 Camera stream stopped');
+        }
+
+
+        if (startCameraBtn) {
+            startCameraBtn.addEventListener('click', () => {
+                if (!isStreaming) {
+                    const selectedId = cameraSelect && !cameraSelect.disabled ? cameraSelect.value : null;
+                    startCameraAndCallHost(selectedId);
+                } else {
+                    stopCamera();
+                }
+            });
+        }
+
+       // při změně kamery – pokud už stream běží, přepneme na novou
+        if (cameraSelect) {
+            cameraSelect.addEventListener('change', () => {
+                if (isStreaming) {
+                    const selectedId = cameraSelect.value || null;
+                    startCameraAndCallHost(selectedId);
+                }
+            });
+        }
+
+
         drawJoystick();
     }
+</script>
+
+<script type="text/plain">
+    Ano, něco ovládat můžeš – ale:
+
+hodně záleží na prohlížeči a HW (mobil/desktop),
+
+všechno jde přes MediaStreamTrack + applyConstraints() a částečně přes ImageCapture,
+
+na mobilech (hlavně iOS/Safari) je podpora dost omezená.
+
+Ukážu ti praktický postup, jak na to v tom, co už máš (getUserMedia + localStream).
+
+1️⃣ Základ: dostat se k video tracku
+
+Jakmile máš stream:
+
+localStream = await navigator.mediaDevices.getUserMedia({
+  video: { facingMode: "environment" },
+  audio: false
+});
+
+const videoTrack = localStream.getVideoTracks()[0];
+
+
+Na tom videoTrack můžeš:
+
+zjistit, co kamera umí: getCapabilities()
+
+zjistit aktuální nastavení: getSettings()
+
+změnit nastavení: applyConstraints({ ... })
+
+2️⃣ Zjistit, co ta konkrétní kamera vůbec umí
+const caps = videoTrack.getCapabilities();
+console.log('Capabilities:', caps);
+
+
+Typicky tam můžeš najít něco jako:
+
+exposureMode, exposureCompensation
+
+focusMode, focusDistance
+
+brightness, contrast, saturation
+
+zoom, whiteBalanceMode
+
+frameRate, width, height
+
+Ne každá kamera to má, takže vždycky kontroluj, jestli to existuje.
+
+3️⃣ Příklad: ruční zaostření (focus)
+
+Pokud kamera podporuje ruční fokus, v caps.focusDistance uvidíš min, max, step.
+
+const caps = videoTrack.getCapabilities();
+
+if (caps.focusDistance) {
+  console.log('Focus range:', caps.focusDistance);
+
+  // Nastavit fokus doprostřed rozsahu:
+  const middle = (caps.focusDistance.min + caps.focusDistance.max) / 2;
+
+  await videoTrack.applyConstraints({
+    advanced: [
+      {
+        focusMode: 'manual',     // pokud to zařízení podporuje
+        focusDistance: middle
+      }
+    ]
+  });
+} else {
+  console.log('Tahle kamera fokus neumožňuje ovládat.');
+}
+
+
+⚠️ Hodně zařízení (hlavně mobily) ti prostě fokus nedají řídit, nebo dovolí jen focusMode: "continuous" / "single-shot" bez focusDistance.
+
+4️⃣ Příklad: expozice / jas
+
+Expozice může být dostupná jako:
+
+exposureCompensation
+
+nebo jenom brightness
+
+const caps = videoTrack.getCapabilities();
+
+if (caps.exposureCompensation) {
+  const { min, max } = caps.exposureCompensation;
+  const desired = (min + max) / 2;
+
+  await videoTrack.applyConstraints({
+    advanced: [
+      {
+        exposureMode: 'manual',          // pokud podporováno
+        exposureCompensation: desired
+      }
+    ]
+  });
+} else if (caps.brightness) {
+  const { min, max } = caps.brightness;
+  const desired = max; // třeba maximum
+
+  await videoTrack.applyConstraints({
+    advanced: [
+      { brightness: desired }
+    ]
+  });
+} else {
+  console.log('Expozici/jas nejde ovládat na této kameře.');
+}
+
+5️⃣ Příklad: zoom
+
+Zoom bývá použitelnější (hlavně na mobilech):
+
+const caps = videoTrack.getCapabilities();
+
+if (caps.zoom) {
+  const { min, max } = caps.zoom;
+
+  // třeba 2× přiblížení (pokud to dovolí)
+  const targetZoom = Math.min(max, 2.0);
+
+  await videoTrack.applyConstraints({
+    advanced: [
+      { zoom: targetZoom }
+    ]
+  });
+}
+
+
+Tady je dobré udělat si slider v UI, který interpoluje mezi min a max a volá applyConstraints při změně.
+
+6️⃣ ImageCapture – pokročilejší ovládání + fotky
+
+Pro některé věci (hlavně fotky a jemnější kontrolu) existuje API:
+
+const track = localStream.getVideoTracks()[0];
+const imageCapture = new ImageCapture(track);
+
+// Co umí pro focení:
+const photoCaps = await imageCapture.getPhotoCapabilities();
+console.log(photoCaps);
+
+// Nastavit nějaké options (když podporuje):
+await imageCapture.setOptions({
+  imageWidth: 1920,
+  imageHeight: 1080,
+  fillLightMode: 'flash'  // pokud má
+});
+
+// Udelat fotku:
+const blob = await imageCapture.takePhoto();
+// → můžeš poslat přes WebRTC DataChannel, zobrazit atd.
+
+
+Zase: podpora jen v některých prohlížečích (Chromium-based, Android ok; Safari bída).
+
+7️⃣ Jak bych to napojil do tvého projektu prakticky
+
+Na controlleru (telefon):
+
+Po getUserMedia si ulož videoTrack.
+
+Vytvoř si UI (slidery / selecty) – třeba:
+
+<input type="range" id="zoomSlider">
+<input type="range" id="exposureSlider">
+<input type="range" id="focusSlider">
+
+
+Při inicializaci:
+
+const track = localStream.getVideoTracks()[0];
+const caps = track.getCapabilities();
+
+if (caps.zoom) {
+  zoomSlider.min = caps.zoom.min;
+  zoomSlider.max = caps.zoom.max;
+  zoomSlider.step = caps.zoom.step || 0.1;
+  zoomSlider.value = track.getSettings().zoom ?? caps.zoom.min;
+}
+
+zoomSlider.addEventListener('input', async () => {
+  await track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomSlider.value) }] });
+});
+
+
+Stejně pro focusDistance, brightness, exposureCompensation, … podle toho, co ti caps vrátí.
+
+8️⃣ Realita / omezení
+
+Nemůžeš si “vynutit” plnou kontrolu – některé telefony ti prostě dají jen auto režim.
+
+iOS Safari má hodně omezenou implementaci constraints.
+
+Někdy funguje jen část (třeba zoom ano, ale focus ne).
+
+Vždy je potřeba:
+
+zkontrolovat getCapabilities(),
+
+ošetřit, když něco chybí.
+
+Pokud chceš, můžu ti přímo doplnit:
+
+konkrétní slider UI do tvého HTML,
+
+a JS, který na základě getCapabilities() automaticky vytvoří jen ty slidery, které daná kamera opravdu umí.
+
 </script>
 </body>
 </html>
