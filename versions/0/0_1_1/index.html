@@ -15030,10 +15030,10 @@
         const l = label.toLowerCase(); // so it is not case-sensitive
 
         if (l.startsWith("default")) return 0; // 1. Default
-        if (l.startsWith("stable")) return 1; // 2. Stable
+        if (l.startsWith("stable")) return 1;  // 2. Stable
         if (l.startsWith("current")) return 2; // 3. Current
-        if (l.startsWith("latest")) return 3; // 4. Latest
-        return 4;                               // 5. others
+        if (l.startsWith("latest")) return 3;  // 4. Latest
+        return 4;                              // 5. others
     }
 
     async function populateVersions() {
@@ -15728,7 +15728,6 @@
         $ID("inputLoadLimitDropValue")?.addEventListener('change', async (event) => {
             // forceLimitDropValue = parseFloat(event.target.value);
         });
-
 
         $ID("inputTakePhotos")?.addEventListener('change', async (event) => {
             const isActive = event.target.checked;
