@@ -16301,14 +16301,14 @@
             copyBtn.style.display = 'inline-flex';
             statusDiv.className = 'status ready';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready – Share your Token</span>';
-            log('✅ Your Host ID: ' + id);
+            logMessage('✅ Remote controll set.\n\tYour Host Token: ' + id);
         });
 
         peer.on('error', (err) => {
             console.error('❌ Peer error: ', err);
             statusDiv.className = 'status error';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
-            log('❌ Error: ' + err);
+            logMessage('❌ Remote controll Error: ' + err);
         });
 
         copyBtn.addEventListener('click', () => {
@@ -16327,7 +16327,7 @@
         });
 
         let messageCount = 0;
-        const maxMessages = 10;
+        const maxMessages = 20;
 
         function log(msg) {
             const time = new Date().toLocaleTimeString();
