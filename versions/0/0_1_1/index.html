@@ -4235,7 +4235,8 @@
 
     const checkArray = (arr) => {
         if (!isNotEmpty(arr)) return null;
-        return isNodeList(arr) ? Array.from(arr) : (isArr(arr) ? arr : [arr]);
+        return isMAP(arr) ? Array.from(arr.values()) :
+            (isIterable(arr) ? Array.from(arr) : (isArr(arr) ? arr : [arr]));
     }
 
     const checkObject = (obj) => {
