@@ -7103,8 +7103,8 @@
 
         for (let i = 1; i <= (series); i++) {
             const state = isBool(states[i - 1]) ? states[i - 1] : show
-            if (isTC && i <= seriesCountTC) timeChart.setSeries(i, {show: state});
-            if (isPC && i <= seriesCountPC) positionChart.setSeries(i, {show: state});
+            if (isTC && i <= seriesCountTC) setChart(timeChart, i, state);
+            if (isPC && i <= seriesCountPC) setChart(positionChart, i, state);;
         }
     };
 
@@ -7162,8 +7162,7 @@
                         present[i] = false;
                     }
 
-                    if (timeChart) timeChart.setSeries(i + 1, {show: present[i]});
-                    if (positionChart) positionChart.setSeries(i + 1, {show: present[i]});
+                    setCharts([timeChart, positionChart], i + 1, present[i]);
                 }
             }
 
@@ -7417,6 +7416,17 @@
         };
     }
 
+    const setChart = (chart, index, state = false) => {
+        if (!isNonEmptyDict(chart)) return;
+        if (!isNumSafe(index) || index < 1) return;
+        if (!isBool(state)) state = false;
+        chart?.setSeries(index, {show: state});
+    };
+    const setCharts = (charts, index, state = false) => {
+        if (!isIterable(charts) && !isObj(charts)) return;
+        charts = checkArray(charts);
+        if (isNonEmptyArr(charts)) charts.forEach(chart => setChart(chart, index, state));
+    };
 
     // /////// uPlot Chart Initialization /////////
     function createChart(containerID, seriesLabels, title = "Graph", labelX = "", labelY = "") {
@@ -9547,13 +9557,11 @@
             // }
 
 
-            const setChart = (chart) => {
-                if (isVoid(chart)) return;
-                loadcellsInfo.presentLoadcells?.forEach((r, i) => chart.setSeries((i + 1), {show: r}));
-                chart.setSeries((loadcellCount + 1), {show: takePhotos});
+            const setGraphs = (charts) => {
+                loadcellsInfo.presentLoadcells?.forEach((r, i) => setCharts(charts, i, r));
+                setCharts(charts, (loadcellCount + 1), takePhotos);
             };
-            setChart(timeChart);
-            setChart(positionChart);
+            setGraphs([timeChart, positionChart]);
 
             // --- 6) Valid dispersion ---
             const diffs = validFields.flatMap(({
@@ -15727,8 +15735,7 @@
             const photosInput = $ID("inputPhotoInterval");
             const photosLabel = $(`label[for="inputPhotoInterval"]`);
             activate(photosInput, photosLabel, isActive);
-            if (timeChart) timeChart.setSeries(loadCellNum + 1, {show: isActive});
-            if (positionChart) positionChart.setSeries(loadCellNum + 1, {show: isActive});
+            setCharts([timeChart, positionChart], loadCellNum + 1, isActive);
         });
 
         $ID("inputDoCycles")?.addEventListener('change', async (event) => {
@@ -15748,8 +15755,7 @@
                 activate(outInput, outLabel, isActive);
                 const container = event.target.closest('.input-group');
                 if (systemLevel >= toNumber(container.dataset.systemLevel, false)) {
-                    if (timeChart) timeChart.setSeries(i, {show: isActive});
-                    if (positionChart) positionChart.setSeries(i, {show: isActive});
+                    setCharts([timeChart, positionChart], i, isActive);
                 }
             });
         }
