@@ -933,6 +933,8 @@
         peer = new Peer();
 
         peer.on('open', (id) => {
+            console.info('My Controller ID:', id);
+
             conn = peer.connect(hostId);
 
             conn.on('open', () => {
