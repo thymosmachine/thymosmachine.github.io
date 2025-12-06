@@ -395,6 +395,12 @@
             --gray-color: #6c757d;
 
 
+            --chartColor1: #FF2730;
+            --chartColor2: #2196F3;
+            --chartColor3: #4CAF50;
+            --chartColor4: #FF8C00;
+
+
             --progressPrimary-color: linear-gradient(to right, var(--cyan-lighter-color), var(--cyan-light-color), var(--cyan-color)); /* Blue color for secondary progress */
             --progressSecondary-color: linear-gradient(to right, var(--purple-lighter-color), var(--purple-light-color), var(--purple-color)); /* Blue color for primary progress */
             --progressOnHold-color: linear-gradient(to right, var(--blue-light-color), var(--blue-lighter-color), var(--blue-color), var(--blue-dark-color)); /* Green color for completed progress */
@@ -2297,9 +2303,9 @@
                         <span style="display: inline-flex; min-width: 30px;  justify-content: center;">mm</span>
                     </div>
                     <div style="display: inline-block;">
-                        <span style="color: #FF3330;display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
-                        <span style="color: #2196F3;display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
-                        <span style="color: #4CAF50;display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
+                        <span style="color: var(--chartColor1, #dc0000);display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
+                        <span style="color: var(--chartColor2, #009dff);display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
+                        <span style="color: var(--chartColor3, #22b700);display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
                         <span style="display: inline-flex; min-width: 30px;  justify-content: center;">N</span>
                     </div>
                 </div>
@@ -2309,9 +2315,9 @@
                         <span style="display: inline-flex; min-width: 30px;  justify-content: center;">mm</span>
                     </div>
                     <div style="display: inline-block;">
-                        <span style="color: #FF3330;display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
-                        <span style="color: #2196F3;display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
-                        <span style="color: #4CAF50;display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
+                        <span style="color: var(--chartColor1, #dc0000);display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
+                        <span style="color: var(--chartColor2, #009dff);display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
+                        <span style="color: var(--chartColor3, #22b700);display: inline-flex; min-width: 100px; justify-content: center; font-weight: bold;">N/A</span>
                         <span style="display: inline-flex; min-width: 30px;  justify-content: center;">N</span>
                     </div>
                 </div>
@@ -2930,7 +2936,10 @@
 
 
                         <div class="input-group" data-system-level="10">
-                            <label for="inputTakePhotos">Take photos: </label>
+                            <label for="inputTakePhotos">
+                                <span style="text-decoration: underline; text-decoration-thickness: 0.1em; text-underline-offset: 0.1em; text-decoration-color: var(--chartColor4);">
+                                    Take photos: </span>
+                            </label>
                             <input type="checkbox" id="inputTakePhotos" class="expInput" value="takePhotos"
                                    data-essence="switch">
                             <label id="inputPhotoIntervalLabel" class="innerInputLabel" for="inputPhotoInterval">Photo
@@ -7437,6 +7446,11 @@
             return null;
         }
 
+        const color_series1 = getComputedStyle(document.documentElement).getPropertyValue('--chartColor1').trim() || "#FF2730";
+        const color_series2 = getComputedStyle(document.documentElement).getPropertyValue('--chartColor2').trim() || "#2196F3";
+        const color_series3 = getComputedStyle(document.documentElement).getPropertyValue('--chartColor3').trim() || "#4CAF50";
+        const color_photos = getComputedStyle(document.documentElement).getPropertyValue('--chartColor4').trim() || "#FF8C00";
+
 
         // Get the container dimensions
         let width = container.clientWidth || 400; // Default width if the container is empty
@@ -7461,14 +7475,14 @@
             },
             series: [...seriesLabels.map((label, index) => ({
                 label: label,
-                stroke: index === 0 ? "000000" : ["#FF2730", "#2196F3", "#4CAF50", "#9C27B0", "#00BCD4", "#8BC34A", "#E91E63", "#3F51B5", "#009688", "#FF9800"][index - 1] || "#555555"
+                stroke: index === 0 ? "000000" : [color_series1, color_series2, color_series3, "#9C27B0", "#00BCD4", "#8BC34A", "#E91E63", "#3F51B5", "#009688", "#FF9800"][index - 1] || "#555555"
             })),
                 {
                     label: "Photos",                    // used to find the legend row and hide it below
                                                         // points-only: most efficient to disable paths (no line)
                     paths: () => null,                  // official recommendation for "points-only"
                     points: {show: true, size: 8, width: 2.5}, // size and width of points
-                    stroke: "#FF8C00", fill: "#FF8C00", // color of points; for points, points.show is enough
+                    stroke: color_photos, fill: color_photos, // color of points; for points, points.show is enough
                 },],
 
             // hooks: {
@@ -11679,6 +11693,7 @@
         // --- očíslované dvojice 1..N ---
         for (let i = 1; i <= n; i++) {
             const cap = $MAKE('div');
+            const color = `--chartColor${i}`;
             cap.className = 'input-group';
             cap.dataset.systemLevel = '200';
             cap.innerHTML = `
@@ -11688,7 +11703,8 @@
             <input type="checkbox" id="activateLoadcell${i}" class="expInput" value="activateLoadcell${i}"
                    data-essence="switch">
             <label for="inputLoadcellCapacity${i}" style="width: calc(var(--inputLabelWidth) - 80px);">
-              <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
+              <span style="text-decoration: underline; text-decoration-thickness: 0.1em; text-underline-offset: 0.1em; text-decoration-color: var(${color});"
+              ><b>Loadcell</b> <b style="color: color-mix(in srgb, var(${color}), black 25%);">${i}</b></span>
               Capacity <span class="units-text"></span>:
             </label>
         </div>
@@ -11702,7 +11718,8 @@
             out.dataset.systemLevel = '200';
             out.innerHTML = `
         <label for="inputLoadcellOutput${i}">
-          <b>Loadcell</b> <b style="color: var(--text-info-3-color);">${i}</b>
+          <span style="text-decoration: underline; text-decoration-thickness: 0.1em; text-underline-offset: 0.1em; text-decoration-color: var(${color});"
+              ><b>Loadcell</b> <b style="color: color-mix(in srgb, var(${color}), black 25%);">${i}</b></span>
           Rated Output <span class="units-text"></span>:
         </label>
         <input
