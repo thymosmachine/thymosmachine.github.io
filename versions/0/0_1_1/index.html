@@ -59,7 +59,7 @@
         console.info(`%c\n\nMoira Controller - Thymos\n`, "color: #007bff; font-size: 20px; font-weight: bold;");
         console.info(`%c\n\nVersion: ${softwareVersion} , Release-date: ${softwareDate}\n\nApp initialization: ${(new Date().toLocaleString()).replaceAll(". ", ".")}\n`, "color: gray; font-size: 12px; font-weight: normal;");
 
-        +
+
             fetch("./files/shared-header.html")
                 .then(res => res.text())
                 .then(html => document.head.insertAdjacentHTML("beforeend", html));
