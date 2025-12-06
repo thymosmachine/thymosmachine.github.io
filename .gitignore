@@ -22,9 +22,9 @@
 *.png
 # Ale neignoruj PNG soubory ve složce images/favicon
 !images/favicon/
-!images/favicon/*.png
+!images/*.png
 # Rekurzivní ignorování PNG souborů ve složce images/favicon
-!images/favicon/**/*.png
+!images/**/*.png
 
 
 # Ignorovat moduly NODE.JS
