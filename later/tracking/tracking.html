@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Tracking bodu ve videu</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #eee;
+      text-align: center;
+    }
+    #controls {
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    #controls button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+    #info {
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    #canvas {
+      display: block;
+      width: 90vw;   /* 90 % šířky okna */
+      height: auto;
+      margin: 10px auto;
+      background: #000;
+    }
+    #video {
+      display: none; /* video je jen zdroj pro canvas */
+    }
+  </style>
+</head>
+<body>
+  <h1>Tracking bodu ve videu</h1>
+
+  <div id="controls">
+    <button id="btnSelectPoint">Vybrat bod</button>
+    <button id="btnPlay">Přehrát</button>
+    <button id="btnPause">Pauza</button>
+    <button id="btnNextFrame">Další snímek</button>
+    <button id="btnReset">Reset</button>
+
+      <br>
+    <span id="info"></span>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- Skryté video – zdroj pro canvas -->
+  <video id="video" src="video.mp4"></video>
+
+  <!-- OpenCV.js -->
+  <script src="https://docs.opencv.org/5.x/opencv.js" type="text/javascript"></script>
+
+  <script>
+    const video   = document.getElementById('video');
+    const canvas  = document.getElementById('canvas');
+    // >>> willReadFrequently = true kvůli warningu <<<
+    const ctx     = canvas.getContext('2d', { willReadFrequently: true });
+
+    const btnSelectPoint = document.getElementById('btnSelectPoint');
+    const btnPlay        = document.getElementById('btnPlay');
+    const btnPause       = document.getElementById('btnPause');
+    const btnNextFrame   = document.getElementById('btnNextFrame');
+    const btnReset       = document.getElementById('btnReset');
+    const info           = document.getElementById('info');
+
+    const FRAME_STEP = 1 / 30; // ruční posun o ~1/30s
+
+    let cvReady = false;
+    let selectMode = false;
+
+    let point = null;            // {x, y}
+    let trackingInitialized = false;
+
+    let prevGray = null;         // cv.Mat
+    let prevPointMat = null;     // cv.Mat
+    let pendingStep = false;     // ruční Další snímek – čekáme na seek
+
+    // OpenCV init
+    cv['onRuntimeInitialized'] = () => {
+      cvReady = true;
+      console.log('OpenCV ready');
+      info.textContent = 'Načítám video...';
+    };
+
+    // když je video načtené
+    video.addEventListener('loadeddata', () => {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      video.pause();
+      video.currentTime = 0;
+
+      const initFirstFrame = () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        info.textContent = 'Klikni na "Vybrat bod" a pak do videa.';
+        video.removeEventListener('seeked', initFirstFrame);
+      };
+
+      // zajistíme vykreslení první frame
+      video.addEventListener('seeked', initFirstFrame);
+      video.currentTime = 0;
+    });
+
+    // výběr bodu
+    btnSelectPoint.addEventListener('click', () => {
+      selectMode = true;
+      info.textContent = 'Klikni do videa na bod, který chceš trackovat.';
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (!selectMode) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top)  * (canvas.height / rect.height);
+
+      point = { x, y };
+      selectMode = false;
+      trackingInitialized = false;
+
+      // vykreslit aktuální frame + bod
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      drawPoint(point.x, point.y);
+
+      info.textContent = 'Bod vybrán. Můžeš dát Přehrát nebo Další snímek.';
+    });
+
+    // Přehrát
+    btnPlay.addEventListener('click', () => {
+      if (!cvReady) {
+        info.textContent = 'Čekám na inicializaci OpenCV...';
+        return;
+      }
+      if (!point) {
+        info.textContent = 'Nejdřív vyber bod (Vybrat bod).';
+        return;
+      }
+      video.play();
+      info.textContent = 'Přehrávám...';
+    });
+
+    // Pauza
+    btnPause.addEventListener('click', () => {
+      video.pause();
+      info.textContent = 'Pauza. Můžeš použít Další snímek.';
+    });
+
+    // Další snímek (ručně, jen když je pauza)
+    btnNextFrame.addEventListener('click', () => {
+      if (!cvReady) {
+        info.textContent = 'Čekám na inicializaci OpenCV...';
+        return;
+      }
+      if (!point) {
+        info.textContent = 'Nejdřív vyber bod (Vybrat bod).';
+        return;
+      }
+      if (!video.paused) {
+        info.textContent = 'Nejdřív video pauzni.';
+        return;
+      }
+      if (pendingStep) return;
+
+      if (video.currentTime + FRAME_STEP >= video.duration) {
+        info.textContent = 'Konec videa.';
+        return;
+      }
+
+      pendingStep = true;
+      info.textContent = 'Načítám další snímek...';
+      video.currentTime = Math.min(video.duration, video.currentTime + FRAME_STEP);
+    });
+
+    // Reset
+    btnReset.addEventListener('click', () => {
+      selectMode = false;
+      point = null;
+      trackingInitialized = false;
+      pendingStep = false;
+      info.textContent = 'Resetováno. Zpět na začátek...';
+
+      if (prevGray) {
+        prevGray.delete();
+        prevGray = null;
+      }
+      if (prevPointMat) {
+        prevPointMat.delete();
+        prevPointMat = null;
+      }
+
+      video.pause();
+      video.currentTime = 0;
+
+      const onSeekedReset = () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        info.textContent = 'Klikni na "Vybrat bod" a pak do videa.';
+        video.removeEventListener('seeked', onSeekedReset);
+      };
+      video.addEventListener('seeked', onSeekedReset);
+    });
+
+    // automatický tracking při přehrávání
+    video.addEventListener('timeupdate', () => {
+      if (video.paused || video.ended) return;
+      if (!cvReady || !point) return;
+
+      trackFromCurrentFrame();
+    });
+
+    // tracking při ručním seeku (Další snímek)
+    video.addEventListener('seeked', () => {
+      if (!pendingStep) return;
+      pendingStep = false;
+
+      if (!point || !cvReady) return;
+      // při ručním kroku trackujeme jen když je pauza
+      if (!video.paused) return;
+
+      trackFromCurrentFrame();
+    });
+
+    function drawPoint(x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'red';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'white';
+      ctx.stroke();
+    }
+
+    function initTrackingFromCurrentFrame() {
+      // načte aktuální canvas do prevGray a prevPointMat
+      const frame = cv.imread(canvas);
+      const gray = new cv.Mat();
+      cv.cvtColor(frame, gray, cv.COLOR_RGBA2GRAY);
+
+      if (prevGray) prevGray.delete();
+      prevGray = gray;
+
+      const pArr = [point.x, point.y];
+      if (prevPointMat) prevPointMat.delete();
+      prevPointMat = cv.matFromArray(1, 1, cv.CV_32FC2, pArr);
+
+      frame.delete();
+      trackingInitialized = true;
+    }
+
+    function trackFromCurrentFrame() {
+      // 1) vykreslit aktuální video frame do canvasu
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // první krok po výběru bodu – jen inicializace
+      if (!trackingInitialized) {
+        initTrackingFromCurrentFrame();
+        drawPoint(point.x, point.y);
+        info.textContent = 'Start trackingu, t = ' + video.currentTime.toFixed(2) + ' s';
+        return;
+      }
+
+      // 2) načíst frame do OpenCV
+      const frame = cv.imread(canvas);
+      const gray = new cv.Mat();
+      cv.cvtColor(frame, gray, cv.COLOR_RGBA2GRAY);
+
+      // 3) optical flow
+      const nextPointMat = new cv.Mat();
+      const status = new cv.Mat();
+      const err = new cv.Mat();
+
+      cv.calcOpticalFlowPyrLK(
+        prevGray,
+        gray,
+        prevPointMat,
+        nextPointMat,
+        status,
+        err
+      );
+
+      if (status.data[0] === 1) {
+        const x = nextPointMat.data32F[0];
+        const y = nextPointMat.data32F[1];
+        point = { x, y };
+
+        // překreslit frame + bod
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        drawPoint(x, y);
+
+        info.textContent = 't = ' + video.currentTime.toFixed(2) + ' s';
+      } else {
+        info.textContent = 'Bod se ztratil (optical flow ho nenašel).';
+      }
+
+      // 4) připravit na další krok
+      if (prevGray) prevGray.delete();
+      prevGray = gray;
+
+      if (prevPointMat) prevPointMat.delete();
+      prevPointMat = nextPointMat;
+
+      status.delete();
+      err.delete();
+      frame.delete();
+    }
+
+    // start
+    video.load();
+  </script>
+</body>
+</html>

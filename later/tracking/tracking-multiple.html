@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-method tracking (LK / Template / Farneback)</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #eee;
+      text-align: center;
+    }
+    #controls {
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    #controls button,
+    #controls label,
+    #controls select {
+      margin: 0 5px;
+      padding: 4px 8px;
+      font-size: 14px;
+    }
+    #controls input[type="checkbox"] {
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    #info {
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    #canvas {
+      display: block;
+      width: 90vw;   /* 90 % šířky okna */
+      height: auto;
+      margin: 10px auto;
+      background: #000;
+    }
+    #video {
+      display: none; /* video je jen zdroj pro canvas */
+    }
+  </style>
+</head>
+<body>
+  <h1>Multi-method tracking + optical flow</h1>
+
+  <div id="controls">
+    <label>
+      Metoda:
+      <select id="trackingMethod">
+        <option value="lk">Optical flow (Lucas–Kanade, multi-point)</option>
+        <option value="template">Template matching</option>
+        <option value="farneback">Optical flow (Farneback, dense)</option>
+      </select>
+    </label>
+
+    <button id="btnToggleSelect">Vybrat body (ON/OFF)</button>
+    <button id="btnPlay">Přehrát</button>
+    <button id="btnPause">Pauza</button>
+    <button id="btnNextFrame">Další snímek</button>
+    <button id="btnReset">Reset</button>
+
+      <br>
+
+    <label>
+      Vektorové pole (Farneback)
+      <input type="checkbox" id="showFlowField">
+    </label>
+
+    <span id="info"></span>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- Skryté video – zdroj pro canvas -->
+  <video id="video" src="video.mp4"></video>
+
+  <!-- OpenCV.js -->
+  <script src="https://docs.opencv.org/5.x/opencv.js" type="text/javascript"></script>
+
+  <script>
+    const video   = document.getElementById('video');
+    const canvas  = document.getElementById('canvas');
+    const ctx     = canvas.getContext('2d', { willReadFrequently: true });
+
+    const trackingMethodSelect = document.getElementById('trackingMethod');
+    const btnToggleSelect = document.getElementById('btnToggleSelect');
+    const btnPlay         = document.getElementById('btnPlay');
+    const btnPause        = document.getElementById('btnPause');
+    const btnNextFrame    = document.getElementById('btnNextFrame');
+    const btnReset        = document.getElementById('btnReset');
+    const showFlowField   = document.getElementById('showFlowField');
+    const info            = document.getElementById('info');
+
+    const FRAME_STEP = 1 / 30; // ruční posun o ~1/30 s
+    const TEMPLATE_SIZE = 31;  // liché číslo, šířka/výška šablony pro template matching
+
+    let cvReady = false;
+    let selectMode = false;
+
+    let trackingMethod = 'lk';     // 'lk' | 'template' | 'farneback'
+    let points = [];               // [{x,y}, ...] – multi-point
+    let templates = [];            // pro template matching: [cv.Mat, ...]
+    let trackingInitialized = false;
+
+    let prevGray = null;           // cv.Mat (předchozí grayscale frame)
+    let pendingStep = false;       // ruční Další snímek – čekáme na seek
+
+    // OpenCV init
+    cv['onRuntimeInitialized'] = () => {
+      cvReady = true;
+      console.log('OpenCV ready');
+      info.textContent = 'Načítám video...';
+    };
+
+    // změna metody
+    trackingMethodSelect.addEventListener('change', () => {
+      trackingMethod = trackingMethodSelect.value;
+      trackingInitialized = false;
+      clearTrackingMats();
+      info.textContent = 'Metoda: ' + trackingMethodSelect.options[trackingMethodSelect.selectedIndex].text + '. Znovu spusť tracking.';
+    });
+
+    // video načtené
+    video.addEventListener('loadeddata', () => {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      video.pause();
+      video.currentTime = 0;
+
+      const initFirstFrame = () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        info.textContent = 'Klikni na "Vybrat body (ON/OFF)" a pak klikej do videa.';
+        video.removeEventListener('seeked', initFirstFrame);
+      };
+
+      video.addEventListener('seeked', initFirstFrame);
+      video.currentTime = 0;
+    });
+
+    // přepínač výběru bodů
+    btnToggleSelect.addEventListener('click', () => {
+      selectMode = !selectMode;
+      if (selectMode) {
+        info.textContent = 'REŽIM VÝBĚRU: klikej do videa a přidáváš body. Znovu klikni na tlačítko pro vypnutí.';
+      } else {
+        info.textContent = 'Režim výběru vypnut. Body: ' + points.length + '. Můžeš dát Přehrát nebo Další snímek.';
+      }
+    });
+
+    // klikání do canvasu – přidávání bodů
+    canvas.addEventListener('click', (e) => {
+      if (!selectMode) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top)  * (canvas.height / rect.height);
+
+      points.push({ x, y });
+      trackingInitialized = false;
+      clearTrackingMats(); // při změně bodů re-init trackingu
+
+      // překreslit aktuální frame a body
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      points.forEach(p => drawPoint(p.x, p.y));
+
+      info.textContent = 'Body: ' + points.length + '. Můžeš přidávat další nebo vypnout režim výběru.';
+    });
+
+    // Přehrát
+    btnPlay.addEventListener('click', () => {
+      if (!cvReady) {
+        info.textContent = 'Čekám na inicializaci OpenCV...';
+        return;
+      }
+      if (points.length === 0) {
+        info.textContent = 'Nejdřív přidej aspoň jeden bod (režim "Vybrat body").';
+        return;
+      }
+      video.play();
+      info.textContent = 'Přehrávám... Body: ' + points.length;
+    });
+
+    // Pauza
+    btnPause.addEventListener('click', () => {
+      video.pause();
+      info.textContent = 'Pauza. Můžeš použít Další snímek.';
+    });
+
+    // Další snímek (ručně, jen při pauze)
+    btnNextFrame.addEventListener('click', () => {
+      if (!cvReady) {
+        info.textContent = 'Čekám na inicializaci OpenCV...';
+        return;
+      }
+      if (points.length === 0) {
+        info.textContent = 'Nejdřív přidej aspoň jeden bod.';
+        return;
+      }
+      if (!video.paused) {
+        info.textContent = 'Nejdřív video pauzni.';
+        return;
+      }
+      if (pendingStep) return;
+
+      if (video.currentTime + FRAME_STEP >= video.duration) {
+        info.textContent = 'Konec videa.';
+        return;
+      }
+
+      pendingStep = true;
+      info.textContent = 'Načítám další snímek...';
+      video.currentTime = Math.min(video.duration, video.currentTime + FRAME_STEP);
+    });
+
+    // Reset
+    btnReset.addEventListener('click', () => {
+      selectMode = false;
+      points = [];
+      templates = [];
+      trackingInitialized = false;
+      pendingStep = false;
+      clearTrackingMats();
+      info.textContent = 'Resetováno. Zpět na začátek...';
+
+      video.pause();
+      video.currentTime = 0;
+
+      const onSeekedReset = () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        info.textContent = 'Klikni na "Vybrat body (ON/OFF)" a pak klikej do videa.';
+        video.removeEventListener('seeked', onSeekedReset);
+      };
+      video.addEventListener('seeked', onSeekedReset);
+    });
+
+    function clearTrackingMats() {
+      if (prevGray) {
+        prevGray.delete();
+        prevGray = null;
+      }
+      if (templates && templates.length) {
+        templates.forEach(t => t && t.delete());
+        templates = [];
+      }
+    }
+
+    // automatický tracking při přehrávání
+    video.addEventListener('timeupdate', () => {
+      if (video.paused || video.ended) return;
+      if (!cvReady || points.length === 0) return;
+
+      trackFromCurrentFrame();
+    });
+
+    // tracking při ručním seeku (Další snímek)
+    video.addEventListener('seeked', () => {
+      if (!pendingStep) return;
+      pendingStep = false;
+
+      if (!cvReady || points.length === 0) return;
+      if (!video.paused) return; // ručně jen při pauze
+
+      trackFromCurrentFrame();
+    });
+
+    // kreslení bodu
+    function drawPoint(x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'red';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'white';
+      ctx.stroke();
+    }
+
+    // body → cv.Mat Nx1, CV_32FC2
+    function pointsToMat(pts) {
+      const data = [];
+      for (const p of pts) {
+        data.push(p.x, p.y);
+      }
+      return cv.matFromArray(pts.length, 1, cv.CV_32FC2, data);
+    }
+
+    // vytvoření šablon pro template matching
+    function initTemplates(gray) {
+      if (templates && templates.length) {
+        templates.forEach(t => t && t.delete());
+      }
+      templates = [];
+
+      const cols = gray.cols;
+      const rows = gray.rows;
+      const half = (TEMPLATE_SIZE - 1) / 2;
+
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        let x0 = Math.round(p.x - half);
+        let y0 = Math.round(p.y - half);
+
+        if (x0 < 0) x0 = 0;
+        if (y0 < 0) y0 = 0;
+        if (x0 + TEMPLATE_SIZE > cols) x0 = cols - TEMPLATE_SIZE;
+        if (y0 + TEMPLATE_SIZE > rows) y0 = rows - TEMPLATE_SIZE;
+
+        const rect = new cv.Rect(x0, y0, TEMPLATE_SIZE, TEMPLATE_SIZE);
+        const roi = gray.roi(rect);
+        const tmpl = roi.clone();
+        roi.delete();
+
+        templates.push(tmpl);
+
+        // zarovnat bod doprostřed šablony (kvůli clamping posunům)
+        points[i] = {
+          x: x0 + TEMPLATE_SIZE / 2,
+          y: y0 + TEMPLATE_SIZE / 2
+        };
+      }
+    }
+
+    // kreslení vektorového pole (Farneback)
+    function drawFlowField(flow, step) {
+      const w = flow.cols;
+      const h = flow.rows;
+      const data = flow.data32F;
+      const scale = 2.0; // zvětšení vektorů
+
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,255,0,0.7)';
+
+      for (let y = step; y < h; y += step) {
+        for (let x = step; x < w; x += step) {
+          const idx = (y * w + x) * 2;
+          const fx = data[idx];
+          const fy = data[idx + 1];
+
+          const endX = x + fx * scale;
+          const endY = y + fy * scale;
+
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // hlavní tracking funkce
+    function trackFromCurrentFrame() {
+      // 1) vykreslit aktuální video frame do canvasu
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // 2) načíst frame do OpenCV
+      const frame = cv.imread(canvas);
+      const gray = new cv.Mat();
+      cv.cvtColor(frame, gray, cv.COLOR_RGBA2GRAY);
+
+      // první frame po výběru nebo změně metody
+      if (!trackingInitialized) {
+        if (trackingMethod === 'template' && points.length > 0) {
+          initTemplates(gray);
+        }
+        trackingInitialized = true;
+
+        // nastavit prevGray pro další snímek (pro LK / Farneback / flow field)
+        if (prevGray) prevGray.delete();
+        prevGray = gray.clone();
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        points.forEach(p => drawPoint(p.x, p.y));
+
+        info.textContent =
+          'Start trackingu (' + trackingMethod + '). Body: ' +
+          points.length + ', t = ' + video.currentTime.toFixed(2) + ' s';
+
+        frame.delete();
+        gray.delete();
+        return;
+      }
+
+      let lostCount = 0;
+
+      // --- tracking podle zvolené metody ---
+      if (trackingMethod === 'lk') {
+        if (prevGray && points.length > 0) {
+          const prevPtsMat = pointsToMat(points);
+          const nextPtsMat = new cv.Mat();
+          const status     = new cv.Mat();
+          const err        = new cv.Mat();
+
+          cv.calcOpticalFlowPyrLK(
+            prevGray,
+            gray,
+            prevPtsMat,
+            nextPtsMat,
+            status,
+            err
+          );
+
+          const newPoints = [];
+          for (let i = 0; i < status.rows; i++) {
+            if (status.data[i] === 1) {
+              const x = nextPtsMat.data32F[i * 2];
+              const y = nextPtsMat.data32F[i * 2 + 1];
+              newPoints.push({ x, y });
+            } else {
+              lostCount++;
+            }
+          }
+
+          prevPtsMat.delete();
+          nextPtsMat.delete();
+          status.delete();
+          err.delete();
+
+          points = newPoints;
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          points.forEach(p => drawPoint(p.x, p.y));
+        }
+
+      } else if (trackingMethod === 'farneback') {
+        if (prevGray && points.length > 0) {
+          const flow = new cv.Mat();
+          cv.calcOpticalFlowFarneback(
+            prevGray,
+            gray,
+            flow,
+            0.5,  // pyr_scale
+            3,    // levels
+            15,   // winsize
+            3,    // iterations
+            5,    // poly_n
+            1.2,  // poly_sigma
+            0     // flags
+          );
+
+          const w = flow.cols;
+          const h = flow.rows;
+          const data = flow.data32F;
+          const newPoints = [];
+
+          for (const p of points) {
+            let ix = Math.round(p.x);
+            let iy = Math.round(p.y);
+
+            if (ix < 0 || iy < 0 || ix >= w || iy >= h) {
+              lostCount++;
+              continue;
+            }
+
+            const idx = (iy * w + ix) * 2;
+            const fx = data[idx];
+            const fy = data[idx + 1];
+
+            const nx = p.x + fx;
+            const ny = p.y + fy;
+
+            if (nx < 0 || ny < 0 || nx >= canvas.width || ny >= canvas.height) {
+              lostCount++;
+              continue;
+            }
+
+            newPoints.push({ x: nx, y: ny });
+          }
+
+          points = newPoints;
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          points.forEach(p => drawPoint(p.x, p.y));
+
+          // vektorové pole (pokud zapnuté)
+          if (showFlowField.checked) {
+            drawFlowField(flow, 20);
+          }
+
+          flow.delete();
+        }
+
+      } else if (trackingMethod === 'template') {
+        if (points.length > 0 && templates.length === points.length) {
+          const newPoints = [];
+
+          for (let i = 0; i < points.length; i++) {
+            const tmpl = templates[i];
+            if (!tmpl) {
+              lostCount++;
+              continue;
+            }
+
+            const cols = gray.cols - tmpl.cols + 1;
+            const rows = gray.rows - tmpl.rows + 1;
+
+            if (cols <= 0 || rows <= 0) {
+              lostCount++;
+              continue;
+            }
+
+            const result = new cv.Mat(rows, cols, cv.CV_32FC1);
+
+            cv.matchTemplate(gray, tmpl, result, cv.TM_CCOEFF_NORMED);
+            const mm = cv.minMaxLoc(result);
+            const maxVal = mm.maxVal;
+            const maxLoc = mm.maxLoc;
+
+            result.delete();
+
+            // jednoduchý threshold – co je moc špatné, bereme jako ztrátu
+            if (maxVal < 0.4) {
+              lostCount++;
+              continue;
+            }
+
+            const nx = maxLoc.x + tmpl.cols / 2;
+            const ny = maxLoc.y + tmpl.rows / 2;
+
+            if (nx < 0 || ny < 0 || nx >= canvas.width || ny >= canvas.height) {
+              lostCount++;
+              continue;
+            }
+
+            newPoints.push({ x: nx, y: ny });
+          }
+
+          points = newPoints;
+
+          // přegenerovat šablony v nových pozicích (pokud nějaké zbyly)
+          if (points.length > 0) {
+            initTemplates(gray);
+          }
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          points.forEach(p => drawPoint(p.x, p.y));
+        }
+      }
+
+      // pokud se všechny body ztratily → tvoje hláška + pauza/next-frame tip
+      if (points.length === 0) {
+        info.textContent = 'Bod se ztratil (optical flow ho nenašel).';
+        if (!video.paused) {
+          video.pause();
+        } else {
+          info.textContent += ' Můžeš dát Další snímek pro pokus o obnovení.';
+        }
+
+      } else {
+        info.textContent =
+          'Metoda: ' + trackingMethod +
+          ', body: ' + points.length +
+          (lostCount > 0 ? (' (ztraceno ' + lostCount + ')') : '') +
+          ', t = ' + video.currentTime.toFixed(2) + ' s';
+
+        // pokud NEPOUŽÍVÁME farneback jako hlavní metodu, ale chceme flow field:
+        if (showFlowField.checked && trackingMethod !== 'farneback' && prevGray) {
+          const flow = new cv.Mat();
+          cv.calcOpticalFlowFarneback(
+            prevGray,
+            gray,
+            flow,
+            0.5, 3, 15, 3, 5, 1.2, 0
+          );
+          drawFlowField(flow, 20);
+          flow.delete();
+        }
+      }
+
+      // 3) připravit prevGray pro další snímek
+      if (prevGray) prevGray.delete();
+      prevGray = gray.clone();
+
+      frame.delete();
+      gray.delete();
+    }
+
+    // start
+    video.load();
+  </script>
+</body>
+</html>
