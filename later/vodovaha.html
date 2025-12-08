@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>Vodováha z telefonu</title>
+    <title>DeviceOrientation + Motion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
     <style>
@@ -96,12 +96,12 @@
             margin-top: 4px;
         }
 
-        /* KRUHOVÁ VODOVÁHA (půdorys) */
+        /* CIRCULAR LEVEL (plan view) */
 
         .circle-wrapper {
             display: flex;
             justify-content: center;
-            margin-top: 6px;
+            margin-top: 10px;
         }
 
         .circle {
@@ -175,7 +175,7 @@
             color: #a5b4fc;
         }
 
-        /* VERTIKÁLNÍ VODOVÁHA */
+        /* VERTICAL LEVEL */
 
         .vertical-wrapper {
             display: flex;
@@ -213,7 +213,7 @@
             box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
         }
 
-        /* HORIZONTÁLNÍ VODOVÁHA */
+        /* HORIZONTAL LEVEL */
 
         .horizontal-wrapper {
             margin-top: 6px;
@@ -250,13 +250,14 @@
             box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
         }
 
-        /* DOPLŇKOVÉ ROTACE / DATA */
+        /* ADDITIONAL ROTATIONS / DATA */
 
         .metrics {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 6px;
             margin-top: 4px;
+            margin-bottom: 12px;
             font-size: 0.7rem;
         }
 
@@ -304,15 +305,15 @@
 <div class="dashboard">
     <div class="header">
         <div>
-            <h1>Vodováha telefonu</h1>
-            <small>Používá DeviceOrientation + Motion</small>
+            <h1>Phone spirit level</h1>
+            <small>Uses DeviceOrientation + Motion</small>
         </div>
-        <button id="enable-sensors">Povolit senzory</button>
+        <button id="enable-sensors">Enable sensors</button>
     </div>
 
-    <!-- 1. ŘADA – VLEVO VERTIKÁL, VPRAVO KRUH -->
+    <!-- 1. LINE - VERTICAL + CIRCLE -->
     <div class="row">
-        <!-- Vertikální vodováha (beta) -->
+        <!-- Vertical water level (beta) -->
         <div class="card" style="max-width: 120px;">
             <div class="label">Pitch (<span class="greek">β</span>)</div>
             <div class="vertical-wrapper">
@@ -324,9 +325,9 @@
             <div class="value" id="beta-text">0.0°</div>
         </div>
 
-        <!-- Kruhová vodováha (kombinace beta + gamma) -->
+        <!-- Circular water level (beta/gamma) -->
         <div class="card">
-            <div class="label">Kruhová (půdorys)</div>
+            <div class="label">Circular (ground plan)</div>
             <div class="circle-wrapper">
                 <div class="circle">
                     <div class="crosshair"></div>
@@ -334,12 +335,12 @@
                     <div class="dot" id="circle-dot"></div>
                 </div>
             </div>
-            <div class="heading" id="alpha-text">Azimut: 0°</div>
-            <div class="value" id="tilt-magnitude">Odchylka: 0.0°</div>
+            <div class="heading" id="alpha-text">Azimuth: 0°</div>
+            <div class="value" id="tilt-magnitude">Deviation: 0.0°</div>
         </div>
     </div>
 
-    <!-- 2. ŘADA – HORIZONTÁLNÍ -->
+    <!-- 2. LINE - HORIZONTAL + ROLL -->
     <div class="row">
         <div class="card" style="max-width: 120px;">
             <div class="label">Roll (<span class="greek">α</span>)</div>
@@ -359,21 +360,21 @@
         </div>
     </div>
 
-    <!-- 3. ŘADA – ROTACE + DALŠÍ SMĚRY -->
+    <!-- 3. LINE - ROTATION + ACCELERATION -->
     <div class="row">
         <div class="card">
-            <div class="label">Rotace / další směry</div>
+            <div class="label">Rotation + Acceleration</div>
             <div class="metrics">
                 <div class="metric">
-                    <span class="metric-label"><span class="greek">α</span> rotace</span>
+                    <span class="metric-label"><span class="greek">α</span> rotation</span>
                     <span class="metric-value" id="rot-alpha">0.0°/s</span>
                 </div>
                 <div class="metric">
-                    <span class="metric-label"><span class="greek">β</span> rotace</span>
+                    <span class="metric-label"><span class="greek">β</span> rotation</span>
                     <span class="metric-value" id="rot-beta">0.0°/s</span>
                 </div>
                 <div class="metric">
-                    <span class="metric-label"><span class="greek">γ</span> rotace</span>
+                    <span class="metric-label"><span class="greek">γ</span> rotation</span>
                     <span class="metric-value" id="rot-gamma">0.0°/s</span>
                 </div>
                 <div class="metric">
@@ -390,10 +391,10 @@
                 </div>
             </div>
             <div class="status" id="device-text">
-                Nepřipojeno
+                Disconnected
             </div>
             <div class="status" id="status-text">
-                Čekám na povolení přístupu k senzorům…
+                Waiting for granting sensor access…
             </div>
         </div>
     </div>
@@ -407,6 +408,11 @@
     const circleDot = document.getElementById("circle-dot");
     const verticalBubble = document.getElementById("vertical-bubble");
     const horizontalBubble = document.getElementById("horizontal-bubble");
+
+    circleDot.style.left = "50%";
+    circleDot.style.top = "50%";
+    verticalBubble.style.top = "50%";
+    horizontalBubble.style.left = "50%";
 
     const betaText = document.getElementById("beta-text");
     const gammaText = document.getElementById("gamma-text");
@@ -434,24 +440,24 @@
     function handleOrientation(event) {
         if (!sensorsEnabled) return;
 
-        let alpha = event.alpha || 0; // kompas / rotace kolem Z
-        let beta = event.beta || 0;   // náklon dopředu/dozadu (-180, 180)
-        let gamma = event.gamma || 0; // náklon doleva/doprava (-90, 90)
+        let alpha = event.alpha || 0;   // compass / rotation around Z
+        let beta = event.beta || 0;     // tilt forward/backward (-180, 180)
+        let gamma = event.gamma || 0;   // tilt left/right (-90, 90)
 
-        // Textové hodnoty
+        // Text values
         betaText.textContent = beta.toFixed(1) + "°";
         gammaText.textContent = gamma.toFixed(1) + "°";
         rollText.textContent = gamma.toFixed(1) + "°";
-        alphaText.textContent = "Azimut: " + alpha.toFixed(0) + "°";
+        alphaText.textContent = "Azimuth: " + alpha.toFixed(0) + "°";
 
-        // Magnituda náklonu (vzdálenost „bubliny“ od středu)
+        // Tilt magnitude (distance of the "bubble" from the center)
         const tiltMagnitude = Math.sqrt(beta * beta + gamma * gamma);
         tiltMagnitudeText.textContent =
-            "Odchylka: " + tiltMagnitude.toFixed(1) + "°";
+            "Deviation: " + tiltMagnitude.toFixed(1) + "°";
 
-        // 1) KRUH – mapování beta/gamma na X/Y
-        const radius = (circle.clientWidth || 140) / 2 - 12; // bublina nelezla ven
-        const maxTilt = 45; // při 45° skončí bublina na hraně
+        // 1) CIRCLE – beta/gamma mapping to X/Y
+        const radius = (circle.clientWidth || 140) / 2 - 12; // the bubble didn't come out
+        const maxTilt = 45; // at 45° the bubble ends on the edge
 
         const x = clamp((gamma / maxTilt) * radius, -radius, radius);
         const y = clamp((beta / maxTilt) * radius, -radius, radius);
@@ -459,21 +465,21 @@
         circleDot.style.left = 50 + (x / radius) * 50 + "%";
         circleDot.style.top = 50 + (y / radius) * 50 + "%";
 
-        // 2) VERTIKÁL – bublina se hýbe nahoru/dolů podle beta
+        // 2) VERTICAL – the bubble moves up/down according to beta
         const vHeight = vBar.clientHeight || 140;
         const vRadius = vHeight / 2 - 10;
         const vY = clamp((beta / maxTilt) * vRadius, -vRadius, vRadius);
         const vPercent = 50 + (vY / vRadius) * 50;
         verticalBubble.style.top = vPercent + "%";
 
-        // 3) HORIZONTÁL – bublina se hýbe doleva/doprava podle gamma
+        // 3) HORIZONTAL – the bubble moves left/right according to gamma
         const hWidth = hBar.clientWidth || 140;
         const hRadius = hWidth / 2 - 10;
         const hX = clamp((gamma / maxTilt) * hRadius, -hRadius, hRadius);
         const hPercent = 50 + (hX / hRadius) * 50;
         horizontalBubble.style.left = hPercent + "%";
 
-        // Zvýraznění středu při téměř dokonalé rovině
+        // Highlighting the center with an almost perfect plane
         const within1deg = Math.abs(beta) < 1 && Math.abs(gamma) < 1;
         circleDot.style.borderColor = within1deg ? "#4ade80" : "#22c55e";
     }
@@ -501,7 +507,7 @@
     }
 
     async function requestSensors() {
-        // iOS 13+ potřebuje explicitní requestPermission
+        // iOS 13+ needs explicit requestPermission
         try {
             if (
                 typeof DeviceOrientationEvent !== "undefined" &&
@@ -510,11 +516,11 @@
                 const response = await DeviceOrientationEvent.requestPermission();
                 if (response !== "granted") {
                     statusText.textContent =
-                        "Senzory zamítnuty. Zkontroluj nastavení prohlížeče / HTTPS.";
+                        "Sensors denied. Check browser settings / HTTPS.";
                     return;
                 }
             }
-            // DeviceMotion má podobný režim na některých iOS
+            // DeviceMotion has a similar mode on some iOS
             if (
                 typeof DeviceMotionEvent !== "undefined" &&
                 typeof DeviceMotionEvent.requestPermission === "function"
@@ -522,24 +528,24 @@
                 try {
                     await DeviceMotionEvent.requestPermission();
                 } catch (e) {
-                    // ignorujeme, není kritické
+                    // we ignore, it's not critical
                 }
             }
 
             window.addEventListener("deviceorientation", handleOrientation, true);
             window.addEventListener("devicemotion", handleMotion, true);
             sensorsEnabled = true;
-            statusText.textContent = "Senzory aktivní.";
+            statusText.textContent = "Sensors active.";
         } catch (err) {
             console.error(err);
             statusText.textContent =
-                "Nepodařilo se aktivovat senzory: " + err.message;
+                "Failed to activate sensors: " + err.message;
         }
 
 
         checkSensors().then(info => {
             const mobile = isMobileDevice();
-            console.log("Podpora senzorů:", info, "isMobile:", mobile);
+            console.log("Sensor support:", info, "isMobile:", mobile);
 
             deviceText.textContent = mobile ?
                 ("Phone" +
@@ -565,10 +571,10 @@
     function isMobileDevice() {
         const ua = navigator.userAgent || navigator.vendor || window.opera;
 
-        // hrubý filtr podle UA
+        // rough mobile user agent detection
         const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 
-        // dotykové ovládání
+        // touchscreen detection
         const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         console.log("isMobileDevice check:", {isMobileUA, hasTouch});
@@ -586,7 +592,7 @@
             motionWorking: false
         };
 
-        // iOS – jen zjištění existence API, nevoláme requestPermission bez uživatele
+        // iOS – just checking the existence of the API, we don't call requestPermission without a user
         if (
             typeof DeviceOrientationEvent !== "undefined" &&
             typeof DeviceOrientationEvent.requestPermission === "function"
@@ -594,7 +600,7 @@
             support.iOSPermission = true;
         }
 
-        // Test zda API skutečně vrací data (bez nutnosti mít hned povolení)
+        // Test whether the API actually returns data (without having to have permission right away)
         await new Promise((resolve) => {
             let timeout = setTimeout(resolve, 1000);
 
