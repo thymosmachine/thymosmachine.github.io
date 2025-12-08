@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Vodováha z telefonu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 480px;
+            background: #020617;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+            border: 1px solid #1f2937;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .header small {
+            font-size: 0.7rem;
+            color: #9ca3af;
+        }
+
+        button#enable-sensors {
+            font-size: 0.75rem;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #4b5563;
+            background: #111827;
+            color: #e5e7eb;
+            cursor: pointer;
+        }
+
+        button#enable-sensors:active {
+            transform: scale(0.98);
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: stretch;
+        }
+
+        .card {
+            flex: 1;
+            background: radial-gradient(circle at top, #0b1120, #020617);
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid #111827;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* KRUHOVÁ VODOVÁHA (půdorys) */
+
+        .circle-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 6px;
+        }
+
+        .circle {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 2px solid #1d4ed8;
+            background: radial-gradient(circle at center, #111827, #020617);
+            box-shadow: 0 0 0 1px #0f172a, 0 0 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .circle .crosshair {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .circle .crosshair::before,
+        .circle .crosshair::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background: rgba(148, 163, 184, 0.5);
+        }
+
+        .circle .crosshair::before {
+            width: 1px;
+            height: 100%;
+            transform: translate(-50%, -50%);
+        }
+
+        .circle .crosshair::after {
+            width: 100%;
+            height: 1px;
+            transform: translate(-50%, -50%);
+        }
+
+        .circle .dot {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #22c55e;
+            background: rgba(22, 163, 74, 0.4);
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
+        }
+
+        .circle .center-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #64748b;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .heading {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            color: #a5b4fc;
+        }
+
+        /* VERTIKÁLNÍ VODOVÁHA */
+
+        .vertical-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .vertical-bar {
+            position: relative;
+            width: 24px;
+            height: 140px;
+            border-radius: 999px;
+            border: 2px solid #1d4ed8;
+            background: linear-gradient(to bottom, #0b1120, #020617);
+            overflow: hidden;
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.25);
+        }
+
+        .vertical-bar-inner {
+            position: absolute;
+            inset: 4px;
+            border-radius: inherit;
+            background: linear-gradient(to bottom, #111827, #020617);
+        }
+
+        .vertical-bubble {
+            position: absolute;
+            left: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            border: 2px solid #22c55e;
+            background: rgba(22, 163, 74, 0.4);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
+        }
+
+        /* HORIZONTÁLNÍ VODOVÁHA */
+
+        .horizontal-wrapper {
+            margin-top: 6px;
+        }
+
+        .horizontal-bar {
+            position: relative;
+            height: 26px;
+            width: 140px;
+            justify-self: center;
+            border-radius: 999px;
+            border: 2px solid #1d4ed8;
+            background: linear-gradient(to right, #0b1120, #020617);
+            overflow: hidden;
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.25);
+        }
+
+        .horizontal-bar-inner {
+            position: absolute;
+            inset: 4px;
+            border-radius: inherit;
+            background: linear-gradient(to right, #111827, #020617);
+        }
+
+        .horizontal-bubble {
+            position: absolute;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            border: 2px solid #22c55e;
+            background: rgba(22, 163, 74, 0.4);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
+        }
+
+        /* DOPLŇKOVÉ ROTACE / DATA */
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            margin-top: 4px;
+            font-size: 0.7rem;
+        }
+
+        .metric span {
+            display: block;
+        }
+
+        .metric-label {
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 0.65rem;
+        }
+
+        .metric-value {
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .status {
+            font-size: 0.7rem;
+            color: #f97316;
+            margin-top: 4px;
+            white-space: normal;
+            overflow-wrap: break-word;
+        }
+
+        .greek {
+            text-transform: lowercase;
+        }
+
+        @media (max-width: 380px) {
+            .circle {
+                width: 120px;
+                height: 120px;
+            }
+
+            .vertical-bar {
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <div>
+            <h1>Vodováha telefonu</h1>
+            <small>Používá DeviceOrientation + Motion</small>
+        </div>
+        <button id="enable-sensors">Povolit senzory</button>
+    </div>
+
+    <!-- 1. ŘADA – VLEVO VERTIKÁL, VPRAVO KRUH -->
+    <div class="row">
+        <!-- Vertikální vodováha (beta) -->
+        <div class="card" style="max-width: 120px;">
+            <div class="label">Pitch (<span class="greek">β</span>)</div>
+            <div class="vertical-wrapper">
+                <div class="vertical-bar">
+                    <div class="vertical-bar-inner"></div>
+                    <div class="vertical-bubble" id="vertical-bubble"></div>
+                </div>
+            </div>
+            <div class="value" id="beta-text">0.0°</div>
+        </div>
+
+        <!-- Kruhová vodováha (kombinace beta + gamma) -->
+        <div class="card">
+            <div class="label">Kruhová (půdorys)</div>
+            <div class="circle-wrapper">
+                <div class="circle">
+                    <div class="crosshair"></div>
+                    <div class="center-dot"></div>
+                    <div class="dot" id="circle-dot"></div>
+                </div>
+            </div>
+            <div class="heading" id="alpha-text">Azimut: 0°</div>
+            <div class="value" id="tilt-magnitude">Odchylka: 0.0°</div>
+        </div>
+    </div>
+
+    <!-- 2. ŘADA – HORIZONTÁLNÍ -->
+    <div class="row">
+        <div class="card" style="max-width: 120px;">
+            <div class="label">Roll (<span class="greek">α</span>)</div>
+            <div class="horizontal-bar" style="visibility: hidden;"></div>
+            <div class="value" id="roll-text">0.0°</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Yaw (<span class="greek">γ</span>)</div>
+            <div class="horizontal-wrapper">
+                <div class="horizontal-bar">
+                    <div class="horizontal-bar-inner"></div>
+                    <div class="horizontal-bubble" id="horizontal-bubble"></div>
+                </div>
+            </div>
+            <div class="value" id="gamma-text">0.0°</div>
+        </div>
+    </div>
+
+    <!-- 3. ŘADA – ROTACE + DALŠÍ SMĚRY -->
+    <div class="row">
+        <div class="card">
+            <div class="label">Rotace / další směry</div>
+            <div class="metrics">
+                <div class="metric">
+                    <span class="metric-label"><span class="greek">α</span> rotace</span>
+                    <span class="metric-value" id="rot-alpha">0.0°/s</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label"><span class="greek">β</span> rotace</span>
+                    <span class="metric-value" id="rot-beta">0.0°/s</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label"><span class="greek">γ</span> rotace</span>
+                    <span class="metric-value" id="rot-gamma">0.0°/s</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">acc X</span>
+                    <span class="metric-value" id="acc-x">0.00 m/s²</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">acc Y</span>
+                    <span class="metric-value" id="acc-y">0.00 m/s²</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">acc Z</span>
+                    <span class="metric-value" id="acc-z">0.00 m/s²</span>
+                </div>
+            </div>
+            <div class="status" id="device-text">
+                Nepřipojeno
+            </div>
+            <div class="status" id="status-text">
+                Čekám na povolení přístupu k senzorům…
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const enableButton = document.getElementById("enable-sensors");
+    const statusText = document.getElementById("status-text");
+    const deviceText = document.getElementById("device-text");
+
+    const circleDot = document.getElementById("circle-dot");
+    const verticalBubble = document.getElementById("vertical-bubble");
+    const horizontalBubble = document.getElementById("horizontal-bubble");
+
+    const betaText = document.getElementById("beta-text");
+    const gammaText = document.getElementById("gamma-text");
+    const alphaText = document.getElementById("alpha-text");
+    const tiltMagnitudeText = document.getElementById("tilt-magnitude");
+    const rollText = document.getElementById("roll-text");
+
+    const rotAlphaText = document.getElementById("rot-alpha");
+    const rotBetaText = document.getElementById("rot-beta");
+    const rotGammaText = document.getElementById("rot-gamma");
+    const accXText = document.getElementById("acc-x");
+    const accYText = document.getElementById("acc-y");
+    const accZText = document.getElementById("acc-z");
+
+    const circle = document.querySelector(".circle");
+    const vBar = document.querySelector(".vertical-bar");
+    const hBar = document.querySelector(".horizontal-bar");
+
+    let sensorsEnabled = false;
+
+    function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+    }
+
+    function handleOrientation(event) {
+        if (!sensorsEnabled) return;
+
+        let alpha = event.alpha || 0; // kompas / rotace kolem Z
+        let beta = event.beta || 0;   // náklon dopředu/dozadu (-180, 180)
+        let gamma = event.gamma || 0; // náklon doleva/doprava (-90, 90)
+
+        // Textové hodnoty
+        betaText.textContent = beta.toFixed(1) + "°";
+        gammaText.textContent = gamma.toFixed(1) + "°";
+        rollText.textContent = gamma.toFixed(1) + "°";
+        alphaText.textContent = "Azimut: " + alpha.toFixed(0) + "°";
+
+        // Magnituda náklonu (vzdálenost „bubliny“ od středu)
+        const tiltMagnitude = Math.sqrt(beta * beta + gamma * gamma);
+        tiltMagnitudeText.textContent =
+            "Odchylka: " + tiltMagnitude.toFixed(1) + "°";
+
+        // 1) KRUH – mapování beta/gamma na X/Y
+        const radius = (circle.clientWidth || 140) / 2 - 12; // bublina nelezla ven
+        const maxTilt = 45; // při 45° skončí bublina na hraně
+
+        const x = clamp((gamma / maxTilt) * radius, -radius, radius);
+        const y = clamp((beta / maxTilt) * radius, -radius, radius);
+
+        circleDot.style.left = 50 + (x / radius) * 50 + "%";
+        circleDot.style.top = 50 + (y / radius) * 50 + "%";
+
+        // 2) VERTIKÁL – bublina se hýbe nahoru/dolů podle beta
+        const vHeight = vBar.clientHeight || 140;
+        const vRadius = vHeight / 2 - 10;
+        const vY = clamp((beta / maxTilt) * vRadius, -vRadius, vRadius);
+        const vPercent = 50 + (vY / vRadius) * 50;
+        verticalBubble.style.top = vPercent + "%";
+
+        // 3) HORIZONTÁL – bublina se hýbe doleva/doprava podle gamma
+        const hWidth = hBar.clientWidth || 140;
+        const hRadius = hWidth / 2 - 10;
+        const hX = clamp((gamma / maxTilt) * hRadius, -hRadius, hRadius);
+        const hPercent = 50 + (hX / hRadius) * 50;
+        horizontalBubble.style.left = hPercent + "%";
+
+        // Zvýraznění středu při téměř dokonalé rovině
+        const within1deg = Math.abs(beta) < 1 && Math.abs(gamma) < 1;
+        circleDot.style.borderColor = within1deg ? "#4ade80" : "#22c55e";
+    }
+
+    function handleMotion(event) {
+        if (!sensorsEnabled) return;
+        const rot = event.rotationRate || {};
+        const acc = event.accelerationIncludingGravity || {};
+
+        const rAlpha = rot.alpha || 0;
+        const rBeta = rot.beta || 0;
+        const rGamma = rot.gamma || 0;
+
+        rotAlphaText.textContent = rAlpha.toFixed(1) + "°/s";
+        rotBetaText.textContent = rBeta.toFixed(1) + "°/s";
+        rotGammaText.textContent = rGamma.toFixed(1) + "°/s";
+
+        const ax = acc.x || 0;
+        const ay = acc.y || 0;
+        const az = acc.z || 0;
+
+        accXText.textContent = ax.toFixed(2) + " m/s²";
+        accYText.textContent = ay.toFixed(2) + " m/s²";
+        accZText.textContent = az.toFixed(2) + " m/s²";
+    }
+
+    async function requestSensors() {
+        // iOS 13+ potřebuje explicitní requestPermission
+        try {
+            if (
+                typeof DeviceOrientationEvent !== "undefined" &&
+                typeof DeviceOrientationEvent.requestPermission === "function"
+            ) {
+                const response = await DeviceOrientationEvent.requestPermission();
+                if (response !== "granted") {
+                    statusText.textContent =
+                        "Senzory zamítnuty. Zkontroluj nastavení prohlížeče / HTTPS.";
+                    return;
+                }
+            }
+            // DeviceMotion má podobný režim na některých iOS
+            if (
+                typeof DeviceMotionEvent !== "undefined" &&
+                typeof DeviceMotionEvent.requestPermission === "function"
+            ) {
+                try {
+                    await DeviceMotionEvent.requestPermission();
+                } catch (e) {
+                    // ignorujeme, není kritické
+                }
+            }
+
+            window.addEventListener("deviceorientation", handleOrientation, true);
+            window.addEventListener("devicemotion", handleMotion, true);
+            sensorsEnabled = true;
+            statusText.textContent = "Senzory aktivní.";
+        } catch (err) {
+            console.error(err);
+            statusText.textContent =
+                "Nepodařilo se aktivovat senzory: " + err.message;
+        }
+
+
+        checkSensors().then(info => {
+            const mobile = isMobileDevice();
+            console.log("Podpora senzorů:", info, "isMobile:", mobile);
+
+            deviceText.textContent = mobile ?
+                ("Phone" +
+                    (navigator.platform ? " (" + navigator.platform + ")" : "") +
+                    (navigator.userAgent ? " UA: " + navigator.userAgent : "") +
+                    (navigator.vendor ? " Vendor: " + navigator.vendor : "") +
+                    (navigator.appVersion ? " AppVer: " + navigator.appVersion : "") +
+                    (navigator.hardwareConcurrency ? " CPU cores: " + navigator.hardwareConcurrency : "") +
+                    (navigator.deviceMemory ? " RAM: " + navigator.deviceMemory + "GB" : "") +
+                    (window.opera ? " Opera: " + window.opera.version() : "")) :
+                ("Not a mobile device" +
+                ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) ? " (touchscreen detected)" : "");
+
+            if (!info?.orientationWorking) {
+                document.body.style.background = '#370000';
+                statusText.textContent = JSON.stringify(info).replaceAll(',"', ' ; "').replace('{', '').replace('}', '');
+            } else {
+                document.body.style.background = '#0F172A';
+            }
+        });
+    }
+
+    function isMobileDevice() {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+        // hrubý filtr podle UA
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+        // dotykové ovládání
+        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+        console.log("isMobileDevice check:", {isMobileUA, hasTouch});
+        return isMobileUA && hasTouch;
+    }
+
+
+    async function checkSensors() {
+        const support = {
+            orientationAPI: !!window.DeviceOrientationEvent,
+            motionAPI: !!window.DeviceMotionEvent,
+            iOSPermission: false,
+            permissionGranted: false,
+            orientationWorking: false,
+            motionWorking: false
+        };
+
+        // iOS – jen zjištění existence API, nevoláme requestPermission bez uživatele
+        if (
+            typeof DeviceOrientationEvent !== "undefined" &&
+            typeof DeviceOrientationEvent.requestPermission === "function"
+        ) {
+            support.iOSPermission = true;
+        }
+
+        // Test zda API skutečně vrací data (bez nutnosti mít hned povolení)
+        await new Promise((resolve) => {
+            let timeout = setTimeout(resolve, 1000);
+
+            function o(e) {
+                if (e.alpha !== null || e.beta !== null || e.gamma !== null) {
+                    support.orientationWorking = true;
+                    window.removeEventListener("deviceorientation", o);
+                    clearTimeout(timeout);
+                    resolve();
+                }
+            }
+
+            window.addEventListener("deviceorientation", o);
+
+            function m(e) {
+                if (e.acceleration || e.rotationRate) {
+                    support.motionWorking = true;
+                    window.removeEventListener("devicemotion", m);
+                    clearTimeout(timeout);
+                    resolve();
+                }
+            }
+
+            window.addEventListener("devicemotion", m);
+        });
+
+        return support;
+    }
+
+    enableButton.addEventListener("click", requestSensors);
+</script>
+</body>
+</html>
