@@ -2318,6 +2318,45 @@
                    L 5.352 14.897
                    Z"/>
                 </g>
+
+
+                <g class="halloweenHat" fill="#000000" stroke="none" display="none">
+                                <path d="M 5.882 16.219
+        C 5.054 16.513 4.640 16.836 4.640 17.184
+        C 4.640 17.706 5.489 18.155 7.186 18.530
+        C 8.883 18.905 10.928 19.094 13.320 19.094
+        C 15.713 19.094 17.758 18.905 19.454 18.530
+        C 21.152 18.155 22.000 17.706 22.000 17.184
+        C 22.000 16.809 21.520 16.463 20.562 16.148
+        C 19.757 15.884 18.744 15.679 17.523 15.532
+        C 15.993 15.877 14.340 16.066 12.615 16.066
+        C 11.108 16.066 9.656 15.922 8.293 15.655
+        C 7.324 15.803 6.521 15.991 5.882 16.219
+        Z" />
+
+    <path d="M 16.715 14.786
+        L 16.630 13.610
+        L 16.964 12.383
+        L 16.478 11.669
+        L 16.863 11.008
+        L 16.339 10.380
+        C 16.192 10.006 16.599 9.674 16.479 9.386
+        C 16.405 9.211 15.910 8.864 15.910 8.864
+        C 15.743 8.571 16.096 7.926 15.956 7.720
+        C 15.501 7.052 15.341 6.659 14.801 6.003
+        C 14.421 5.534 13.558 5.134 13.241 5.000
+        C 12.567 4.906 10.569 5.676 7.249 7.312
+        C 4.055 8.880 2.306 9.865 2.000 10.267
+        L 8.783 10.669
+        L 9.663 10.925
+        L 10.269 11.735
+        L 9.937 12.580
+        L 9.487 13.427
+        L 9.385 14.635
+        C 10.468 14.797 11.611 15.190 12.775 15.190
+        C 14.222 15.190 15.399 15.032 16.715 14.786
+        Z" />
+                </g>
             </svg>
 
             <div style="display: flex; flex-direction: column; align-content: space-between;">
@@ -15566,6 +15605,8 @@
     // ===============================================
 
     document.addEventListener("DOMContentLoaded", function () {
+        const now = new Date();
+
         // start at top of page
         try {
             history.scrollRestoration = 'manual';
@@ -15626,7 +15667,6 @@
         if (exists('darkModeButton')) $ID('darkModeButton').innerText = savedTheme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"
         document.body.dataset.theme = savedTheme;
 
-        const now = new Date();
         if (now.getMonth() === 11) {
             $$(".thymosHead").forEach(el => {
                 el.style.strokeWidth = "0.5";
@@ -15635,6 +15675,15 @@
             $$(".christmasHat").forEach(el => {
                 el.style.display = "block";
                 el.style.transform = "translate(12px, 12px) scale(0.65) translate(-12px, -12px) translate(-1.5px, -8.5px)";
+            });
+        } else  if (now.getMonth() === 10) {
+            $$(".thymosHead").forEach(el => {
+                el.style.strokeWidth = "0.5";
+                 el.style.transform = "translate(12px, 12px) scale(0.6) translate(-12px, -12px) translate(0px, 6.5px)";
+            });
+            $$(".halloweenHat").forEach(el => {
+                el.style.display = "block";
+                el.style.transform = "translate(12px, 12px) scale(0.7) translate(-12px, -12px) translate(-1.5px, -7.5px)";
             });
         }
 
