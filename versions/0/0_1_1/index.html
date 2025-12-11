@@ -16556,9 +16556,15 @@
 
         const myId = generateId();
 
-        peer = new Peer(myId, {
-            debug: 2
-        });
+peer = new Peer(myId, {
+  debug: 2,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' }
+    ]
+  }
+});
+
         console.info('\t🔧 Peer object created, connecting to PeerJS server...');
 
 
@@ -16870,6 +16876,24 @@
                         log('❓ Unknown command received: ' + cmd.command);
                         return;
                 }
+            });
+
+
+            conn.on('error', err => {
+                log('❌ Connection closed');
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
+                btnWrapper.style.display = 'none';
+                conn = null;
+                isPeerConnected = false;
+
+                pongTime = null;
+                latencyMs = null;
+                pingIntervalTime = null;
+                clearInterval(pongInterval);
+                pongInterval = null;
+
+                console.error('❌ Connection error: ', err);
             });
 
             conn.on('close', () => {
