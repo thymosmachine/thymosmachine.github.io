@@ -2321,7 +2321,7 @@
 
 
                 <g class="halloweenHat" fill="#000000" stroke="none" display="none">
-                                <path d="M 5.882 16.219
+                    <path d="M 5.882 16.219
         C 5.054 16.513 4.640 16.836 4.640 17.184
         C 4.640 17.706 5.489 18.155 7.186 18.530
         C 8.883 18.905 10.928 19.094 13.320 19.094
@@ -2332,9 +2332,9 @@
         C 15.993 15.877 14.340 16.066 12.615 16.066
         C 11.108 16.066 9.656 15.922 8.293 15.655
         C 7.324 15.803 6.521 15.991 5.882 16.219
-        Z" />
+        Z"/>
 
-    <path d="M 16.715 14.786
+                    <path d="M 16.715 14.786
         L 16.630 13.610
         L 16.964 12.383
         L 16.478 11.669
@@ -2355,7 +2355,7 @@
         L 9.385 14.635
         C 10.468 14.797 11.611 15.190 12.775 15.190
         C 14.222 15.190 15.399 15.032 16.715 14.786
-        Z" />
+        Z"/>
                 </g>
             </svg>
 
@@ -15676,10 +15676,10 @@
                 el.style.display = "block";
                 el.style.transform = "translate(12px, 12px) scale(0.65) translate(-12px, -12px) translate(-1.5px, -8.5px)";
             });
-        } else  if (now.getMonth() === 10) {
+        } else if (now.getMonth() === 10) {
             $$(".thymosHead").forEach(el => {
                 el.style.strokeWidth = "0.5";
-                 el.style.transform = "translate(12px, 12px) scale(0.6) translate(-12px, -12px) translate(0px, 6.5px)";
+                el.style.transform = "translate(12px, 12px) scale(0.6) translate(-12px, -12px) translate(0px, 6.5px)";
             });
             $$(".halloweenHat").forEach(el => {
                 el.style.display = "block";
@@ -16556,14 +16556,18 @@
 
         const myId = generateId();
 
-peer = new Peer(myId, {
-  debug: 2,
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' }
-    ]
-  }
-});
+        // peer = new Peer(myId, {
+        //     debug: 2,
+        //     config: {
+        //         iceServers: [
+        //             {urls: 'stun:stun.l.google.com:19302'}
+        //         ]
+        //     }
+        // });
+
+        peer = new Peer(myId, {
+            debug: 2
+        });
 
         console.info('\t🔧 Peer object created, connecting to PeerJS server...');
 
@@ -16589,6 +16593,8 @@ peer = new Peer(myId, {
             statusDiv.className = 'status error';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
             logMessage('❌ Remote controll Error: ' + err);
+
+            disconnectFromHost(true);
         });
 
         copyBtn.addEventListener('click', () => {
@@ -16669,11 +16675,60 @@ peer = new Peer(myId, {
             }
         }
 
+        function disconnectFromHost(override = false) {
+            if (!override && !isPeerConnected) {
+                console.warn('Not connected');
+                return;
+            }
+
+            pongTime = null;
+            latencyMs = null;
+            pingIntervalTime = null;
+            clearInterval(pongInterval);
+            pongInterval = null;
+
+
+            lockControlButtons(undefined);
+
+            try {
+                if (conn) {
+                    conn.close();
+                }
+            } catch {
+            } finally {
+                conn = null;
+            }
+
+            if (override) {
+                try {
+                    if (peer) {
+                        peer.destroy();
+                    }
+                } catch {
+                } finally {
+                    peer = null;
+                }
+                initHost(); // re-initialize
+            }
+
+            isPeerConnected = false;
+        }
+
         peer.on('connection', (connection) => {
             conn = connection;
             log('📞 Incoming connection from: ' + conn.peer);
             statusDiv.className = 'status waiting';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Connecting...</span>';
+
+            setTimeout(() => {
+                if (!isPeerConnected) {
+                    disconnectFromHost(true);
+                    console.error('P2P Connection timeout');
+                    log('❌ Error: Connection Timeout - No response from peer.');
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '<span class="status-icon"></span><span>Connection Timeout</span>';
+                }
+            }, 15_000); // 15 seconds timeout
 
             conn.on('open', () => {
                 log('✅ Connected to controller!');
@@ -16884,16 +16939,9 @@ peer = new Peer(myId, {
                 statusDiv.className = 'status error';
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Error: ' + err.type + '</span>';
                 btnWrapper.style.display = 'none';
-                conn = null;
-                isPeerConnected = false;
-
-                pongTime = null;
-                latencyMs = null;
-                pingIntervalTime = null;
-                clearInterval(pongInterval);
-                pongInterval = null;
-
                 console.error('❌ Connection error: ', err);
+
+                disconnectFromHost(true);
             });
 
             conn.on('close', () => {
@@ -16901,14 +16949,8 @@ peer = new Peer(myId, {
                 statusDiv.className = 'status ready';
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
                 btnWrapper.style.display = 'none';
-                conn = null;
-                isPeerConnected = false;
 
-                pongTime = null;
-                latencyMs = null;
-                pingIntervalTime = null;
-                clearInterval(pongInterval);
-                pongInterval = null;
+                disconnectFromHost();
             });
         });
     }
