@@ -16720,7 +16720,7 @@
             statusDiv.className = 'status waiting';
             statusDiv.innerHTML = '<span class="status-icon"></span><span>Connecting...</span>';
 
-            setTimeout(() => {
+            let timeout = setTimeout(() => {
                 if (!isPeerConnected) {
                     disconnectFromHost(true);
                     console.error('P2P Connection timeout');
@@ -16737,6 +16737,8 @@
                 btnWrapper.style.display = 'inline-flex';
                 isPeerConnected = true;
 
+                clearTimeout(timeout);
+                timeout = undefined;
 
                 pongTime = null;
                 latencyMs = null;
@@ -16941,6 +16943,9 @@
                 btnWrapper.style.display = 'none';
                 console.error('❌ Connection error: ', err);
 
+                                clearTimeout(timeout);
+                timeout = undefined;
+
                 disconnectFromHost(true);
             });
 
@@ -16949,6 +16954,9 @@
                 statusDiv.className = 'status ready';
                 statusDiv.innerHTML = '<span class="status-icon"></span><span>Ready - Share your ID</span>';
                 btnWrapper.style.display = 'none';
+
+                                clearTimeout(timeout);
+                timeout = undefined;
 
                 disconnectFromHost();
             });

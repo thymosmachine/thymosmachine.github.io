@@ -940,7 +940,7 @@
             conn = peer.connect(hostId);
 
 
-            setTimeout(() => {
+            let timeout = setTimeout(() => {
                 if (!isConnected) {
                     disconnectFromHost(true);
                     console.error('P2P Connection timeout');
@@ -957,6 +957,9 @@
                 MACHINE.name = '';
                 MACHINE.id = '';
                 lockControlButtons(undefined);
+
+                clearTimeout(timeout);
+                timeout = undefined;
 
                 // Change button to disconnect
                 connectBtn.innerHTML = `
@@ -1114,11 +1117,17 @@
 
             conn.on('close', () => {
                 disconnectFromHost();
+
+                clearTimeout(timeout);
+                timeout = undefined;
             });
 
             conn.on('error', (err) => {
                 showError('Connection failed: ' + err);
                 disconnectFromHost(true);
+
+                clearTimeout(timeout);
+                timeout = undefined;
             });
         });
 
