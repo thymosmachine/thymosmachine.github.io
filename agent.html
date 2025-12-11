@@ -544,7 +544,8 @@
                 <button class="btn btn-third" id="measureBtn">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <path d="M3 17h2v-7H3v7zm4 0h2v-4H7v4zm4 0h2v-10h-2v10zm4 0h2v-2h-2v2zm4 0h2v-5h-2v5z"/>
-                        <rect fill="none" stroke="currentColor" stroke-width="3" x="3.5" y="3.5" width="17" height="17" rx="4" ry="4"/>
+                        <rect fill="none" stroke="currentColor" stroke-width="3"
+                              x="3.5" y="3.5" width="17" height="17" rx="4" ry="4"/>
                     </svg>
                     Measure Data
                 </button>
@@ -930,12 +931,22 @@
         connectBtn.disabled = true;
         setTokenInputsDisabled(true);
 
+
         peer = new Peer();
 
         peer.on('open', (id) => {
             console.info('My Controller ID:', id);
 
             conn = peer.connect(hostId);
+
+
+            setTimeout(() => {
+                if (!isConnected) {
+                    disconnectFromHost(true);
+                    console.error('P2P Connection timeout');
+                    alert('Connection timeout, please try again.');
+                }
+            }, 15_000); // 15 seconds timeout
 
             conn.on('open', () => {
                 isConnected = true;
@@ -1102,23 +1113,23 @@
             });
 
             conn.on('close', () => {
-                handleDisconnection();
+                disconnectFromHost();
             });
 
             conn.on('error', (err) => {
                 showError('Connection failed: ' + err);
-                handleDisconnection();
+                disconnectFromHost(true);
             });
         });
 
         peer.on('error', (err) => {
             showError('Peer error: ' + err.type);
-            handleDisconnection();
+            disconnectFromHost(true);
         });
     });
 
-    function disconnectFromHost() {
-        if (!isConnected) {
+    function disconnectFromHost(override = false) {
+        if (!override && !isConnected) {
             console.warn('Not connected');
             return;
         }
@@ -1135,14 +1146,24 @@
 
         lockControlButtons(undefined);
 
-        if (conn) {
-            conn.close();
+        try {
+            if (conn) {
+                conn.close();
+            }
+        } catch {
+        } finally {
             conn = null;
         }
-        if (peer) {
-            peer.destroy();
+
+        try {
+            if (peer) {
+                peer.destroy();
+            }
+        } catch {
+        } finally {
             peer = null;
         }
+
         handleDisconnection();
     }
 
