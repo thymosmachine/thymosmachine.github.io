@@ -1,2 +1,2 @@
-# This is a web-based machine controller.
-
+# thymosmachine.github.io
+THYMOS - Moira controller
